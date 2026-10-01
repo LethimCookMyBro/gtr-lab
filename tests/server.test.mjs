@@ -8,6 +8,8 @@ beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), "gtr-server-"));
   await writeFile(join(root, "index.html"), "<h1>GT-R LAB</h1>");
   await writeFile(join(root, "car.glb"), "glTF-test");
+  await writeFile(join(root, "film.mp4"), "0123456789abcdef");
+  await writeFile(join(root, "film.webm"), "webm-test");
   server = createAppServer(root);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   url = "http://127.0.0.1:" + server.address().port;
@@ -60,6 +62,59 @@ describe("production static server", () => {
     ).toEqual(["script-src 'self' 'wasm-unsafe-eval'"]);
     expect(directives).toContain("object-src 'none'");
     expect(directives.join(";")).not.toMatch(/https?:|wss?:|\*/);
+  });
+  it("serves film types with byte-range support for browser metadata and seeking", async () => {
+    const mp4 = await fetch(url + "/film.mp4");
+    expect(mp4.headers.get("content-type")).toBe("video/mp4");
+    expect(mp4.headers.get("accept-ranges")).toBe("bytes");
+    const webm = await fetch(url + "/film.webm");
+    expect(webm.headers.get("content-type")).toBe("video/webm");
+  });
+  it("streams only a requested film byte interval", async () => {
+    const response = await fetch(url + "/film.mp4", {
+      headers: { Range: "bytes=2-5" },
+    });
+    expect(response.status).toBe(206);
+    expect(response.headers.get("content-range")).toBe("bytes 2-5/16");
+    expect(response.headers.get("content-length")).toBe("4");
+    expect(await response.text()).toBe("2345");
+  });
+  it("supports film suffix and open-ended ranges without buffering the full asset", async () => {
+    const suffix = await fetch(url + "/film.mp4", {
+      headers: { Range: "bytes=-4" },
+    });
+    expect(suffix.status).toBe(206);
+    expect(await suffix.text()).toBe("cdef");
+    const tail = await fetch(url + "/film.mp4", {
+      headers: { Range: "bytes=12-" },
+    });
+    expect(tail.status).toBe(206);
+    expect(await tail.text()).toBe("cdef");
+  });
+  it("rejects unsatisfiable or malformed ranges and gives the actual size", async () => {
+    for (const range of [
+      "bytes=99-100",
+      "bytes=7-2",
+      "bytes=a-b",
+      "bytes=-0",
+      "bytes=0-2,5-7",
+      "bytes=9007199254740992-",
+    ]) {
+      const response = await fetch(url + "/film.mp4", {
+        headers: { Range: range },
+      });
+      expect(response.status, range).toBe(416);
+      expect(response.headers.get("content-range")).toBe("bytes */16");
+    }
+  });
+  it("supports a ranged HEAD response with no film payload", async () => {
+    const response = await fetch(url + "/film.mp4", {
+      method: "HEAD",
+      headers: { Range: "bytes=4-7" },
+    });
+    expect(response.status).toBe(206);
+    expect(response.headers.get("content-length")).toBe("4");
+    expect(await response.text()).toBe("");
   });
   it("rejects mutation methods", async () => {
     const r = await fetch(url + "/", { method: "POST" });

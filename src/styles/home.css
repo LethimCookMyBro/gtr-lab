@@ -38,6 +38,7 @@
 }
 .home-header > .brand {
   position: absolute;
+  min-height: 44px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 24px;
@@ -94,6 +95,9 @@
   min-height: 48px;
   padding: 0;
   font-size: 14px;
+}
+.home-menu-top > .brand {
+  min-height: 44px;
 }
 .home-menu-body {
   display: grid;
@@ -917,9 +921,9 @@
     aspect-ratio: 1.05;
     transform: translateY(calc(var(--progress, 0) * -28px));
   }
-  .home-editorial-image--cockpit {
+  .cinematic-home .home-editorial-image--cockpit {
     width: 88%;
-    margin-top: -30px;
+    margin-top: -42px;
     aspect-ratio: 0.75;
     transform: translateY(calc(14px - var(--progress, 0) * 42px));
   }
@@ -944,7 +948,11 @@
   }
   .home-expanding-frame .home-film-video,
   .home-expanding-frame .home-film-backup {
-    object-fit: contain;
+    object-fit: cover;
+    object-position: 65% center;
+  }
+  .home-expanding-frame .home-film-video {
+    object-position: 35% center;
   }
   .home-expanding-frame .home-film-controls {
     left: 16px;
@@ -969,7 +977,7 @@
   }
   .home-heritage-r32 {
     top: 4%;
-    right: -16%;
+    right: -4%;
     width: 84%;
     opacity: 0;
     transform: translateY(calc(16svh - var(--progress) * 24svh));
@@ -981,16 +989,19 @@
   }
   [data-active-era="1"] .home-heritage-r32,
   [data-active-era="2"] .home-heritage-r32 {
-    opacity: 0.8;
+    opacity: 1;
+  }
+  .home-heritage-r32 img {
+    filter: brightness(0.9);
   }
   .home-heritage-r34 {
     display: none;
   }
   .home-heritage-r35 {
-    bottom: 0;
+    bottom: -6%;
     right: -17%;
     width: 90%;
-    transform: translateY(calc(26svh - var(--progress) * 30svh));
+    transform: translateY(calc(20svh - var(--progress) * 21svh));
   }
   .home-heritage-copy {
     left: 24px;
@@ -999,7 +1010,13 @@
     padding: 0;
   }
   .home-heritage-copy::before {
-    inset: -42px -50px;
+    inset: -22px -30px;
+    background: linear-gradient(
+      180deg,
+      #07080900 0%,
+      #070809ed 18%,
+      #070809 72%
+    );
   }
   .home-heritage-copy h2 {
     font-size: 64px;
@@ -1019,14 +1036,20 @@
     max-width: 285px;
   }
   .home-era-navigation {
-    top: auto;
-    bottom: 18%;
+    top: calc(31% + 305px);
+    bottom: auto;
     left: 24px;
     right: 24px;
-    flex-direction: row;
+    width: calc(100% - 48px);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    background: #070809;
+    box-shadow: 0 0 0 10px #070809;
+    isolation: isolate;
   }
   .home-era-navigation button {
-    flex: 1;
+    width: 100%;
+    min-width: 0;
     min-height: 54px;
     font-size: 16px;
     padding: 0 6px;
@@ -1189,6 +1212,7 @@
   .home-era-navigation {
     position: relative;
     inset: auto;
+    width: 100%;
     flex-direction: row;
     margin: 25px 0 45px;
     order: 1;

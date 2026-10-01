@@ -14,6 +14,8 @@ const MIME = {
   ".webp": "image/webp",
   ".png": "image/png",
   ".jpg": "image/jpeg",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
   ".glb": "model/gltf-binary",
   ".hdr": "application/octet-stream",
   ".woff2": "font/woff2",
@@ -21,6 +23,25 @@ const MIME = {
 // ImageBitmapLoader fetches temporary blob URLs created from embedded GLB textures.
 const CSP =
   "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+/** One bounded byte range; browsers use these for film metadata and seeking. */
+function byteRange(header, size) {
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header);
+  if (!match || (!match[1] && !match[2]) || size <= 0) return null;
+  const first = match[1] ? Number(match[1]) : undefined;
+  const last = match[2] ? Number(match[2]) : undefined;
+  if (
+    [first, last].some(
+      (value) => value !== undefined && !Number.isSafeInteger(value),
+    )
+  )
+    return null;
+  if (first === undefined) {
+    if (!last || last <= 0) return null;
+    return { start: Math.max(0, size - last), end: size - 1 };
+  }
+  if (first >= size || (last !== undefined && last < first)) return null;
+  return { start: first, end: Math.min(last ?? size - 1, size - 1) };
+}
 export function createAppServer(directory = resolve("dist")) {
   const root = resolve(directory);
   return http.createServer(async (req, res) => {
@@ -56,9 +77,25 @@ export function createAppServer(directory = resolve("dist")) {
         info = await stat(file);
       }
       const extension = extname(file);
-      res.writeHead(200, {
+      const rangeHeader = req.headers.range;
+      const range = rangeHeader ? byteRange(rangeHeader, info.size) : undefined;
+      if (rangeHeader && !range) {
+        res.writeHead(416, {
+          "Content-Range": `bytes */${info.size}`,
+          "Accept-Ranges": "bytes",
+        });
+        res.end();
+        return;
+      }
+      res.writeHead(range ? 206 : 200, {
         "Content-Type": MIME[extension] || "application/octet-stream",
-        "Content-Length": info.size,
+        "Content-Length": range ? range.end - range.start + 1 : info.size,
+        "Accept-Ranges": "bytes",
+        ...(range
+          ? {
+              "Content-Range": `bytes ${range.start}-${range.end}/${info.size}`,
+            }
+          : {}),
         "Cache-Control":
           extension === ".html"
             ? "no-cache"
@@ -70,7 +107,7 @@ export function createAppServer(directory = resolve("dist")) {
         res.end();
         return;
       }
-      pipeline(createReadStream(file), res, (error) => {
+      pipeline(createReadStream(file, range || undefined), res, (error) => {
         if (error && !res.destroyed) res.destroy(error);
       });
     } catch {
