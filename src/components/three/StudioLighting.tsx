@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { environmentAsset } from "./sceneHelpers";
+import { StageGeometry } from "./StageGeometry";
 import { Environment } from "@react-three/drei/core/Environment";
 import { Lightformer } from "@react-three/drei/core/Lightformer";
 import { ContactShadows } from "@react-three/drei/core/ContactShadows";
@@ -50,90 +51,92 @@ export function StudioLighting({
     <>
       <color attach="background" args={[mood.background]} />
       <fog attach="fog" args={[mood.background, 18, 45]} />
-      <ambientLight intensity={mood.ambient} />
-      <directionalLight
-        position={[3, 7, 5]}
-        intensity={mood.key}
-        color="#fff7ed"
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-5}
-        shadow-camera-right={5}
-        shadow-camera-top={5}
-        shadow-camera-bottom={-5}
-        shadow-bias={-0.0003}
-        shadow-normalBias={0.03}
-      />
-      <directionalLight
-        position={[-5, 3, -4]}
-        intensity={environment === "night" ? 1.5 : 2.4}
-        color="#e7ebed"
-      />
-      <Environment
-        key={environment}
-        resolution={256}
-        frames={1}
-        environmentIntensity={mood.intensity}
-      >
-        <color
-          attach="background"
-          args={[environment === "gallery" ? "#6f7071" : "#111316"]}
+      <StageGeometry>
+        <ambientLight intensity={mood.ambient} />
+        <directionalLight
+          position={[3, 7, 5]}
+          intensity={mood.key}
+          color="#fff7ed"
+          castShadow
+          shadow-mapSize={[1024, 1024]}
+          shadow-camera-left={-5}
+          shadow-camera-right={5}
+          shadow-camera-top={5}
+          shadow-camera-bottom={-5}
+          shadow-bias={-0.0003}
+          shadow-normalBias={0.03}
         />
-        <Lightformer
-          form="rect"
-          intensity={5}
-          color="#ffffff"
-          position={[0, 6, 0]}
-          rotation={[Math.PI / 2, 0, 0]}
-          scale={[4, 8, 1]}
+        <directionalLight
+          position={[-5, 3, -4]}
+          intensity={environment === "night" ? 1.5 : 2.4}
+          color="#e7ebed"
         />
-        <Lightformer
-          form="rect"
-          intensity={7}
-          color="#f3f2ef"
-          position={[-4, 2, 0]}
-          rotation={[0, Math.PI / 2, 0]}
-          scale={[1.5, 6, 1]}
+        <Environment
+          key={environment}
+          resolution={256}
+          frames={1}
+          environmentIntensity={mood.intensity}
+        >
+          <color
+            attach="background"
+            args={[environment === "gallery" ? "#6f7071" : "#111316"]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={5}
+            color="#ffffff"
+            position={[0, 6, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={[4, 8, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={7}
+            color="#f3f2ef"
+            position={[-4, 2, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+            scale={[1.5, 6, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={4}
+            color="#e9ecee"
+            position={[4, 2, -3]}
+            rotation={[0, -Math.PI / 2, 0]}
+            scale={[2, 5, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={environment === "night" ? 2 : 4}
+            color="#ffffff"
+            position={[0, 3, -6]}
+            scale={[5, 1, 1]}
+          />
+        </Environment>
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -0.012, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[150, 150]} />
+          <meshStandardMaterial
+            color={mood.floor}
+            roughness={0.48}
+            metalness={0.18}
+          />
+        </mesh>
+        <ContactShadows
+          key={environment}
+          position={[0, 0.006, 0]}
+          opacity={environment === "gallery" ? 0.55 : 0.68}
+          scale={12}
+          blur={2.5}
+          far={4.5}
+          resolution={512}
+          frames={1}
+          color="#000000"
         />
-        <Lightformer
-          form="rect"
-          intensity={4}
-          color="#e9ecee"
-          position={[4, 2, -3]}
-          rotation={[0, -Math.PI / 2, 0]}
-          scale={[2, 5, 1]}
-        />
-        <Lightformer
-          form="rect"
-          intensity={environment === "night" ? 2 : 4}
-          color="#ffffff"
-          position={[0, 3, -6]}
-          scale={[5, 1, 1]}
-        />
-      </Environment>
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.012, 0]}
-        receiveShadow
-      >
-        <planeGeometry args={[150, 150]} />
-        <meshStandardMaterial
-          color={mood.floor}
-          roughness={0.48}
-          metalness={0.18}
-        />
-      </mesh>
-      <ContactShadows
-        key={environment}
-        position={[0, 0.006, 0]}
-        opacity={environment === "gallery" ? 0.55 : 0.68}
-        scale={12}
-        blur={2.5}
-        far={4.5}
-        resolution={512}
-        frames={1}
-        color="#000000"
-      />
+      </StageGeometry>
     </>
   );
 }
@@ -168,7 +171,7 @@ function OutdoorEnvironment({
   const width = useThree((state) => state.size.width);
   const file = environmentAsset(environment, width < 768)!;
   return (
-    <>
+    <StageGeometry>
       <Environment
         key={file}
         files={file}
@@ -209,6 +212,6 @@ function OutdoorEnvironment({
         frames={1}
         color="#000000"
       />
-    </>
+    </StageGeometry>
   );
 }

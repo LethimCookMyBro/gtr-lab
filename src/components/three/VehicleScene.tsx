@@ -90,6 +90,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
     props.materialRoles,
     props.onProgress,
     props.onError,
+    props.disabledEmissive,
   );
   const readiness = useSceneReadiness(
     props.url,

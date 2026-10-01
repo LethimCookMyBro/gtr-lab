@@ -10,7 +10,7 @@ Research date: 2026-10-01. This is an asset acquisition record, not a legal opin
 - Manufacturer-sourced facts: `docs/verified-specifications.json` and `docs/SPECIFICATIONS.md`
 - WebP display set totals 1,061,980 bytes; small set totals 341,668 bytes, versus 15,880,199 bytes of original JPEGs
 - All twelve WebP payloads successfully decoded and dimensions verified
-- **No production-qualified 3D model has been acquired by this asset research task**
+- **Official Ciasny R35 exterior acquired and integrated for testing.** Source 40,477,960 bytes; optimized Meshopt/WebP asset 8,296,356 bytes with all 566,475 imported triangles retained. Exact custom aero and model-year limitations remain visible. No source cabin exists. See `MODEL_PROVENANCE.md`.
 
 - Detailed-interior follow-up, paid-license restrictions, and public GLB provenance checks: `docs/MODEL_ACQUISITION_REVIEW.md`
 
@@ -18,7 +18,7 @@ Research date: 2026-10-01. This is an asset acquisition record, not a legal opin
 
 | Variant | Required model | Best current evidence | Blocker / next step |
 |---|---|---|---|
-| R35 Premium | Detailed stock R35 exterior with appropriate model year | Ciasny's R35 on Sketchfab, CC BY 4.0; GLB and glTF archives confirmed in the public page metadata | Account sign-in required for download. Final trim/year and geometry quality must be inspected after lawful download. Neubi's original BlendSwap model is another candidate |
+| R35 Premium | Detailed stock R35 exterior with appropriate model year | Official Ciasny CC BY 4.0 GLB acquired. Its recognizable custom-aero R35 exterior is active on this route, clearly separated from the 2024 catalog specifications | Detailed cabin is absent and being authored from matched photographs. Actual-car browser/material QA pending. Not an exact 2024 Premium replica |
 | R35 NISMO | Correct NISMO body, wing, wheels, vents | Search surfaced several downloadable Sketchfab models | Prominent candidates declare game-derived sources or carry contradictory provenance; no clean production-qualified asset found |
 | T-spec | Correct body/year, wider front fenders, gold wheels, T-spec details | No exact clean free model established | Obtain an authorized exact model, or properly license and carefully adapt a compatible R35 base and label the adaptation |
 | GT-R50 by Italdesign | Unique GT-R50 body, not a recolored R35 | Professional SQUIR model available commercially | Purchase not authorized; listed standard licenses may restrict distribution of the underlying model. Free candidate is a game-derived re-upload |
@@ -35,9 +35,9 @@ Research date: 2026-10-01. This is an asset acquisition record, not a legal opin
 - Published: 2024-06-18
 - Reported complexity: 566.6k triangles / 291.5k vertices
 - Official public page confirms `source`, `gltf`, and `glb` archives exist
-- Official anonymous response says authentication credentials were not provided and download permission is false for the anonymous session
-- Shortest unblock: user downloads the GLB through their own signed-in Sketchfab account and supplies it, or authorizes supported account access. Do not extract protected viewer payloads or bypass sign-in
-- After acquisition: check front/rear styling, model year, source provenance, texture quality, separated paint/wheel/glass/light materials, mesh count, actual dimensions, and performance. Compress a derived copy only within the license terms
+- Acquired through the official signed-in Sketchfab download menu on 2026-10-01; embedded author/source/CC BY 4.0 metadata verified. No protected viewer extraction or API key was used
+- Source preserved unchanged; front/rear/side/inside renders and numerical geometry validation completed
+- Optimized with retained exterior topology, exact paint/lamp/window/exhaust material separation, 2K WebP and Meshopt. Full provenance and hashes are in `MODEL_PROVENANCE.md`
 
 ### 2. Neubi / Neubi3D — Nissan GTR R35
 

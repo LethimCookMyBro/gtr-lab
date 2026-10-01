@@ -41,3 +41,43 @@ it("identifies an original approximation and its limitations instead of claiming
     "licensed GLB vehicle asset",
   );
 });
+
+it("credits a licensed model and explains its relationship to catalog specifications", () => {
+  const model = {
+    ...models[0],
+    asset: {
+      ...models[0].asset,
+      status: "ready",
+      url: "/models/ciasny-r35.glb",
+      kind: "licensed-model",
+      displayName: "GT-R R35 · Ciasny edition",
+      referenceNote:
+        "2017-era exterior with custom aero; not a verified 2024 Premium replica.",
+      source:
+        "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a",
+      author: "Ciasny",
+      license: "https://creativecommons.org/licenses/by/4.0/",
+      licenseName: "CC BY 4.0",
+      limitations: ["Detailed cabin pending integration"],
+    },
+  } as VehicleModel;
+  useConfigurator.setState({ panel: "assets" });
+  render(
+    <MemoryRouter>
+      <AudioProvider>
+        <ConfiguratorPanels model={model} interactive />
+      </AudioProvider>
+    </MemoryRouter>,
+  );
+  const dialog = screen.getByRole("dialog");
+  expect(dialog.textContent).toContain("GT-R R35 · Ciasny edition");
+  expect(dialog.textContent).toContain("2017-era exterior");
+  expect(
+    screen
+      .getByRole("link", { name: "Ciasny · Original model" })
+      .getAttribute("href"),
+  ).toBe(model.asset.source);
+  expect(
+    screen.getByRole("link", { name: "CC BY 4.0" }).getAttribute("href"),
+  ).toBe(model.asset.license);
+});

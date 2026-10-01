@@ -84,6 +84,9 @@ export function ConfiguratorPage() {
   const paint = paints.find((p) => p.id === state.selectedPaint)!;
   const hasAsset = model.asset.status === "ready" && !!model.asset.url;
   const interactive = hasAsset && state.ready && !state.error;
+  const sceneName = hasAsset
+    ? model.asset.displayName || model.name
+    : model.name;
   const open = (
     panel: "camera" | "environment" | "models" | "details" | "assets",
   ) => {
@@ -104,7 +107,7 @@ export function ConfiguratorPage() {
         </button>
       </header>
       <div className="config-title">
-        <h1>{model.name}</h1>
+        <h1>{sceneName}</h1>
         <p>{model.tagline}</p>
         {model.asset.kind === "original-study" && (
           <button className="study-disclosure" onClick={() => open("assets")}>
@@ -112,13 +115,21 @@ export function ConfiguratorPage() {
             Original R35 study · View limitations
           </button>
         )}
+        {hasAsset && model.asset.kind === "licensed-model" && (
+          <button className="study-disclosure" onClick={() => open("assets")}>
+            <Info size={14} />
+            Model provenance & limitations
+          </button>
+        )}
       </div>
       <div
         className="scene-stage"
         aria-label={
           interactive
-            ? "Interactive 3D " + model.name
-            : "Photographic reference of " + model.name
+            ? "Interactive 3D " + sceneName
+            : hasAsset && !state.error
+              ? "Loading 3D " + sceneName
+              : "Photographic reference of " + model.name
         }
       >
         {hasAsset && !state.error ? (
@@ -140,6 +151,7 @@ export function ConfiguratorPage() {
               lights={state.lightsEnabled}
               reducedMotion={reduced}
               materialRoles={model.asset.materialRoles}
+              disabledEmissive={model.asset.disabledEmissive}
               cameraViews={model.asset.cameraViews}
               onReady={onReady}
               onError={onError}
@@ -239,7 +251,9 @@ export function ConfiguratorPage() {
             <Info size={15} />
             {state.error
               ? "3D unavailable · View details"
-              : "Photo reference · 3D asset pending"}
+              : hasAsset
+                ? "Preparing 3D · View details"
+                : "Photo reference · 3D asset pending"}
           </button>
         )}
         <span className="scene-count">

@@ -14,6 +14,15 @@ describe("accurate distinct lineup", () => {
       expect(m.sourceUrls.length).toBeGreaterThan(0);
     }
   });
+  it("uses the licensed R35 on one route without relabeling it as six variants", () => {
+    const available = models.filter((m) => m.asset.status === "ready");
+    expect(available.map((m) => m.id)).toEqual(["premium"]);
+    expect(available[0].asset.author).toBe("Ciasny");
+    expect(available[0].asset.materialRoles.paint).toEqual(["CarPaint"]);
+    expect(available[0].asset.displayName).toBe("GT-R R35");
+    expect(available[0].asset.referenceNote).toContain("2024 Premium");
+    expect(available[0].asset.interior).toBe(false);
+  });
   it("keeps GT500 distinct from road-car specifications", () => {
     expect(getModel("gt500")?.engine).toContain("inline-four");
     expect(getModel("gt500")?.drive).toBe("Rear-wheel drive");

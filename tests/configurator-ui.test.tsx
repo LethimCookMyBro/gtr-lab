@@ -12,6 +12,9 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { ConfiguratorPage } from "../src/pages/ConfiguratorPage";
 import { AudioProvider } from "../src/hooks/useAudio";
 import { useConfigurator } from "../src/stores/configurator";
+vi.mock("../src/components/three/VehicleScene", () => ({
+  default: () => <div>Renderer covered by WebGL suite</div>,
+}));
 const setup = (route = "/configurator/premium") =>
   render(
     <MemoryRouter initialEntries={[route]}>
@@ -27,13 +30,11 @@ beforeEach(() => {
   useConfigurator.getState().reset();
   Object.defineProperty(window, "matchMedia", {
     writable: true,
-    value: vi
-      .fn()
-      .mockImplementation(() => ({
-        matches: false,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      })),
+    value: vi.fn().mockImplementation(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
   });
 });
 afterEach(() => {
@@ -42,7 +43,7 @@ afterEach(() => {
 });
 describe("configurator honest functional flow", () => {
   it("labels photograph honestly and disables materials without geometry", () => {
-    setup();
+    setup("/configurator/gt500");
     expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
     expect(
       (screen.getByRole("button", { name: "Pearl White" }) as HTMLButtonElement)
@@ -86,7 +87,7 @@ describe("configurator honest functional flow", () => {
     );
   });
   it("explains unavailable camera and detailed interior instead of teleporting into fake cabin", async () => {
-    setup();
+    setup("/configurator/gt500");
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Camera" }));
     expect(screen.getByRole("dialog").textContent).toContain(

@@ -82,6 +82,27 @@ export function CreditsPage() {
           a clearly marked photographic reference rather than substituting
           another variant or a primitive mesh.
         </p>
+        {models
+          .filter((m) => m.asset.status === "ready")
+          .map((m) => (
+            <div className="source-row" key={m.id}>
+              <h3>{m.asset.displayName || m.name}</h3>
+              {m.asset.source && (
+                <a href={m.asset.source} target="_blank" rel="noreferrer">
+                  {m.asset.author} · Original 3D model
+                </a>
+              )}
+              {m.asset.license && (
+                <a href={m.asset.license} target="_blank" rel="noreferrer">
+                  {m.asset.licenseName || "Asset license"}
+                </a>
+              )}
+              <p>{m.asset.referenceNote}</p>
+              {m.asset.changes?.map((change) => (
+                <p key={change}>{change}</p>
+              ))}
+            </div>
+          ))}
       </section>
       <section>
         <h2>Original implementation</h2>

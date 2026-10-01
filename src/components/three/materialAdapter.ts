@@ -57,9 +57,14 @@ export function disposeVehicleObject(root: Object3D) {
   skeletons.forEach((skeleton) => skeleton.dispose());
 }
 
-export function prepareVehicle(source: Object3D, roles: MaterialRoles) {
+export function prepareVehicle(
+  source: Object3D,
+  roles: MaterialRoles,
+  disabledEmissive: string[] = [],
+) {
   const scene = clone(source);
   const bindings: Binding[] = [];
+  const inactiveMaterials = new Set(disabledEmissive);
   const copies = new Map<Material, Map<MaterialRole | null, Material>>();
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return;
@@ -86,7 +91,10 @@ export function prepareVehicle(source: Object3D, roles: MaterialRoles) {
         paint.metalness = 0.78;
         paint.roughness = 0.23;
       }
-      if (role && material instanceof MeshStandardMaterial)
+      const keepUnlit = inactiveMaterials.has(original.name);
+      if (keepUnlit && material instanceof MeshStandardMaterial)
+        material.emissiveIntensity = 0;
+      if (role && !keepUnlit && material instanceof MeshStandardMaterial)
         bindings.push({ material, role });
       variants.set(role, material);
       return material;

@@ -16,7 +16,7 @@ Homepage → model collection → Premium configurator → model details → Esc
 
 The isolated WebGL harness uses obvious synthetic test geometry, excluded from the production build. It exercised real GLB decoding/rendering, material-capability matching, paint/camera pixel changes, keyboard and pointer exploration, rotation cancellation, invalid-model recovery, unavailable WebGL feedback, context loss/retry and failed HDRI recovery to Studio. **This is evidence for renderer mechanics, not vehicle realism.**
 
-Additional sound-persistence and drawer-source/focus browser cases have been added after the green run and require the next CI result.
+The later main commit `af06fb4cb704c8a8af2ddd92cd689f2da9d4deeb` passed 81 unit tests, 24 responsive browser cases and six WebGL fixture cases in run https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36833127966. The added cases verify sound persistence and full detail-sheet source/focus behavior.
 
 ## Actual screenshot inspection
 
@@ -55,3 +55,14 @@ Initial screenshots captured the 0.8-second hero entrance and detail-sheet trans
 The direct cloud browser could not create a WebGL context for the reference site and rejected the application’s local preview URL. Those are environment limitations, not reported reference-site bugs. Authorized GitHub Actions supplied a working browser and software WebGL for the tests above.
 
 A green scaffold/fixture build is not a finished six-variant premium configurator. Acquire and inspect accurate, lawfully usable vehicle assets, integrate and test the real vehicles, then verify the Railway preview before claiming full acceptance. Main contains in-progress source; a temporary WIP branch still awaits authenticated removal.
+
+
+## Licensed-exterior integration checkpoint
+
+The official Ciasny CC BY 4.0 R35 exterior is integrated on a single route, with attribution and explicit custom-aero/model-year limitations. Source and optimized payload hashes, numerical validation and adaptation records are in `MODEL_PROVENANCE.md`. The source has no cabin; Interior remains disabled while a fitted reference-guided cabin is developed. No rejected original exterior is included.
+
+Fresh local aggregate verification: 136 unit/DOM/build-helper tests passed across 17 files, production typecheck and build passed, renderer QA typecheck passed, and the dedicated real-car suite lists 10 cases across 1440×900 and 390×844. These new real-car cases have not yet run in CI at this checkpoint.
+
+New regressions isolate floor/panorama geometry from the contact-shadow depth pass, keep declared reverse emitters inactive, prevent the loader from being labeled a photo reference, separate source geometry from catalog specifications, expose creator/license/changes, and verify offline chunk reconstruction with complete hashes, bounds and symlink/path checks.
+
+Embedded GLB images use local blob URLs through ImageBitmapLoader. The production CSP now permits only self and blob connections; no external hosts or general JavaScript eval were added. An HTTP header regression verifies this narrow policy.

@@ -1,0 +1,9 @@
+Nissan GTR R35 by Ciasny
+https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a
+Author: https://sketchfab.com/Ciasny
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Changes: Adapted for web by baking transforms, centering and grounding, normalization to 4.7 m length with +Y up/+Z front, separating exhaust metal from body paint, splitting window and lamp glass and front/rear emitter materials into exact semantic roles, generating MikkTSpace tangents, resizing textures to a maximum 2048 pixels with WebP encoding, and Meshopt geometry compression. No exterior mesh simplification. Original downloadable asset is preserved unchanged.
+
+The original model has no cabin. Any subsequently added cabin must be identified separately as an authored study fitted to the licensed exterior. This artist model depicts custom aero and is not represented as an exact 2024 Premium model or an official Nissan asset.

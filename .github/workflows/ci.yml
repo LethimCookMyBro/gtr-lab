@@ -8,7 +8,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +24,12 @@ jobs:
         if: ${{ !cancelled() }}
       - run: npx playwright test -c playwright.renderer.config.ts
         if: ${{ !cancelled() }}
+      - run: npx playwright test -c playwright.vehicle.config.ts
+        if: ${{ !cancelled() }}
+      - run: node scripts/audit-reference.mjs
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 4
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -33,4 +39,7 @@ jobs:
             test-results/
             playwright-renderer-report/
             renderer-test-results/
+            playwright-vehicle-report/
+            vehicle-test-results/
+            reference-audit-results/
           retention-days: 14

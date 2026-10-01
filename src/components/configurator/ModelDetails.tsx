@@ -6,6 +6,9 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
       <img src={model.image} alt={model.imageCaption} />
       <p className="photo-caption">{model.imageCaption}</p>
       <p className="detail-lead">{model.description}</p>
+      {model.asset.referenceNote && (
+        <p className="availability-note">{model.asset.referenceNote}</p>
+      )}
       <div className="key-figures">
         <div>
           <strong>

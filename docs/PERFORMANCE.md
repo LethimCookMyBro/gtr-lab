@@ -13,10 +13,10 @@
 - Audio synthesized on gesture, no background audio file or autoplay
 
 ## Current build baseline
-Latest verified production build succeeded. The Three chunk is704.45KB minified/181.57KB gzip; renderer315.15KB/100.61KB gzip; this is a disclosed bundler size warning, not a runtime failure. These figures must be refreshed after final edits and asset integration.
+Latest verified production build succeeded. The Three chunk is704.45KB minified/181.57KB gzip; renderer337.75KB/106.97KB gzip; this is a disclosed bundler size warning, not a runtime failure. These figures must be refreshed after final edits and asset integration.
 
 ## Pending genuine measurements
-No production-approved vehicle GLB is integrated yet. Geometry/textures dominate performance and final FPS/memory cannot be measured without the real asset and a functioning WebGL test browser. Current cloud CUA reports WebGL disabled; fallback Chromium launch is restricted by OS socket support. Do not report invented FPS, Lighthouse scores or mobile performance passes.
+The current licensed exterior is 8,296,356 bytes with 566,475 triangles, 82 mesh objects and 22 materials. It is lazily loaded on one route. Geometry is not decimated; textures are limited to 2K and compressed as WebP. Meshopt decoding is bundled locally. Actual-car software-WebGL tests will run in GitHub Actions; physical-device FPS/memory remain unmeasured. Do not report invented FPS, Lighthouse scores or mobile performance passes.
 
 ## Production asset acceptance
 Per vehicle target ideally<10MB compressed transfer, texture max2K default, mobile1K where suitable, measured draw-call/triangle/texture counts. Preserve cabin visibility and curved silhouette quality. Use meshopt or Draco only with configured local decoders; loader support and final file compatibility must be tested, not assumed. Split interior only if transition/loading remains coherent. Optimize exported content in a DCC or verified asset optimization pipeline, never obscure geometry with darkness or bloom.

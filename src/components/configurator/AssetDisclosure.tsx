@@ -14,7 +14,7 @@ export function AssetDisclosure({
   const title = interactive
     ? study
       ? model.asset.displayName || "An original design study."
-      : "A real-time perspective."
+      : model.asset.displayName || "A real-time perspective."
     : ready
       ? "A rendering interruption."
       : "The right model comes first.";
@@ -32,6 +32,23 @@ export function AssetDisclosure({
       <Box size={35} />
       <h3>{title}</h3>
       <p>{description}</p>
+      {model.asset.referenceNote && <p>{model.asset.referenceNote}</p>}
+      {model.asset.kind === "licensed-model" && model.asset.source && (
+        <p>
+          <a href={model.asset.source} target="_blank" rel="noreferrer">
+            {model.asset.author} · Original model
+          </a>
+          {model.asset.license && (
+            <>
+              {" "}
+              ·{" "}
+              <a href={model.asset.license} target="_blank" rel="noreferrer">
+                {model.asset.licenseName || "License"}
+              </a>
+            </>
+          )}
+        </p>
+      )}
       {study && !interactive && (
         <p>
           {model.asset.displayName}. Original approximate geometry; not

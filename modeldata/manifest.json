@@ -1,0 +1,183 @@
+[
+  {
+    "id": "ciasny-r35",
+    "path": "/models/ciasny-r35.glb",
+    "bytes": 8296356,
+    "sha256": "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d",
+    "source": {
+      "title": "Nissan GTR R35",
+      "author": "Ciasny",
+      "url": "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a"
+    },
+    "license": {
+      "name": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "changes": [
+      "Normalized scale and axes, separated lamp/window/exhaust material bindings, resized textures to 2K WebP, Meshopt compressed. Source exterior topology retained."
+    ],
+    "originalSha256": "c2bb4967ef2648f8f8bbb27ad1e97d99e3148e34d114f3c9f0cac4f27c690dc4",
+    "chunks": [
+      {
+        "path": "ciasny-r35/0000.bin",
+        "bytes": 262144,
+        "sha256": "2d6112173294e31775b282ed2f55066276f18c28630d33a27eea488c15fb03a1"
+      },
+      {
+        "path": "ciasny-r35/0001.bin",
+        "bytes": 262144,
+        "sha256": "d722f57eb0ac5fa275e9408630f935b4906b113c080d604149f4dfc6e2213c66"
+      },
+      {
+        "path": "ciasny-r35/0002.bin",
+        "bytes": 262144,
+        "sha256": "ae26bdf36685904a3b4ccb36f9c7f23b557ba7dea4455a780330ca8eecd73492"
+      },
+      {
+        "path": "ciasny-r35/0003.bin",
+        "bytes": 262144,
+        "sha256": "90e71b58d58bc5684e0bd2af815c683b4178fa0f2f0b4b6a27f5bb015fc9fad2"
+      },
+      {
+        "path": "ciasny-r35/0004.bin",
+        "bytes": 262144,
+        "sha256": "29b22f85f10f4da78cf4edf5a85270eeff1504fa49d2f88f4ba9265cb2919be2"
+      },
+      {
+        "path": "ciasny-r35/0005.bin",
+        "bytes": 262144,
+        "sha256": "8be79fef88d29fe966fa1fe201a3a7b28b1e1b171762b498551faefe47f3b833"
+      },
+      {
+        "path": "ciasny-r35/0006.bin",
+        "bytes": 262144,
+        "sha256": "c4dd664aa57d463872754d23ae847185b2fc758c9fda4fb605d416b4543df6cf"
+      },
+      {
+        "path": "ciasny-r35/0007.bin",
+        "bytes": 262144,
+        "sha256": "d15a21c8a18926f26485fb54f19b6d6fec635636c038bf86043fe7e8bbcf9c58"
+      },
+      {
+        "path": "ciasny-r35/0008.bin",
+        "bytes": 262144,
+        "sha256": "1c40cc950fa692dc4415d4362625c53db06e7208228f2233a554a5c6e820270b"
+      },
+      {
+        "path": "ciasny-r35/0009.bin",
+        "bytes": 262144,
+        "sha256": "8f39f0eb630619240df6549bcab44d32ceca084349bf12190e6c4ba43db9406f"
+      },
+      {
+        "path": "ciasny-r35/0010.bin",
+        "bytes": 262144,
+        "sha256": "ce0a0396ccfcc06015f80af0ae4deff75f88aa5a549c0a65999ac383bceb02a9"
+      },
+      {
+        "path": "ciasny-r35/0011.bin",
+        "bytes": 262144,
+        "sha256": "69d29c22599922c55759842e2d9c9290548f4b6f1334048707394111a514df2f"
+      },
+      {
+        "path": "ciasny-r35/0012.bin",
+        "bytes": 262144,
+        "sha256": "461fa07629620238b38bed3f2b7089ebd19c0d927ad4315d9e2502fb4a48777f"
+      },
+      {
+        "path": "ciasny-r35/0013.bin",
+        "bytes": 262144,
+        "sha256": "a2ed78133a2c0d9d26f69112fce299b8ac40aa97daaf4ecd3c7c79e8113bf2db"
+      },
+      {
+        "path": "ciasny-r35/0014.bin",
+        "bytes": 262144,
+        "sha256": "4155bd9367e04031c46c24468178bf81b51a25c2da71a57d3619460d810cbfaf"
+      },
+      {
+        "path": "ciasny-r35/0015.bin",
+        "bytes": 262144,
+        "sha256": "18c83728e2d891c91c1ac92074b7822b821b602b59ee031c49f5231f13dae0fb"
+      },
+      {
+        "path": "ciasny-r35/0016.bin",
+        "bytes": 262144,
+        "sha256": "393858e96219b95a725d16424c9640da9f81fbc3d5de689fccea24866364146a"
+      },
+      {
+        "path": "ciasny-r35/0017.bin",
+        "bytes": 262144,
+        "sha256": "46338f4668b2d4d386cdbeb38f3e95feb2caaaa53d5c3193756720ca2fad8d4a"
+      },
+      {
+        "path": "ciasny-r35/0018.bin",
+        "bytes": 262144,
+        "sha256": "62b451f97bad65641533ec8606fbc0cfa30cb660885f916ccf96d774b50d43d0"
+      },
+      {
+        "path": "ciasny-r35/0019.bin",
+        "bytes": 262144,
+        "sha256": "1a7a787bf07aaae3fd81226e8c598f3f830f9c61f132b641a5f7ced994a2f8ab"
+      },
+      {
+        "path": "ciasny-r35/0020.bin",
+        "bytes": 262144,
+        "sha256": "7d19e5716b52733986e0fd4cdbcdce09e6566253809a7a36fad22300b3c1ef74"
+      },
+      {
+        "path": "ciasny-r35/0021.bin",
+        "bytes": 262144,
+        "sha256": "1c69a1efd12b54e4624a9596cdfcdadc7787eb04a5061d8a15450d01cbbe8606"
+      },
+      {
+        "path": "ciasny-r35/0022.bin",
+        "bytes": 262144,
+        "sha256": "fac186537487621af79c0f3f77d8e89f7cf4bd62a74792d99a127de84cf4195c"
+      },
+      {
+        "path": "ciasny-r35/0023.bin",
+        "bytes": 262144,
+        "sha256": "9a514770cdc4f67bbc4715ccd3a60f0c2b4932e960cf665dc809d3c575fec6a7"
+      },
+      {
+        "path": "ciasny-r35/0024.bin",
+        "bytes": 262144,
+        "sha256": "81fe87aed56b3a051f98861ab0bd2eb715f8df51e826d57e30a9d7066092c403"
+      },
+      {
+        "path": "ciasny-r35/0025.bin",
+        "bytes": 262144,
+        "sha256": "608e3c3308256a79ce55cf8ee6daecbc6252bd2134ad1121a0702544658bcee6"
+      },
+      {
+        "path": "ciasny-r35/0026.bin",
+        "bytes": 262144,
+        "sha256": "82fcad05371575f1bec32dc6af3d7bc3c092531d3403b6231cad2fed28d6de57"
+      },
+      {
+        "path": "ciasny-r35/0027.bin",
+        "bytes": 262144,
+        "sha256": "c16fe89986bce203d1bf51a42105aeeab6bee88ff29da07cb246af78e8165da9"
+      },
+      {
+        "path": "ciasny-r35/0028.bin",
+        "bytes": 262144,
+        "sha256": "d4813d754a5a529ef88d8436f4729183e99602c16acbbfd46d27042827bc4b0b"
+      },
+      {
+        "path": "ciasny-r35/0029.bin",
+        "bytes": 262144,
+        "sha256": "8599f9deb7b851506d158b2cd599a972b70d6151299639fbae3621790d06df4f"
+      },
+      {
+        "path": "ciasny-r35/0030.bin",
+        "bytes": 262144,
+        "sha256": "4ed7266691933f8bb4b099a1f1c9a79d9f3afd8678b34deb25d991ac84268e7f"
+      },
+      {
+        "path": "ciasny-r35/0031.bin",
+        "bytes": 169892,
+        "sha256": "0fee015a77b84d81b8cba7edb4ec8dba25464dc2f85a624c0c2ce0bfd21d570a"
+      }
+    ]
+  }
+]

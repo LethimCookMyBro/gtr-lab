@@ -59,11 +59,13 @@ export function useVehicleAsset(
   roles: MaterialRoles,
   onProgress: (value: number) => void,
   onError: (message: string) => void,
+  disabledEmissive: string[] = [],
 ) {
   const [asset, setAsset] = useState<PreparedVehicle | null>(null);
   const callbacks = useRef({ onProgress, onError });
   callbacks.current = { onProgress, onError };
   const rolesKey = JSON.stringify(roles);
+  const disabledEmissiveKey = JSON.stringify(disabledEmissive);
   useEffect(() => {
     let live = true;
     let owned: PreparedVehicle | undefined;
@@ -96,6 +98,7 @@ export function useVehicleAsset(
           owned = prepareVehicle(
             gltf.scene,
             JSON.parse(rolesKey) as MaterialRoles,
+            JSON.parse(disabledEmissiveKey) as string[],
           );
           callbacks.current.onProgress(99);
           setAsset(owned);
@@ -119,6 +122,6 @@ export function useVehicleAsset(
       window.clearTimeout(timeout);
       owned?.dispose();
     };
-  }, [url, rolesKey]);
+  }, [url, rolesKey, disabledEmissiveKey]);
   return asset;
 }

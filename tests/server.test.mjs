@@ -46,6 +46,21 @@ describe("production static server", () => {
       "object-src 'none'",
     );
   });
+  it("allows embedded GLB texture blob fetches without widening external network or script access", async () => {
+    const response = await fetch(url + "/car.glb");
+    const directives = response.headers
+      .get("content-security-policy")
+      .split(";")
+      .map((value) => value.trim());
+    expect(
+      directives.filter((value) => value.startsWith("connect-src ")),
+    ).toEqual(["connect-src 'self' blob:"]);
+    expect(
+      directives.filter((value) => value.startsWith("script-src ")),
+    ).toEqual(["script-src 'self' 'wasm-unsafe-eval'"]);
+    expect(directives).toContain("object-src 'none'");
+    expect(directives.join(";")).not.toMatch(/https?:|wss?:|\*/);
+  });
   it("rejects mutation methods", async () => {
     const r = await fetch(url + "/", { method: "POST" });
     expect(r.status).toBe(405);

@@ -7,10 +7,13 @@ export interface AssetManifest {
   status: "missing" | "ready";
   kind?: "original-study" | "licensed-model";
   displayName?: string;
+  referenceNote?: string;
   limitations?: string[];
   url: string | null;
   source: string | null;
   license: string | null;
+  licenseName?: string;
+  changes?: string[];
   author: string | null;
   materialRoles: {
     paint: string[];
@@ -19,6 +22,7 @@ export interface AssetManifest {
   };
   interior: boolean;
   lights: boolean;
+  disabledEmissive?: string[];
   cameraViews?: Partial<Record<string, CameraView>>;
 }
 export interface VehicleModel {
@@ -102,6 +106,35 @@ const editorial: Record<
     imagePosition: "50% 58%",
   },
 };
+const licensedR35: AssetManifest = {
+  status: "ready",
+  kind: "licensed-model",
+  displayName: "GT-R R35",
+  referenceNote:
+    "The 3D scene is Ciasny’s artist-built R35 with custom aero, not a verified replica of the 2024 Premium. Published specifications describe the catalog model separately.",
+  limitations: [
+    "Source exterior is a custom-aero R35; exact factory trim and model year are unverified.",
+    "The licensed source has no cabin. Interior view remains unavailable while a fitted cabin is being authored.",
+    "Body paint and head/tail lights are independently controlled. Doors and other parts are not animated.",
+  ],
+  url: "/models/ciasny-r35.glb",
+  source:
+    "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a",
+  license: "https://creativecommons.org/licenses/by/4.0/",
+  licenseName: "CC BY 4.0",
+  author: "Ciasny",
+  changes: [
+    "Adapted for GT-R LAB: transforms normalized, exhaust and lamp/window materials separated, textures resized to 2K WebP, tangents generated and geometry Meshopt-compressed. Exterior topology retained; original source preserved unchanged.",
+  ],
+  materialRoles: {
+    paint: ["CarPaint"],
+    headlights: ["Headlight_Emitter"],
+    taillights: ["Taillight_Emitter"],
+  },
+  interior: false,
+  lights: true,
+  disabledEmissive: ["Reverse_Emitter"],
+};
 export const models: VehicleModel[] = facts.variants.map((v) => ({
   ...v,
   ...editorial[v.id as VariantId],
@@ -111,16 +144,19 @@ export const models: VehicleModel[] = facts.variants.map((v) => ({
     "transmission" in v ? v.transmission! : "Not specified in source",
   image: `/images/gtr-${v.id}.webp`,
   imageCaption: imageCredits.find((c) => c.id === v.id)?.description || "",
-  asset: {
-    status: "missing",
-    url: null,
-    source: null,
-    license: null,
-    author: null,
-    materialRoles: { paint: [], headlights: [], taillights: [] },
-    interior: false,
-    lights: false,
-  },
+  asset:
+    v.id === "premium"
+      ? licensedR35
+      : {
+          status: "missing",
+          url: null,
+          source: null,
+          license: null,
+          author: null,
+          materialRoles: { paint: [], headlights: [], taillights: [] },
+          interior: false,
+          lights: false,
+        },
 }));
 export const getModel = (id: string) => models.find((m) => m.id === id);
 export { imageCredits };

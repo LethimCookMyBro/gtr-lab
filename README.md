@@ -5,7 +5,7 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 ## Current status
 **In progress. Not a completed production configurator.**
 
-The application builds and its core UI/data/renderer unit tests run. All six catalog vehicles currently show labeled photographic references because production-qualified licensed GLBs (including detailed cabins and separately controlled materials) have not been acquired. Camera, lights and paint are not faked. The renderer mechanics passed six real-WebGL fixture tests and the application passed sixteen responsive browser cases. Accurate vehicle integration, material/cabin visual quality and real-car GPU validation remain blocking acceptance requirements. Source is available on main. Railway deployment is pending; no live URL is implied by this README.
+One licensed Ciasny R35 exterior is integrated for real-car testing on the Premium route, with its custom-aero/model-year limitations visible. The remaining five routes show labeled photographs rather than a relabeled shared mesh. The exterior has separately controlled paint and lamps; its source has no cabin, so Interior remains disabled while a fitted reference-guided cabin is authored. The preceding main revision passed 81 unit tests, 24 responsive browser cases and six real-WebGL fixture tests. Real-car browser/material/cabin QA is the next acceptance gate. Source is on main; Railway deployment remains pending.
 
 ## Run
 
@@ -21,7 +21,11 @@ Requires Node22.12+ or24 and npm.
 
 A restricted environment may disallow Vite’s network-interface enumeration. The production server does not need that enumeration. Build first and use `PORT=4173 npm start` for a production-equivalent local preview. This is not a bypass of browser or network restrictions; use a permitted browser test environment.
 
-## Build-time environment assets
+## Build-time assets
+
+The licensed GLB is reconstructed offline from small SHA-256-pinned binary chunks in `modeldata/`. The build verifies each chunk, the completed payload and the glTF container before publishing it to `public/models/`. See `docs/MODEL_TRANSPORT.md` and `docs/MODEL_PROVENANCE.md`. Model data is served locally at runtime.
+
+### Environment assets
 
 HDR binaries are excluded from Git. `npm run build` fetches missing/corrupt files from the pinned official Poly Haven HTTPS URLs and verifies byte size, SHA-256 and Radiance headers before Vite bundles them. A cold build requires HTTPS access to `dl.polyhaven.org`; a valid local cache supports offline builds. Production serves the bundled files locally and has no external HDRI dependency. No credentials are needed. See `docs/ENVIRONMENT_CREDITS.md` for timeout and cache details.
 
@@ -65,4 +69,4 @@ No analytics, account login, backend user data or checkout. Sound preference is 
 
 ## Browser QA
 
-`npm run test:e2e` is the real-browser suite (install Chromium with `npx playwright install chromium` in a permitted environment). It exercises home→models→configurator→detail→back, all six variants, fallbacks, reduced motion and overflow at1920×1080,1440×900,390×844 and430×932. A prepared GitHub Actions workflow can run these on a standard cloud runner after an authorized push. It has not run yet. Its screenshots/reports must be inspected before visual acceptance; passing tests alone cannot establish premium realism.
+`npm run test:e2e` is the real-browser suite (install Chromium with `npx playwright install chromium` in a permitted environment). It exercises home→models→configurator→detail→back, all six variants, fallbacks, reduced motion and overflow at1920×1080,1440×900,390×844 and430×932. A prepared GitHub Actions workflow can run these on a standard cloud runner after an authorized push. The scaffold suite ran in GitHub Actions and its settled screenshots were inspected. `npm run test:vehicle` separately exercises the licensed vehicle through the production server and CSP. Fresh real-car screenshots must be inspected before visual acceptance; passing tests alone cannot establish premium realism.

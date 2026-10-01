@@ -11,6 +11,7 @@ export type VehicleSceneProps = {
   lights: boolean;
   reducedMotion: boolean;
   materialRoles: MaterialRoles;
+  disabledEmissive?: string[];
   cameraViews?: Partial<Record<string, CameraView>>;
   onReady: () => void;
   onError: (message: string) => void;
