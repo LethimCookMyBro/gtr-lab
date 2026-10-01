@@ -902,7 +902,10 @@ p {
   letter-spacing: 0.16em;
 }
 .interaction-hint {
-  color: #bcc1c5;
+  color: #e4e8eb;
+  background: #0b0e11db;
+  padding: 7px 10px;
+  border-radius: 3px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -1826,6 +1829,7 @@ p {
     margin-top: 8px;
   }
   .scene-stage {
+    top: 120px;
     bottom: 242px;
   }
   .reference-view img {

@@ -11,8 +11,9 @@ const MOODS = {
   studio: {
     background: "#111316",
     floor: "#171a1d",
-    ambient: 0.35,
-    key: 4.5,
+    ambient: 0.18,
+    key: 1.8,
+    fill: 0.65,
     intensity: 0.9,
   },
   gallery: {
@@ -20,6 +21,7 @@ const MOODS = {
     floor: "#aaa8a2",
     ambient: 0.75,
     key: 3.2,
+    fill: 2.4,
     intensity: 1.1,
   },
   night: {
@@ -27,6 +29,7 @@ const MOODS = {
     floor: "#0a0b0e",
     ambient: 0.12,
     key: 2.3,
+    fill: 1.5,
     intensity: 0.6,
   },
 };
@@ -70,7 +73,7 @@ export function StudioLighting({
         />
         <directionalLight
           position={[-5, 3, -4]}
-          intensity={environment === "night" ? 1.5 : 2.4}
+          intensity={mood.fill}
           color="#e7ebed"
         />
         <Environment

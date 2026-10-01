@@ -194,6 +194,37 @@ test("licensed production asset loads and all nine paints change rendered pixels
   });
   await capture(page, info, "vehicle-hero-silver");
   const canvas = page.locator(".scene-stage canvas");
+  if (info.project.name === "mobile-390") {
+    const bounds = (await canvas.boundingBox())!;
+    expect(bounds.y).toBe(120);
+    expect(bounds.y + bounds.height).toBe(602);
+  }
+  const hintContrast = await page
+    .locator(".interaction-hint")
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      const rgba = (value: string) => value.match(/[\d.]+/g)!.map(Number);
+      const foreground = rgba(style.color);
+      const background = rgba(style.backgroundColor);
+      const alpha = background[3] ?? 1;
+      // White is the worst-case scene backdrop for light text on a dark backing.
+      const composite = background
+        .slice(0, 3)
+        .map((channel) => channel * alpha + 255 * (1 - alpha));
+      const luminance = (channels: number[]) =>
+        channels.slice(0, 3).reduce((total, channel, index) => {
+          const value = channel / 255;
+          return (
+            total +
+            (value <= 0.04045
+              ? value / 12.92
+              : ((value + 0.055) / 1.055) ** 2.4) *
+              [0.2126, 0.7152, 0.0722][index]
+          );
+        }, 0);
+      return (luminance(foreground) + 0.05) / (luminance(composite) + 0.05);
+    });
+  expect(hintContrast).toBeGreaterThanOrEqual(4.5);
   const rail = page.getByRole("group", { name: "Exterior paint", exact: true });
   let previous = (await canvas.screenshot()).toString("base64");
   for (const [index, paint] of paints.entries()) {
@@ -272,10 +303,22 @@ test("separate lamps and real environments affect the licensed vehicle", async (
     /\/environments\/tief_etz(?:_1k)?\.hdr/.test(response.url()),
   );
   await chooseEnvironment(page, "Forest road", "forest");
-  expect((await forestResponse).ok()).toBe(true);
+  const forest = await forestResponse;
+  expect(forest.ok()).toBe(true);
+  expect(await forest.finished()).toBeNull();
   await renderedFrames(page);
   await expect(page.locator(".scene-notice")).toHaveCount(0);
   await capture(page, info, "vehicle-environment-forest");
+  const coastResponse = page.waitForResponse((response) =>
+    /\/environments\/victoria_curve_01(?:_1k)?\.hdr/.test(response.url()),
+  );
+  await chooseEnvironment(page, "Coastal road", "coast");
+  const coast = await coastResponse;
+  expect(coast.ok()).toBe(true);
+  expect(await coast.finished()).toBeNull();
+  await renderedFrames(page);
+  await expect(page.locator(".scene-notice")).toHaveCount(0);
+  await capture(page, info, "vehicle-environment-coast");
   await chooseEnvironment(page, "After hours", "night");
   await capture(page, info, "vehicle-environment-night");
   await chooseEnvironment(page, "Studio", "studio");

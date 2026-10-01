@@ -26,11 +26,11 @@ const exteriorLandmarks = [
 ];
 
 it.each([
-  [1440, 744, 0.5, 0.55],
-  [390, 602, 0.8, 0.85],
+  [1440, 744, 0.5, 0.55, 0],
+  [390, 482, 0.8, 0.85, 120],
 ])(
   "frames the licensed hero prominently and clear of controls at %s×%s",
-  (width, height, minimumWidth, maximumWidth) => {
+  (width, height, minimumWidth, maximumWidth, top) => {
     const view = CAMERA_VIEWS.hero;
     const target = new Vector3(...view.target);
     const camera = new PerspectiveCamera(view.fov, width / height, 0.02, 150);
@@ -43,7 +43,7 @@ it.each([
     camera.updateMatrixWorld();
     const projected = exteriorLandmarks.map((point) => {
       const p = new Vector3().fromArray(point).project(camera);
-      return [((p.x + 1) * width) / 2, ((1 - p.y) * height) / 2];
+      return [((p.x + 1) * width) / 2, ((1 - p.y) * height) / 2 + top];
     });
     const left = Math.min(...projected.map((p) => p[0]));
     const right = Math.max(...projected.map((p) => p[0]));
@@ -52,6 +52,12 @@ it.each([
     expect(left).toBeGreaterThan(16);
     expect(right).toBeLessThan(width - 16);
     expect(Math.min(...projected.map((p) => p[1]))).toBeGreaterThan(225);
-    expect(Math.max(...projected.map((p) => p[1]))).toBeLessThan(height - 100);
+    const topEdge = Math.min(...projected.map((p) => p[1]));
+    const bottomEdge = Math.max(...projected.map((p) => p[1]));
+    expect(bottomEdge).toBeLessThan(top + height - 100);
+    if (width < 500) {
+      expect((topEdge + bottomEdge) / 2).toBeGreaterThan(355);
+      expect((topEdge + bottomEdge) / 2).toBeLessThan(415);
+    }
   },
 );
