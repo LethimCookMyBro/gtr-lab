@@ -1,0 +1,43 @@
+name: Cinematic homepage QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/HomePage.tsx'
+      - 'src/components/home/**'
+      - 'src/components/layout/SiteLayout.tsx'
+      - 'src/styles/home.css'
+      - 'src/data/home-media-credits.json'
+      - 'public/media/**'
+      - 'public/films/**'
+      - 'filmdata/**'
+      - 'scripts/prepare-films.mjs'
+      - 'e2e/home-motion.spec.ts'
+      - 'playwright.home.config.ts'
+      - '.github/workflows/homepage-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: gtr-homepage-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  home:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test -c playwright.home.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cinematic-homepage-evidence
+          path: |
+            test-results/home-motion/
+            playwright-home-report/
+          retention-days: 14
