@@ -20,3 +20,10 @@ The current licensed exterior is 8,296,356 bytes with 566,475 triangles, 82 mesh
 
 ## Production asset acceptance
 Per vehicle target ideally<10MB compressed transfer, texture max2K default, mobile1K where suitable, measured draw-call/triangle/texture counts. Preserve cabin visibility and curved silhouette quality. Use meshopt or Draco only with configured local decoders; loader support and final file compatibility must be tested, not assumed. Split interior only if transition/loading remains coherent. Optimize exported content in a DCC or verified asset optimization pipeline, never obscure geometry with darkness or bloom.
+
+
+## Mobile scroll diagnostics
+
+Five final Chromium Android-emulation recordings cover 390×844, 390×700, 430×932, 430×700 and reduced-motion 390×844. Real incremental wheel input drives the actual page; no animation state is patched. The inspected normal-motion runs recorded approximately 16.7–16.8ms 95th-percentile RAF intervals, no frames above 34ms and no reported Long Tasks. These unthrottled cloud-runner observations are not physical Android/iOS FPS or thermal certification.
+
+A separate six-portrait-viewport sweep includes 375×600 and 390×667. After allowing preceding native input to settle, each single film target stayed within 0px over 14 RAFs in the verified run. Continuous photographic transforms and film frame growth use one shared scheduled update; independent image geometry is read before writes to avoid layout-thrashing loops. Reduced-motion content remains sequential and films initially remain paused.

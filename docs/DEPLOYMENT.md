@@ -11,15 +11,15 @@ The public preview is https://gtr-lab-production.up.railway.app/. It uses one st
 
 ## Release verification
 
-The cinematic-homepage application candidate is `fb8ebf7d35af8b44911aca879d230748a020eec2`. Its homepage browser run `36866873520` passed all 20 applicable cases, with 4 intentionally skipped duplicate viewport checks. Native movie playback, two temporal frames, offscreen pause, reduced-motion/Save-Data explicit play and desktop/mobile/landscape compositions were verified. These tests do not constitute OEM-photoreal, physical-Safari or six-car product acceptance.
+The mobile-motion product candidate is `4aa490a110954b41c0b4aac586ba216a85c6872a`, with the final test-only follow-up `0538e2f8123aba3de1f7cb41b3f7c65f58b8676f`. Homepage browser run `36889777177` passed 21 applicable cases, with 6 intentionally skipped duplicate-project checks. The six-portrait-size sweep includes 600/667px heights, stable scroll targets, readable timeline/credit spacing and focus reveal. Real native films, reduced-motion/Save-Data explicit play and desktop/landscape regressions also passed. These tests do not constitute OEM-photoreal, physical-Safari or six-car product acceptance.
 
 A temporary release-marker watch gate kept unfinished homepage commits out of the existing preview. The reviewed release restores ordinary deployment triggers after the exact new Railway revision is healthy and its public browser smoke checks pass. The release marker records the tested application candidate; the release commit adds only deployment verification and documentation, not untested application changes.
 
-`Railway live smoke` waits for the exact GitHub commit's Railway status, verifies both movie hashes, HTTP MIME/HEAD and 206 byte ranges, checks the deployed real-car controls/environments, then captures the public homepage during native video playback at 1920, 1440 and 390 widths. Its evidence is retained as `railway-live-browser-proof`.
+`Railway live smoke` waits for the exact GitHub commit's Railway status, verifies both movie hashes, HTTP MIME/HEAD and 206 byte ranges, checks the deployed real-car controls/environments, then captures the public homepage during native video playback at 1920, 1440 and 390 widths. It additionally records gradual live 390×700 scrolling and verifies 430×700 motion. Its evidence is retained as `railway-live-browser-proof`. The 390px demonstration uses slower actual wheel input; the footage is not retimed.
 
 ## Normal service watch patterns
 
-Restore the original patterns, then retain these two film-pipeline additions: `/filmdata/**` and `/scripts/prepare-films.mjs`. No other service settings need to change.
+The mobile revision temporarily uses only `/release-marker.json`; restore the exact 14 patterns below after the tested live release. The two film-pipeline paths were already part of the recorded pre-mobile list. No other service settings change.
 
 ```json
 [
@@ -51,7 +51,7 @@ Only the accepted licensed custom-aero R35 exterior is integrated. The other 5 v
 
 Revision `b2579cef674d09d1aeeee5df63462bd5839c2211`, deployment `d6777878-285f-45fd-853b-e31cb41445b0`: build and healthcheck succeeded. Public HEAD requests to `/`, `/models`, `/configurator/premium` and `/models/ciasny-r35.glb` returned200. The GLB response is8,296,356 bytes, matching the initial accepted exterior revision.
 
-The direct cloud browser opened the actual homepage and followed Enter configurator. That browser does not expose WebGL; the deployed app correctly displayed its photo/error fallback instead of a blank screen. A separate public-URL Chromium/SwiftShader workflow verifies rendered3D and essential controls. Run36847271913 subsequently passed actual public-URL WebGL, paint/lamp/detail and studio/forest/coast checks at1440×900 and390×844 after verifying revision1a6f68faf21cc32442a1ef919e05049716194ae0 deployed successfully.
+The direct cloud browser opened the actual homepage and followed Enter configurator. That browser does not expose WebGL; the deployed app correctly displayed its photo/error fallback instead of a blank screen. A separate public-URL Chromium/SwiftShader workflow verifies rendered3D and essential controls. Run36847271913 subsequently passed actual public-URL WebGL, paint/lamp/detail and studio/forest/coast checks at1440×900 and 390×844 after verifying revision1a6f68faf21cc32442a1ef919e05049716194ae0 deployed successfully.
 
 The first Nixpacks build failed because a redundant `npm ci` attempted to remove the mounted dependency cache. The config now selects current Railpack and runs build only after dependency installation.
 

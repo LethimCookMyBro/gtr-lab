@@ -3,7 +3,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'release-marker.json'
+      - '.github/workflows/deployment-smoke.yml'
+      - 'scripts/capture-vehicle.mjs'
+      - 'scripts/wait-railway.mjs'
+      - 'src/**'
+      - 'modeldata/**'
+      - 'filmdata/**'
+      - 'public/films/**'
+      - 'scripts/prepare-films.mjs'
 permissions:
   contents: read
 jobs:
@@ -62,11 +69,27 @@ jobs:
           HOME_QA_URL: https://gtr-lab-production.up.railway.app
           REQUIRE_HOME_FILMS: "1"
         timeout-minutes: 5
+      - name: Record live 390px gradual mobile scrolling
+        run: node scripts/diagnose-mobile-home-motion.mjs
+        env:
+          HOME_MOTION_URL: https://gtr-lab-production.up.railway.app/
+          HOME_MOTION_PLAN: 390x700-normal
+          HOME_MOTION_DEMO: "1"
+          HOME_MOTION_OUTPUT: mobile-motion-live-390x700
+        timeout-minutes: 3
+      - name: Verify live 430px mobile motion
+        run: node scripts/diagnose-mobile-home-motion.mjs
+        env:
+          HOME_MOTION_URL: https://gtr-lab-production.up.railway.app/
+          HOME_MOTION_PLAN: 430x700-normal
+          HOME_MOTION_OUTPUT: mobile-motion-live-430x700
+        timeout-minutes: 3
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: railway-live-browser-proof
           path: |
+            mobile-motion-live-*/
             vehicle-preview-results/
             media-live-results/
             test-results/home-motion/

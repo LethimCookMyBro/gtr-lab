@@ -13,7 +13,7 @@ Original home, cinematic six-variant selector, heritage/engineering, sources/cre
 - Different photographs and specification sources for all six variants; no same-mesh renaming
 - GT3 photograph is2015 context; GT-R50 photograph is2018 concept; Premium photo2018. Specs explicitly identify their other relevant year/market. Correct hp vs PS,2020GT500 inline-four RWD
 - Concept paint palette is clearly non-official; no OEM availability claim
-- The redesigned homepage uses native original-CGI films with credited photographic failure fallbacks, true-white asymmetric editorial sections, scroll-expanding film and a pinned heritage sequence. Generated layout concepts are design references only, not runtime vehicle imagery. The replacement homepage is gated from the live preview until actual films and browser visual checks pass.
+- The redesigned homepage uses native original-CGI films with credited photographic failure fallbacks, true-white asymmetric editorial sections, scroll-expanding film and a pinned heritage sequence. Generated layout concepts are design references only, not runtime vehicle imagery. The original cinematic homepage and films are available in the live preview. The later mobile-motion revision has its own exact-commit release checks.
 - Doors/hood/trunk omitted because unsupported asset animation is not faked
 - No placeholder shopping/checkout/Finish control
 - Generated sounds are short quiet interface cues, not genuine recorded engine audio
@@ -28,4 +28,13 @@ An original Blender study was evaluated and rejected as insufficiently accurate.
 ## Cinematic homepage revision
 The reference homepage was re-audited through actual desktop/mobile interaction and an independent Chromium capture. Its two genuine looping videos, white editorial overlap, expanding second film, heritage depth and responsive lineup behavior are recorded in REFERENCE_AUDIT.md. The GT-R adaptation deliberately uses full-width semantic model invitations rather than reproducing the reference's inaccessible image-card navigation.
 
-First redesign browser run `36852709099` passed desktop/mobile layout, native scroll geometry, menu focus, six destinations and reduced-motion layout checks. Real-media tests were explicitly skipped because final original films were still rendering; this is not a film acceptance pass. Screenshot review identified mobile image-overlap and era-control placement issues, followed by measured regression assertions. Latest homepage review verification:225 tests, TypeScript and production build pass. Final media/crop checks and release remain pending.
+First redesign browser run `36852709099` passed desktop/mobile layout, native scroll geometry, menu focus, six destinations and reduced-motion layout checks. Real-media tests were explicitly skipped because final original films were still rendering; this is not a film acceptance pass. Screenshot review identified mobile image-overlap and era-control placement issues, followed by measured regression assertions. The original cinematic homepage subsequently passed its real-film/crop checks and was released. The mobile-motion revision below supersedes its earlier short-height behavior.
+
+
+## Gradual mobile motion revision
+
+The live baseline disabled scroll staging for every viewport at or below 740px height, including ordinary portrait phones. The revised policy retains gradual motion for portrait viewports down to 600px, while reduced motion, genuinely very short screens and short wide layouts keep sequential content. Save-Data continues to prevent film autoplay without disabling the non-video storytelling.
+
+The mobile hero has a controlled exit, the two editorial photographs stage independently, the second film grows continuously toward the viewport edges, and heritage photographs crossfade with a single large year fading through zero at each era boundary. Timeline navigation remains native scrolling; there is no scroll interception. The implementation batches geometry reads before style writes and removes motion styles when preferences change.
+
+Product source is frozen at 4aa490a110954b41c0b4aac586ba216a85c6872a. The test-only follow-up 0538e2f8123aba3de1f7cb41b3f7c65f58b8676f waits for native focus scrolling to finish before issuing an independent film stability probe. It does not weaken the 14-frame/2px stability assertion. These changes do not add vehicle assets or change the outstanding interior/six-variant acceptance gates.
