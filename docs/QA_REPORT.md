@@ -106,3 +106,12 @@ Revision `1a6f68faf21cc32442a1ef919e05049716194ae0`:152 unit checks,44 UI cases,
 - The original hero/detail CGI clips are each8seconds,1280×720,24fps,H.264,noaudio,fast-start. Their source meshes/normals match the untouched Ciasny import. Decode/loop/crop studies are separate from app overlay acceptance.
 - Local verification after media playback review and transport pipeline:225tests, TypeScript and production build. Media build tests include50 byte/hash/path/symlink/boundary cases. Browser acceptance explicitly requires real duration/time progression, native pause, reduced-motion/Save-Data explicit Play, offscreen pause and two distinct composed temporal frames per clip at1920/1440/390.
 - No release is implied until those browser outputs are inspected. The existing Railway service remains on the last reviewed preview during this gate.
+
+
+## Cinematic homepage preview candidate accepted for release
+
+Application commit `fb8ebf7d35af8b44911aca879d230748a020eec2` passed homepage run [36866873520](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36866873520): 20 passed, 4 intentional duplicate-project skips, zero failures. The broader [quality run36866873577](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36866873577) also completed successfully, including the real licensed-car cases.
+
+The landscape regression came from applying other routes' global scroll-padding to a centered home-era target. The corrected home-only calculation uses measured viewport geometry; actual 844×390 and 375×667 screenshots confirm the selected figure and caption fit. Film credits are now 11px on mobile, remain readable and retain 44px hit targets.
+
+All 12 actual timed film frames at 1920, 1440 and 390 widths were inspected. The desktop car remains dominant, and the intentional mobile nose/rear crops preserve recognizable details. The result is accepted as an original CGI studio preview, not OEM-photoreal or complete six-variant acceptance. Public deployment checks still verify the exact release revision, movie hashes/ranges, native playback and real-car controls.

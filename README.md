@@ -7,14 +7,14 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 
 One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The other five routes remain labeled photographic references, not renamed copies of the same mesh. Paint, lamps, cameras and outdoor environments work on the licensed exterior. Interior remains disabled until an accurate cabin preview is accepted. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
 
-The homepage is being replaced with two original eight-second CGI films, white overlapping editorial photography, a scroll-expanding second film, pinned heritage and six full-width model invitations. The new page has passed layout checks and a225-test unit/DOM/build-asset suite; the final real-film playback/crop suite is a separate acceptance gate. Main-only development continues while the [Railway development preview](https://gtr-lab-production.up.railway.app/) remains on the last reviewed release. This is not the finished six-vehicle experience.
+The homepage combines two original eight-second CGI films, white overlapping editorial photography, a scroll-expanding second film, pinned heritage and six full-width model invitations. The reviewed page passed 225 unit/DOM/build-asset tests and all 20 applicable real-film browser cases, with desktop, mobile and landscape screenshots inspected. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
 
 ## Run
 
 Requires Node22.12+ or24 and npm.
 
 - `npm ci`
-- `npm run prepare:assets` (one-time HDRI preparation for local development; production builds do this automatically)
+- `npm run prepare:assets` (model, film and HDRI preparation for local development; production builds do this automatically)
 - `npm run dev` (Vite development)
 - `npm test`
 - `npm run typecheck`
@@ -62,6 +62,7 @@ Railway. `railway.json` defines build, Node start and healthcheck. Connect the a
 ## Documentation
 
 - `docs/REFERENCE_AUDIT.md`: observed interaction audit and verification limitations
+- `docs/DEPLOYMENT.md`: reviewed release process, live checks and normal deployment triggers
 - `docs/ARCHITECTURE.md`: application/state/rendering boundaries and plan
 - `docs/ASSETS_REQUIRED.md`: six-variant readiness and qualified source candidates
 - `public/films/ATTRIBUTION.txt`, `public/films/provenance.json`: original film provenance and modifications
