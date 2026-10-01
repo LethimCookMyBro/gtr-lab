@@ -55,7 +55,7 @@ try{
      await page.getByRole('dialog').waitFor({state:'hidden'});
      if(await page.locator('.scene-notice').count())throw new Error(await page.locator('.scene-notice').innerText());
      state.ready=true;
-     await page.screenshot({path:`${directory}/${name}-${environment}-licensed-r35.png`,animations:'disabled',scale:'css',timeout:20000});
+     await page.screenshot({path:`${directory}/${name}-${environment}-licensed-r35.png`,animations:'disabled',scale:'css',timeout:40000});
     }catch(e){state.error=String(e);view.errors.push(`${environment}: ${e}`);}
     await save();console.log(`[preview] ${name} ${environment} ready=${state.ready}`);
    }

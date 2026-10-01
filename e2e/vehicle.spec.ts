@@ -325,14 +325,14 @@ test("separate lamps and real environments affect the licensed vehicle", async (
   await capture(page, info, "vehicle-environment-studio");
 });
 
-test("manual exploration stops automatic rotation and variant switching never reuses the mesh under NISMO", async ({
+test("automatic rotation changes real vehicle pixels", async ({
   page,
 }, info) => {
   await openVehicle(page);
   await stableResolution(page);
   const canvas = page.locator(".scene-stage canvas");
   // Capture a settled baseline before continuous software rendering starts.
-  const before = (await canvas.screenshot()).toString("base64");
+  const before = await canvas.screenshot();
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const rotate = page.getByRole("button", { name: "Rotate", exact: true });
   await expect(rotate).toBeEnabled();
@@ -351,11 +351,32 @@ test("manual exploration stops automatic rotation and variant switching never re
   );
   await rotate.click();
   await expect(rotate).toHaveAttribute("aria-pressed", "false");
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await stableResolution(page);
   // Both PNGs use the original DPR, with rotation stopped. PNG readback during
   // continuous SwiftShader rendering exceeded the original polling deadline.
-  expect((await canvas.screenshot()).toString("base64")).not.toBe(before);
-  await capture(page, info, "vehicle-after-automatic-rotation");
+  const after = await canvas.screenshot();
+  expect(after.toString("base64")).not.toBe(before.toString("base64"));
+  await info.attach("vehicle-before-automatic-rotation", {
+    body: before,
+    contentType: "image/png",
+  });
+  await info.attach("vehicle-after-automatic-rotation", {
+    body: after,
+    contentType: "image/png",
+  });
+});
+
+test("manual keyboard or touch input cancels showcase and preserves exploration", async ({
+  page,
+}, info) => {
+  await openVehicle(page);
+  await stableResolution(page);
+  const canvas = page.locator(".scene-stage canvas");
+  const before = await canvas.screenshot();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const rotate = page.getByRole("button", { name: "Rotate", exact: true });
+  await expect(rotate).toBeEnabled();
   await rotate.click();
   await expect(rotate).toHaveAttribute("aria-pressed", "true");
   if (info.project.name === "mobile-390") await touchExplore(page, "drag");
@@ -364,18 +385,30 @@ test("manual exploration stops automatic rotation and variant switching never re
     await canvas.press("ArrowLeft");
   }
   await expect(rotate).toHaveAttribute("aria-pressed", "false");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await stableResolution(page);
+  const after = await canvas.screenshot();
+  expect(after.toString("base64")).not.toBe(before.toString("base64"));
+  await info.attach("vehicle-after-manual-exploration", {
+    body: after,
+    contentType: "image/png",
+  });
   if (info.project.name === "mobile-390") {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await stableResolution(page);
-    const beforePinch = (await canvas.screenshot()).toString("base64");
-    await capture(page, info, "vehicle-mobile-after-touch-drag");
     await touchExplore(page, "pinch");
     await stableResolution(page);
-    expect((await canvas.screenshot()).toString("base64")).not.toBe(
-      beforePinch,
-    );
-    await capture(page, info, "vehicle-mobile-after-pinch");
+    const pinched = await canvas.screenshot();
+    expect(pinched.toString("base64")).not.toBe(after.toString("base64"));
+    await info.attach("vehicle-mobile-after-pinch", {
+      body: pinched,
+      contentType: "image/png",
+    });
   }
+});
+
+test("variant switching never reuses the licensed mesh under NISMO and restores Premium", async ({
+  page,
+}, info) => {
+  await openVehicle(page);
   await page.getByRole("button", { name: "Switch model", exact: true }).click();
   await page
     .getByRole("dialog")
@@ -403,14 +436,16 @@ test("manual exploration stops automatic rotation and variant switching never re
     .click();
   await expect(page).toHaveURL(/\/configurator\/premium$/);
   await ready(page);
-  await expect(rotate).toHaveAttribute("aria-pressed", "false");
+  await expect(
+    page.getByRole("button", { name: "Rotate", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
 });
 
 test("actual model load failure is recoverable under the production CSP", async ({
   page,
 }, info) => {
   let failed = false;
-  await page.route("**/models/*.glb", async (route) => {
+  await page.route(/\/models\/[^/?]+\.glb(?:\?.*)?$/, async (route) => {
     if (!failed) {
       failed = true;
       await route.fulfill({

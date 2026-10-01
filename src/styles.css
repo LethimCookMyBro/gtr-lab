@@ -1821,6 +1821,19 @@ p {
     left: 24px;
     right: 24px;
   }
+  .config-title::before {
+    content: "";
+    position: absolute;
+    inset: -102px -24px -64px;
+    z-index: -1;
+    pointer-events: none;
+    /* Cover the sky behind every label, then fade before the vehicle roof. */
+    background: linear-gradient(
+      #111416 120px,
+      #111416f5 calc(100% - 64px),
+      #11141600
+    );
+  }
   .config-title h1 {
     font-size: 35px;
   }

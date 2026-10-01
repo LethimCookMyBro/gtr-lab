@@ -5,9 +5,15 @@ on:
     paths-ignore:
       - scripts/capture-vehicle.mjs
       - .github/workflows/vehicle-preview.yml
+      - .github/workflows/deployment-smoke.yml
+      - docs/**
+      - README.md
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: gtr-quality-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
