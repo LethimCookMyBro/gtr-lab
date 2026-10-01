@@ -1,0 +1,33 @@
+name: Reference homepage motion audit
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit-home-motion.mjs'
+      - '.github/workflows/reference-home-audit.yml'
+permissions:
+  contents: read
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/audit-home-motion.mjs --viewport=${{ matrix.viewport }}
+        timeout-minutes: 6
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reference-home-motion-${{ matrix.viewport }}
+          path: home-motion-audit-results/
+          retention-days: 14

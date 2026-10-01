@@ -54,23 +54,23 @@ Initial screenshots captured the 0.8-second hero entrance and detail-sheet trans
 
 - An accepted detailed cabin; both the original exterior study and subsequent authored cabin were rejected and are excluded from the site
 - Final paint/grounding/hero visual quality, accepted cabin placement, physical mobile GPU performance and meaningful six-variant geometry differentiation
-- Final comprehensive rerun after the rendering and test-measurement corrections
+- Final comprehensive rerun after the source-normal correction and independently budgeted vehicle flows
 - 1600×900, 1366×768 and tablet-specific visual review
 - Recorded engine sound, part animation or unsupported features (none are faked)
-- Railway live deployment and the final GitHub About Website URL
+- Final production-URL screenshot coverage
 
 ## Environment and acceptance boundary
 
 The direct cloud browser could not create a WebGL context for the reference site and rejected the application’s local preview URL. Those are environment limitations, not reported reference-site bugs. Authorized GitHub Actions supplied a working browser and software WebGL for the tests above.
 
-A green scaffold/fixture build is not a finished six-variant premium configurator. Acquire and inspect accurate, lawfully usable vehicle assets, integrate and test the real vehicles, then verify the Railway preview before claiming full acceptance. Main contains in-progress source; a temporary WIP branch still awaits authenticated removal.
+A green scaffold/fixture build is not a finished six-variant premium configurator. Acquire and inspect accurate, lawfully usable vehicle assets, integrate and test the real vehicles, then verify the Railway preview before claiming full acceptance. Main contains in-progress source. The temporary WIP branch has been removed after its commits were retained on main; the GitHub About Website field points to the verified Railway URL.
 
 
 ## Licensed-exterior integration checkpoint
 
-The official Ciasny CC BY 4.0 R35 exterior is integrated on a single route, with attribution and explicit custom-aero/model-year limitations. Source and optimized payload hashes, numerical validation and adaptation records are in `MODEL_PROVENANCE.md`. The source has no cabin; Interior remains disabled while a fitted reference-guided cabin is developed. No rejected original exterior is included.
+The official Ciasny CC BY 4.0 R35 exterior is integrated on a single route, with attribution and explicit custom-aero/model-year limitations. Source and optimized payload hashes, numerical validation and adaptation records are in `MODEL_PROVENANCE.md`. The source has no cabin; Interior remains disabled until a separately developed cabin preview is accepted. No rejected original exterior is included.
 
-Fresh local aggregate verification: 136 unit/DOM/build-helper tests passed across 17 files, production typecheck and build passed, renderer QA typecheck passed, and the dedicated real-car suite lists 10 cases across 1440×900 and 390×844. These new real-car cases have not yet run in CI at this checkpoint.
+Fresh local aggregate verification: 136 unit/DOM/build-helper tests passed across 17 files, production typecheck and build passed, renderer QA typecheck passed, and the dedicated real-car suite lists 10 cases across 1440×900 and 390×844. The subsequent real-car outcomes are recorded above and in the current checkpoint below.
 
 New regressions isolate floor/panorama geometry from the contact-shadow depth pass, keep declared reverse emitters inactive, prevent the loader from being labeled a photo reference, separate source geometry from catalog specifications, expose creator/license/changes, and verify offline chunk reconstruction with complete hashes, bounds and symlink/path checks.
 
@@ -82,3 +82,18 @@ Embedded GLB images use local blob URLs through ImageBitmapLoader. The productio
 The next source revision uses44 independently budgeted responsive UI cases (each of the six detail routes now has its own case) and reduced motion for UI-only screenshots. The10 actual-vehicle cases keep separate no-preference rotation/manual-input coverage. Trace-confirmed PNG readback behavior is handled by comparing settled frames at the same DPR.
 
 Local aggregate verification for the calibration candidate:150 tests passed across19 files, typecheck/build and renderer QA typecheck passed. This candidate preserves artist paint metalness/roughness, grounds the floor at y=0, bounds direct-shadow depth, and moves the hero camera25% closer. Projection using the actual vehicle vertices estimates51.7% desktop and82.1% mobile width; browser screenshots must verify the result before visual acceptance.
+
+## Current calibration and deployment checkpoint
+
+- `b123624c2f512ae5b988117b377778bd81386e5f`, [run36843043294](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36843043294):150 unit checks,44 responsive UI cases and6 real-WebGL fixtures passed. Actual car8/10 passed. The remaining combined rotation/manual/variant cases exceeded120 seconds after the rotation pixel proof had passed. Trace timing measured24 RAFs at24–37s, Stop at8–13s, comparison PNG28–38s and a duplicate PNG10–22s. This is a software-renderer timing diagnosis, not proof of acceptable physical-GPU performance.
+- The next vehicle suite splits automatic rotation, manual keyboard/touch/pinch and variant separation into independent flows without removing assertions or increasing the120-second case budget. The comparison image also serves as its artifact, removing duplicate readback. It restores reduced motion only after the explicit Stop action, keeping actual automatic rotation exercised with no-preference.
+- `01c12926c047458295fd33b7bd41c11a34a12c39`, [visual run36844847179](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36844847179): both1440×900 and390×844 rendered studio,forest and coast, with no page or console errors. Actual pixels show the full silhouette, grounded tires, no rectangular shadow plane and improved mobile centering. Forest/coast panoramas change reflection mood and ground projection. Studio normals/high-contrast trim and outdoor title contrast still need refinement.
+- The initial six-view smoke matched a forest thumbnail HTTP response in its report. Actual pixels showed the loaded forest, but the next script narrows network evidence to `.hdr` so thumbnail readiness cannot substitute for environment completion.
+- Source audit isolated damaged split normals in the manual Blender vertex-bake step. The corrected exterior retains exact source geometry, split normals, tangents and hierarchy, with a parent normalization wrapper and lossless compression. The candidate remains outside the published application pending its separate asset-release process. Same-lighting actual-browser comparison is required before claiming the visible facets corrected.
+- Railway revision `b2579cef674d09d1aeeee5df63462bd5839c2211` is healthy at https://gtr-lab-production.up.railway.app/. Homepage,deep links and GLB endpoint return200. The direct cloud browser verifies navigation and its WebGL-unavailable fallback. The public-URL Chromium workflow supplies separate deployed3D evidence; do not conflate the two.
+
+The reference rerun retained DOM observations at both sizes but all10 screenshot attempts timed out. Route entry and color-input values were verified; visual paint, camera and toolbar behavior remain unverified. `REFERENCE_AUDIT.md` distinguishes attempted actions from observed results.
+
+## Verified preview before homepage redesign
+
+Revision `1a6f68faf21cc32442a1ef919e05049716194ae0`:152 unit checks,44 UI cases,6 renderer fixtures and all14 independently budgeted real-vehicle cases passed their CI steps. The public-URL Railway smoke run36847271913 passed after waiting for Railway to report this exact revision successful. Both desktop/mobile checked live paint, lamp and detail controls and studio/forest/coast media. The latest user still rejected the static homepage design; this functional evidence does not constitute visual/product acceptance. A separate real-video, asymmetric-editorial and scroll-choreography redesign is in progress.

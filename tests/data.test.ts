@@ -9,7 +9,7 @@ describe("accurate distinct lineup", () => {
   });
   it("does not invent GLB readiness", () => {
     for (const m of models) {
-      if (m.asset.status === "ready") expect(m.asset.url).toMatch(/\.glb$/);
+      if (m.asset.status === "ready") expect(new URL(m.asset.url!, "https://gtr-lab.test").pathname).toMatch(/\.glb$/);
       else expect(m.asset.url).toBeNull();
       expect(m.sourceUrls.length).toBeGreaterThan(0);
     }

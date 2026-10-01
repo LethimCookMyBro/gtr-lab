@@ -6,6 +6,8 @@ on:
       - scripts/capture-vehicle.mjs
       - .github/workflows/vehicle-preview.yml
       - .github/workflows/deployment-smoke.yml
+      - .github/workflows/reference-home-audit.yml
+      - scripts/audit-home-motion.mjs
       - docs/**
       - README.md
   pull_request:
@@ -35,10 +37,6 @@ jobs:
         if: ${{ !cancelled() }}
       - run: npx playwright test -c playwright.vehicle.config.ts
         if: ${{ !cancelled() }}
-      - run: node scripts/audit-reference.mjs
-        if: ${{ !cancelled() }}
-        continue-on-error: true
-        timeout-minutes: 4
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -105,6 +105,11 @@ export function CreditsPage() {
           ))}
       </section>
       <section>
+        <h2>Software & typography</h2>
+        <p>Open-source rendering, interface and font credits are preserved in the complete distribution notices.</p>
+        <a href="/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer">Read software and font license notices</a>
+      </section>
+      <section>
         <h2>Original implementation</h2>
         <p>
           Experience research used Porsche Lab as an interaction benchmark. No
