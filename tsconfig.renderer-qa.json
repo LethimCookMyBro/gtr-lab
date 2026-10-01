@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src",
+    "qa/renderer",
+    "e2e-renderer",
+    "vite.renderer-qa.config.ts",
+    "playwright.renderer.config.ts"
+  ]
+}

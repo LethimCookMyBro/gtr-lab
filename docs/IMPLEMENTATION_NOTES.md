@@ -1,0 +1,26 @@
+# Implementation status / honest limitations
+
+## Implemented, not yet full product acceptance
+Original home, cinematic six-variant selector, heritage/engineering, sources/credits, per-variant configurator route, responsive layout rules, keyboard panels, gesture-only audio preference, central state, realGLB renderer, eight camera modes, declared PBR/light-material adapters, studio/gallery/night plus CC0 outdoor HDRI pipeline, progress/error handling and production server.
+
+## Blocking acceptance criteria
+1. **No qualified licensed GT-R mesh yet.** All variant manifests intentionally remain missing. Photo references are visibly marked; painting/camera/light controls are disabled where inapplicable. This is not completed live3D functionality and must not be sold or described as finished. Candidate acquisition and required detailed cabin/material contract are in ASSETS_REQUIRED.md.
+2. **Visual/GPU QA unavailable in current cloud tools.** Reference browser reports WebGL disabled. The built app’s localhost URL was blocked by the cloud browser (ERR_BLOCKED_BY_CLIENT). A standalone Playwright Chromium attempt failed OS socket creation even via reviewed escalation. No visual-comparison pass, measured camera-feel pass or target-viewport screenshot pass is claimed.
+3. **Railway deployment pending.** Railway is connected and the existing workspace was verified read-only. Build/deployment configuration is prepared, but no Railway deploy has occurred. No alternate host substituted. No new paid plans/credentials established.
+4. **Work-in-progress GitHub branch approved.** Source and cloud browser tests are being published to `wip/cloud-browser-qa`; `main` is only a work-in-progress notice until acceptance. No final release is implied.
+
+## Deliberate choices
+- Different photographs and specification sources for all six variants; no same-mesh renaming
+- GT3 photograph is2015 context; GT-R50 photograph is2018 concept; Premium photo2018. Specs explicitly identify their other relevant year/market. Correct hp vs PS,2020GT500 inline-four RWD
+- Concept paint palette is clearly non-official; no OEM availability claim
+- Hero is an original generated illustration, labeled as such; actual lineup photos are licensed/credited. User requests no AI slop; final image quality still requires visual acceptance, or replace with approved photography/CGI
+- Doors/hood/trunk omitted because unsupported asset animation is not faked
+- No placeholder shopping/checkout/Finish control
+- Generated sounds are short quiet interface cues, not genuine recorded engine audio
+- User screenshots never committed publicly, since browser chrome may contain personal context
+
+## Verification evidence
+Unit/DOM tests cover data accuracy, variant state cleanup, exclusive panels, material-role selection, bounds normalization, camera definitions, real progress helpers, photo-fallback honesty, detail drawer open/Escape/focus return, variant navigation and Back. Latest verification includes 78 unit tests (including pinned asset downloads and camera calibration); production build and typecheck passed. Browser/GPU checks remain explicitly unrun. See QA_REPORT.md for evidence and fixed risks.
+
+## Original asset fallback
+The user approved original DCC modeling after lawful detailed model acquisition did not succeed. An R35-inspired Blender study is being built separately. It must pass exterior/cabin inspection and be explicitly identified as an approximation before integration; it will not be reused under six exact variant identities.

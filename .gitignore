@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+asset-sources/
+docs/user-references/
+docs/design/*.png
+docs/design/assets/
+tmp/
+
+*.tsbuildinfo
+
+playwright-report/
+test-results/
+
+qa-dist/
+playwright-renderer-report/
+
+renderer-test-results/
+
+# Large CC0 HDRIs are fetched and verified at build time.
+public/environments/*.hdr

@@ -1,0 +1,89 @@
+[
+  {
+    "id": "tief_etz",
+    "label": "Forest road",
+    "title": "Tief Etz",
+    "authors": [
+      "Adrian Kubasa"
+    ],
+    "sourceUrl": "https://polyhaven.com/a/tief_etz",
+    "license": "CC0 1.0 Universal",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "providerLicenseUrl": "https://polyhaven.com/license",
+    "files": [
+      {
+        "id": "tief_etz",
+        "resolution": "2k",
+        "path": "/environments/tief_etz.hdr",
+        "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/tief_etz_2k.hdr",
+        "bytes": 6910630,
+        "md5": "ebfcb9e8c46e4ca291c5208587e9884e",
+        "sha256": "8d0a727f19f54afe25160616c8c02f892c9c37e4c63a7979610a54a745a2e7bc",
+        "dimensionsHeader": "-Y 1024 +X 2048"
+      },
+      {
+        "id": "tief_etz",
+        "resolution": "1k",
+        "path": "/environments/tief_etz_1k.hdr",
+        "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/tief_etz_1k.hdr",
+        "bytes": 1700131,
+        "md5": "d41e4e8f61219d9aeef3b0e23d762ea0",
+        "sha256": "97f893e85dacb83fe2720066c00cd8e52e6334ea2491e83c8f19e60ba9dc1ecb",
+        "dimensionsHeader": "-Y 512 +X 1024"
+      }
+    ],
+    "previewPath": "/environments/tief_etz.preview.webp",
+    "previewBytes": 147546,
+    "previewSha256": "d9535ec600069b5b3c8069c05fa3df12591fdba66668d6901e3a357d11d698e1",
+    "previewChanges": "Derived locally from the downloaded 2K CC0 HDRI: resized to 1280\u00d7640, converted to sRGB LDR, WebP quality 82. High-dynamic-range highlights are clipped in the LDR preview. Use HDR for lighting, not this preview.",
+    "photographic": true,
+    "verifiedOn": "2026-10-01",
+    "notes": [
+      "Real photographed asphalt forest junction with guardrails and dense green woodland."
+    ]
+  },
+  {
+    "id": "victoria_curve_01",
+    "label": "Coastal road",
+    "title": "Victoria Curve 01",
+    "authors": [
+      "Greg Zaal"
+    ],
+    "sourceUrl": "https://polyhaven.com/a/victoria_curve_01",
+    "license": "CC0 1.0 Universal",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "providerLicenseUrl": "https://polyhaven.com/license",
+    "files": [
+      {
+        "id": "victoria_curve_01",
+        "resolution": "2k",
+        "path": "/environments/victoria_curve_01.hdr",
+        "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/victoria_curve_01_2k.hdr",
+        "bytes": 6435770,
+        "md5": "d8d51a6f8321899c36fa34123ddcefa9",
+        "sha256": "ab6aa5152272864c9fcabf6675145bc8ed416bf55b4020c8032f1a78fd487d56",
+        "dimensionsHeader": "-Y 1024 +X 2048"
+      },
+      {
+        "id": "victoria_curve_01",
+        "resolution": "1k",
+        "path": "/environments/victoria_curve_01_1k.hdr",
+        "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/victoria_curve_01_1k.hdr",
+        "bytes": 1612785,
+        "md5": "a81df79c34418139ff836ef289c2646f",
+        "sha256": "ae14c105f211badcaaea2d135478217bd3b55570c332fd80032b34adeb88c4ff",
+        "dimensionsHeader": "-Y 512 +X 1024"
+      }
+    ],
+    "previewPath": "/environments/victoria_curve_01.preview.webp",
+    "previewBytes": 71168,
+    "previewSha256": "9440e917a660cbefe2506428185bd3528ccd41dde3a4e258b903f51a8d35c5ec",
+    "previewChanges": "Derived locally from the downloaded 2K CC0 HDRI: resized to 1280\u00d7640, converted to sRGB LDR, WebP quality 82. High-dynamic-range highlights are clipped in the LDR preview. Use HDR for lighting, not this preview.",
+    "photographic": true,
+    "verifiedOn": "2026-10-01",
+    "notes": [
+      "Real photographed asphalt coastal bend/viewpoint, ocean on one side and rocky hills on the other.",
+      "Contains a distant parked white car, benches and bins; preserve the photograph rather than generatively removing objects."
+    ]
+  }
+]

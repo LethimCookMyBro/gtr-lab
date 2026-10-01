@@ -1,0 +1,13 @@
+Use case: ui-mockup.
+Design a complete premium automotive MODEL LINEUP SELECTION webpage for independent fan project GT-R LAB. This is a crisp high-fidelity UI reference screenshot, desktop 1440 wide x approximately 1500 high, readable and realistic. Same original design language as luxury editorial dark GT-R site: black #070809, graphite #151719, silver, warm-neutral white #f3f3f1, racing red #c32229 used sparingly. Sharp Swiss geometric sans-serif typography, quiet navigation, 64px page gutter, 1px understated neutral lines, square corners, no rounded cards, no generic ecommerce grid, no dashboard panels, no neon.
+
+Top minimal header: "GT-R LAB" wordmark left with tiny red square; right "Models", "Heritage", square hairline button "Enter configurator". Main introductory open space: very large heading "Choose your expression." left, tiny copy right "One unmistakable lineage. Six distinct perspectives." No eyebrow, hero badge or stats.
+
+The primary surface is a cinematic editorial lineup of six broad horizontal photographic panels, not cards and not a grid. Each full-width panel is approximately 175px tall and has perfectly readable model name on the left, smaller short subline, and far-right "Explore" arrow. Each panel has different but coordinated photorealistic car composition and dark background fading naturally on the left for white typography. Car shown primarily on right 65% with dramatic enough crop to feel premium yet unmistakable. Order and exact text:
+1 "Premium" / "The modern icon." / metallic silver R35 in side-front profile, dark architecture.
+2 "NISMO" / "Performance, intensified." / white R35 NISMO with red lower trim and black carbon accents, circuit setting.
+3 "T-spec" / "A singular point of view." / pale jade/green R35 T-spec, dark studio.
+4 "GT-R50" / "A sculpted interpretation." / metallic grey Nissan GT-R50 by Italdesign with distinctive gold upper accents, large rear shape, not ordinary R35.
+5 "GT3" / "Built for the circuit." / white widebody Nissan GT-R GT3 race car with large wing and restrained dark-red livery.
+6 "GT500" / "The edge of competition." / dramatically wide red-and-black Super GT GT-R racing silhouette with very large rear wing.
+Panels separated only by thin black gaps or a quiet 1px line. No pricing, purchase, specs, fake numbers, invented official claims. Active or hovered Premium panel may have a 3px red vertical accent at left and lighter arrow. Car imagery high-end realistic CGI photography. All text and controls intended to be code-native; imagery is separable. Bottom small disclosure "Independent fan project. Not affiliated with Nissan." The lineup page should feel art-directed, clear and original, never like a dealership catalog.

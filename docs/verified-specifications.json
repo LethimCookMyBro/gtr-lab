@@ -1,0 +1,129 @@
+{
+  "verifiedOn": "2026-10-01",
+  "sources": {
+    "road": "https://usa.nissannews.com/en-US/releases/2024-nissan-gt-r-press-kit",
+    "gtr50": "https://www.nismo.co.jp/en/news_list/2021/news_flash/21007.html",
+    "gtr50_design": "https://www.italdesign.it/en/project/gt-r-50-by-italdesign/",
+    "gt3": "https://www.nismo.co.jp/en/products/customerracing/",
+    "gt500": "https://www.nismo.co.jp/motorsports/SUPERGT/2020/machine.html"
+  },
+  "variants": [
+    {
+      "id": "premium",
+      "name": "GT-R Premium",
+      "modelYear": "2024 US specification",
+      "engine": "VR38DETT \u00b7 3.8 L twin-turbo V6",
+      "powerValue": 565,
+      "powerUnit": "hp",
+      "torqueValue": 467,
+      "torqueUnit": "lb-ft",
+      "drive": "ATTESA E-TS AWD",
+      "transmission": "6-speed dual-clutch rear transaxle",
+      "sourceUrls": [
+        "https://usa.nissannews.com/en-US/releases/2024-nissan-gt-r-press-kit"
+      ],
+      "notes": [
+        "Do not label hp as PS. The US specification is 565 hp.",
+        "Photograph supplied is a 2018 Premium. Caption accordingly."
+      ]
+    },
+    {
+      "id": "nismo",
+      "name": "GT-R NISMO",
+      "modelYear": "2024 US specification",
+      "engine": "VR38DETT \u00b7 3.8 L twin-turbo V6",
+      "powerValue": 600,
+      "powerUnit": "hp",
+      "torqueValue": 481,
+      "torqueUnit": "lb-ft",
+      "drive": "ATTESA E-TS AWD",
+      "transmission": "6-speed dual-clutch rear transaxle",
+      "sourceUrls": [
+        "https://usa.nissannews.com/en-US/releases/2024-nissan-gt-r-press-kit"
+      ],
+      "notes": [
+        "Front limited-slip differential added for 2024.",
+        "Carbon-ceramic brakes and carbon-fiber exterior components."
+      ]
+    },
+    {
+      "id": "tspec",
+      "name": "GT-R T-spec",
+      "modelYear": "2024 US specification",
+      "engine": "VR38DETT \u00b7 3.8 L twin-turbo V6",
+      "powerValue": 565,
+      "powerUnit": "hp",
+      "torqueValue": 467,
+      "torqueUnit": "lb-ft",
+      "drive": "ATTESA E-TS AWD",
+      "transmission": "6-speed dual-clutch rear transaxle",
+      "sourceUrls": [
+        "https://usa.nissannews.com/en-US/releases/2024-nissan-gt-r-press-kit"
+      ],
+      "notes": [
+        "Gold RAYS wheels, carbon-ceramic brakes, NISMO-tuned VDC.",
+        "Exclusive Millennium Jade and Midnight Purple colors."
+      ]
+    },
+    {
+      "id": "gtr50",
+      "name": "GT-R50 by Italdesign",
+      "modelYear": "2021 production powertrain specification",
+      "engine": "NISMO-tuned VR38DETT \u00b7 3.8 L twin-turbo V6",
+      "powerValue": 720,
+      "powerUnit": "PS",
+      "torqueValue": 780,
+      "torqueUnit": "Nm",
+      "sourceUrls": [
+        "https://www.nismo.co.jp/en/news_list/2021/news_flash/21007.html",
+        "https://www.italdesign.it/en/project/gt-r-50-by-italdesign/"
+      ],
+      "notes": [
+        "720 PS is metric horsepower, approximately 710 hp. Do not label it 720 hp.",
+        "Photo supplied depicts the 2018 concept, not the production car.",
+        "NISMO confirms strengthened transaxle and an engine developed for Euro 6 compliance."
+      ]
+    },
+    {
+      "id": "gt3",
+      "name": "GT-R NISMO GT3",
+      "modelYear": "2018 specification / 2020 EVO context",
+      "engine": "VR38DETT \u00b7 3,799 cc twin-turbo V6",
+      "powerValue": 550,
+      "powerUnit": "PS+",
+      "torqueValue": 637,
+      "torqueUnit": "Nm+",
+      "transmission": "6-speed sequential with paddle shift",
+      "sourceUrls": [
+        "https://www.nismo.co.jp/en/products/customerracing/"
+      ],
+      "notes": [
+        "Power and torque depend on the event Balance of Performance; minimum published values, not fixed universal figures.",
+        "ABS, traction control, double-wishbone front and rear suspension.",
+        "The supplied photograph depicts a 2015-spec Bathurst car."
+      ]
+    },
+    {
+      "id": "gt500",
+      "name": "GT-R NISMO GT500",
+      "modelYear": "2020 Class 1 specification",
+      "engine": "NR20B \u00b7 1,998 cc direct-injection turbo inline-four",
+      "powerValue": 550,
+      "powerUnit": "PS+",
+      "torqueValue": 50,
+      "torqueUnit": "kgf\u00b7m+",
+      "drive": "Rear-wheel drive",
+      "transmission": "6-speed sequential transaxle",
+      "massValue": 1020,
+      "massUnit": "kg+",
+      "sourceUrls": [
+        "https://www.nismo.co.jp/motorsports/SUPERGT/2020/machine.html"
+      ],
+      "notes": [
+        "A purpose-built Class 1 race car; it is not the road-going V6 AWD drivetrain.",
+        "Dimensions 4,725 \u00d7 1,950 \u00d7 1,150 mm; wheelbase 2,750 mm.",
+        "GT500 specifications vary by year: 2021 used NR4S21 instead of NR20B."
+      ]
+    }
+  ]
+}
