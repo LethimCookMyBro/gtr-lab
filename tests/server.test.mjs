@@ -37,6 +37,12 @@ describe("production static server", () => {
     expect(r.headers.get("content-type")).toBe("model/gltf-binary");
     expect(r.headers.get("x-content-type-options")).toBe("nosniff");
     expect(r.headers.get("content-security-policy")).toContain(
+      "script-src 'self' 'wasm-unsafe-eval'",
+    );
+    expect(r.headers.get("content-security-policy")).not.toContain(
+      "'unsafe-eval'",
+    );
+    expect(r.headers.get("content-security-policy")).toContain(
       "object-src 'none'",
     );
   });

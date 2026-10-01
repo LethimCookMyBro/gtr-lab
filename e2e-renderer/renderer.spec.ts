@@ -19,6 +19,8 @@ test("actual GLB renders, exposes matched capabilities, and responds to paint an
   await expect(page.getByTestId("lights-capability")).toHaveText("true");
   const canvas = page.locator("canvas");
   await page.screenshot({
+    animations: "disabled",
+    scale: "css",
     path: info.outputPath("synthetic-renderer-ready.png"),
   });
   const bluePixels = (await canvas.screenshot()).toString("base64");
@@ -34,6 +36,8 @@ test("actual GLB renders, exposes matched capabilities, and responds to paint an
   await page.getByRole("button", { name: "Top view", exact: true }).click();
   await expectReady(page);
   await page.screenshot({
+    animations: "disabled",
+    scale: "css",
     path: info.outputPath("synthetic-renderer-top.png"),
   });
 });

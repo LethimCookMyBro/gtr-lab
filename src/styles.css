@@ -2228,3 +2228,21 @@ p {
     font-size: 11px;
   }
 }
+
+.study-disclosure {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 7px;
+  color: #d0d4d7;
+  font-size: 11px;
+  letter-spacing: 0.015em;
+}
+.asset-explanation ul {
+  padding-left: 20px;
+  color: #b6bbbf;
+  line-height: 1.7;
+  margin: 16px 0;
+}

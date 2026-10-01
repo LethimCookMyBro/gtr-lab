@@ -93,7 +93,7 @@ export function ConfiguratorPage() {
   return (
     <main className={"configurator environment-" + state.selectedEnvironment}>
       <header className="config-header">
-        <Link to="/models" className="back-link">
+        <Link to="/models" className="back-link" aria-label="Back to models">
           <ArrowLeft size={19} />
           <span>Back to models</span>
         </Link>
@@ -106,6 +106,12 @@ export function ConfiguratorPage() {
       <div className="config-title">
         <h1>{model.name}</h1>
         <p>{model.tagline}</p>
+        {model.asset.kind === "original-study" && (
+          <button className="study-disclosure" onClick={() => open("assets")}>
+            <Info size={14} />
+            Original R35 study · View limitations
+          </button>
+        )}
       </div>
       <div
         className="scene-stage"

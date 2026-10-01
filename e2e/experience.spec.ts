@@ -9,6 +9,8 @@ test("homepage to models to details and back", async ({ page }, info) => {
     page.getByRole("heading", { name: "Engineered to defy." }),
   ).toBeVisible();
   await page.screenshot({
+    animations: "disabled",
+    scale: "css",
     path: info.outputPath("homepage.png"),
     fullPage: false,
   });
@@ -20,6 +22,8 @@ test("homepage to models to details and back", async ({ page }, info) => {
     page.getByRole("heading", { name: "Choose your expression." }),
   ).toBeVisible();
   await page.screenshot({
+    animations: "disabled",
+    scale: "css",
     path: info.outputPath("models.png"),
     fullPage: true,
   });
@@ -32,7 +36,11 @@ test("homepage to models to details and back", async ({ page }, info) => {
     .getByRole("link", { name: "Explore GT-R Premium", exact: true })
     .click();
   await expect(page).toHaveURL(/\/configurator\/premium$/);
-  await page.screenshot({ path: info.outputPath("configurator.png") });
+  await page.screenshot({
+    animations: "disabled",
+    scale: "css",
+    path: info.outputPath("configurator.png"),
+  });
   await page.getByRole("button", { name: "Model detail", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("2024 US specification");
   await page.keyboard.press("Escape");
@@ -51,7 +59,11 @@ test("six distinct variants and no hidden horizontal overflow", async ({
       .getByRole("button", { name: "Model detail", exact: true })
       .click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await page.screenshot({ path: info.outputPath(id + "-details.png") });
+    await page.screenshot({
+      animations: "disabled",
+      scale: "css",
+      path: info.outputPath(id + "-details.png"),
+    });
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "Close panel", exact: true })
@@ -67,21 +79,20 @@ test("missing assets remain visibly honest and controls are disabled", async ({
   page,
 }) => {
   await page.goto("/configurator/gt500");
+  await expect(
+    page.getByRole("heading", { name: "GT-R NISMO GT500" }),
+  ).toBeVisible();
   const pending = page.getByRole("button", {
     name: "Photo reference · 3D asset pending",
   });
-  if (await pending.count()) {
-    await expect(pending).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Pearl White", exact: true }),
-    ).toBeDisabled();
-    await pending.click();
-    await expect(page.getByRole("dialog")).toContainText(
-      "photograph, not an interactive render",
-    );
-  } else {
-    await expect(page.locator("canvas")).toBeVisible();
-  }
+  await expect(pending).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Pearl White", exact: true }),
+  ).toBeDisabled();
+  await pending.click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "photograph, not an interactive render",
+  );
 });
 test("reduced motion preserves navigation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });

@@ -62,3 +62,8 @@ Date:2026-10-01. Status:**partial implementation verified; full product acceptan
 
 ## Acceptance boundary
 The54unit/DOM/server tests and passing build are useful evidence, not a substitute for livebrowser/GPU validation. No current view is called a finished six-variant3D configurator. Acquire and inspect production-quality licensed meshes, run browser QA in a permitted environment, fix visual findings, verify exact GitHub commit, then deploy/verify Railway before marking complete.
+
+## First GitHub browser run (2026-10-01)
+Commit `b22fc600050dcddcfc4c5e48408f3fd8f523ff26`: GitHub Actions run `36830977636`. Unit tests 79/79 and TypeScript passed. The real browser suite passed 12/16 cases across 1920×1080, 1440×900, 390×844 and 430×932. Four pending-asset checks had a test-only race: an immediate locator count ran before the lazy configurator mounted and chose the wrong canvas assertion. Failure snapshots show the correct labeled photographic fallback. Fixed by waiting for the expected route heading and asserting the intentionally missing GT500 state directly.
+
+Actual screenshots inspected: desktop home at both required widths, mobile home/model collection/configurator/details, desktop configurator. Model/detail spacing and mobile controls fit; no horizontal overflow was detected in tested model routes. Initial hero screenshots caught the entry fade before it finished, so evidence capture now fast-forwards finite animations and uses CSS pixel scale. Static composition must be reinspected from the next run. Actual vehicle realism/GPU flow remains a separate unmet criterion.

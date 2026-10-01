@@ -5,6 +5,9 @@ export type VariantId =
   "premium" | "nismo" | "tspec" | "gtr50" | "gt3" | "gt500";
 export interface AssetManifest {
   status: "missing" | "ready";
+  kind?: "original-study" | "licensed-model";
+  displayName?: string;
+  limitations?: string[];
   url: string | null;
   source: string | null;
   license: string | null;

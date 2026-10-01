@@ -1,6 +1,7 @@
+import { AssetDisclosure } from "./AssetDisclosure";
 import { useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { ArrowRight, Check, Box } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Check } from "lucide-react";
 import { useConfigurator } from "../../stores/configurator";
 import { models } from "../../data/models";
 import type { VehicleModel } from "../../data/models";
@@ -140,56 +141,7 @@ export function ConfiguratorPanels({
         </>
       )}
       {state.panel === "assets" && (
-        <div className="asset-explanation">
-          <Box size={35} />
-          <h3>
-            {interactive
-              ? "A real-time perspective."
-              : model.asset.status === "ready"
-                ? "A rendering interruption."
-                : "The right model comes first."}
-          </h3>
-          <p>
-            {interactive
-              ? "This view uses a licensed GLB vehicle asset rendered live in WebGL."
-              : model.asset.status === "ready"
-                ? "This model has a licensed 3D asset, but the viewer is not currently rendering it. The visible image is a photographic reference. Retry the scene to restore live interaction."
-                : "A production-quality, licensed 3D asset for " +
-                  model.name +
-                  " has not been integrated yet. The current view is a clearly marked photograph, not an interactive render."}
-          </p>
-          <p>
-            Exterior geometry, detailed cabin, separated paint and light
-            materials must all be verified before the complete experience can be
-            enabled.
-          </p>
-          <dl>
-            <div>
-              <dt>Photography</dt>
-              <dd>Available · attributed</dd>
-            </div>
-            <div>
-              <dt>Vehicle geometry</dt>
-              <dd>
-                {model.asset.status === "ready"
-                  ? "Available"
-                  : "Pending licensed asset"}
-              </dd>
-            </div>
-            <div>
-              <dt>Detailed interior</dt>
-              <dd>{model.asset.interior ? "Verified" : "Not yet verified"}</dd>
-            </div>
-            <div>
-              <dt>Headlight materials</dt>
-              <dd>{model.asset.lights ? "Verified" : "Not yet verified"}</dd>
-            </div>
-          </dl>
-          <Link to="/credits" className="text-link underlined">
-            Credits & asset policy
-            <ArrowRight size={18} />
-          </Link>
-        </div>
+        <AssetDisclosure model={model} interactive={interactive} />
       )}
     </Drawer>
   );

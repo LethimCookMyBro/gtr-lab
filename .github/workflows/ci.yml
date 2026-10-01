@@ -1,7 +1,7 @@
 name: Quality checks
 on:
   push:
-    branches: [main, "wip/**"]
+    branches: [main]
   pull_request:
 permissions:
   contents: read
@@ -21,7 +21,9 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npx tsc --noEmit -p tsconfig.renderer-qa.json
+        if: ${{ !cancelled() }}
       - run: npx playwright test -c playwright.renderer.config.ts
+        if: ${{ !cancelled() }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

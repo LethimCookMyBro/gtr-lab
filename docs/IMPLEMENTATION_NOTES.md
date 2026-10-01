@@ -7,7 +7,7 @@ Original home, cinematic six-variant selector, heritage/engineering, sources/cre
 1. **No qualified licensed GT-R mesh yet.** All variant manifests intentionally remain missing. Photo references are visibly marked; painting/camera/light controls are disabled where inapplicable. This is not completed live3D functionality and must not be sold or described as finished. Candidate acquisition and required detailed cabin/material contract are in ASSETS_REQUIRED.md.
 2. **Visual/GPU QA unavailable in current cloud tools.** Reference browser reports WebGL disabled. The built app’s localhost URL was blocked by the cloud browser (ERR_BLOCKED_BY_CLIENT). A standalone Playwright Chromium attempt failed OS socket creation even via reviewed escalation. No visual-comparison pass, measured camera-feel pass or target-viewport screenshot pass is claimed.
 3. **Railway deployment pending.** Railway is connected and the existing workspace was verified read-only. Build/deployment configuration is prepared, but no Railway deploy has occurred. No alternate host substituted. No new paid plans/credentials established.
-4. **Work-in-progress GitHub branch approved.** Source and cloud browser tests are being published to `wip/cloud-browser-qa`; `main` is only a work-in-progress notice until acceptance. No final release is implied.
+4. **Work-in-progress GitHub branch approved.** The user requested main-only development after the initial WIP push. The full source and cloud browser tests are now on `main`, still explicitly in progress. No final release is implied.
 
 ## Deliberate choices
 - Different photographs and specification sources for all six variants; no same-mesh renaming
