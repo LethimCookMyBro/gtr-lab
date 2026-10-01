@@ -2,6 +2,10 @@ name: Quality checks
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - scripts/capture-vehicle.mjs
+      - .github/workflows/vehicle-preview.yml
+      - .github/workflows/ci.yml
   pull_request:
 permissions:
   contents: read
