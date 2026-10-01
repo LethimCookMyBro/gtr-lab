@@ -135,7 +135,33 @@ describe("cinematic homepage", () => {
     const { container } = setup();
     expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
     expect(container.querySelector("video")?.preload).toBe("none");
+    expect(
+      container
+        .querySelector(".cinematic-home")
+        ?.getAttribute("data-sequential-motion"),
+    ).toBe("false");
   });
+  it.each([667, 700, 740, 844, 932])(
+    "retains scroll staging in a normal-motion portrait viewport of %ipx",
+    (height) => {
+      vi.mocked(matchMedia).mockImplementation(
+        (query) =>
+          ({
+            matches: query.includes("max-height")
+              ? height <= Number(query.match(/max-height:\s*(\d+)/)?.[1] || 0)
+              : false,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+          }) as unknown as MediaQueryList,
+      );
+      const { container } = setup();
+      expect(
+        container
+          .querySelector(".cinematic-home")
+          ?.getAttribute("data-sequential-motion"),
+      ).toBe("false");
+    },
+  );
   it("updates playback controls from actual media events and permits explicit play", async () => {
     reduced = true;
     const { container } = setup();

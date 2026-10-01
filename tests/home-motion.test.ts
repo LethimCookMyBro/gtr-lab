@@ -5,9 +5,31 @@ import {
   sectionProgress,
   timelineScrollTarget,
   mayAutoplay,
+  heritageLayersAt,
+  viewportProgress,
 } from "../src/components/home/motion";
 
 describe("native homepage scroll geometry", () => {
+  it("stages each editorial image from its own viewport crossing", () => {
+    expect(viewportProgress(700, 400, 700)).toBe(0);
+    expect(viewportProgress(150, 400, 700)).toBe(0.5);
+    expect(viewportProgress(-400, 400, 700)).toBe(1);
+    expect(viewportProgress(-500, 400, 700)).toBe(1);
+  });
+  it("crossfades heritage photographs continuously without a blank interval", () => {
+    expect(heritageLayersAt(0)).toEqual([1, 0, 0]);
+    expect(heritageLayersAt(0.5)).toEqual([0, 1, 0]);
+    expect(heritageLayersAt(1)).toEqual([0, 0, 1]);
+    for (let step = 0; step <= 100; step++) {
+      const layers = heritageLayersAt(step / 100);
+      expect(layers.reduce((total, layer) => total + layer, 0)).toBeCloseTo(1);
+      expect(Math.max(...layers)).toBeGreaterThanOrEqual(0.5);
+    }
+    expect(heritageLayersAt(0.32)[0]).toBeGreaterThan(
+      heritageLayersAt(0.34)[0],
+    );
+    expect(heritageLayersAt(0.32)[1]).toBeLessThan(heritageLayersAt(0.34)[1]);
+  });
   it("clamps pinned progress to the measured scroll runway", () => {
     expect(sectionProgress(200, 2700, 900)).toBe(0);
     expect(sectionProgress(-900, 2700, 900)).toBe(0.5);

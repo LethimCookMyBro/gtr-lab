@@ -72,7 +72,8 @@ export function HeritageJourney({
       top: timelineScrollTarget(
         rect.top + window.scrollY,
         rect.height,
-        window.innerHeight,
+        element.querySelector<HTMLElement>(".home-heritage-sticky")
+          ?.offsetHeight || window.innerHeight,
         index,
       ),
       behavior: "smooth",
@@ -88,6 +89,22 @@ export function HeritageJourney({
       aria-labelledby="heritage-title"
     >
       <div className="home-heritage-sticky">
+        <div className="home-heritage-years" aria-hidden="true">
+          {eras.map((era, index) => (
+            <span key={era.year} className={`home-heritage-year-${index}`}>
+              {era.year}
+            </span>
+          ))}
+        </div>
+        <p className="home-heritage-mobile-caption">
+          {
+            [
+              "1969 · Skyline 2000GT-R",
+              "1992 · Skyline GT-R R32",
+              "2024 · GT-R NISMO",
+            ][activeEra]
+          }
+        </p>
         <div className="home-heritage-visuals">
           <HeritagePlane
             image={storyMedia.origin}

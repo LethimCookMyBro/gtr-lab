@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/diagnose-mobile-home-motion.mjs'
       - '.github/workflows/mobile-motion-proof.yml'
+      - 'src/components/home/**'
+      - 'src/styles/home.css'
 permissions:
   contents: read
 jobs:
@@ -23,16 +25,26 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Record the current public mobile baseline
-        run: node scripts/diagnose-mobile-home-motion.mjs
+      - run: npm run build
+      - name: Record the actual candidate mobile experience
+        run: |
+          PORT=4173 npm start >/tmp/gtr-mobile-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl --silent --fail http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 0.5
+          done
+          curl --silent --fail http://127.0.0.1:4173/ >/dev/null
+          node scripts/diagnose-mobile-home-motion.mjs
         timeout-minutes: 5
         env:
-          HOME_MOTION_URL: https://gtr-lab-production.up.railway.app/
+          HOME_MOTION_URL: http://127.0.0.1:4173/
           HOME_MOTION_PLAN: ${{ matrix.plan }}
           HOME_MOTION_OUTPUT: mobile-home-motion-evidence
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mobile-motion-baseline-${{ matrix.plan }}
+          name: mobile-motion-candidate-${{ matrix.plan }}
           path: mobile-home-motion-evidence/
           retention-days: 14

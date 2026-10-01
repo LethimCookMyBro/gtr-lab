@@ -8,7 +8,10 @@ export function EditorialOverlap() {
       aria-labelledby="form-title"
     >
       <div className="home-editorial-layout">
-        <div className="home-editorial-copy home-editorial-copy--form">
+        <div
+          className="home-editorial-copy home-editorial-copy--form"
+          data-motion-anchor="form"
+        >
           <h2 id="form-title">
             Form follows
             <br />
@@ -20,7 +23,10 @@ export function EditorialOverlap() {
             Every detail, a reason to exist.
           </p>
         </div>
-        <figure className="home-editorial-image home-editorial-image--detail">
+        <figure
+          className="home-editorial-image home-editorial-image--detail"
+          data-motion-anchor="detail"
+        >
           <img
             src={storyMedia.detail.src}
             srcSet={`${storyMedia.detail.small} 800w, ${storyMedia.detail.src} 1920w`}
@@ -32,7 +38,10 @@ export function EditorialOverlap() {
             style={{ objectPosition: storyMedia.detail.position }}
           />
         </figure>
-        <figure className="home-editorial-image home-editorial-image--cockpit">
+        <figure
+          className="home-editorial-image home-editorial-image--cockpit"
+          data-motion-anchor="cockpit"
+        >
           <img
             src={storyMedia.cockpit.src}
             srcSet={`${storyMedia.cockpit.small} 480w, ${storyMedia.cockpit.src} 1200w`}
@@ -48,7 +57,10 @@ export function EditorialOverlap() {
             </Link>
           </figcaption>
         </figure>
-        <div className="home-editorial-copy home-editorial-copy--control">
+        <div
+          className="home-editorial-copy home-editorial-copy--control"
+          data-motion-anchor="control"
+        >
           <h2>
             Control without
             <br />

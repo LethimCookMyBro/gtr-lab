@@ -17,12 +17,87 @@ function Harness({ reduced }: { reduced: boolean }) {
         </div>
       </section>
       <section data-motion-section="expanding" />
+      <section data-motion-section="editorial">
+        <figure data-motion-anchor="detail" />
+        <figure data-motion-anchor="cockpit" />
+      </section>
+      <section data-motion-section="heritage" />
     </div>
   );
 }
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+it("reads untransformed editorial geometry before writing any scroll styles", () => {
+  vi.stubGlobal("innerWidth", 390);
+  const order: string[] = [];
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    () => {
+      order.push("read-section");
+      return {
+        top: -450,
+        height: 1800,
+        bottom: 1350,
+        left: 0,
+        right: 390,
+        width: 390,
+        x: 0,
+        y: -450,
+        toJSON: () => ({}),
+      };
+    },
+  );
+  vi.spyOn(HTMLElement.prototype, "offsetTop", "get").mockImplementation(
+    function (this: HTMLElement) {
+      order.push("read-anchor");
+      return this.dataset.motionAnchor === "detail" ? 400 : 700;
+    },
+  );
+  vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+    () => {
+      order.push("read-height");
+      return 300;
+    },
+  );
+  const setProperty = CSSStyleDeclaration.prototype.setProperty;
+  vi.spyOn(CSSStyleDeclaration.prototype, "setProperty").mockImplementation(
+    function (this: CSSStyleDeclaration, name, value, priority) {
+      order.push("write");
+      setProperty.call(this, name, value, priority);
+    },
+  );
+  const { container, rerender } = render(<Harness reduced={false} />);
+  expect(
+    Number(
+      container
+        .querySelector<HTMLElement>('[data-motion-section="hero"]')!
+        .style.getPropertyValue("--progress"),
+    ),
+  ).toBeCloseTo(0.3);
+  const detail = container.querySelector<HTMLElement>(
+    '[data-motion-anchor="detail"]',
+  )!;
+  const cockpit = container.querySelector<HTMLElement>(
+    '[data-motion-anchor="cockpit"]',
+  )!;
+  expect(
+    Number(detail.style.getPropertyValue("--item-progress")),
+  ).toBeGreaterThan(Number(cockpit.style.getPropertyValue("--item-progress")));
+  expect(order.lastIndexOf("read-anchor")).toBeLessThan(order.indexOf("write"));
+  expect(order.lastIndexOf("read-section")).toBeLessThan(
+    order.indexOf("write"),
+  );
+  rerender(<Harness reduced />);
+  expect(detail.style.getPropertyValue("--item-progress")).toBe("");
+  expect(detail.style.getPropertyValue("--item-reveal")).toBe("");
+  expect(
+    container
+      .querySelector<HTMLElement>('[data-motion-section="heritage"]')!
+      .style.getPropertyValue("--era-0-opacity"),
+  ).toBe("");
 });
 it("clears every scroll-derived value when reduced motion is enabled mid-story", () => {
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({

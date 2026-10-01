@@ -4,11 +4,12 @@ import type { Page } from "@playwright/test";
 async function scrollProgress(page: Page, selector: string, progress: number) {
   await page.locator(selector).evaluate((element, p) => {
     const rect = element.getBoundingClientRect();
+    const stickyHeight =
+      (element.firstElementChild as HTMLElement | null)?.offsetHeight ||
+      window.innerHeight;
     window.scrollTo({
       top:
-        window.scrollY +
-        rect.top +
-        Math.max(0, rect.height - window.innerHeight) * p,
+        window.scrollY + rect.top + Math.max(0, rect.height - stickyHeight) * p,
       behavior: "instant",
     });
   }, progress);
@@ -205,7 +206,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       await scrollProgress(page, ".home-heritage-runway", progress);
       const photo = await page.locator(".home-heritage-r32").boundingBox();
       const caption = await page
-        .locator(".home-heritage-r32 figcaption")
+        .locator(".home-heritage-mobile-caption")
         .boundingBox();
       const heading = await page.locator("#heritage-title").boundingBox();
       expect(photo!.x).toBeGreaterThanOrEqual(20);
@@ -680,7 +681,7 @@ test("short viewports use reachable sequential targets and keep playback control
   );
   for (const [width, height] of [
     [844, 390],
-    [375, 667],
+    [375, 560],
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
@@ -724,5 +725,227 @@ test("short viewports use reachable sequential targets and keep playback control
       path: info.outputPath(`short-${width}x${height}-era.png`),
       scale: "css",
     });
+  }
+});
+
+test("normal portrait phones keep gradual reversible staging with reachable controls", async ({
+  page,
+}, info) => {
+  test.setTimeout(90000);
+  test.skip(
+    info.project.name !== "home-desktop",
+    "Single bounded portrait motion regression",
+  );
+  for (const [width, height] of [
+    [375, 600],
+    [375, 667],
+    [390, 667],
+    [390, 700],
+    [430, 700],
+    [430, 932],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    await expect(page.locator(".cinematic-home")).toHaveAttribute(
+      "data-sequential-motion",
+      "false",
+    );
+    const controls = page.locator(".home-film--hero .home-film-controls");
+    const controlsBox = await controls.boundingBox();
+    expect(controlsBox!.y).toBeGreaterThanOrEqual(0);
+    expect(controlsBox!.y + controlsBox!.height).toBeLessThanOrEqual(height);
+    await scrollProgress(page, ".home-hero-runway", 0.2);
+    const firstHero = await page
+      .locator(".home-hero-copy")
+      .evaluate((element) => getComputedStyle(element).transform);
+    await scrollProgress(page, ".home-hero-runway", 0.55);
+    expect(
+      await page
+        .locator(".home-hero-copy")
+        .evaluate((element) => getComputedStyle(element).transform),
+    ).not.toBe(firstHero);
+
+    await page.locator(".home-editorial").evaluate((element) =>
+      window.scrollTo({
+        top: scrollY + element.getBoundingClientRect().top,
+        behavior: "instant",
+      }),
+    );
+    const detail = page.locator(".home-editorial-image--detail");
+    await expect
+      .poll(() =>
+        detail.evaluate((element) =>
+          Number(
+            (element as HTMLElement).style.getPropertyValue("--item-progress"),
+          ),
+        ),
+      )
+      .toBeGreaterThan(0);
+    const before = await detail.evaluate((element) => ({
+      progress: Number(
+        (element as HTMLElement).style.getPropertyValue("--item-progress"),
+      ),
+      transform: getComputedStyle(element).transform,
+    }));
+    expect(
+      await detail.evaluate((element) => {
+        const section = element.closest(".home-editorial");
+        let current: HTMLElement | null = element as HTMLElement;
+        while (current && current !== section)
+          current = current.offsetParent as HTMLElement | null;
+        return current === section;
+      }),
+    ).toBe(true);
+    await page.mouse.wheel(0, 180);
+    await expect
+      .poll(() =>
+        detail.evaluate((element) =>
+          Number(
+            (element as HTMLElement).style.getPropertyValue("--item-progress"),
+          ),
+        ),
+      )
+      .toBeGreaterThan(before.progress + 0.1);
+    expect(
+      await detail.evaluate((element) => getComputedStyle(element).transform),
+    ).not.toBe(before.transform);
+    const photoCredit = page.getByRole("link", {
+      name: "2017 GT-R Premium Edition · Photography credits",
+    });
+    await photoCredit.focus();
+    await expect(photoCredit).toBeFocused();
+    await expect(photoCredit).toBeInViewport();
+    expect(
+      await page
+        .locator(".home-editorial-image--cockpit")
+        .evaluate((element) => getComputedStyle(element).clipPath),
+    ).toBe("none");
+    await photoCredit.blur();
+
+    const filmBounds = [];
+    for (const progress of [0.2, 0.5, 0.8]) {
+      await scrollProgress(page, ".home-expanding-runway", progress);
+      filmBounds.push(
+        (await page.locator(".home-expanding-frame").boundingBox())!,
+      );
+    }
+    expect(filmBounds[0].width).toBeLessThan(filmBounds[1].width);
+    expect(filmBounds[1].width).toBeLessThan(filmBounds[2].width);
+    expect(filmBounds[0].height).toBeLessThan(filmBounds[2].height);
+
+    const origins = [];
+    const successors = [];
+    for (const progress of [0.26, 0.33, 0.4]) {
+      await scrollProgress(page, ".home-heritage-runway", progress);
+      origins.push(
+        await page
+          .locator(".home-heritage-origin")
+          .evaluate((element) => Number(getComputedStyle(element).opacity)),
+      );
+      successors.push(
+        await page
+          .locator(".home-heritage-r32")
+          .evaluate((element) => Number(getComputedStyle(element).opacity)),
+      );
+      if (
+        (width === 390 && height === 700) ||
+        (width === 430 && height === 932)
+      ) {
+        await page.screenshot({
+          path: info.outputPath(
+            `portrait-${width}x${height}-crossfade-${progress}.png`,
+          ),
+          scale: "css",
+        });
+      }
+    }
+    expect(origins[0]).toBeGreaterThan(origins[1]);
+    expect(origins[1]).toBeGreaterThan(origins[2]);
+    expect(successors[0]).toBeLessThan(successors[1]);
+    expect(successors[1]).toBeLessThan(successors[2]);
+    await scrollProgress(page, ".home-heritage-runway", 0.26);
+    expect(
+      await page
+        .locator(".home-heritage-origin")
+        .evaluate((element) => Number(getComputedStyle(element).opacity)),
+    ).toBeCloseTo(origins[0], 2);
+    const caption = await page
+      .locator(".home-heritage-mobile-caption")
+      .boundingBox();
+    const heading = await page.locator("#heritage-title").boundingBox();
+    const description = await page
+      .locator(".home-era-description")
+      .boundingBox();
+    const timeline = await page.locator(".home-era-navigation").boundingBox();
+    expect(caption!.y + caption!.height).toBeLessThanOrEqual(heading!.y - 16);
+    expect(description!.y + description!.height).toBeLessThanOrEqual(
+      timeline!.y - 8,
+    );
+    for (const control of await page
+      .getByRole("navigation", { name: "GT-R eras" })
+      .getByRole("button")
+      .all()) {
+      const box = (await control.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(20);
+      expect(box.x + box.width).toBeLessThanOrEqual(width - 20);
+      expect(box.y + box.height).toBeLessThanOrEqual(height - 52);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    for (const [index, name] of [
+      "1969: Skyline GT-R",
+      "1989: R32 GT-R",
+      "2007: R35 GT-R",
+    ].entries()) {
+      await page.getByRole("button", { name, exact: true }).click();
+      await expect(page.locator(".home-heritage-runway")).toHaveAttribute(
+        "data-active-era",
+        String(index),
+      );
+      await expect
+        .poll(() =>
+          page
+            .locator(".home-heritage-runway")
+            .evaluate((element) =>
+              Number(
+                (element as HTMLElement).style.getPropertyValue("--progress"),
+              ),
+            ),
+        )
+        .toBeCloseTo(index / 2, 1);
+      const copy = (await page.locator(".home-heritage-copy").boundingBox())!;
+      const eraControls = (await page
+        .locator(".home-era-navigation")
+        .boundingBox())!;
+      const archiveCredit = (await page
+        .locator(".home-heritage-credit")
+        .boundingBox())!;
+      expect(copy.y + copy.height).toBeLessThanOrEqual(eraControls.y - 8);
+      expect(eraControls.y + eraControls.height).toBeLessThanOrEqual(
+        archiveCredit.y - 8,
+      );
+    }
+    await page.screenshot({
+      path: info.outputPath(`portrait-staging-${width}x${height}.png`),
+      scale: "css",
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator(".cinematic-home")).toHaveAttribute(
+    "data-sequential-motion",
+    "true",
+  );
+  expect(await page.locator(".home-heritage-years").isVisible()).toBe(false);
+  for (const image of await page.locator(".home-editorial-image").all()) {
+    expect(
+      await image.evaluate((element) => getComputedStyle(element).clipPath),
+    ).toBe("none");
+    expect(
+      await image.evaluate((element) => getComputedStyle(element).transform),
+    ).toBe("none");
   }
 });
