@@ -1,6 +1,33 @@
 import { test, expect } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
 
+async function settleNativeScroll(page: Page, info: TestInfo, name: string) {
+  const samples = await page.evaluate(async () => {
+    const frames = [];
+    let previous = scrollY;
+    let stable = 0;
+    for (let frame = 0; frame < 240; frame++) {
+      await new Promise(requestAnimationFrame);
+      const current = scrollY;
+      frames.push({
+        frame,
+        scrollY: current,
+        activeElement: document.activeElement?.tagName,
+      });
+      stable = Math.abs(current - previous) < 0.5 ? stable + 1 : 0;
+      previous = current;
+      if (stable >= 8) return frames;
+    }
+    throw new Error(
+      "Native input scrolling did not become stationary before the independent geometry probe",
+    );
+  });
+  await info.attach(name, {
+    body: JSON.stringify(samples, null, 2),
+    contentType: "application/json",
+  });
+}
+
 async function scrollProgress(
   page: Page,
   selector: string,
@@ -852,10 +879,12 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
     expect(
       await detail.evaluate((element) => getComputedStyle(element).transform),
     ).not.toBe(before.transform);
+    await settleNativeScroll(page, info, `wheel-settled-${width}x${height}`);
     const photoCredit = page.getByRole("link", {
       name: "2017 GT-R Premium Edition · Photography credits",
     });
     await photoCredit.focus();
+    await settleNativeScroll(page, info, `focus-settled-${width}x${height}`);
     await expect(photoCredit).toBeFocused();
     await expect(photoCredit).toBeInViewport();
     expect(
@@ -864,6 +893,7 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
         .evaluate((element) => getComputedStyle(element).clipPath),
     ).toBe("none");
     await photoCredit.blur();
+    await settleNativeScroll(page, info, `blur-settled-${width}x${height}`);
 
     const filmBounds = [];
     for (const progress of [0.2, 0.5, 0.8]) {
