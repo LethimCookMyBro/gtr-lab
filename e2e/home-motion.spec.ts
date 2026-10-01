@@ -58,6 +58,17 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     expect(media!.width).toBeCloseTo(page.viewportSize()!.width, 0);
     expect(media!.height).toBeCloseTo(page.viewportSize()!.height, 0);
     expect(media!.y).toBeCloseTo(0, 0);
+    const credit = page.locator(".home-film--hero .home-film-credit");
+    const creditBox = await credit.boundingBox();
+    expect(creditBox!.height).toBeGreaterThanOrEqual(44);
+    expect(creditBox!.x + creditBox!.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width - 20,
+    );
+    expect(
+      await credit.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize),
+      ),
+    ).toBeGreaterThanOrEqual(11);
   }
   await page.screenshot({
     animations: "disabled",
@@ -128,6 +139,25 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   }
   await scrollProgress(page, ".home-expanding-runway", 0);
   const initial = await page.locator(".home-expanding-frame").boundingBox();
+  if ((page.viewportSize()?.width || 0) <= 700) {
+    const credit = page.locator(".home-film--detail .home-film-credit");
+    const creditBox = await credit.boundingBox();
+    const toggleBox = await page
+      .locator(".home-film--detail .home-film-toggle")
+      .boundingBox();
+    expect(creditBox!.height).toBeGreaterThanOrEqual(44);
+    expect(creditBox!.x).toBeGreaterThanOrEqual(
+      toggleBox!.x + toggleBox!.width + 4,
+    );
+    expect(creditBox!.x + creditBox!.width).toBeLessThanOrEqual(
+      initial!.x + initial!.width - 12,
+    );
+    expect(
+      await credit.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize),
+      ),
+    ).toBeGreaterThanOrEqual(11);
+  }
   await page.screenshot({
     animations: "disabled",
     path: info.outputPath("04-film-inset.png"),

@@ -49,9 +49,22 @@ export function HeritageJourney({
     const element = section.current;
     if (!element) return;
     if (sequentialMotion) {
-      element
-        .querySelector<HTMLElement>(`[data-era-image="${index}"]`)
-        ?.scrollIntoView({ behavior: "instant", block: "center" });
+      const target = element.querySelector<HTMLElement>(
+        `[data-era-image="${index}"]`,
+      );
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        // Home has no fixed header. Ignore the other routes' global scroll padding.
+        window.scrollTo({
+          top: Math.max(
+            0,
+            window.scrollY +
+              rect.top -
+              Math.max(0, (window.innerHeight - rect.height) / 2),
+          ),
+          behavior: "instant",
+        });
+      }
       return;
     }
     const rect = element.getBoundingClientRect();

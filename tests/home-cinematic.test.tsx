@@ -66,6 +66,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  document.documentElement.style.scrollPaddingTop = "";
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -311,8 +312,18 @@ describe("cinematic homepage", () => {
   });
   it("uses sequential navigation on short viewports without disabling normal film autoplay", async () => {
     compactHeight = true;
-    const scrollIntoView = vi.fn();
-    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      top: 900,
+      bottom: 1200,
+      height: 300,
+      left: 0,
+      right: 400,
+      width: 400,
+      x: 0,
+      y: 900,
+      toJSON: () => ({}),
+    });
+    document.documentElement.style.scrollPaddingTop = "100px";
     const { container } = setup();
     expect(
       container
@@ -330,9 +341,9 @@ describe("cinematic homepage", () => {
     await userEvent
       .setup()
       .click(screen.getByRole("button", { name: "2007: R35 GT-R" }));
-    expect(scrollIntoView).toHaveBeenCalledWith({
+    expect(window.scrollTo).toHaveBeenCalledWith({
+      top: 666,
       behavior: "instant",
-      block: "center",
     });
     expect(
       screen
