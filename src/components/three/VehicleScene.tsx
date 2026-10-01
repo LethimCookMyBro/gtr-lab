@@ -127,6 +127,9 @@ export default function VehicleScene(props: VehicleSceneProps) {
         }}
         fallback={<CanvasFallback />}
         onCreated={({ gl }) => {
+          // ContactShadows removes scene.background for its depth pass. Clear
+          // unused render-target pixels transparently even with an opaque canvas.
+          gl.setClearAlpha(0);
           gl.outputColorSpace = SRGBColorSpace;
           gl.toneMapping = ACESFilmicToneMapping;
           gl.toneMappingExposure = 1;
