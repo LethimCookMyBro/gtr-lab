@@ -6,11 +6,17 @@ import { writeFileSync } from 'node:fs';
 const root = 'reference-audit-results';
 await mkdir(root, { recursive: true });
 const started = Date.now();
+const viewportChoice = process.env.REFERENCE_VIEWPORT || 'both';
+if (!['both', 'desktop', 'mobile'].includes(viewportChoice)) throw new Error('Invalid reference viewport');
+const budgetMs = Math.min(360000, Math.max(60000, Number(process.env.REFERENCE_AUDIT_BUDGET_MS) || 220000));
+const screenshotTimeout = Math.min(40000, Math.max(2500, Number(process.env.REFERENCE_SCREENSHOT_TIMEOUT_MS) || 2500));
 const result = {
   reference: 'https://everymatrix-porchelab.netlify.app/',
   capturedAt: new Date().toISOString(),
   method: 'Public DOM, real pointer/keyboard input, and optional screenshots in cloud Chromium/SwiftShader',
-  budgetMs: 220000,
+  budgetMs,
+  screenshotTimeoutMs: screenshotTimeout,
+  viewportChoice,
   status: 'running',
   views: [],
 };
@@ -33,10 +39,11 @@ try {
     timeout: 20000,
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'],
   });
-  for (const [name, viewport, budgetMs] of [
+  for (const [name, viewport, ordinaryBudgetMs] of [
     ['desktop', { width: 1440, height: 900 }, 125000],
     ['mobile', { width: 390, height: 844 }, 75000],
-  ]) {
+  ].filter(([name]) => viewportChoice === 'both' || viewportChoice === name)) {
+    const budgetMs = viewportChoice === 'both' ? ordinaryBudgetMs : result.budgetMs - 10000;
     const remaining = result.budgetMs - (Date.now() - started) - 5000;
     if (remaining < 20000) {
       result.views.push({ name, viewport, status: 'unverified', reason: 'Insufficient remaining audit budget', events: [] });
@@ -46,7 +53,7 @@ try {
     const context = await browser.newContext({ viewport, ...(name === 'mobile' ? { isMobile: true, hasTouch: true } : {}), deviceScaleFactor: 1 });
     const page = await context.newPage();
     page.setDefaultTimeout(3000);
-    const view = { name, viewport, status: 'running', events: [], errors: [], consoleErrors: [] };
+    const view = { name, viewport, status: 'running', events: [], errors: [], consoleErrors: [], screenshotFailures: 0 };
     result.views.push(view);
     await save();
     const deadline = Date.now() + Math.min(budgetMs, remaining);
@@ -98,15 +105,18 @@ try {
         }));
       } catch (error) { event.domError = String(error); }
       await save();
-      if (!screenshot || !hasTime(4000)) {
-        event.screenshot = { status: 'not-attempted', reason: screenshot ? 'Viewport time budget' : 'DOM-only checkpoint' };
+      if (!screenshot || !hasTime(screenshotTimeout + 1500) || view.screenshotFailures >= 2) {
+        event.screenshot = { status: 'not-attempted', reason: !screenshot ? 'DOM-only checkpoint' : view.screenshotFailures >= 2 ? 'Two pixel-capture failures; no further capture retries this viewport' : 'Viewport time budget' };
       } else {
         const path = `${root}/${name}-${label}.png`;
         try {
           // Keep real animations intact: disabling CSS animations can distort reference transitions.
-          await page.screenshot({ path, animations: 'allow', scale: 'css', timeout: 2500 });
+          const captureStarted = Date.now();
+          await page.screenshot({ path, animations: 'allow', scale: 'css', timeout: screenshotTimeout });
           event.screenshot = { status: 'captured', path };
+          event.screenshot.elapsedMs = Date.now() - captureStarted;
         } catch (error) {
+          view.screenshotFailures++;
           event.screenshot = { status: 'unavailable', error: String(error) };
         }
       }
@@ -188,7 +198,7 @@ try {
           const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
           return { width: canvas.width, height: canvas.height, webgl: !!gl, lost: gl?.isContextLost(), renderer: gl?.getParameter(gl.RENDERER) };
         }));
-        await capture('configurator', { screenshot: false });
+        await capture('configurator', { screenshot: screenshotTimeout > 2500 });
         // The first configurator screenshot follows ordinary pointer input, which may stop
         // auto-rotation. It is not a claim that rotation stopped; compare actual artifacts.
         const canvas = page.locator('canvas').first();
