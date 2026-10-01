@@ -168,3 +168,13 @@ The desktop artifact (`observations-desktop.json`) contains 1440×900 observatio
 The selected logo images had no native focusable link/button/tabindex ancestor. Eight real Tab presses traversed page-level/hero/footer targets rather than these cards. This is specific evidence of a keyboard-access gap in the sampled flow; the original implementation should provide explicit keyboard-reachable cards and focus states. It is not a complete WCAG audit.
 
 No further homepage rerun is required for the verified motion/layout findings above. Exact easing/durations, the film overlay's activation, reliable targeted card hover/navigation, tablet/intermediate breakpoints, touch gestures, reduced-motion behavior, and full accessibility remain outside this run. The homepage evidence must not be used to claim any previously unverified configurator behavior.
+
+## Final bounded configurator pixel attempt — run 36880375364
+
+On 2026-10-01 the desktop-only GitHub Chromium/SwiftShader pass used a 40-second per-screenshot budget, a six-minute overall cap and a two-failure capture stop. No reference runtime, animation loop, renderer, source code or asset was modified. The observation pass finished in 154.399 seconds; workflow success describes the evidence collection only.
+
+A configurator PNG finally returned after 16.422 seconds, but inspection shows an entirely black frame. It does not establish any rendered vehicle, toolbar or loading-screen appearance. The preceding DOM checkpoint reported Model Detail, Back and Loading 100%; these are separate observations, not claims about pixels in the later screenshot. Subsequent orbit and zoom inputs were dispatched, but each screenshot timed out after 40 seconds. The collector then stopped pixel retries as intended. Model Detail still failed actionability; a color-input change was recorded; Back was successfully clicked and the homepage URL/text returned. No labeled camera/environment/light/sound toolbar controls were discovered.
+
+Consequently, rendered reference configurator behavior, cabin/camera response and toolbar details remain unverified beyond the user's supplied static screenshots. This bounded retry closes the current cloud-renderer attempt; there will be no further retry loop. Continue judging GT-R LAB against its explicitly requested functionality and actual independent browser evidence, not imagined reference behavior.
+
+Artifact: `reference-configurator-bounded-evidence`, SHA-256 `813c14d9fa88ad25ac091b39e3b6808ed916d0960a2d9bc7dcf73f916a2819ba`. Workflow: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36880375364

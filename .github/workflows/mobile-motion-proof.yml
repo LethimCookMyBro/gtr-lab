@@ -1,0 +1,38 @@
+name: Mobile homepage motion evidence
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose-mobile-home-motion.mjs'
+      - '.github/workflows/mobile-motion-proof.yml'
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        plan: [390x844-normal, 390x700-normal, 430x932-normal, 430x700-normal, 390x844-reduced]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Record the current public mobile baseline
+        run: node scripts/diagnose-mobile-home-motion.mjs
+        timeout-minutes: 5
+        env:
+          HOME_MOTION_URL: https://gtr-lab-production.up.railway.app/
+          HOME_MOTION_PLAN: ${{ matrix.plan }}
+          HOME_MOTION_OUTPUT: mobile-home-motion-evidence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-motion-baseline-${{ matrix.plan }}
+          path: mobile-home-motion-evidence/
+          retention-days: 14
