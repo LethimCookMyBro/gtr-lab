@@ -1,0 +1,286 @@
+{
+  "historicalCaution": "1969 GT-R is PGC10 four-door sedan; KPGC10 two-door hardtop introduced in 1970. Photos are modern photographs of historic models, not period photographs. Photo date and model year are separate.",
+  "historySources": [
+    {
+      "url": "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/skyline_2000gtr_1969.html",
+      "supports": "1969 PGC10 origin of GT-R"
+    },
+    {
+      "url": "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/skyline_hardtop_2000gt-r.html",
+      "supports": "KPGC10 two-door introduction in 1970"
+    },
+    {
+      "url": "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/skyline_gt-r_1989.html",
+      "supports": "R32 GT-R launched August 1989, after the R32 Skyline launch in May 1989"
+    },
+    {
+      "url": "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/skyline_gt-r_2002.html",
+      "supports": "R34 GT-R launched January 1999"
+    },
+    {
+      "url": "https://global.nissannews.com/en/releases/071024-01-e",
+      "supports": "R35 GT-R announced October 24, 2007; Japan availability from December 6, 2007"
+    }
+  ],
+  "assets": [
+    {
+      "id": "heritage-pgc10-1969",
+      "caption": "1969 Nissan Skyline 2000GT-R (PGC10)",
+      "alt": "White four-door 1969 Nissan Skyline 2000GT-R at a classic-car gathering",
+      "author": "TTTNIS",
+      "authorUrl": "https://commons.wikimedia.org/wiki/User:TTTNIS",
+      "license": "Public-domain dedication (PD-self)",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:1969_Nissan_Skyline_Sedan_2000GT-R.jpg",
+      "photoDate": "2014-07-27",
+      "framingNote": "Preserve native 4572:1990 aspect ratio to keep both bumpers and four-door shape. For a 16:10 UI panel, use object-fit:contain on a dark background; object-fit:cover would crop the car. Crowded background, retained honestly.",
+      "credit": "“1969 Nissan Skyline 2000GT-R (PGC10)” — TTTNIS, via Wikimedia Commons. Public-domain dedication (PD-self). Cropped where stated, resized and converted to WebP.",
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 696,
+          "bytes": 173080,
+          "sha256": "a0235bdbae8472cd29ef7ad99271b235734fc016e62cd75b444b863d2ba11729",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "Public-domain dedication (PD-self)",
+          "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self",
+          "path": "/media/heritage-pgc10-1969-desktop.webp"
+        },
+        {
+          "width": 640,
+          "height": 279,
+          "bytes": 29012,
+          "sha256": "a96adbba7314fb7f11124664d8e423299e4368cefeb4d726c7a5345fdb6ee225",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "Public-domain dedication (PD-self)",
+          "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self",
+          "path": "/media/heritage-pgc10-1969-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "heritage-r32-1992",
+      "caption": "1992 Nissan Skyline GT-R (R32), Montlhéry",
+      "alt": "Dark 1992 Nissan Skyline GT-R R32 on the road at Montlhéry, with the banked circuit behind it",
+      "author": "crash71100",
+      "authorUrl": "https://www.flickr.com/people/152930510@N02/",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nissan_Skyline_GT-R_R32.jpg",
+      "photoDate": "2019-05-25",
+      "framingNote": "Native aspect ratio is already almost 16:10 (2747:1711); all vehicle geometry and frame retained. This is a 1992 car, though R32-era narrative may start with 1989 launch.",
+      "credit": "“1992 Nissan Skyline GT-R (R32), Montlhéry” — crash71100, via Wikimedia Commons. CC0 1.0. Cropped where stated, resized and converted to WebP.",
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 997,
+          "bytes": 128370,
+          "sha256": "60947f78ea99b0fa2d1ba446d4041d4da57f5858a14e6c11b0a5f7947d6e9efd",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/heritage-r32-1992-desktop.webp"
+        },
+        {
+          "width": 640,
+          "height": 399,
+          "bytes": 19854,
+          "sha256": "0e7cece49a3b67b313732cb40544dc79bc5fb007e0ac2a36f5a61f13f880df4e",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/heritage-r32-1992-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "heritage-r34-1999",
+      "caption": "1999 Nissan Skyline GT-R (R34), Montlhéry",
+      "alt": "Silver 1999 Nissan Skyline GT-R R34 in front three-quarter view at Montlhéry",
+      "author": "crash71100",
+      "authorUrl": "https://www.flickr.com/people/152930510@N02/",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nissan_Skyline_GT-R_R34.jpg",
+      "photoDate": "2019-05-25",
+      "framingNote": "Small horizontal crop to 1.60:1 retains both bumpers, wheels and wing. Festival setting and neighboring car retained. Windshield sticker is present in original; not removed.",
+      "credit": "“1999 Nissan Skyline GT-R (R34), Montlhéry” — crash71100, via Wikimedia Commons. CC0 1.0. Cropped where stated, resized and converted to WebP.",
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 1000,
+          "bytes": 177948,
+          "sha256": "d965c69212cdbd3d50f6ee29d52544ec4609d5111660bec000728c759070dabb",
+          "changes": [
+            "EXIF orientation normalized",
+            "Crop 6147x3842+95+0 from original-pixel coordinates",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/heritage-r34-1999-desktop.webp"
+        },
+        {
+          "width": 640,
+          "height": 400,
+          "bytes": 24774,
+          "sha256": "cb8f75b420ab5d70598c1a3d46ca7242b4f616e0e963ca723ab0705920cfeecd",
+          "changes": [
+            "EXIF orientation normalized",
+            "Crop 6147x3842+95+0 from original-pixel coordinates",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/heritage-r34-1999-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "cockpit-r35-2017",
+      "caption": "2017 Nissan GT-R Premium Edition (R35), Nissan Global Headquarters Gallery",
+      "alt": "Real 2017 Nissan GT-R Premium Edition right-hand-drive cockpit with tan leather, steering wheel, instrument cluster and centre console",
+      "author": "Tokumeigakarinoaoshima",
+      "authorUrl": "https://commons.wikimedia.org/wiki/User:Tokumeigakarinoaoshima",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_interior_of_Nissan_GT-R_Premium_Edition_2017_year_model_at_Nissan_Global_Headquarters_Gallery.jpg",
+      "photoDate": "2017-02-19",
+      "framingNote": "Full 4:3 cockpit image plus separate 3:4 portrait crop emphasizing real steering wheel and tan seat. Softness exists in original; no artificial detail introduced.",
+      "credit": "“2017 Nissan GT-R Premium Edition (R35), Nissan Global Headquarters Gallery” — Tokumeigakarinoaoshima, via Wikimedia Commons. CC BY-SA 4.0. Cropped where stated, resized and converted to WebP.",
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 1200,
+          "bytes": 117784,
+          "sha256": "2644075eb52a7271cf3c22f06d075c61f814df1e01a520248efb76d036169afc",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "path": "/media/cockpit-r35-2017-desktop.webp"
+        },
+        {
+          "width": 640,
+          "height": 480,
+          "bytes": 29958,
+          "sha256": "f72d9d49f5a4e7901f05fa2be1c9790065fb5ec2e9f01015525fd34e21ca32c9",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "path": "/media/cockpit-r35-2017-small.webp"
+        },
+        {
+          "width": 1200,
+          "height": 1600,
+          "bytes": 99014,
+          "sha256": "e09a8923131a031fe8a6c7e3822f9a00c3d14b126692f3acacf068ebf3c3c6fb",
+          "changes": [
+            "EXIF orientation normalized",
+            "Crop 1440x1920+1020+0 from original-pixel coordinates",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "path": "/media/cockpit-r35-2017-portrait.webp"
+        },
+        {
+          "width": 480,
+          "height": 640,
+          "bytes": 24388,
+          "sha256": "95aa78b99774d50103181121a4d8484a1c96ef21e0055804bb5dc9fa75531568",
+          "changes": [
+            "EXIF orientation normalized",
+            "Crop 1440x1920+1020+0 from original-pixel coordinates",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "path": "/media/cockpit-r35-2017-portrait-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "heritage-kpgc10-detail",
+      "caption": "Nissan Skyline 2000GT-R (KPGC10) headlight and grille detail",
+      "alt": "Black-and-white detail of a restored Nissan Skyline GT-R KPGC10, with twin round headlights and GT-R grille emblem",
+      "author": "Matt Conaghan (MRC Imagery)",
+      "authorUrl": "https://www.flickr.com/people/34544826@N05/",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:KPGC10_%E3%83%8F%E3%82%B3%E3%82%B9%E3%82%AB_(8186743791).jpg",
+      "photoDate": "2012-07-20",
+      "framingNote": "Strongest early-generation editorial visual. Native image includes photographer watermark lower right; retained. Source says Rocky Auto KPGC10 restoration but does not identify this car's production year. Do not label it 1969 or claim a specific vehicle year. KPGC10 two-door model was introduced in 1970.",
+      "credit": "“Nissan Skyline 2000GT-R (KPGC10) headlight and grille detail” — Matt Conaghan (MRC Imagery), via Wikimedia Commons. CC BY 2.0. Cropped where stated, resized and converted to WebP.",
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 1008,
+          "bytes": 241422,
+          "sha256": "98288c1148e6cc7171e6e4e46cb0981241a4e3f4c556ad00fee97775db1b6dc4",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/heritage-kpgc10-detail-desktop.webp"
+        },
+        {
+          "width": 640,
+          "height": 403,
+          "bytes": 37864,
+          "sha256": "2efaa41c1129384d54fd93523487d3a4a8b5e53d569ac85ed829f3708e7ff79c",
+          "changes": [
+            "EXIF orientation normalized",
+            "proportional downsize, no geometry distortion",
+            "metadata stripped",
+            "lossy WebP encoding"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/heritage-kpgc10-detail-small.webp"
+        }
+      ]
+    }
+  ]
+}

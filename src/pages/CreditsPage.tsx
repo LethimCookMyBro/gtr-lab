@@ -1,4 +1,5 @@
 import { imageCredits, models } from "../data/models";
+import homeMedia from "../data/home-media-credits.json";
 export function CreditsPage() {
   return (
     <article className="credits-page page-enter">
@@ -45,6 +46,72 @@ export function CreditsPage() {
             </div>
           ))}
         </div>
+      </section>
+      <section id="story-photography">
+        <h2>Heritage & editorial photography</h2>
+        <p>{homeMedia.historicalCaution}</p>
+        <div className="credit-list">
+          {homeMedia.assets.map((asset) => (
+            <div key={asset.id}>
+              <img
+                src={
+                  asset.derivatives.find((copy) =>
+                    copy.path.endsWith("-small.webp"),
+                  )?.path
+                }
+                alt={asset.alt}
+                loading="lazy"
+              />
+              <div>
+                <h3>{asset.caption}</h3>
+                <p>Photograph by {asset.author}</p>
+                <a href={asset.sourceUrl} target="_blank" rel="noreferrer">
+                  Original source
+                </a>
+                <span> · </span>
+                <a href={asset.licenseUrl} target="_blank" rel="noreferrer">
+                  {asset.license}
+                </a>
+                <p>
+                  Display copies are resized, compressed and cropped where
+                  stated. The cockpit derivatives remain CC BY-SA 4.0. No
+                  photographer or manufacturer endorsement is implied.
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {homeMedia.historySources.map((source) => (
+          <p key={source.url}>
+            <a href={source.url} target="_blank" rel="noreferrer">
+              {source.supports}
+            </a>
+          </p>
+        ))}
+      </section>
+      <section id="films">
+        <h2>Original CGI films</h2>
+        <p>
+          The new films are being developed with original GT-R LAB camera
+          animation and lighting around Ciasny’s licensed R35 exterior. They are
+          CGI visual studies, not Nissan campaign footage or factory-accurate
+          trim scans.
+        </p>
+        <a
+          href="https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Ciasny · original exterior
+        </a>
+        <span> · </span>
+        <a
+          href="https://creativecommons.org/licenses/by/4.0/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          CC BY 4.0
+        </a>
       </section>
       <section id="generated">
         <h2>Illustrative imagery</h2>
@@ -106,8 +173,13 @@ export function CreditsPage() {
       </section>
       <section>
         <h2>Software & typography</h2>
-        <p>Open-source rendering, interface and font credits are preserved in the complete distribution notices.</p>
-        <a href="/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer">Read software and font license notices</a>
+        <p>
+          Open-source rendering, interface and font credits are preserved in the
+          complete distribution notices.
+        </p>
+        <a href="/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer">
+          Read software and font license notices
+        </a>
       </section>
       <section>
         <h2>Original implementation</h2>

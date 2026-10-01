@@ -3,11 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '.github/workflows/deployment-smoke.yml'
-      - 'scripts/capture-vehicle.mjs'
-      - 'scripts/wait-railway.mjs'
-      - 'src/**'
-      - 'modeldata/**'
+      - 'release-marker.json'
 permissions:
   contents: read
 jobs:
