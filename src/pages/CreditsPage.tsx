@@ -92,10 +92,11 @@ export function CreditsPage() {
       <section id="films">
         <h2>Original CGI films</h2>
         <p>
-          The new films are being developed with original GT-R LAB camera
-          animation and lighting around Ciasny’s licensed R35 exterior. They are
-          CGI visual studies, not Nissan campaign footage or factory-accurate
-          trim scans.
+          The two eight-second films use original GT-R LAB camera animation,
+          studio lighting, silver materials and editing around Ciasny’s licensed
+          R35 exterior. The source vehicle geometry and normals are preserved.
+          These are CGI visual studies, not Nissan campaign footage or
+          factory-accurate trim scans. No interior has been added.
         </p>
         <a
           href="https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a"
@@ -112,15 +113,6 @@ export function CreditsPage() {
         >
           CC BY 4.0
         </a>
-      </section>
-      <section id="generated">
-        <h2>Illustrative imagery</h2>
-        <p>
-          The silver R35 studio hero is an AI-generated illustration produced
-          for GT-R LAB. It is not Nissan campaign photography, a specification
-          reference or a real-time 3D rendering. Model lineup photographs are
-          actual vehicles with attribution above.
-        </p>
       </section>
       <section>
         <h2>Technical specifications</h2>

@@ -18,15 +18,17 @@ import { AudioProvider } from "../src/hooks/useAudio";
 
 let reduced = false;
 let saveData = false;
+let compactHeight = false;
 const intersections: IntersectionObserverCallback[] = [];
 beforeEach(() => {
   reduced = false;
   saveData = false;
+  compactHeight = false;
   intersections.length = 0;
   vi.stubGlobal(
     "matchMedia",
-    vi.fn(() => ({
-      matches: reduced,
+    vi.fn((query: string) => ({
+      matches: query.includes("max-height") ? compactHeight : reduced,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     })),
@@ -225,6 +227,119 @@ describe("cinematic homepage", () => {
     ).toBeTruthy();
   });
 
+  it("lets the user cancel playback while the real playing event is still pending", async () => {
+    reduced = true;
+    let resolve!: () => void;
+    vi.mocked(HTMLMediaElement.prototype.play).mockImplementation(
+      () =>
+        new Promise<void>((done) => {
+          resolve = done;
+        }),
+    );
+    const { container } = setup();
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Play opening film" }));
+    expect(
+      container
+        .querySelector(".home-film--hero")
+        ?.getAttribute("data-film-state"),
+    ).toBe("loading");
+    await userEvent
+      .setup()
+      .click(
+        screen.getByRole("button", { name: "Cancel opening film loading" }),
+      );
+    await act(async () => {
+      resolve();
+      fireEvent.playing(container.querySelector("video")!);
+    });
+    expect(
+      screen.getByRole("button", { name: "Play opening film" }),
+    ).toBeTruthy();
+    expect(
+      container
+        .querySelector(".home-film--hero")
+        ?.getAttribute("data-film-state"),
+    ).toBe("paused");
+  });
+  it("ignores a queued pause from an older attempt while a new native play is pending", async () => {
+    let nativePaused = true;
+    const resolutions: Array<() => void> = [];
+    vi.mocked(HTMLMediaElement.prototype.play).mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      Object.defineProperty(this, "paused", {
+        configurable: true,
+        get: () => nativePaused,
+      });
+      nativePaused = false;
+      return new Promise<void>((resolve) => resolutions.push(resolve));
+    });
+    vi.mocked(HTMLMediaElement.prototype.pause).mockImplementation(() => {
+      nativePaused = true;
+    });
+    const { container } = render(
+      <MemoryRouter>
+        <StrictMode>
+          <Film kind="hero" reducedMotion={false} saveData={false} />
+        </StrictMode>
+      </MemoryRouter>,
+    );
+    const video = container.querySelector("video")!;
+    expect(
+      screen.getByRole("button", { name: "Cancel opening film loading" }),
+    ).toBeTruthy();
+    fireEvent.pause(video);
+    expect(video.paused).toBe(false);
+    expect(
+      screen.getByRole("button", { name: "Cancel opening film loading" }),
+    ).toBeTruthy();
+    await userEvent
+      .setup()
+      .click(
+        screen.getByRole("button", { name: "Cancel opening film loading" }),
+      );
+    await act(async () => {
+      resolutions.forEach((resolve) => resolve());
+      fireEvent.playing(video);
+    });
+    expect(video.paused).toBe(true);
+    expect(
+      screen.getByRole("button", { name: "Play opening film" }),
+    ).toBeTruthy();
+  });
+  it("uses sequential navigation on short viewports without disabling normal film autoplay", async () => {
+    compactHeight = true;
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    const { container } = setup();
+    expect(
+      container
+        .querySelector(".cinematic-home")
+        ?.getAttribute("data-sequential-motion"),
+    ).toBe("true");
+    expect(
+      container
+        .querySelector(".cinematic-home")
+        ?.getAttribute("data-reduced-motion"),
+    ).toBe("false");
+    expect(
+      screen.getByRole("button", { name: "Pause opening film" }),
+    ).toBeTruthy();
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "2007: R35 GT-R" }));
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: "instant",
+      block: "center",
+    });
+    expect(
+      screen
+        .getByRole("button", { name: "2007: R35 GT-R" })
+        .getAttribute("aria-current"),
+    ).toBe("step");
+  });
   it("opens an accessible menu, traps focus, closes on Escape and restores focus", async () => {
     setup();
     const user = userEvent.setup();

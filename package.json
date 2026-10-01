@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write src tests server.mjs vite.config.ts *.json",
     "test:e2e": "playwright test",
-    "prepare:assets": "node scripts/prepare-models.mjs && node scripts/fetch-environments.mjs",
+    "prepare:assets": "node scripts/prepare-models.mjs && node scripts/prepare-films.mjs && node scripts/fetch-environments.mjs",
     "test:vehicle": "playwright test -c playwright.vehicle.config.ts"
   },
   "dependencies": {

@@ -143,3 +143,6 @@ Use the supplied mobile image as a recomposition reference at 390 × 844 logical
 
 Compare the relevant generated concept and actual browser screenshot together using view_image. Inspect: car dominance/crop, headline scale and baseline, header spacing, black/graphite color lock, open container model, fine line treatment, toolbar/rail dimensions, touch targets, copy, footer disclosure, and absence of invented filler. Check desktop and 390px mobile. Concepts have been visually inspected; browser implementation verification belongs to the implementation owner.
 
+
+## Superseded homepage imagery
+The initial generated silver R35 illustration was a design exploration. It is not used by the cinematic homepage and has been removed from public assets. The current homepage uses credited original CGI films and authentic photography.

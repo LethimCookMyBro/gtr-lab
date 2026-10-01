@@ -13,12 +13,14 @@ export function HomePage() {
   const root = useRef<HTMLDivElement>(null);
   const [activeEra, setActiveEra] = useState(0);
   const preferences = useHomePreferences();
-  useHomeMotion(root, preferences.reducedMotion, setActiveEra);
+  const sequential = preferences.reducedMotion || preferences.compactHeight;
+  useHomeMotion(root, sequential, setActiveEra);
   return (
     <div
       ref={root}
       className="cinematic-home"
       data-reduced-motion={preferences.reducedMotion}
+      data-sequential-motion={sequential}
     >
       <HeroFilm {...preferences} />
       <EditorialOverlap />
@@ -26,7 +28,7 @@ export function HomePage() {
       <HeritageJourney
         activeEra={activeEra}
         onEra={setActiveEra}
-        reducedMotion={preferences.reducedMotion}
+        sequentialMotion={sequential}
       />
       <ModelInvitations />
     </div>

@@ -11,22 +11,31 @@ const reducedPreference = () =>
   matchMedia("(prefers-reduced-motion: reduce)").matches;
 export function useHomePreferences() {
   const [reducedMotion, setReducedMotion] = useState(reducedPreference);
+  const [compactHeight, setCompactHeight] = useState(
+    () =>
+      typeof matchMedia === "function" &&
+      matchMedia("(max-height: 740px)").matches,
+  );
   const [saveData, setSaveData] = useState(
     () => connection()?.saveData === true,
   );
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const updateMotion = () => setReducedMotion(query.matches);
+    const heightQuery = window.matchMedia("(max-height: 740px)");
+    const updateHeight = () => setCompactHeight(heightQuery.matches);
     const network = connection();
     const updateData = () => setSaveData(network?.saveData === true);
     query.addEventListener("change", updateMotion);
+    heightQuery.addEventListener("change", updateHeight);
     network?.addEventListener?.("change", updateData);
     return () => {
       query.removeEventListener("change", updateMotion);
+      heightQuery.removeEventListener("change", updateHeight);
       network?.removeEventListener?.("change", updateData);
     };
   }, []);
-  return { reducedMotion, saveData };
+  return { reducedMotion, saveData, compactHeight };
 }
 /** A single passive listener and batched read/write RAF for the entire story. */
 export function useHomeMotion(
@@ -49,11 +58,15 @@ export function useHomeMotion(
         "--film-radius",
         "--film-surround",
       ];
-      sections.forEach((section) =>
+      sections.forEach((section) => {
         properties.forEach((property) =>
           section.style.removeProperty(property),
-        ),
-      );
+        );
+        section.removeAttribute("data-copy-inactive");
+        section
+          .querySelector(".home-hero-support a")
+          ?.removeAttribute("tabindex");
+      });
       return;
     }
     let frame = 0;
@@ -72,11 +85,17 @@ export function useHomeMotion(
             ? clamp01((viewport - rect.top) / (rect.height + viewport))
             : sectionProgress(rect.top, rect.height, viewport);
         element.style.setProperty("--progress", progress.toFixed(5));
-        if (kind === "hero")
+        if (kind === "hero") {
           element.style.setProperty(
             "--copy-opacity",
             String(1 - clamp01((progress - 0.3) / 0.6)),
           );
+          element.toggleAttribute("data-copy-inactive", progress >= 0.9);
+          const action = element.querySelector<HTMLAnchorElement>(
+            ".home-hero-support a",
+          );
+          if (action) action.tabIndex = progress >= 0.9 ? -1 : 0;
+        }
         if (kind === "expanding") {
           const bounds = expansionAt(progress);
           element.style.setProperty("--film-width", `${bounds.width}%`);

@@ -97,3 +97,12 @@ The reference rerun retained DOM observations at both sizes but all10 screenshot
 ## Verified preview before homepage redesign
 
 Revision `1a6f68faf21cc32442a1ef919e05049716194ae0`:152 unit checks,44 UI cases,6 renderer fixtures and all14 independently budgeted real-vehicle cases passed their CI steps. The public-URL Railway smoke run36847271913 passed after waiting for Railway to report this exact revision successful. Both desktop/mobile checked live paint, lamp and detail controls and studio/forest/coast media. The latest user still rejected the static homepage design; this functional evidence does not constitute visual/product acceptance. A separate real-video, asymmetric-editorial and scroll-choreography redesign is in progress.
+
+
+## Cinematic homepage revision — pre-release media gate
+
+- Main46666fa passed the full quality job36854114388. Homepage layout job36854114469 passed its4 desktop/mobile cases;6 real-media cases were explicitly skipped because film integration had not happened yet. These are not media acceptance results.
+- Actual screenshots identified and verified fixes for mobile editorial image overlap, all three era controls, R32 image visibility and detail-film frame filling. Later caption/credits spacing, short-height sequencing and full-height hero framing await the real-media capture.
+- The original hero/detail CGI clips are each8seconds,1280×720,24fps,H.264,noaudio,fast-start. Their source meshes/normals match the untouched Ciasny import. Decode/loop/crop studies are separate from app overlay acceptance.
+- Local verification after media playback review and transport pipeline:225tests, TypeScript and production build. Media build tests include50 byte/hash/path/symlink/boundary cases. Browser acceptance explicitly requires real duration/time progression, native pause, reduced-motion/Save-Data explicit Play, offscreen pause and two distinct composed temporal frames per clip at1920/1440/390.
+- No release is implied until those browser outputs are inspected. The existing Railway service remains on the last reviewed preview during this gate.

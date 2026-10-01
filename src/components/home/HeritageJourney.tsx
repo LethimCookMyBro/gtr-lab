@@ -37,18 +37,18 @@ function HeritagePlane({
 export function HeritageJourney({
   activeEra,
   onEra,
-  reducedMotion,
+  sequentialMotion,
 }: {
   activeEra: number;
   onEra: (era: number) => void;
-  reducedMotion: boolean;
+  sequentialMotion: boolean;
 }) {
   const section = useRef<HTMLElement>(null);
   const navigateEra = (index: number) => {
     onEra(index);
     const element = section.current;
     if (!element) return;
-    if (reducedMotion) {
+    if (sequentialMotion) {
       element
         .querySelector<HTMLElement>(`[data-era-image="${index}"]`)
         ?.scrollIntoView({ behavior: "instant", block: "center" });

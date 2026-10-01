@@ -1,0 +1,22 @@
+[
+  {
+    "file": "gtr-hero.mp4",
+    "bytes": 886469,
+    "sha256": "a2ee20e038d1e9e3a55d20f3dcb3df61373a4d021d5abbd14471fd73146114f2"
+  },
+  {
+    "file": "gtr-hero.webp",
+    "bytes": 24776,
+    "sha256": "a2a6be8405f3052e31c75acb5f5155af03ab46c7b9976c3bfdda7066bd9d861c"
+  },
+  {
+    "file": "gtr-detail.mp4",
+    "bytes": 934416,
+    "sha256": "88dc562ccdf717d7cceedd97563da2ca0be7fd6e9cd934321122918fa469e196"
+  },
+  {
+    "file": "gtr-detail.webp",
+    "bytes": 33770,
+    "sha256": "12c69a89e2a7f5828776cd66470167c93049756c75399c65da8dde31107341d5"
+  }
+]

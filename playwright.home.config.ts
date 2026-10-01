@@ -19,6 +19,13 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "home-wide",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1920, height: 1080 },
+      },
+    },
+    {
       name: "home-desktop",
       use: {
         ...devices["Desktop Chrome"],

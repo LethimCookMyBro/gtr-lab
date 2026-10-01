@@ -1,0 +1,8 @@
+"Nissan GTR R35" by Ciasny, via Sketchfab. Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
+Model: https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a
+Creator: https://sketchfab.com/Ciasny
+License: https://creativecommons.org/licenses/by/4.0/
+
+Adapted into original CGI preview for GT-R LAB: parent-only placement/scale and measured ground contact; neutral silver finish; restrained rim and opaque exterior glazing materials; separate lamp-lens/emitter finishing; dark-red rear lamps in the detail film; original studio stage, lighting, true camera animation, denoising and motion-interpolated editing. Original vehicle geometry and imported custom normals retained. No cabin added.
+
+This artist model depicts custom aero and is not represented as an exact factory trim/model-year or an official Nissan asset. Independent CGI study, not affiliated with or endorsed by Nissan or Ciasny. The asset license does not grant trademark rights.

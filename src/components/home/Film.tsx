@@ -19,6 +19,7 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
       typeof document === "undefined" || document.visibilityState !== "hidden",
   );
   const [playing, setPlaying] = useState(false);
+  const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const name = kind === "hero" ? "opening" : "detail";
   const title = kind === "hero" ? "Opening" : "Detail";
@@ -49,6 +50,7 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
       mayAutoplay({ reducedMotion, saveData, visible, documentVisible })
     ) {
       wantsPlayback.current = true;
+      setPending(true);
       video.muted = true;
       const attempt = video.play();
       void attempt
@@ -56,10 +58,15 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
           if (!wantsPlayback.current) video.pause();
         })
         .catch(() => {
-          if (intent.current === sequence) setPlaying(false);
+          if (intent.current === sequence) {
+            wantsPlayback.current = false;
+            setPending(false);
+            setPlaying(false);
+          }
         });
     } else {
       wantsPlayback.current = false;
+      setPending(false);
       video.pause();
     }
     return () => {
@@ -72,27 +79,41 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
     const video = ref.current;
     if (!video || failed) return;
     const sequence = ++intent.current;
-    if (playing) {
+    if (wantsPlayback.current || playing || pending) {
       userPaused.current = true;
       wantsPlayback.current = false;
+      setPending(false);
       video.pause();
       return;
     }
     userPaused.current = false;
     wantsPlayback.current = true;
+    setPending(true);
     try {
       video.muted = true;
       await video.play();
       if (!wantsPlayback.current) video.pause();
     } catch {
-      if (intent.current === sequence) setPlaying(false);
+      if (intent.current === sequence) {
+        wantsPlayback.current = false;
+        setPending(false);
+        setPlaying(false);
+      }
     }
   };
   return (
     <div
       ref={holder}
       className={`home-film home-film--${kind}`}
-      data-film-state={failed ? "unavailable" : playing ? "playing" : "paused"}
+      data-film-state={
+        failed
+          ? "unavailable"
+          : pending
+            ? "loading"
+            : playing
+              ? "playing"
+              : "paused"
+      }
     >
       <img
         className="home-film-backup"
@@ -118,15 +139,23 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
         }
         aria-label={`${title} film: an original CGI study of a custom-aero Nissan GT-R R35`}
         onPlaying={() => {
+          setPending(false);
           if (wantsPlayback.current) setPlaying(true);
           else {
             ref.current?.pause();
             setPlaying(false);
           }
         }}
-        onPause={() => setPlaying(false)}
+        onPause={(event) => {
+          // A pause event from an older request can arrive after a new play().
+          if (event.currentTarget.paused || !wantsPlayback.current) {
+            setPending(false);
+            setPlaying(false);
+          }
+        }}
         onError={() => {
           setFailed(true);
+          setPending(false);
           setPlaying(false);
         }}
         hidden={failed}
@@ -141,16 +170,24 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
           aria-label={
             failed
               ? `${title} film unavailable`
-              : `${playing ? "Pause" : "Play"} ${name} film`
+              : pending
+                ? `Cancel ${name} film loading`
+                : `${playing ? "Pause" : "Play"} ${name} film`
           }
         >
-          {playing ? (
+          {playing || pending ? (
             <Pause size={16} strokeWidth={1.5} aria-hidden="true" />
           ) : (
             <Play size={16} strokeWidth={1.5} aria-hidden="true" />
           )}
           <span>
-            {failed ? "Film unavailable" : playing ? "Pause film" : "Play film"}
+            {failed
+              ? "Film unavailable"
+              : pending
+                ? "Cancel loading"
+                : playing
+                  ? "Pause film"
+                  : "Play film"}
           </span>
         </button>
         <Link

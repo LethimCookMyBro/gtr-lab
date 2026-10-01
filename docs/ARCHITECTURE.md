@@ -4,7 +4,7 @@
 Original independent Nissan GT-R digital exhibition, not official Nissan or Porsche. The user requests premium visual storytelling, six accurate variant identities, real WebGL, meaningful controls, mobile access, documented legal assets, GitHub publication and Railway deployment. No copied reference code/assets, invented specs, fake 3D or six-label reskin. Asset readiness is an explicit product state.
 
 ## Design and stack
-React, TypeScript, Vite, React Router, Three.js / React Three Fiber / Drei, Zustand. Static app served by a minimal Railway-compatible Node server with SPA routing. Dark neutral tokens, thin silver borders, restrained red, editorial sans headings. Native browser motion/CSS for UI; frame interpolation in Three for cameras/materials. Generated design concepts guide composition only; actual variant photography is rights-cleared and credited.
+React, TypeScript, Vite, React Router, Three.js / React Three Fiber / Drei, Zustand. Static app served by a minimal Railway-compatible Node server with SPA routing. Dark neutral exhibition tokens contrasted with a true-white editorial homepage, restrained red and DM Sans typography. Native browser motion/CSS for UI; frame interpolation in Three for cameras/materials. Generated design concepts guide composition only; actual variant photography is rights-cleared and credited.
 
 ## Routes
 `/` cinematic home, `/models` immersive model selector, `/configurator/:model` configurator, `/heritage` story, `/credits` asset/source/legal attribution. Direct links and browser Back/Forward work.
@@ -15,6 +15,8 @@ React, TypeScript, Vite, React Router, Three.js / React Three Fiber / Drei, Zust
 - `stores/configurator.ts`: selected variant/paint/environment/camera/rotation/lights/sound/details state; guarded localStorage
 - `components/three`: renderer/error boundary, GLTF loader, material adapter, camera transition, studio lighting/environment and context-loss state
 - `components/configurator`: toolbar/panels, swatches, detail sheet, asset fallback and progress
+- `components/home`: native films, overlapping editorial images, measured scroll expansion, depth-based heritage and semantic six-model invitations
+- `styles/home.css`: scoped homepage layout, responsive recomposition and reduced-motion sequence
 - `components/layout`, `pages`, `hooks`: site shell, focused route compositions, gesture-activated audio and reduced motion
 
 ## Asset contract
@@ -38,3 +40,10 @@ Panels use one controlled active panel, escape dismissal and focus return. Sound
 
 ## Definition of completion
 Functional scaffold or a photographic fallback is not completion of required live premium3D. Report missing geometry/visual test/deployment blockers honestly; do not publish them as a finished product.
+
+## Homepage motion and media
+`HomePage` composes six small sections. `useHomeMotion` computes clamped progress from actual section bounds and viewport height, writing local CSS custom properties in one scheduled animation frame. Scrolling remains native; era buttons scroll to real document destinations. Reduced motion removes all scroll-derived inline state and uses a sequential layout.
+
+`Film` uses native muted, inline, looping video, with real playback events driving controls. Intersection and document visibility pause decoding offscreen/background. Reduced-motion and Save-Data preferences prevent automatic playback while preserving explicit Play. Sequenced intent guards late playback promises. Missing media shows a credited still and an explicit failure state, never an image pretending to be video.
+
+The server supports video MIME types, bounded byte-range streaming, HEAD and 416 responses so film metadata and seeking do not require buffering the complete file. Homepage and configurator resource states are independent. Original rendered films are separate outputs based on the credited Ciasny asset; they do not imply that all six variant GLBs or an accepted interior are available.

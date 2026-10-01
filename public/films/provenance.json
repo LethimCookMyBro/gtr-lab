@@ -1,0 +1,52 @@
+{
+  "status": "Original CGI preview, published for browser acceptance testing",
+  "vehicle": {
+    "title": "Nissan GTR R35",
+    "author": "Ciasny",
+    "creator": "https://sketchfab.com/Ciasny",
+    "source": "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "bytes": 40477960,
+    "sha256": "c2bb4967ef2648f8f8bbb27ad1e97d99e3148e34d114f3c9f0cac4f27c690dc4",
+    "sourceGeometry": "82 original imported meshes; no new vehicle meshes or cabin; no baked transforms or custom-normal regeneration",
+    "presentationChanges": [
+      "Parent-only uniform scale/grounding; tire contact measured from four source tire meshes",
+      "Neutral silver paint with restrained gloss",
+      "Opaque tinted exterior glazing with capped dielectric reflection; no interior geometry",
+      "Separate lamp-lens, reverse-lamp and rim finishes",
+      "Dark red rear lens treatment on detail film; original circular-lamp geometry retained",
+      "Original studio stage, lighting and camera motion"
+    ]
+  },
+  "environment": {
+    "final": "Original neutral studio stage, continuous floor/cove, broad area lighting",
+    "photographicHDRIUsedInFinal": false
+  },
+  "tools": {
+    "blender": "4.3.2, installed, CPU Cycles",
+    "oidn": "2.5.1",
+    "oidnSource": "https://github.com/OpenImageDenoise/oidn/releases/download/v2.5.1/oidn-2.5.1.x86_64.linux.tar.gz",
+    "oidnArchiveSha256": "743c3e2aff8c220d5d70fe6cb970fb3d36f2702d2693c61d1d148e404cf37cd6"
+  },
+  "limitations": [
+    "Artist R35 with custom aero, not an exact factory trim/year claim",
+    "Original source has no cabin; no cabin is fabricated",
+    "Camera CGI, not live-action driving footage"
+  ],
+  "render": {
+    "resolution": [
+      1280,
+      720
+    ],
+    "durationSecondsPerFilm": 8,
+    "outputFramesPerSecond": 24,
+    "sourceFramesPerSecond": 8,
+    "uniqueRenderedViewsPerFilm": 33,
+    "movement": "Actual perspective-changing 3D camera dolly; eased four-second traversal plus mirrored camera return",
+    "frameInterpolation": "FFmpeg motion-compensated interpolation, explicit Rec.709 conversion",
+    "audio": "None",
+    "sourceMeshesOrNormalsChanged": false,
+    "qualityLabel": "CGI preview; no OEM photoreal acceptance claim"
+  }
+}

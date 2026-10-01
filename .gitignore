@@ -30,3 +30,9 @@ vehicle-test-results/
 playwright-vehicle-report/
 reference-audit-results/
 vehicle-preview-results/
+
+# Reassembled from hash-pinned original CGI filmdata chunks before the build.
+public/films/*.mp4
+
+playwright-home-report/
+docs/design/home-redesign/*.png

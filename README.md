@@ -5,7 +5,9 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 ## Current status
 **In progress. Not a completed production configurator.**
 
-One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The remaining five routes show labeled photographs rather than a relabeled shared mesh. The exterior has independently controlled paint and lamps. Its source has no cabin; Interior remains disabled until an accurate interior preview is accepted. The calibrated revision passed 150 unit tests, 44 responsive browser cases and six real-WebGL fixture tests. Eight of ten combined real-car cases passed; the two long rotation/manual-navigation flows exhausted their software-renderer time budget and are being split without dropping coverage. Desktop/mobile real-car rendering, paints, cameras, lights and environments have browser evidence. Final visual refinement, the complete rerun and accurate cabins remain acceptance gates. Source is on main. The [Railway development preview](https://gtr-lab-production.up.railway.app/) is deployed; it is not the finished six-vehicle release.
+One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The other five routes remain labeled photographic references, not renamed copies of the same mesh. Paint, lamps, cameras and outdoor environments work on the licensed exterior. Interior remains disabled until an accurate cabin preview is accepted. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
+
+The homepage is being replaced with two original eight-second CGI films, white overlapping editorial photography, a scroll-expanding second film, pinned heritage and six full-width model invitations. The new page has passed layout checks and a225-test unit/DOM/build-asset suite; the final real-film playback/crop suite is a separate acceptance gate. Main-only development continues while the [Railway development preview](https://gtr-lab-production.up.railway.app/) remains on the last reviewed release. This is not the finished six-vehicle experience.
 
 ## Run
 
@@ -24,6 +26,10 @@ A restricted environment may disallow Vite’s network-interface enumeration. Th
 ## Build-time assets
 
 The licensed GLB is reconstructed offline from small SHA-256-pinned binary chunks in `modeldata/`. The build verifies each chunk, the completed payload and the glTF container before publishing it to `public/models/`. See `docs/MODEL_TRANSPORT.md` and `docs/MODEL_PROVENANCE.md`. Model data is served locally at runtime.
+
+### Original CGI films
+
+Two native720p MP4s total1,820,885bytes. `filmdata/` stores explicit64KiB chunks solely for reliable source publication. `prepare-films.mjs` validates every chunk and the completed film against the source manifest before writing self-contained `public/films/` outputs. There is no runtime chunk assembly or external video host. Posters and full author/license/modification credits ship alongside the films. The films animate real perspective-changing cameras around the unchanged licensed Ciasny exterior; they are CGI previews, not live-action footage or proof that all six variants are complete.
 
 ### Environment assets
 
@@ -58,6 +64,8 @@ Railway. `railway.json` defines build, Node start and healthcheck. Connect the a
 - `docs/REFERENCE_AUDIT.md`: observed interaction audit and verification limitations
 - `docs/ARCHITECTURE.md`: application/state/rendering boundaries and plan
 - `docs/ASSETS_REQUIRED.md`: six-variant readiness and qualified source candidates
+- `public/films/ATTRIBUTION.txt`, `public/films/provenance.json`: original film provenance and modifications
+- `docs/HOME_MEDIA_CREDITS.md`: authentic editorial and heritage imagery
 - `docs/IMAGE_CREDITS.md`, `docs/ENVIRONMENT_CREDITS.md`, `docs/SPECIFICATIONS.md`: rights and factual sources
 - `docs/PERFORMANCE.md`: actual bundle/assets and pending measurements
 - `docs/IMPLEMENTATION_NOTES.md`: compromises and blockers
@@ -70,3 +78,5 @@ No analytics, account login, backend user data or checkout. Sound preference is 
 ## Browser QA
 
 `npm run test:e2e` is the real-browser suite (install Chromium with `npx playwright install chromium` in a permitted environment). It exercises home→models→configurator→detail→back, all six variants, fallbacks, reduced motion and overflow at1920×1080,1440×900,390×844 and430×932. A prepared GitHub Actions workflow can run these on a standard cloud runner after an authorized push. The scaffold suite ran in GitHub Actions and its settled screenshots were inspected. `npm run test:vehicle` separately exercises the licensed vehicle through the production server and CSP. Fresh real-car screenshots must be inspected before visual acceptance; passing tests alone cannot establish premium realism.
+
+`REQUIRE_HOME_FILMS=1 npx playwright test -c playwright.home.config.ts` is the separate cinematic-homepage acceptance suite. It checks1920×1080,1440×900 and390×844 compositions, two temporal frames per real film, native playback/pause, reduced-motion and Save-Data behavior, and a bounded extra viewport/landscape sweep. The final composed images require human visual review before release.

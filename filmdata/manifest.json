@@ -1,0 +1,207 @@
+[
+  {
+    "id": "gtr-hero",
+    "path": "/films/gtr-hero.mp4",
+    "bytes": 886469,
+    "sha256": "a2ee20e038d1e9e3a55d20f3dcb3df61373a4d021d5abbd14471fd73146114f2",
+    "source": {
+      "title": "Nissan GTR R35",
+      "author": "Ciasny",
+      "url": "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a"
+    },
+    "license": {
+      "name": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "changes": [
+      "Adapted into an original CGI preview for GT-R LAB using the licensed exterior model; original vehicle geometry and imported custom normals retained, with no cabin added.",
+      "Parent-only scale, placement and measured ground contact; neutral silver paint, restrained rim and opaque exterior glazing materials; separate lamp-lens finishing and dark-red rear lamps in the detail film.",
+      "Original neutral studio stage, broad area lighting, perspective-changing camera animation, denoising and motion-interpolated editing."
+    ],
+    "render": {
+      "width": 1280,
+      "height": 720,
+      "durationSeconds": 8,
+      "framesPerSecond": 24,
+      "audio": false,
+      "description": "Independent CGI study using an artist model with custom aero; not an exact factory trim or model-year claim, and not affiliated with or endorsed by Nissan or Ciasny."
+    },
+    "chunks": [
+      {
+        "path": "gtr-hero/0000.bin",
+        "bytes": 65536,
+        "sha256": "4b012e526db2c3de3dde1d0054303f57b0d37cd2aa5b2c6500abd76c3af794ee"
+      },
+      {
+        "path": "gtr-hero/0001.bin",
+        "bytes": 65536,
+        "sha256": "75d64b916b6239266fc65858897ca6e0b1dd60a6d8d4e865edaeb6e3bdd6f41b"
+      },
+      {
+        "path": "gtr-hero/0002.bin",
+        "bytes": 65536,
+        "sha256": "f6a23c193b24fb1379e5954bc64e852ab49ff50978ff4c3e103ac969462b5f5b"
+      },
+      {
+        "path": "gtr-hero/0003.bin",
+        "bytes": 65536,
+        "sha256": "08814e658b79d8f50155fb558a5bcee0f9cebf2f0545e7e0b3df6a62b1d3f579"
+      },
+      {
+        "path": "gtr-hero/0004.bin",
+        "bytes": 65536,
+        "sha256": "d404c51a89a5631b26f78ab4b216cfabce9a3c3d7a5b173736e792ce6842dcf9"
+      },
+      {
+        "path": "gtr-hero/0005.bin",
+        "bytes": 65536,
+        "sha256": "e26f848e106ba032962e5b825dc111719be4d266ceef658d18d17cd300e46299"
+      },
+      {
+        "path": "gtr-hero/0006.bin",
+        "bytes": 65536,
+        "sha256": "475b8a864028e8650c80700a42115f6859d6c375e7cf0772f28f46358b08e1cf"
+      },
+      {
+        "path": "gtr-hero/0007.bin",
+        "bytes": 65536,
+        "sha256": "bcc9d234d78c05105e0912321333d215d029453857a096d8b8fa1fcb2a1f3e55"
+      },
+      {
+        "path": "gtr-hero/0008.bin",
+        "bytes": 65536,
+        "sha256": "ff338d67595789cbf77c5e571330d2f2d9054916dbd91cf44ae6921ab63f163d"
+      },
+      {
+        "path": "gtr-hero/0009.bin",
+        "bytes": 65536,
+        "sha256": "6a45d93b8aa9a5c6a2b4e608521838e48038bd1586c3e2cf5c0267b82182587e"
+      },
+      {
+        "path": "gtr-hero/0010.bin",
+        "bytes": 65536,
+        "sha256": "862ad9dee23806412995fb28c44dd9fe3ef438e1564fd8b7b40d9b5df9b5c556"
+      },
+      {
+        "path": "gtr-hero/0011.bin",
+        "bytes": 65536,
+        "sha256": "5e3e62a326a78999a156a75a162cab704ab1b752cae88aad7a5f1d54d9929832"
+      },
+      {
+        "path": "gtr-hero/0012.bin",
+        "bytes": 65536,
+        "sha256": "6ea1b69f431f55786e19e4a370faa575197a980a4404273c97c03daeb9ddf100"
+      },
+      {
+        "path": "gtr-hero/0013.bin",
+        "bytes": 34501,
+        "sha256": "92502a36b39f7c9f6e79174e1f0c78a574fa321a968f46119b6489dc4b25bb85"
+      }
+    ]
+  },
+  {
+    "id": "gtr-detail",
+    "path": "/films/gtr-detail.mp4",
+    "bytes": 934416,
+    "sha256": "88dc562ccdf717d7cceedd97563da2ca0be7fd6e9cd934321122918fa469e196",
+    "source": {
+      "title": "Nissan GTR R35",
+      "author": "Ciasny",
+      "url": "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a"
+    },
+    "license": {
+      "name": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "changes": [
+      "Adapted into an original CGI preview for GT-R LAB using the licensed exterior model; original vehicle geometry and imported custom normals retained, with no cabin added.",
+      "Parent-only scale, placement and measured ground contact; neutral silver paint, restrained rim and opaque exterior glazing materials; separate lamp-lens finishing and dark-red rear lamps in the detail film.",
+      "Original neutral studio stage, broad area lighting, perspective-changing camera animation, denoising and motion-interpolated editing."
+    ],
+    "render": {
+      "width": 1280,
+      "height": 720,
+      "durationSeconds": 8,
+      "framesPerSecond": 24,
+      "audio": false,
+      "description": "Independent CGI study using an artist model with custom aero; not an exact factory trim or model-year claim, and not affiliated with or endorsed by Nissan or Ciasny."
+    },
+    "chunks": [
+      {
+        "path": "gtr-detail/0000.bin",
+        "bytes": 65536,
+        "sha256": "25480b78ad835643761ff68c4c160f47681af963f4130989d50d6e36c8a173c4"
+      },
+      {
+        "path": "gtr-detail/0001.bin",
+        "bytes": 65536,
+        "sha256": "351a8c0849bebbe3a053237317ed400301b84f7da3140762bffd4928fd44106a"
+      },
+      {
+        "path": "gtr-detail/0002.bin",
+        "bytes": 65536,
+        "sha256": "ffc047c1b22b8918c4f59de3203717a7198ad805e3e555b8373cd3062cef42b6"
+      },
+      {
+        "path": "gtr-detail/0003.bin",
+        "bytes": 65536,
+        "sha256": "58ce5714ae86847c525a7d8022ac2c7efd0195ac803226ab533dc2d7882b483c"
+      },
+      {
+        "path": "gtr-detail/0004.bin",
+        "bytes": 65536,
+        "sha256": "21ab0555396f127b7d91951c90832245c37812ca01047005b8533e7f4de00f55"
+      },
+      {
+        "path": "gtr-detail/0005.bin",
+        "bytes": 65536,
+        "sha256": "223259a19379fe9c6c626f895af53f51268e05bac37e42339e48ee49a9f4839e"
+      },
+      {
+        "path": "gtr-detail/0006.bin",
+        "bytes": 65536,
+        "sha256": "ecf07dae0d9c430c359ccaa33175821f1a889f30cc487504082846b142b5218a"
+      },
+      {
+        "path": "gtr-detail/0007.bin",
+        "bytes": 65536,
+        "sha256": "31791b6f0d5fe2e4951709eda1f0634f85a4be65a35abb97e2afa33b8973141e"
+      },
+      {
+        "path": "gtr-detail/0008.bin",
+        "bytes": 65536,
+        "sha256": "cf26bfa25d52c784cb9515c741a474ad58f2986fccf949fd0a3925012df45f73"
+      },
+      {
+        "path": "gtr-detail/0009.bin",
+        "bytes": 65536,
+        "sha256": "045c10978f18bc00c8d3abb69d2e88af28ed3bd55caa7912a01dd1398046b923"
+      },
+      {
+        "path": "gtr-detail/0010.bin",
+        "bytes": 65536,
+        "sha256": "6f245b0a395db698ed773d02da2876f7013cb21e7fe72b9199af1a203fd5fa2b"
+      },
+      {
+        "path": "gtr-detail/0011.bin",
+        "bytes": 65536,
+        "sha256": "e737067a774a656627352d1a78305cacb8a076b588eb32b4524b9f95d54a6c2c"
+      },
+      {
+        "path": "gtr-detail/0012.bin",
+        "bytes": 65536,
+        "sha256": "6c94d48ed17e7141e0ebaf09ccb9b7199843171981e5309223b2fda05b58c797"
+      },
+      {
+        "path": "gtr-detail/0013.bin",
+        "bytes": 65536,
+        "sha256": "9bcfe58c4c5fd7895c27aba1044be3beab2565f7658334c79cdb568eee646ae5"
+      },
+      {
+        "path": "gtr-detail/0014.bin",
+        "bytes": 16912,
+        "sha256": "1c7c3a8ed87ec4f85fdc41dae7b6d1702a1b32e6d51c987ef0504c16809824d6"
+      }
+    ]
+  }
+]
