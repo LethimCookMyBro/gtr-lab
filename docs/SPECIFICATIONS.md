@@ -52,23 +52,26 @@ Sources:
 
 ## GT-R50 by Italdesign
 
-2021 production powertrain specification
+2018 prototype specification, gray/gold press-reveal configuration
 
 - Engine: NISMO-tuned VR38DETT · 3.8 L twin-turbo V6
-- Output: 720 PS
-- Torque: 780 Nm
+- Estimated output: 720 PS at 7,100 rpm
+- Estimated torque: 780 Nm at 3,600–5,600 rpm
+- Drive: ATTESA E-TS AWD
+- Transmission: reinforced six-speed dual-clutch rear transaxle
+- Purpose: one-off anniversary prototype
 
-- 720 PS is metric horsepower, approximately 710 hp. Do not label it 720 hp.
-- Photo supplied depicts the 2018 concept, not the production car.
-- NISMO confirms strengthened transaxle and an engine developed for Euro 6 compliance.
+Both headline figures are manufacturer estimates, labeled next to the numbers in the detail panel. The catalog no longer combines a 2021 production-engine release with the prototype drivetrain. The 2018 bespoke cabin also differs from later customer-car configurations. No production certification or Euro 6 claim is assigned to the prototype.
+
+The licensed photograph depicts this 2018 prototype at 2019 NYIAS. Its existing credit remains unchanged. 720 PS is metric horsepower, approximately 710 hp; it must not be labeled 720 hp.
 
 Sources:
-- https://www.nismo.co.jp/en/news_list/2021/news_flash/21007.html
+- https://global.nissannews.com/en/releases/nissan-and-italdesign-to-unveil-ultra-limited-gt-r-prototype
 - https://www.italdesign.it/en/project/gt-r-50-by-italdesign/
 
 ## GT-R NISMO GT3
 
-2018 specification / 2020 EVO context
+2018-spec FIA GT3
 
 - Engine: VR38DETT · 3,799 cc twin-turbo V6
 - Output: 550 PS+
@@ -77,10 +80,13 @@ Sources:
 
 - Power and torque depend on the event Balance of Performance; minimum published values, not fixed universal figures.
 - ABS, traction control, double-wishbone front and rear suspension.
-- The supplied photograph depicts a 2015-spec Bathurst car.
+- The supplied photograph depicts a 2015-spec Bathurst car. Its year mismatch remains visible until an accepted render or a rights-cleared matching image replaces it.
+- The selected geometry/cabin target is the 2018-spec factory demonstrator. Later EVO cockpit revisions are not represented as part of this specification.
 
 Sources:
-- https://www.nismo.co.jp/en/products/customerracing/
+- https://www.nismo.co.jp/en/news_list/2018/news_flash/18009.html
+- https://www.nismo.co.jp/en/products/customerracing/pdf/nissan_gtr_nismo_gt3_2018-spec_en.pdf
+- https://www.nismo.co.jp/en/products/customerracing/racingcar.html
 
 ## GT-R NISMO GT500
 
@@ -102,6 +108,3 @@ Sources:
 ## Not asserted
 
 No 0–100 km/h, 0–60 mph, or top speed figures are supplied because comparable manufacturer-verified figures for these exact six model/year specifications were not established. Do not fabricate them.
-
-### GT-R50 drivetrain correction
-Removed the incorrect universal rear-wheel-drive fallback. Nissan’s 2018 prototype table specifies ATTESA E-TS AWD and a reinforced six-speed dual-clutch rear transaxle. These two fields are explicitly labeled prototype context, while power/torque remain from the2021production-engine release. Source: https://global.nissannews.com/en/releases/nissan-and-italdesign-to-unveil-ultra-limited-gt-r-prototype?origin=channel-75b19d3a1fdacef505523031451f8819

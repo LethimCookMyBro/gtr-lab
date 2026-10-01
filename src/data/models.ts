@@ -39,6 +39,8 @@ export interface VehicleModel {
   powerUnit: string;
   torqueValue: number;
   torqueUnit: string;
+  outputIsEstimate?: boolean;
+  purpose?: string;
   engine: string;
   drive: string;
   transmission: string;

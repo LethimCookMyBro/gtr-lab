@@ -74,3 +74,14 @@ Under [CC BY 4.0 §§2–3](https://creativecommons.org/licenses/by/4.0/legalcod
 ## Acceptance before adding another named variant
 
 Choose the actual model year; retain original source/license evidence; inspect the downloaded geometry; compare front, rear, side, top and cabin views against that year's authoritative references; verify distinct physical parts and a plausible scale; credit all adaptations; then optimize and test the exact accepted file. Show a newly authored cabin or major body modification for acceptance before integration. Keep unavailable variants unavailable until those checks pass.
+
+## Coherent authoring targets, 2026-10-01
+
+The free-only route now includes isolated, review-only original geometry studies. These do not make an asset ready:
+
+- Road family: 2024 US Premium, T-spec and NISMO. Correct Premium front-fascia work begins from the unchanged licensed source with a non-destructive root transform. Retained source vertices, topology and corner normals are hash-checked; the prior vertex-bake normalization is not reused. Factory rear aero, wheels, stance and trim-specific cabins remain separate review gates.
+- GT-R50: the 2018 gray/gold prototype, including its genuinely lowered roof and distinct coachwork. Nissan's 720 PS and 780 Nm are estimates and the catalog now says so beside both figures. The existing licensed prototype photograph remains. The later production cabin/powertrain narrative is not mixed into this target.
+- GT3: the 2018-spec factory demonstrator. Its 4,832 mm length, 2,036 mm width, 2,817 mm wheelbase and 1,690/1,700 mm tracks require a real race-body conversion. NISMO's brochure supplies visible race-cabin references. The existing 2015 Bathurst photograph stays accurately captioned until a legitimate replacement exists.
+- GT500: the 2020 Class 1 #23 appearance. Its 4,725 × 1,950 × 1,150 mm body and 2,750 mm wheelbase require independently authored geometry. Exact matching cockpit references remain incomplete, so no interior camera can be enabled yet.
+
+Primary reference images remain private modeling aids, not automatically licensed runtime textures. Geometry must pass matched front/rear/side/top comparisons, silhouette and material/normal checks, cabin review where applicable, and real-browser performance/camera tests before changing any availability flag. No new study is present in the deployed model manifest.

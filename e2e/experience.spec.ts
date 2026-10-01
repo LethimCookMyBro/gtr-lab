@@ -62,6 +62,15 @@ for (const id of variants) {
       .getByRole("button", { name: "Model detail", exact: true })
       .click();
     await expect(page.getByRole("dialog")).toBeVisible();
+    if (id === "gtr50") {
+      const details = page.getByRole("dialog");
+      await expect(
+        details.getByText("2018 prototype specification"),
+      ).toBeVisible();
+      await expect(details.getByText("Estimated power")).toBeVisible();
+      await expect(details.getByText("Estimated torque")).toBeVisible();
+      await expect(details).toContainText("One-off anniversary prototype");
+    }
     await page.screenshot({
       animations: "disabled",
       scale: "css",

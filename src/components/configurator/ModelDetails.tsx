@@ -15,14 +15,18 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
             {model.powerValue}
             <small>{model.powerUnit}</small>
           </strong>
-          <span>Published power</span>
+          <span>
+            {model.outputIsEstimate ? "Estimated power" : "Published power"}
+          </span>
         </div>
         <div>
           <strong>
             {model.torqueValue}
             <small>{model.torqueUnit}</small>
           </strong>
-          <span>Published torque</span>
+          <span>
+            {model.outputIsEstimate ? "Estimated torque" : "Published torque"}
+          </span>
         </div>
       </div>
       <p className="spec-context">{model.modelYear}</p>
@@ -42,11 +46,12 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
         <div>
           <dt>Purpose</dt>
           <dd>
-            {model.category === "Track"
-              ? "Circuit competition"
-              : model.category === "Bespoke"
-                ? "Limited-production coachbuilding"
-                : "Road-going performance"}
+            {model.purpose ??
+              (model.category === "Track"
+                ? "Circuit competition"
+                : model.category === "Bespoke"
+                  ? "Limited-production coachbuilding"
+                  : "Road-going performance")}
           </dd>
         </div>
       </dl>
