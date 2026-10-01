@@ -5,7 +5,7 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 ## Current status
 **In progress. Not a completed production configurator.**
 
-One licensed Ciasny R35 exterior is integrated for real-car testing on the Premium route, with its custom-aero/model-year limitations visible. The remaining five routes show labeled photographs rather than a relabeled shared mesh. The exterior has separately controlled paint and lamps; its source has no cabin, so Interior remains disabled while a fitted reference-guided cabin is authored. The preceding main revision passed 81 unit tests, 24 responsive browser cases and six real-WebGL fixture tests. Real-car browser/material/cabin QA is the next acceptance gate. Source is on main; Railway deployment remains pending.
+One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The remaining five routes show labeled photographs rather than a relabeled shared mesh. The exterior has independently controlled paint and lamps. Its source has no cabin; Interior remains disabled until an accurate interior preview is accepted. The preceding main revision passed 81 unit tests, 24 responsive browser cases and six real-WebGL fixture tests. Desktop/mobile real-car rendering, paints, cameras, lights and environments have browser evidence. Final visual refinement, the complete rerun and accurate cabins remain acceptance gates. Source is on main; Railway deployment remains pending.
 
 ## Run
 

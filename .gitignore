@@ -29,3 +29,4 @@ public/models/*.glb
 vehicle-test-results/
 playwright-vehicle-report/
 reference-audit-results/
+vehicle-preview-results/

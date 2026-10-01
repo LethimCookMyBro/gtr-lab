@@ -17,7 +17,7 @@ export type CameraView = {
 // Asset contract: +Y up, +Z forward. All dimensions below are metres.
 export const CAMERA_VIEWS: Record<string, CameraView> = {
   hero: {
-    position: [5.7, 2.25, 6.8],
+    position: [4.275, 1.8675, 5.1],
     target: [0, 0.72, 0],
     fov: 34,
     minDistance: 2.7,

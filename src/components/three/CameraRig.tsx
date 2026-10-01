@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei/core/OrbitControls";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { PerspectiveCamera, Vector3 } from "three";
+import { Matrix4, PerspectiveCamera, Quaternion, Vector3 } from "three";
 import {
   cameraView,
   interpolationAlpha,
@@ -36,6 +36,16 @@ export function CameraRig({
   const controls = useRef<OrbitControlsImpl>(null);
   const moving = useRef(true);
   const manuallyStopped = useRef(false);
+  const wasInterior = useRef(preset === "interior");
+  const leavingInterior = useRef(false);
+  const lookTransition = useMemo(
+    () => ({
+      direction: new Vector3(),
+      rotation: new Quaternion(),
+      matrix: new Matrix4(),
+    }),
+    [],
+  );
   const view = cameraView(preset, cameraViews);
   const aspect = size.width / Math.max(1, size.height);
   const destination = useMemo(() => {
@@ -50,17 +60,35 @@ export function CameraRig({
     return { target, position, maxDistance: view.maxDistance * distanceScale };
   }, [aspect, preset, view]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     moving.current = true;
     manuallyStopped.current = false;
+    leavingInterior.current = wasInterior.current && preset !== "interior";
     if (controls.current) {
+      // Interior look owns the camera quaternion, so the old orbit target no
+      // longer describes its view. Start the exit from the direction on screen.
+      if (leavingInterior.current) {
+        const lookDistance = Math.max(
+          0.05,
+          camera.position.distanceTo(controls.current.target),
+        );
+        camera
+          .getWorldDirection(controls.current.target)
+          .multiplyScalar(lookDistance)
+          .add(camera.position);
+      }
       controls.current.autoRotate = false;
       controls.current.enableDamping = false;
       controls.current.minDistance = 0.05;
       controls.current.maxDistance = 100;
+      // A cabin view may look upward. Exterior limits must not clamp that
+      // orientation before interpolation has brought it outside the cabin.
+      controls.current.minPolarAngle = 0;
+      controls.current.maxPolarAngle = Math.PI;
     }
+    wasInterior.current = preset === "interior";
     invalidate();
-  }, [destination, view.fov, invalidate]);
+  }, [destination, view.fov, invalidate, camera, preset]);
 
   useEffect(() => {
     // User can deliberately enable rotation again after a drag cancelled it.
@@ -73,8 +101,30 @@ export function CameraRig({
     if (!orbit) return;
     if (moving.current) {
       const alpha = interpolationAlpha(delta, reducedMotion);
+      const lookDistance = camera.position.distanceTo(orbit.target);
       camera.position.lerp(destination.position, alpha);
-      orbit.target.lerp(destination.target, alpha);
+      if (leavingInterior.current) {
+        // A nearby cabin target and a distant exterior target can swing the
+        // view abruptly even when their positions lerp. Blend the look rotation
+        // itself, then rebuild a matching target for OrbitControls.
+        lookTransition.matrix.lookAt(
+          camera.position,
+          destination.target,
+          camera.up,
+        );
+        lookTransition.rotation.setFromRotationMatrix(lookTransition.matrix);
+        camera.quaternion.slerp(lookTransition.rotation, alpha);
+        const radius =
+          lookDistance +
+          (camera.position.distanceTo(destination.target) - lookDistance) *
+            alpha;
+        orbit.target
+          .copy(camera.getWorldDirection(lookTransition.direction))
+          .multiplyScalar(radius)
+          .add(camera.position);
+      } else {
+        orbit.target.lerp(destination.target, alpha);
+      }
       camera.fov += (view.fov - camera.fov) * alpha;
       camera.updateProjectionMatrix();
       orbit.update();
@@ -90,6 +140,8 @@ export function CameraRig({
         moving.current = false;
         orbit.minDistance = view.minDistance;
         orbit.maxDistance = destination.maxDistance;
+        orbit.minPolarAngle = 0.005;
+        orbit.maxPolarAngle = Math.PI / 2 - 0.025;
       }
       invalidate();
     }
@@ -110,6 +162,8 @@ export function CameraRig({
       controls.current.autoRotate = false;
       controls.current.minDistance = view.minDistance;
       controls.current.maxDistance = destination.maxDistance;
+      controls.current.minPolarAngle = 0.005;
+      controls.current.maxPolarAngle = Math.PI / 2 - 0.025;
     }
     onManual();
   }

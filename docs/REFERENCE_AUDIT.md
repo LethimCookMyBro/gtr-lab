@@ -3,7 +3,7 @@
 Reference: https://everymatrix-porchelab.netlify.app/ and /configurator
 
 ## Method and confidence
-Actual interactions in dot's cloud Chromium (1180×747 viewport), not source-code copying or screenshot guessing. Inspected both URLs, clicked navigation categories/close, hero Explore in 3D, a model invitation, Model Detail and Back, and scrolled the editorial/heritage/lineup content. The cloud browser cannot create WebGL (console reports GL_VENDOR/GL_RENDERER Disabled). One reload reproduced failure; direct reload of the configurator returned to home. An isolated Playwright Chromium fallback also failed to launch due OS socket permissions. No user-computer browser was used. These environmental limits prevent claiming full reference 3D, mobile, sound or exact-timing verification. The implementation below must use the user's explicit brief for unverified behavior, not inventions attributed to the reference.
+Actual interactions in dot's cloud Chromium (1180×747 viewport), not source-code copying or screenshot guessing. Inspected both URLs, clicked navigation categories/close, hero Explore in 3D, a model invitation, Model Detail and Back, and scrolled the editorial/heritage/lineup content. The cloud browser cannot create WebGL (console reports GL_VENDOR/GL_RENDERER Disabled). One reload reproduced failure; direct reload of the configurator returned to home. An isolated Playwright Chromium fallback also failed to launch due OS socket permissions. No user-computer browser was used. These initial-browser limits prevented full reference 3D, mobile, sound or exact-timing verification. The later GitHub-runner evidence below supersedes the blanket WebGL limitation, but does not yet establish rendered configurator behavior. The implementation below must use the user's explicit brief for unverified behavior, not inventions attributed to the reference.
 
 ## 1. Routes and hierarchy
 - `/`: long cinematic editorial homepage, in-page model selection, footer
@@ -26,7 +26,7 @@ Actual interactions in dot's cloud Chromium (1180×747 viewport), not source-cod
 - Entry overlays homepage with vertical translucent dark/blur panels and PREPARING YOUR 3D PORSCHE EXPERIENCE text before route handoff
 - Initial home also showed a brief Loading.../brand state; exact progress accounting not verified
 - Configurator DOM exposes Model Detail at top, custom color well, roughness slider (0.41), metalness slider (1), Back button and WebGL surface
-- Due WebGL context failure viewport remained black; don't infer visible toolbar positioning from hidden DOM
+- In the initial cloud browser, WebGL context failure left the viewport black; do not infer visible toolbar positioning from hidden DOM. The subsequent GitHub runner created a live context, but its first configurator screenshot timed out (see evidence update below)
 - Do not reproduce its blank-screen environmental failure: GT-R LAB must have explicit recoverable fallback
 
 ## 7–8. Typography, layout, hierarchy
@@ -47,13 +47,13 @@ Large light/regular sans hero typography, smaller restrained UI, editorial headi
 | Back | Page return transition and brand/loading overlay | `/` homepage | Explore/card can enter again |
 | Color well/sliders | Controls discovered in accessibility DOM, rendering could not validate effect | Unverified material behavior | Unverified |
 
-Camera presets, orbit/zoom clamps, model handoff geometry, toolbar toggles, environment controls, light controls, precise drawer animations, auto-rotation and audio are unverified because the 3D route did not render. No audible behavior was established. No proprietary source or assets were downloaded/copied.
+Camera presets, orbit/zoom clamps, model handoff geometry, toolbar toggles, environment controls, light controls, precise drawer animations, auto-rotation and audio remain unverified: the initial browser did not render the 3D route, and the first GitHub pass stopped before interaction checkpoints. No audible behavior was established. No proprietary source or assets were downloaded/copied.
 
 ## 15. Timing
 Perceived transitions are deliberate, with card/route blur followed by takeover. The browser tool sampling is too coarse to truthfully give millisecond durations. GT-R LAB targets original 160–240ms micro-interactions, 350ms drawers and ~900ms camera interpolation; these are implementation design decisions, not measured reference values.
 
 ## 17. Responsive behavior
-Desktop current viewport inspected. No supported cloud browser viewport resize API was available, and fallback Chromium launch failed, so reference mobile/tablet layouts remain unverified. GT-R LAB must independently validate target sizes with available means and explicitly report any unavailable checks.
+The initial cloud-browser desktop viewport was inspected. A later GitHub runner captured the homepage at 1440×900 and 390×844; these screenshots show transient page states, not a complete responsive-layout audit. Both configurator canvases reported the matching dimensions and a live WebGL context, but no configurator screenshot or interaction result survived that pass. Tablet and complete mobile behavior remain unverified. GT-R LAB must independently validate target sizes with available means and explicitly report any unavailable checks.
 
 ## 18. Subtleties and adaptation
 - Route entry carries selection in runtime state rather than pathname: improve via per-variant routes
@@ -64,7 +64,7 @@ Desktop current viewport inspected. No supported cloud browser viewport resize A
 - Do not copy timelines, logos, fonts, photos or source code from reference
 - Assets and environmental render failures must be visible states, not theatrical indefinite loaders
 
-Audit is sufficient for the observed homepage/entry grammar; it is explicitly incomplete for reference3D/mobile. Continue with user's detailed functional specification while retaining those limits in final QA.
+Audit is sufficient for the observed homepage/entry grammar; it is explicitly incomplete for rendered reference 3D interactions and complete mobile behavior. Continue with user's detailed functional specification while retaining those limits in final QA.
 
 ## User-supplied reference screenshots, inspected 2026-10-01
 The user subsequently supplied four screenshots of the working configurator. These provide visual evidence, not proof of animations or interactions. Pixels were materialized and inspected:
@@ -73,3 +73,25 @@ The user subsequently supplied four screenshots of the working configurator. The
 - Cabin view angled toward passenger seat/console with detailed door trim and cabin materials
 - Large centered environment-selection overlay with scrollable panoramic preview rows (including a coastal sunset)
 These reinforce the user's original specification: a properly modeled cabin and believable outdoor lighting are essential, not optional screenshot simulations. A camera inside an empty shell does not pass. The original GT-R interface retains restrained dark control styling rather than copying reference white icon squares or branding. Personal browser-tab chrome in supplied screenshots is excluded from public source control.
+
+
+## GitHub cloud-renderer evidence update — 2026-10-01
+
+The first `browser-qa-evidence` reference artifact was inspected directly (`reference-audit-results/observations.json`, captured at **09:04:20 UTC**, plus both homepage PNGs). This is a separate environment from the WebGL-disabled interactive cloud browser; no user computer was used.
+
+Verified from that artifact:
+- Desktop: 1440×900 canvas, `webgl: true`, `lost: false`, renderer reported `WebKit WebGL`
+- Mobile: 390×844 canvas, the same live/non-lost WebGL result
+- Both homepage captures exist. Desktop shows a historical racing-video frame with no readable hero overlay in that frame. Mobile shows a full-height car/road image and bottom Explore in 3D CTA, with very dark/faint heading and copy. These are captured transition/loading states; they do not establish stable text contrast, final layout, or animation timing
+- The first configurator screenshot in each viewport failed after 10 seconds. The old capture helper attempted screenshots before saving DOM, so the only retained event in each view is `home`. Live WebGL does **not** prove model geometry/materials finished loading
+- No Model Detail, orbit, zoom, paint, toolbar, or return action can be claimed from this first artifact
+
+### Audit-runner correction prepared for the next pass
+
+`scripts/audit-reference.mjs` now saves a checkpoint before reading public DOM, saves DOM/control values before requesting pixels, and catches screenshot errors at the individual event. It writes progress atomically after each checkpoint and action. A stalled screenshot therefore cannot discard already observed controls or skip all subsequent actions.
+
+The run is desktop-first, with 125 seconds for desktop, 75 seconds for mobile, and a 220-second total watchdog inside the existing four-minute CI step. Each screenshot has a 2.5-second limit. CSS animations are left intact. Initial configurator DOM is recorded before ordinary mouse drag input and the first image attempt; no reference application state, animation loop, camera object, or renderer code is patched. Pointer input is explicitly distinguished from a visually verified camera response. The mobile pass is a mobile viewport with desktop-style diagnostic pointer input; touch gestures are not claimed.
+
+Model Detail, visible color input, and Back are attempted independently. Toolbar candidates are selected only from labels actually exposed by the visible current UI. Unlabeled or missing controls are recorded as unverified rather than assigned guessed meanings. Each record includes the attempted action, resulting public text/control state, screenshot success/failure, and any error. Escape is recorded as an attempted exit; a discovered close label is used when available. Exact camera clamps, audible sound, and animation duration still require separate evidence.
+
+A local, browser-free regression harness reproduced the original data-loss failure by injecting screenshot timeouts, then passed with the corrected script: both viewport records retained configurator controls and progressed through Model Detail, color-input, and Back checkpoints. This verifies audit error handling only. **The corrected script's actual reference interactions and screenshots remain pending a new GitHub Actions artifact; no benchmark gap is closed merely by changing the script.**

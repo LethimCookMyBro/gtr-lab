@@ -285,16 +285,36 @@ test("separate lamps and real environments affect the licensed vehicle", async (
 test("manual exploration stops automatic rotation and variant switching never reuses the mesh under NISMO", async ({
   page,
 }, info) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await openVehicle(page);
+  await stableResolution(page);
+  const canvas = page.locator(".scene-stage canvas");
+  // Capture a settled baseline before continuous software rendering starts.
+  const before = (await canvas.screenshot()).toString("base64");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   const rotate = page.getByRole("button", { name: "Rotate", exact: true });
+  await expect(rotate).toBeEnabled();
   await rotate.click();
   await expect(rotate).toHaveAttribute("aria-pressed", "true");
-  const canvas = page.locator(".scene-stage canvas");
-  const before = (await canvas.screenshot()).toString("base64");
-  await expect
-    .poll(async () => (await canvas.screenshot()).toString("base64"))
-    .not.toBe(before);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        let remaining = 24;
+        const advance = () => {
+          if (--remaining === 0) resolve();
+          else requestAnimationFrame(advance);
+        };
+        requestAnimationFrame(advance);
+      }),
+  );
+  await rotate.click();
+  await expect(rotate).toHaveAttribute("aria-pressed", "false");
+  await stableResolution(page);
+  // Both PNGs use the original DPR, with rotation stopped. PNG readback during
+  // continuous SwiftShader rendering exceeded the original polling deadline.
+  expect((await canvas.screenshot()).toString("base64")).not.toBe(before);
+  await capture(page, info, "vehicle-after-automatic-rotation");
+  await rotate.click();
+  await expect(rotate).toHaveAttribute("aria-pressed", "true");
   if (info.project.name === "mobile-390") await touchExplore(page, "drag");
   else {
     await canvas.focus();

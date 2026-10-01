@@ -1,10 +1,19 @@
 # GT-R LAB QA and red-team report
 
-Date: 2026-10-01. Status: **application mechanics verified; full product acceptance blocked by vehicle assets**.
+Date: 2026-10-01. Status: **accepted licensed exterior rendering; visual refinement and complete six-vehicle acceptance still open**.
+
+## Real-car checkpoints
+
+- `6025ad53cbcd0d001d7b1afcbecb08c56c0d5982`, [full run36837794879](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36837794879): 136 unit tests and all6 WebGL fixture checks passed. Ordinary UI:19 passed,1 flaky,4 failed; the four failures were the six-variant loop exceeding one30-second budget. The loop is being split into independently budgeted variant cases, without removing any variant assertions.
+- Same run, actual licensed vehicle:8/10 cases passed across1440×900 and390×844. All nine paints, exterior camera views, lamp changes, forest/night/studio environments and503 recovery passed. Two rotation checks timed out while reading PNGs during continuous software rendering. Trace inspection showed the pixels did change: desktop PNG reads took42.28s/32.63s and mobile34.80s/28.64s, exceeding a5-second poll budget. The revised check captures a settled baseline, runs rotation, stops it, restores DPR and compares settled pixels; manual cancellation remains separately exercised.
+- `a15a8ea941a75bd1810b5870a78db33039414551`, [visual checkpoint36839510134](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36839510134): actual production GLB rendered at1440×900 and390×844 with no page/console errors. Inspected pixels revealed an opaque rectangular contact-shadow surface, overly metallic paint and undersized hero framing.
+- `ff14bddce792bb55c8996c589bf916e05b058689`, [visual checkpoint36841657612](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36841657612): explicit transparent offscreen clear alpha removed the rectangle at both sizes. A regression uses Three's actual background-clear behavior. Paint response, ground contact and hero size are the next visual pass.
+
+The live file at these checkpoints is Ciasny's licensed exterior only, SHA-256 `fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d`. Interior is disabled. The newly authored cabin was rejected and never referenced by a published commit. No six-vehicle or production-ready claim follows from these partial results.
 
 ## Verified evidence
 
-- Local current tree: 81 unit/DOM/server tests pass, TypeScript check passes, production build passes
+- Pre-asset baseline: 81 unit/DOM/server tests passed with TypeScript and production build checks. Later checkpoints below distinguish real-car results
 - Main commit `7efbac60ac1e220c7cd111da4ad3a899752eb0eb`: [GitHub Actions run 36831837406](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36831837406) passed 80 unit tests, 16 responsive UI browser cases and 6 real-WebGL fixture cases, with no retries
 - Browser sizes: 1920×1080, 1440×900, 390×844 and 430×932
 - Production dependency audit at implementation check: zero reported vulnerabilities; development dependency notices remain separate
@@ -43,9 +52,9 @@ Initial screenshots captured the 0.8-second hero entrance and detail-sheet trans
 
 ## Still not established
 
-- An accurate, production-quality R35 model with a detailed cabin; the original Blender study was rejected and is not included in the site
-- Real vehicle geometry/material/light quality, cabin camera placement, outdoor grounding, mobile GPU performance or meaningful six-variant geometry differentiation
-- Paint-rail scrolling to the last two swatches on a real interactive vehicle
+- An accepted detailed cabin; both the original exterior study and subsequent authored cabin were rejected and are excluded from the site
+- Final paint/grounding/hero visual quality, accepted cabin placement, physical mobile GPU performance and meaningful six-variant geometry differentiation
+- Final comprehensive rerun after the rendering and test-measurement corrections
 - 1600×900, 1366×768 and tablet-specific visual review
 - Recorded engine sound, part animation or unsupported features (none are faked)
 - Railway live deployment and the final GitHub About Website URL
@@ -66,3 +75,10 @@ Fresh local aggregate verification: 136 unit/DOM/build-helper tests passed acros
 New regressions isolate floor/panorama geometry from the contact-shadow depth pass, keep declared reverse emitters inactive, prevent the loader from being labeled a photo reference, separate source geometry from catalog specifications, expose creator/license/changes, and verify offline chunk reconstruction with complete hashes, bounds and symlink/path checks.
 
 Embedded GLB images use local blob URLs through ImageBitmapLoader. The production CSP now permits only self and blob connections; no external hosts or general JavaScript eval were added. An HTTP header regression verifies this narrow policy.
+
+
+## Pending next rerun
+
+The next source revision uses44 independently budgeted responsive UI cases (each of the six detail routes now has its own case) and reduced motion for UI-only screenshots. The10 actual-vehicle cases keep separate no-preference rotation/manual-input coverage. Trace-confirmed PNG readback behavior is handled by comparing settled frames at the same DPR.
+
+Local aggregate verification for the calibration candidate:150 tests passed across19 files, typecheck/build and renderer QA typecheck passed. This candidate preserves artist paint metalness/roughness, grounds the floor at y=0, bounds direct-shadow depth, and moves the hero camera25% closer. Projection using the actual vehicle vertices estimates51.7% desktop and82.1% mobile width; browser screenshots must verify the result before visual acceptance.

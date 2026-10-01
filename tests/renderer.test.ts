@@ -180,7 +180,11 @@ describe("review regressions", () => {
     const { stepVehicleAppearance } =
       await import("../src/components/three/materialAdapter");
     const root = new Group();
-    const material = new MeshStandardMaterial({ color: "#000000" });
+    const material = new MeshStandardMaterial({
+      color: "#000000",
+      metalness: 0.5592398,
+      roughness: 0.3702869,
+    });
     material.name = "BodyPaint";
     root.add(new Mesh(new BoxGeometry(2, 1, 4), material));
     const prepared = prepareVehicle(root, roles);
@@ -197,7 +201,8 @@ describe("review regressions", () => {
     expect(paint.color.r).toBeGreaterThan(0);
     expect(paint.color.r).toBeLessThan(1);
     expect(paint.clearcoat).toBe(1);
-    expect(paint.metalness).toBe(0.78);
+    expect(paint.metalness).toBe(material.metalness);
+    expect(paint.roughness).toBe(material.roughness);
     for (let frame = 0; frame < 180; frame++)
       stepVehicleAppearance(prepared.bindings, "#ffffff", true, 0.016, false);
     expect(paint.color.getHexString()).toBe("ffffff");

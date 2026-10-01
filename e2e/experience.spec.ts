@@ -36,6 +36,9 @@ test("homepage to models to details and back", async ({ page }, info) => {
     .getByRole("link", { name: "Explore GT-R Premium", exact: true })
     .click();
   await expect(page).toHaveURL(/\/configurator\/premium$/);
+  await expect(
+    page.getByRole("button", { name: "Ultimate Silver", exact: true }),
+  ).toBeEnabled();
   await page.screenshot({
     animations: "disabled",
     scale: "css",
@@ -49,10 +52,10 @@ test("homepage to models to details and back", async ({ page }, info) => {
   await expect(page).toHaveURL(/\/models$/);
   expect(errors).toEqual([]);
 });
-test("six distinct variants and no hidden horizontal overflow", async ({
-  page,
-}, info) => {
-  for (const id of variants) {
+for (const id of variants) {
+  test(`${id} detail route fits without horizontal overflow`, async ({
+    page,
+  }, info) => {
     await page.goto("/configurator/" + id);
     await expect(page.locator("h1")).toBeVisible();
     await page
@@ -73,8 +76,8 @@ test("six distinct variants and no hidden horizontal overflow", async ({
         () => document.documentElement.scrollWidth <= window.innerWidth + 1,
       ),
     ).toBe(true);
-  }
-});
+  });
+}
 test("missing assets remain visibly honest and controls are disabled", async ({
   page,
 }) => {

@@ -63,8 +63,10 @@ export function StudioLighting({
           shadow-camera-right={5}
           shadow-camera-top={5}
           shadow-camera-bottom={-5}
-          shadow-bias={-0.0003}
-          shadow-normalBias={0.03}
+          shadow-camera-near={0.1}
+          shadow-camera-far={20}
+          shadow-bias={-0.0001}
+          shadow-normalBias={0.003}
         />
         <directionalLight
           position={[-5, 3, -4]}
@@ -115,19 +117,19 @@ export function StudioLighting({
         </Environment>
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, -0.012, 0]}
+          position={[0, 0, 0]}
           receiveShadow
         >
           <planeGeometry args={[150, 150]} />
           <meshStandardMaterial
             color={mood.floor}
-            roughness={0.48}
-            metalness={0.18}
+            roughness={0.8}
+            metalness={0}
           />
         </mesh>
         <ContactShadows
           key={environment}
-          position={[0, 0.006, 0]}
+          position={[0, 0.001, 0]}
           opacity={environment === "gallery" ? 0.55 : 0.68}
           scale={12}
           blur={2.5}
@@ -191,11 +193,14 @@ function OutdoorEnvironment({
         shadow-camera-right={5}
         shadow-camera-top={5}
         shadow-camera-bottom={-5}
-        shadow-normalBias={0.03}
+        shadow-camera-near={0.1}
+        shadow-camera-far={20}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.003}
       />
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.004, 0]}
+        position={[0, 0.0005, 0]}
         receiveShadow
       >
         <planeGeometry args={[30, 30]} />
@@ -203,7 +208,7 @@ function OutdoorEnvironment({
       </mesh>
       <ContactShadows
         key={file}
-        position={[0, 0.006, 0]}
+        position={[0, 0.001, 0]}
         opacity={0.65}
         scale={12}
         blur={2.3}

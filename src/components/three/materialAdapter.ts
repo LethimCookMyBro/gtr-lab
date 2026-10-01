@@ -88,8 +88,7 @@ export function prepareVehicle(
         const paint = material as MeshPhysicalMaterial;
         paint.clearcoat = 1;
         paint.clearcoatRoughness = 0.12;
-        paint.metalness = 0.78;
-        paint.roughness = 0.23;
+        // Retain the artist's base-layer PBR response beneath the lacquer.
       }
       const keepUnlit = inactiveMaterials.has(original.name);
       if (keepUnlit && material instanceof MeshStandardMaterial)
