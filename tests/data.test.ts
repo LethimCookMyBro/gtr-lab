@@ -18,6 +18,10 @@ describe("accurate distinct lineup", () => {
     expect(getModel("gt500")?.engine).toContain("inline-four");
     expect(getModel("gt500")?.drive).toBe("Rear-wheel drive");
   });
+  it("never assigns the race-car RWD fallback to the bespoke GT-R50", () => {
+    expect(getModel("gtr50")?.drive).toContain("AWD");
+    expect(getModel("gtr50")?.notes.join(" ")).toContain("2018 prototype");
+  });
   it("keeps metric horsepower units intact", () => {
     expect(getModel("gtr50")?.powerUnit).toBe("PS");
     expect(getModel("premium")?.powerUnit).toBe("hp");

@@ -5,7 +5,7 @@ Original home, cinematic six-variant selector, heritage/engineering, sources/cre
 
 ## Blocking acceptance criteria
 1. **No qualified licensed GT-R mesh yet.** All variant manifests intentionally remain missing. Photo references are visibly marked; painting/camera/light controls are disabled where inapplicable. This is not completed live3D functionality and must not be sold or described as finished. Candidate acquisition and required detailed cabin/material contract are in ASSETS_REQUIRED.md.
-2. **Visual/GPU QA unavailable in current cloud tools.** Reference browser reports WebGL disabled. The built app’s localhost URL was blocked by the cloud browser (ERR_BLOCKED_BY_CLIENT). A standalone Playwright Chromium attempt failed OS socket creation even via reviewed escalation. No visual-comparison pass, measured camera-feel pass or target-viewport screenshot pass is claimed.
+2. **Real vehicle visual/GPU QA still pending.** Direct cloud preview was unavailable, so the authorized GitHub Actions runner completed16responsive UI cases and6real-WebGL synthetic-fixture cases. Settled desktop/mobile screenshots were inspected. This validates application mechanics, but does not establish real vehicle geometry, cabin placement, material quality or animation feel.
 3. **Railway deployment pending.** Railway is connected and the existing workspace was verified read-only. Build/deployment configuration is prepared, but no Railway deploy has occurred. No alternate host substituted. No new paid plans/credentials established.
 4. **Work-in-progress GitHub branch approved.** The user requested main-only development after the initial WIP push. The full source and cloud browser tests are now on `main`, still explicitly in progress. No final release is implied.
 
@@ -20,7 +20,7 @@ Original home, cinematic six-variant selector, heritage/engineering, sources/cre
 - User screenshots never committed publicly, since browser chrome may contain personal context
 
 ## Verification evidence
-Unit/DOM tests cover data accuracy, variant state cleanup, exclusive panels, material-role selection, bounds normalization, camera definitions, real progress helpers, photo-fallback honesty, detail drawer open/Escape/focus return, variant navigation and Back. Latest verification includes 78 unit tests (including pinned asset downloads and camera calibration); production build and typecheck passed. Browser/GPU checks remain explicitly unrun. See QA_REPORT.md for evidence and fixed risks.
+Unit/DOM tests cover data accuracy, variant state cleanup, exclusive panels, material-role selection, bounds normalization, camera definitions, real progress helpers, photo-fallback honesty, detail drawer open/Escape/focus return, variant navigation and Back. Main commit7efbac6 passed80unit tests,16UI browser cases and6WebGL fixture cases; production build and typecheck passed. Browser/GPU checks remain explicitly unrun. See QA_REPORT.md for evidence and fixed risks.
 
-## Original asset fallback
-The user approved original DCC modeling after lawful detailed model acquisition did not succeed. An R35-inspired Blender study is being built separately. It must pass exterior/cabin inspection and be explicitly identified as an approximation before integration; it will not be reused under six exact variant identities.
+## Rejected original asset study
+An original Blender study was evaluated and rejected as insufficiently accurate. It is not included in the application, public assets or deployment. An accurate, cabin-detailed, lawfully sourced model remains a blocking acceptance requirement.

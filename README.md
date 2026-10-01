@@ -5,7 +5,7 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 ## Current status
 **In progress. Not a completed production configurator.**
 
-The application builds and its core UI/data/renderer unit tests run. All six catalog vehicles currently show labeled photographic references because production-qualified licensed GLBs (including detailed cabins and separately controlled materials) have not been acquired. Camera, lights and paint are not faked. The renderer is implemented, but real vehicle integration and GPU/browser visual QA remain blocking acceptance requirements. GitHub/Railway publication must be verified separately; no live URL is implied by this README.
+The application builds and its core UI/data/renderer unit tests run. All six catalog vehicles currently show labeled photographic references because production-qualified licensed GLBs (including detailed cabins and separately controlled materials) have not been acquired. Camera, lights and paint are not faked. The renderer mechanics passed six real-WebGL fixture tests and the application passed sixteen responsive browser cases. Accurate vehicle integration, material/cabin visual quality and real-car GPU validation remain blocking acceptance requirements. Source is available on main. Railway deployment is pending; no live URL is implied by this README.
 
 ## Run
 

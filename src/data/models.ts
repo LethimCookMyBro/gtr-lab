@@ -106,11 +106,9 @@ export const models: VehicleModel[] = facts.variants.map((v) => ({
   ...v,
   ...editorial[v.id as VariantId],
   id: v.id as VariantId,
-  drive: "drive" in v ? v.drive! : "Rear-wheel drive",
+  drive: "drive" in v ? v.drive! : "Not specified in source",
   transmission:
-    "transmission" in v
-      ? v.transmission!
-      : "Strengthened dual-clutch transaxle",
+    "transmission" in v ? v.transmission! : "Not specified in source",
   image: `/images/gtr-${v.id}.webp`,
   imageCaption: imageCredits.find((c) => c.id === v.id)?.description || "",
   asset: {

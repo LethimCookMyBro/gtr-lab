@@ -102,3 +102,6 @@ Sources:
 ## Not asserted
 
 No 0–100 km/h, 0–60 mph, or top speed figures are supplied because comparable manufacturer-verified figures for these exact six model/year specifications were not established. Do not fabricate them.
+
+### GT-R50 drivetrain correction
+Removed the incorrect universal rear-wheel-drive fallback. Nissan’s 2018 prototype table specifies ATTESA E-TS AWD and a reinforced six-speed dual-clutch rear transaxle. These two fields are explicitly labeled prototype context, while power/torque remain from the2021production-engine release. Source: https://global.nissannews.com/en/releases/nissan-and-italdesign-to-unveil-ultra-limited-gt-r-prototype?origin=channel-75b19d3a1fdacef505523031451f8819

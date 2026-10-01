@@ -1,69 +1,57 @@
 # GT-R LAB QA and red-team report
 
-Date:2026-10-01. Status:**partial implementation verified; full product acceptance blocked**.
+Date: 2026-10-01. Status: **application mechanics verified; full product acceptance blocked by vehicle assets**.
 
-## Passed on current tree
-- `npm test`:54/54 tests across8 files after formatting/integration
-- `npm run build`:TypeScript project check and Vite production compilation succeeded
-- `npm run typecheck`:passed
-- `npm audit --omit=dev`:0 reported production dependency vulnerabilities at check time
-- Six actual-variant photographs licensed/attributed; all optimized JPEG/WebP sources decoded and visually inspected by asset worker
-- Two CC0 outdoor HDRIs verified against official byte sizes/MD5 and visually inspected; derived previews use asset pixels rather than non-CC0 website example renders
-- Generated original desktop homepage/configurator/lineup and mobile concepts inspected with image viewer; they are design references, never shipped as fake UI
+## Verified evidence
 
-## Exercised without a browser GPU
-- Home and models semantic output, six distinct entry routes
-- Detail drawer open, source-year content, Escape dismissal and focus return
-- Variant switching, unknown variant, Back, repeated panel changes
-- Honest photo fallback and disabled paint/light/cabin controls when asset is absent
-- Sound preferences, no AudioContext on mount, unsupported audio error recovery
-- Central state validation and reset, failed HDRI recovery to Studio
-- Real Three material binding/normalization, actual GLB parsing, byte progress, original material preservation
-- Paint interpolation and reduced-motion immediate update
-- All8camera preset convergence using actual OrbitControls math
-- Keyboard orbit/zoom/manual cancellation and interior look helpers
-- ImageBitmap/resource cleanup deduplication
-- Production server deep links, missing-asset404, HEAD, encoded traversal protection, method allowlist and content security headers
+- Local current tree: 81 unit/DOM/server tests pass, TypeScript check passes, production build passes
+- Main commit `7efbac60ac1e220c7cd111da4ad3a899752eb0eb`: [GitHub Actions run 36831837406](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36831837406) passed 80 unit tests, 16 responsive UI browser cases and 6 real-WebGL fixture cases, with no retries
+- Browser sizes: 1920×1080, 1440×900, 390×844 and 430×932
+- Production dependency audit at implementation check: zero reported vulnerabilities; development dependency notices remain separate
+- Six licensed, attributed variant photographs and two checksum-verified CC0 HDRIs; the AI-generated homepage illustration is explicitly identified
 
-## Red-team bugs fixed
-1. Top view violated orbit polar clamp, causing never-ending demand renders: corrected preset, all8views regression-tested
-2. Failed HDRI trapped Retry in cached errors: environment-only boundary, cache clearing, visible Studio fallback, synchronized UI and safe retry action
-3. Exterior canvas lacked keyboard navigation: focusable canvas, arrows/zoom/Home controls and instructions
-4. Paint snapped immediately: linear-color frame interpolation, reduced-motion bypass
-5. Loader showed100before render readiness: parsing capped99; vehicle+environment frame readiness gate
-6. Asset panel claimed liveWebGL even during fallback: runtime-aware wording now separates asset availability from actual current view
-7. Accessible model-button names ran together: explicit coherent labels
-8. Unsupported audio left remembered preference on: persistent state reverts off with meaningful error
-9. Server buffered large HDRIs/GLBs including HEAD: streams GET and does no payload read for HEAD
-10. Controls relied only on declared material names: paint/light availability now comes from actual matched bindings too
+## Real browser flows exercised
 
-## Not run / not established
-- Built-site browser interaction, screenshots, touch, overflow and layout at1920×1080,1440×900,390×844,430px,tablet1600/1366
-- Actual vehicle WebGL appearance, cabin detail, material tuning, light realism, photographic ground alignment, camera view calibration and mobile GPU performance
-- No final concept-to-browser screenshot fidelity ledger can be marked pass without actual render evidence
-- No GitHub remote commit or CI result; no Railway deployed URL
+Homepage → model collection → Premium configurator → model details → Escape → Back. All six variant routes and their detail sheets were opened at each target viewport. Pending-asset labels and disabled physical controls were checked. Reduced motion preserved variant navigation. No horizontal overflow was detected in those flows and the primary navigation flow had no page errors.
 
-## Exact environment blockers
-- Reference cloud browser: THREE.WebGLRenderer context creation failed with GL_VENDOR/GL_RENDERER Disabled. One reload did not resolve it
-- Built-site navigation: `http://localhost:4173/` was rejected by cloud browser with `net::ERR_BLOCKED_BY_CLIENT`
-- Isolated cloud Chromium fallback: OS `socket() failed: Operation not permitted`; reviewed escalation produced the same error. No restriction bypass attempted
-- Current runtime portable, no advertised supported local-preview forwarding tool. Do not infer public-site failure from this environment limit
+The isolated WebGL harness uses obvious synthetic test geometry, excluded from the production build. It exercised real GLB decoding/rendering, material-capability matching, paint/camera pixel changes, keyboard and pointer exploration, rotation cancellation, invalid-model recovery, unavailable WebGL feedback, context loss/retry and failed HDRI recovery to Studio. **This is evidence for renderer mechanics, not vehicle realism.**
 
-## Visual fidelity ledger (honest pending status)
-| Point | Target evidence | Current implementation | Status |
-|---|---|---|---|
-| Headline/navigation | Original homepage concept | Code-native content and typography tokens | Browser match unverified |
-| Vehicle prominence | Original concepts + user screenshot | Rights-cleared photo fallback, realGLB pipeline | Geometry missing; cannot pass |
-| Configurator UI | User screenshot right toolbar/bottom rail | Right tools and bottom paint rail | Browser framing unverified |
-| Mobile recomposition |390px concept | Bottom dock +scroll swatches +sheet CSS | Touch/overflow unverified |
-| Interior | User detailed cabin screenshots | Fixed-seat look controller gated by asset capability | Detailed cabin asset missing |
-| Outdoor realism | User forest/coast screenshots | Verified photographic CC0 HDRIs +ground projection | Vehicle grounding unverified |
-| Legal/source clarity | User no-official-brand/no-rips requirement | Independent notice, per-photo licenses, correct year captions | Content verified |
+Additional sound-persistence and drawer-source/focus browser cases have been added after the green run and require the next CI result.
 
-## Acceptance boundary
-The54unit/DOM/server tests and passing build are useful evidence, not a substitute for livebrowser/GPU validation. No current view is called a finished six-variant3D configurator. Acquire and inspect production-quality licensed meshes, run browser QA in a permitted environment, fix visual findings, verify exact GitHub commit, then deploy/verify Railway before marking complete.
+## Actual screenshot inspection
 
-## First GitHub browser run (2026-10-01)
-Commit `b22fc600050dcddcfc4c5e48408f3fd8f523ff26`: GitHub Actions run `36830977636`. Unit tests 79/79 and TypeScript passed. The real browser suite passed 12/16 cases across 1920×1080, 1440×900, 390×844 and 430×932. Four pending-asset checks had a test-only race: an immediate locator count ran before the lazy configurator mounted and chose the wrong canvas assertion. Failure snapshots show the correct labeled photographic fallback. Fixed by waiting for the expected route heading and asserting the intentionally missing GT500 state directly.
+Settled browser screenshots were inspected at 1920, 1440 and 390 widths. Homepage text is readable and high-contrast. Desktop navigation, right-hand tools, paint rail and detail drawer fit. Mobile navigation, model cards, bottom dock, pending-state controls and detail sheets remain within the viewport. All six model identities have different photographs and correctly labeled photo-year context.
 
-Actual screenshots inspected: desktop home at both required widths, mobile home/model collection/configurator/details, desktop configurator. Model/detail spacing and mobile controls fit; no horizontal overflow was detected in tested model routes. Initial hero screenshots caught the entry fade before it finished, so evidence capture now fast-forwards finite animations and uses CSS pixel scale. Static composition must be reinspected from the next run. Actual vehicle realism/GPU flow remains a separate unmet criterion.
+Initial screenshots captured the 0.8-second hero entrance and detail-sheet transition mid-animation, causing transient low-opacity text and right-edge clipping. Capture now fast-forwards finite animations and uses CSS pixel scale. Settled screenshots confirm those were capture artifacts rather than permanent layout defects.
+
+## Red-team defects corrected
+
+1. Top camera conflicted with orbit limits and never settled: corrected preset and eight-view convergence regression
+2. Failed HDRI remained trapped in cache: environment-only boundary, cache clearing, visible Studio fallback and synchronized state
+3. Canvas lacked keyboard exploration: focusable controls, arrows, zoom and Home reset
+4. Paint snapped immediately: linear-color interpolation with reduced-motion bypass
+5. Loader reached 100 before rendering: parse progress capped at 99; vehicle/environment frame readiness gate
+6. Asset panel claimed live WebGL during fallback: wording now follows actual runtime readiness
+7. Model-button accessible names ran together: explicit labels
+8. Unsupported audio left the stored preference on: failed start resets preference and displays an error
+9. Server buffered large files and HEAD requests: streaming GET, metadata-only HEAD
+10. Physical controls trusted declarations without bindings: availability now requires actual matched materials
+11. R3F fallback children mounted on healthy canvases and triggered false errors: fallback is now purely presentational
+12. Pending-asset browser test checked the lazy route too early: waits for its heading and checks the intended missing-asset state directly
+13. GT-R50 inherited an incorrect RWD default: generic factual defaults removed; AWD and six-speed transmission now cite and explicitly label Nissan’s 2018 prototype data alongside 2021 powertrain figures
+14. Meshopt decoder required WebAssembly permission: self-only scripts permit WebAssembly compilation without enabling general JavaScript eval
+
+## Still not established
+
+- An accurate, production-quality R35 model with a detailed cabin; the original Blender study was rejected and is not included in the site
+- Real vehicle geometry/material/light quality, cabin camera placement, outdoor grounding, mobile GPU performance or meaningful six-variant geometry differentiation
+- Paint-rail scrolling to the last two swatches on a real interactive vehicle
+- 1600×900, 1366×768 and tablet-specific visual review
+- Recorded engine sound, part animation or unsupported features (none are faked)
+- Railway live deployment and the final GitHub About Website URL
+
+## Environment and acceptance boundary
+
+The direct cloud browser could not create a WebGL context for the reference site and rejected the application’s local preview URL. Those are environment limitations, not reported reference-site bugs. Authorized GitHub Actions supplied a working browser and software WebGL for the tests above.
+
+A green scaffold/fixture build is not a finished six-variant premium configurator. Acquire and inspect accurate, lawfully usable vehicle assets, integrate and test the real vehicles, then verify the Railway preview before claiming full acceptance. Main contains in-progress source; a temporary WIP branch still awaits authenticated removal.

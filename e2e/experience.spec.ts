@@ -108,3 +108,53 @@ test("reduced motion preserves navigation", async ({ page }) => {
     page.getByRole("heading", { name: "GT-R NISMO GT500" }),
   ).toBeVisible();
 });
+
+test("sound preference survives reload and can be turned off", async ({
+  page,
+}) => {
+  await page.goto("/configurator/nismo");
+  await page
+    .getByRole("button", { name: "Turn sound on", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Turn sound off", exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("gtr-lab:sound")))
+    .toBe("on");
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Turn sound off", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Turn sound on", exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("gtr-lab:sound")))
+    .toBe("off");
+});
+
+test("detail sheet reaches its sources and traps keyboard focus", async ({
+  page,
+}) => {
+  await page.goto("/configurator/nismo");
+  const trigger = page.getByRole("button", {
+    name: "Model detail",
+    exact: true,
+  });
+  await trigger.click();
+  const dialog = page.getByRole("dialog");
+  const source = dialog
+    .getByRole("link", { name: /Manufacturer source/ })
+    .last();
+  await source.scrollIntoViewIfNeeded();
+  await expect(source).toBeVisible();
+  await source.focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Close panel", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
