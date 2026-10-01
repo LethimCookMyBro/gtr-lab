@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { HousingReviewHarness } from "./housing";
 import VehicleScene from "../../src/components/three/VehicleScene";
 import type { StudioEnvironment } from "../../src/components/three/types";
 import { createFixtureGlb, QA_MATERIAL_ROLES } from "./fixture";
@@ -166,4 +167,10 @@ function Harness() {
     </main>
   );
 }
-createRoot(document.getElementById("root")!).render(<Harness />);
+createRoot(document.getElementById("root")!).render(
+  new URLSearchParams(location.search).get("review") === "housing" ? (
+    <HousingReviewHarness />
+  ) : (
+    <Harness />
+  ),
+);
