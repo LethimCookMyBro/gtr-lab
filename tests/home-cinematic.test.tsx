@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react";
 import { StrictMode } from "react";
 import { Film } from "../src/components/home/Film";
+import { HeritageJourney } from "../src/components/home/HeritageJourney";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { HomePage } from "../src/pages/HomePage";
@@ -85,6 +86,45 @@ const setup = () =>
   );
 
 describe("cinematic homepage", () => {
+  it("renders a single decorative year while era photographs transition", async () => {
+    const onEra = vi.fn();
+    const scene = (activeEra: number) => (
+      <MemoryRouter>
+        <HeritageJourney
+          activeEra={activeEra}
+          onEra={onEra}
+          sequentialMotion={false}
+        />
+      </MemoryRouter>
+    );
+    const { container, rerender } = render(scene(0));
+    const years = container.querySelector(".home-heritage-years")!;
+    expect(years.children).toHaveLength(1);
+    expect(years.textContent).toBe("1969");
+    rerender(scene(2));
+    expect(years.children).toHaveLength(1);
+    expect(years.textContent).toBe("2007");
+  });
+  it("lets actual scroll progress select the visible era during normal timeline navigation", async () => {
+    const onEra = vi.fn();
+    render(
+      <MemoryRouter>
+        <HeritageJourney activeEra={0} onEra={onEra} sequentialMotion={false} />
+      </MemoryRouter>,
+    );
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "2007: R35 GT-R" }));
+    expect(window.scrollTo).toHaveBeenCalledWith(
+      expect.objectContaining({ behavior: "smooth" }),
+    );
+    expect(onEra).not.toHaveBeenCalled();
+    expect(
+      screen
+        .getByRole("button", { name: "1969: Skyline GT-R" })
+        .getAttribute("aria-current"),
+    ).toBe("step");
+  });
   it("contains two real native films and all six full-row model destinations", () => {
     const { container } = setup();
     expect(container.querySelectorAll("video")).toHaveLength(2);

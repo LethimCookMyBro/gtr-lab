@@ -16,6 +16,15 @@ export function heritageLayersAt(progress: number) {
   const second = ease(0.56, 0.78);
   return [1 - first, first - second, second];
 }
+/** One numeral string fades out completely before the active era changes. */
+export function heritageYearOpacityAt(progress: number) {
+  const distance = Math.min(
+    Math.abs(progress - 1 / 3),
+    Math.abs(progress - 2 / 3),
+  );
+  const value = clamp01(distance / 0.075);
+  return value * value * (3 - 2 * value);
+}
 /** Progress of a sticky section, using its real scrollable runway. */
 export function sectionProgress(top: number, height: number, viewport: number) {
   return clamp01(-top / Math.max(1, height - viewport));

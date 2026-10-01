@@ -5,6 +5,7 @@ import {
   clamp01,
   expansionAt,
   heritageLayersAt,
+  heritageYearOpacityAt,
   sectionProgress,
   viewportProgress,
 } from "./motion";
@@ -76,6 +77,7 @@ export function useHomeMotion(
         "--era-0-opacity",
         "--era-1-opacity",
         "--era-2-opacity",
+        "--year-opacity",
       ];
       [...sections, ...anchors.map((anchor) => anchor.element)].forEach(
         (section) => {
@@ -165,6 +167,11 @@ export function useHomeMotion(
           );
         }
         if (kind === "heritage") {
+          write(
+            element,
+            "--year-opacity",
+            heritageYearOpacityAt(progress).toFixed(5),
+          );
           heritageLayersAt(progress).forEach((opacity, index) =>
             write(element, `--era-${index}-opacity`, opacity.toFixed(5)),
           );

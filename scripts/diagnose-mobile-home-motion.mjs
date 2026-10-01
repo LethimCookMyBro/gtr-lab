@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const url = process.env.HOME_MOTION_URL || 'https://gtr-lab-production.up.railway.app/';
 const output = process.env.HOME_MOTION_OUTPUT || 'mobile-home-motion-evidence';
+const deliberateDemo = process.env.HOME_MOTION_DEMO === '1';
 const allPlans = [
   { width: 390, height: 844 },
   { width: 390, height: 700 },
@@ -20,6 +21,7 @@ const plans = allPlans.filter(plan => !selectedPlan || planName(plan) === select
 await mkdir(output, { recursive: true });
 const report = {
   url, startedAt: new Date().toISOString(),
+  scrollPace: deliberateDemo ? 'Deliberate real input for an unretimed demonstration' : 'Diagnostic sweep',
   method: 'GitHub Chromium Android emulation using Pixel 7 user agent/touch settings and the stated CSS viewport. Real incremental mouse-wheel input, not native Android touch gestures. Video records the actual page while scrolling. No media or motion state is patched.',
   performanceScope: 'Unthrottled CI Chromium. RAF frame intervals and Long Tasks during wheel input are diagnostics, not physical-device performance certification.',
   views: [],
@@ -90,12 +92,12 @@ try {
       };
       const wheelTo = async target => {
         await page.evaluate(() => { window.__motionProbe.active = true; });
-        for (let step = 0; step < 150; step++) {
+        for (let step = 0; step < (deliberateDemo ? 450 : 150); step++) {
           const current = await page.evaluate(() => scrollY);
           const remaining = target - current;
           if (Math.abs(remaining) < 3) break;
-          await page.mouse.wheel(0, Math.sign(remaining) * Math.min(75, Math.abs(remaining)));
-          await page.waitForTimeout(32);
+          await page.mouse.wheel(0, Math.sign(remaining) * Math.min(deliberateDemo ? 24 : 75, Math.abs(remaining)));
+          await page.waitForTimeout(deliberateDemo ? 80 : 32);
         }
         await page.waitForTimeout(100);
         await page.evaluate(() => { window.__motionProbe.active = false; window.__motionProbe.last = 0; });

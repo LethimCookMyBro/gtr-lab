@@ -6,10 +6,20 @@ import {
   timelineScrollTarget,
   mayAutoplay,
   heritageLayersAt,
+  heritageYearOpacityAt,
   viewportProgress,
 } from "../src/components/home/motion";
 
 describe("native homepage scroll geometry", () => {
+  it("fades the single decorative year through zero at each era switch", () => {
+    expect(heritageYearOpacityAt(0)).toBe(1);
+    expect(heritageYearOpacityAt(1 / 3)).toBe(0);
+    expect(heritageYearOpacityAt(0.5)).toBe(1);
+    expect(heritageYearOpacityAt(2 / 3)).toBe(0);
+    expect(heritageYearOpacityAt(1)).toBe(1);
+    expect(heritageYearOpacityAt(0.32)).toBeLessThan(0.1);
+    expect(heritageYearOpacityAt(0.34)).toBeLessThan(0.1);
+  });
   it("stages each editorial image from its own viewport crossing", () => {
     expect(viewportProgress(700, 400, 700)).toBe(0);
     expect(viewportProgress(150, 400, 700)).toBe(0.5);

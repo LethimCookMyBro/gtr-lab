@@ -1,18 +1,61 @@
 import { test, expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Page, TestInfo } from "@playwright/test";
 
-async function scrollProgress(page: Page, selector: string, progress: number) {
-  await page.locator(selector).evaluate((element, p) => {
-    const rect = element.getBoundingClientRect();
-    const stickyHeight =
-      (element.firstElementChild as HTMLElement | null)?.offsetHeight ||
-      window.innerHeight;
-    window.scrollTo({
-      top:
-        window.scrollY + rect.top + Math.max(0, rect.height - stickyHeight) * p,
-      behavior: "instant",
+async function scrollProgress(
+  page: Page,
+  selector: string,
+  progress: number,
+  diagnostic?: { info: TestInfo; name: string },
+) {
+  const samples = await page.locator(selector).evaluate(
+    async (element, { p, capture }) => {
+      const rect = element.getBoundingClientRect();
+      const stickyHeight =
+        (element.firstElementChild as HTMLElement | null)?.offsetHeight ||
+        window.innerHeight;
+      window.scrollTo({
+        top:
+          window.scrollY +
+          rect.top +
+          Math.max(0, rect.height - stickyHeight) * p,
+        behavior: "instant",
+      });
+      const frames = [];
+      if (capture) {
+        for (let frame = 0; frame < 14; frame++) {
+          if (frame) await new Promise(requestAnimationFrame);
+          const runway = element.getBoundingClientRect();
+          frames.push({
+            frame,
+            scrollY,
+            runwayTop: runway.top,
+            runwayHeight: runway.height,
+            stickyHeight: (element.firstElementChild as HTMLElement)
+              .offsetHeight,
+            filmHeight: element
+              .querySelector(".home-expanding-frame")
+              ?.getBoundingClientRect().height,
+            activeElement: document.activeElement?.tagName,
+            progress: (element as HTMLElement).style.getPropertyValue(
+              "--progress",
+            ),
+          });
+        }
+      }
+      return frames;
+    },
+    { p: progress, capture: Boolean(diagnostic) },
+  );
+  if (diagnostic) {
+    await diagnostic.info.attach(diagnostic.name, {
+      body: JSON.stringify(samples, null, 2),
+      contentType: "application/json",
     });
-  }, progress);
+    expect(
+      Math.max(...samples.map((sample) => sample.scrollY)) -
+        Math.min(...samples.map((sample) => sample.scrollY)),
+    ).toBeLessThanOrEqual(2);
+  }
   await expect
     .poll(() =>
       page
@@ -824,7 +867,14 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
 
     const filmBounds = [];
     for (const progress of [0.2, 0.5, 0.8]) {
-      await scrollProgress(page, ".home-expanding-runway", progress);
+      await scrollProgress(
+        page,
+        ".home-expanding-runway",
+        progress,
+        progress === 0.2
+          ? { info, name: `film-scroll-stability-${width}x${height}` }
+          : undefined,
+      );
       filmBounds.push(
         (await page.locator(".home-expanding-frame").boundingBox())!,
       );
@@ -847,6 +897,13 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
           .locator(".home-heritage-r32")
           .evaluate((element) => Number(getComputedStyle(element).opacity)),
       );
+      await expect(page.locator(".home-heritage-years span")).toHaveCount(1);
+      if (progress === 0.33)
+        expect(
+          await page
+            .locator(".home-heritage-years span")
+            .evaluate((element) => Number(getComputedStyle(element).opacity)),
+        ).toBeLessThan(0.05);
       if (
         (width === 390 && height === 700) ||
         (width === 430 && height === 932)
@@ -912,6 +969,17 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
             ),
         )
         .toBeCloseTo(index / 2, 1);
+      expect(
+        await page
+          .locator(
+            [
+              ".home-heritage-origin",
+              ".home-heritage-r32",
+              ".home-heritage-r35",
+            ][index],
+          )
+          .evaluate((element) => Number(getComputedStyle(element).opacity)),
+      ).toBe(1);
       const copy = (await page.locator(".home-heritage-copy").boundingBox())!;
       const eraControls = (await page
         .locator(".home-era-navigation")

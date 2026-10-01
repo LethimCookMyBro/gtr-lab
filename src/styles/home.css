@@ -403,6 +403,8 @@
   border-radius: var(--film-radius);
   overflow: hidden;
   background: #070809;
+  /* Its centered growth must not move the native scroll position to follow a film control. */
+  overflow-anchor: none;
 }
 .home-expanding-frame .home-film-controls {
   left: 30px;
@@ -1024,6 +1026,7 @@
     position: absolute;
     inset: 0;
     transform: translateX(calc(24px - var(--progress) * 48px));
+    opacity: var(--year-opacity, 1);
   }
   .home-heritage-origin,
   .home-heritage-r32,
@@ -1042,16 +1045,13 @@
     filter: none;
     object-fit: contain;
   }
-  .home-heritage-origin,
-  .home-heritage-year-0 {
+  .home-heritage-origin {
     opacity: var(--era-0-opacity, 1);
   }
-  .home-heritage-r32,
-  .home-heritage-year-1 {
+  .home-heritage-r32 {
     opacity: var(--era-1-opacity, 0);
   }
-  .home-heritage-r35,
-  .home-heritage-year-2 {
+  .home-heritage-r35 {
     opacity: var(--era-2-opacity, 0);
   }
   .home-heritage-origin {

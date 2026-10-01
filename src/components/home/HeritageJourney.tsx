@@ -45,10 +45,10 @@ export function HeritageJourney({
 }) {
   const section = useRef<HTMLElement>(null);
   const navigateEra = (index: number) => {
-    onEra(index);
     const element = section.current;
     if (!element) return;
     if (sequentialMotion) {
+      onEra(index);
       const target = element.querySelector<HTMLElement>(
         `[data-era-image="${index}"]`,
       );
@@ -90,11 +90,7 @@ export function HeritageJourney({
     >
       <div className="home-heritage-sticky">
         <div className="home-heritage-years" aria-hidden="true">
-          {eras.map((era, index) => (
-            <span key={era.year} className={`home-heritage-year-${index}`}>
-              {era.year}
-            </span>
-          ))}
+          <span>{eras[activeEra].year}</span>
         </div>
         <p className="home-heritage-mobile-caption">
           {
