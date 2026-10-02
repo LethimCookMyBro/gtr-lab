@@ -50,3 +50,8 @@ The expanding track loop gains an enlarged-view dialog using the already verifie
 ## Responsive model-card spacing
 
 The model invitations now have separate dark gaps and side gutters, rounded corners, and a stacked mobile heading/CTA. All six genuine photographs and destinations are preserved. Candidate903cea1544db55ddeba7ac2203cfc71973d6b2b1 passed actual-card image, spacing, label, keyboard-focus and link checks at390,430 and1440 CSS pixels. The rear-signature source-stability test now waits for the lazy photograph to be ready before sampling; its source/reverse-motion assertions remain intact.
+
+
+## Grouped mobile readability pass
+
+An inspection of the menu, editorial photographs, film controls, archive, model cards and footer found8–9px photo metadata and a10px affiliation disclosure. The grouped correction raises photo metadata to11px, gives the cockpit credit a restrained dark backing, and raises the footer disclosure to12px. Existing44–52px interactive targets are preserved. Candidateb42c764c861be237e64ba7eb1e3b5d68bda3e40b passed the homepage browser checks, and390/430 captures were inspected for contrast and clipping. This closes the bounded UI pass; professional asset quality and the missing accepted vehicle variants remain separate open gates.

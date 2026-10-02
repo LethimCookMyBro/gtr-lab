@@ -1,4 +1,5 @@
-Release responsive model-card spacing.
-Tested application:903cea1544db55ddeba7ac2203cfc71973d6b2b1
-Homepage and all-six-card browser QA:36999355619
-Restore the saved14 normal Railway watch patterns after verified deployment.
+Release grouped mobile caption and disclosure readability.
+Tested application:b42c764c861be237e64ba7eb1e3b5d68bda3e40b
+Homepage browser QA:37001014633
+Mobile captures:37001014570
+Restore all14 saved normal Railway watch patterns after verified deployment.
