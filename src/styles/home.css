@@ -1468,3 +1468,20 @@
     height: calc(100% - 76px);
   }
 }
+
+/* Keep hosted landscape footage and its controls together on portrait screens. */
+@media (max-width: 767px) {
+  .home-expanding-frame {
+    box-sizing: content-box;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    padding-bottom: 76px;
+  }
+}
+
+@media (max-width: 700px) and (min-height: 700px) {
+  .home-hero-copy {
+    top: calc(88px + 56.25vw + 28px);
+    bottom: auto;
+  }
+}

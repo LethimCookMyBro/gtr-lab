@@ -4,3 +4,5 @@ Public-origin probe: 06500737ec87880d451984c8e9b40487bf07a2db
 Both exact players advance; final composed review follows this deployment.
 Temporary responsive wrapper and its route-scoped headers must be removed after review.
 Restore the recorded 14 normal Railway watch patterns after verified release.
+
+Responsive follow-up: landscape detail frame plus nearby controls and hero copy.

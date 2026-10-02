@@ -111,6 +111,11 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     expect(media!.width).toBeCloseTo(page.viewportSize()!.width, 0);
     expect(media!.height).toBeCloseTo((page.viewportSize()!.width * 9) / 16, 0);
     expect(media!.y).toBeGreaterThanOrEqual(70);
+    if (page.viewportSize()!.height >= 700) {
+      const copy = await page.locator(".home-hero-copy").boundingBox();
+      expect(copy!.y - (media!.y + media!.height)).toBeGreaterThanOrEqual(20);
+      expect(copy!.y - (media!.y + media!.height)).toBeLessThanOrEqual(40);
+    }
     const credit = page.locator(".home-film--hero .home-film-credit");
     const creditBox = await credit.boundingBox();
     expect(creditBox!.height).toBeGreaterThanOrEqual(44);
@@ -228,7 +233,19 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   expect(middle!.width).toBeGreaterThan(initial!.width);
   expect(expanded!.width).toBeGreaterThan(middle!.width);
   expect(expanded!.width).toBeCloseTo(page.viewportSize()!.width, 0);
-  expect(expanded!.height).toBeCloseTo(page.viewportSize()!.height, 0);
+  if (page.viewportSize()!.width <= 767) {
+    expect(expanded!.height).toBeCloseTo((expanded!.width * 9) / 16 + 76, 0);
+    const player = await page
+      .locator(".home-film--detail iframe")
+      .boundingBox();
+    expect(player!.height).toBeCloseTo((player!.width * 9) / 16, 0);
+    const controls = await page
+      .locator(".home-film--detail .home-film-controls")
+      .boundingBox();
+    expect(controls!.y - (player!.y + player!.height)).toBeLessThanOrEqual(32);
+  } else {
+    expect(expanded!.height).toBeCloseTo(page.viewportSize()!.height, 0);
+  }
   await page.screenshot({
     animations: "disabled",
     path: info.outputPath("06-film-fullscreen.png"),
