@@ -94,6 +94,32 @@ async function scrollProgress(
     .toBeCloseTo(progress, 1);
 }
 
+const archiveNames = [
+  "1969: Skyline GT-R",
+  "1989: R32 GT-R",
+  "1999: R34 GT-R",
+  "2007: R35 GT-R",
+];
+
+async function centerArchiveChapter(page: Page, index: number) {
+  await page
+    .locator(`.home-archive-chapter[data-era-image="${index}"]`)
+    .evaluate((chapter) => {
+      const rect = chapter.getBoundingClientRect();
+      window.scrollTo({
+        top: scrollY + rect.top + rect.height / 2 - innerHeight / 2,
+        behavior: "instant",
+      });
+    });
+  await expect(page.locator(".home-archive-runway")).toHaveAttribute(
+    "data-active-era",
+    String(index),
+  );
+  await expect(
+    page.getByRole("button", { name: archiveNames[index], exact: true }),
+  ).toHaveAttribute("aria-current", "step");
+}
+
 test("cinematic layout, real scroll geometry, menu and six destinations", async ({
   page,
 }, info) => {
@@ -251,81 +277,75 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     path: info.outputPath("06-film-fullscreen.png"),
     scale: "css",
   });
-  await scrollProgress(page, ".home-heritage-runway", 0.1);
-  const copyBefore = await page.locator(".home-heritage-copy").boundingBox();
-  const planeBefore = await page.locator(".home-heritage-origin").boundingBox();
-  await scrollProgress(page, ".home-heritage-runway", 0.6);
-  const copyAfter = await page.locator(".home-heritage-copy").boundingBox();
-  const planeAfter = await page.locator(".home-heritage-origin").boundingBox();
-  expect(copyAfter!.y).toBeCloseTo(copyBefore!.y, 0);
-  expect(Math.abs(planeAfter!.y - planeBefore!.y)).toBeGreaterThan(25);
-  if ((page.viewportSize()?.width || 0) <= 700) {
-    const timeline = page.getByRole("navigation", { name: "GT-R eras" });
-    const bounds = await timeline.boundingBox();
-    expect(bounds!.x).toBeGreaterThanOrEqual(20);
-    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
-      page.viewportSize()!.width - 20,
+  await expect(page.locator(".home-archive-chapter")).toHaveCount(4);
+  const narratives: string[] = [];
+  const imageBounds = [];
+  const stageBounds = [];
+  for (const index of [0, 1, 2, 3]) {
+    await centerArchiveChapter(page, index);
+    const image = page.locator(
+      `.home-archive-chapter[data-era-image="${index}"] .home-archive-image`,
     );
-    expect(
-      await timeline.evaluate(
-        (element) => getComputedStyle(element).backgroundColor,
-      ),
-    ).toBe("rgb(7, 8, 9)");
-    for (const progress of [0.35, 0.6]) {
-      await scrollProgress(page, ".home-heritage-runway", progress);
-      const photo = await page.locator(".home-heritage-r32").boundingBox();
-      const caption = await page
-        .locator(".home-heritage-mobile-caption")
-        .boundingBox();
-      const heading = await page.locator("#heritage-title").boundingBox();
-      expect(photo!.x).toBeGreaterThanOrEqual(20);
-      expect(photo!.x + photo!.width).toBeLessThanOrEqual(
-        page.viewportSize()!.width - 19,
-      );
-      expect(caption!.y + caption!.height).toBeLessThanOrEqual(heading!.y - 16);
-    }
-    const credits = page.getByRole("link", {
-      name: "Archive photography & sources",
-    });
-    const creditsBox = await credits.boundingBox();
-    expect(creditsBox!.height).toBeGreaterThanOrEqual(44);
-    expect(
-      await credits.evaluate((element) =>
-        Number.parseFloat(getComputedStyle(element).fontSize),
-      ),
-    ).toBeGreaterThanOrEqual(12);
-    expect(
-      await credits.evaluate(
-        (element) => getComputedStyle(element).backgroundColor,
-      ),
-    ).toBe("rgb(7, 8, 9)");
-    for (const button of await timeline.getByRole("button").all()) {
-      const rect = await button.boundingBox();
-      expect(rect!.width).toBeGreaterThanOrEqual(44);
-      expect(rect!.x).toBeGreaterThanOrEqual(bounds!.x);
-      expect(rect!.x + rect!.width).toBeLessThanOrEqual(
-        bounds!.x + bounds!.width + 1,
-      );
-    }
+    await expect(image).toBeInViewport();
+    const bounds = (await image.boundingBox())!;
+    expect(bounds.width).toBeGreaterThan(page.viewportSize()!.width * 0.3);
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width + 1,
+    );
+    imageBounds.push(bounds);
+    stageBounds.push(
+      (await page.locator(".home-archive-stage").boundingBox())!,
+    );
+    narratives.push(
+      await page.locator(".home-archive-narrative h2").innerText(),
+    );
+    await expect(page.locator(".home-archive-narrative h2")).toBeInViewport();
   }
+  expect(new Set(narratives).size).toBe(4);
+  if (page.viewportSize()!.width > 767) {
+    expect(Math.abs(imageBounds[0].x - imageBounds[1].x)).toBeGreaterThan(100);
+    expect(stageBounds[1].y).toBeCloseTo(stageBounds[2].y, 0);
+  }
+  for (const index of [2, 1, 0]) {
+    await centerArchiveChapter(page, index);
+    await expect(page.locator(".home-archive-narrative h2")).toHaveText(
+      narratives[index],
+    );
+  }
+  const timeline = page.getByRole("navigation", { name: "GT-R eras" });
+  await expect(timeline.getByRole("button")).toHaveCount(4);
+  for (const button of await timeline.getByRole("button").all()) {
+    const rect = (await button.boundingBox())!;
+    expect(rect.width).toBeGreaterThanOrEqual(44);
+    expect(rect.height).toBeGreaterThanOrEqual(44);
+    expect(rect.x).toBeGreaterThanOrEqual(0);
+    expect(rect.x + rect.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width + 1,
+    );
+  }
+  await page
+    .getByRole("button", { name: archiveNames[3], exact: true })
+    .click();
+  await expect(page.locator(".home-archive-runway")).toHaveAttribute(
+    "data-active-era",
+    "3",
+  );
+  await expect
+    .poll(() =>
+      page
+        .locator('.home-archive-chapter[data-era-image="3"]')
+        .evaluate((chapter) => {
+          const rect = chapter.getBoundingClientRect();
+          return Math.abs(rect.top + rect.height / 2 - innerHeight / 2);
+        }),
+    )
+    .toBeLessThan(3);
   await page.screenshot({
     animations: "disabled",
     path: info.outputPath("07-home-heritage.png"),
     scale: "css",
   });
-  await page.getByRole("button", { name: "2007: R35 GT-R" }).click();
-  await expect(
-    page.getByRole("button", { name: "2007: R35 GT-R" }),
-  ).toHaveAttribute("aria-current", "step");
-  await expect
-    .poll(() =>
-      page
-        .locator(".home-heritage-runway")
-        .evaluate((element) =>
-          Number((element as HTMLElement).style.getPropertyValue("--progress")),
-        ),
-    )
-    .toBeGreaterThan(0.9);
   await page.locator(".home-invitations").scrollIntoViewIfNeeded();
   await page.screenshot({
     animations: "disabled",
@@ -379,7 +399,7 @@ test("reduced motion stays sequential and permits explicit film playback", async
   await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
   await page.getByRole("button", { name: "Open menu" }).click();
   await page.keyboard.press("Escape");
-  await page.locator(".home-heritage-runway").scrollIntoViewIfNeeded();
+  await page.locator(".home-archive-runway").scrollIntoViewIfNeeded();
   await page.screenshot({
     animations: "disabled",
     path: info.outputPath("10-reduced-heritage.png"),
@@ -387,9 +407,9 @@ test("reduced motion stays sequential and permits explicit film playback", async
   });
   expect(
     await page
-      .locator(".home-heritage-sticky")
+      .locator(".home-archive-stage")
       .evaluate((element) => getComputedStyle(element).position),
-  ).toBe("relative");
+  ).not.toBe("sticky");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,
@@ -610,7 +630,7 @@ test("additional viewport sanity stays within bounds with usable navigation", as
     ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(menu).toBeFocused();
-    await scrollProgress(page, ".home-heritage-runway", 0.5);
+    await centerArchiveChapter(page, 1);
     for (const button of await page
       .getByRole("navigation", { name: "GT-R eras" })
       .getByRole("button")
@@ -694,16 +714,16 @@ test("short viewports use reachable sequential targets and keep playback control
     });
     expect(
       await page
-        .locator(".home-heritage-sticky")
+        .locator(".home-archive-stage")
         .evaluate((element) => getComputedStyle(element).position),
-    ).toBe("relative");
+    ).not.toBe("sticky");
     const era = page.getByRole("button", { name: "2007: R35 GT-R" });
     await era.scrollIntoViewIfNeeded();
     await era.click();
     await expect(era).toHaveAttribute("aria-current", "step");
-    const target = await page.locator('[data-era-image="2"]').boundingBox();
-    expect(target!.y).toBeGreaterThanOrEqual(-1);
-    expect(target!.y + target!.height).toBeLessThanOrEqual(height + 1);
+    await expect(
+      page.locator('.home-archive-chapter[data-era-image="3"]'),
+    ).toBeInViewport();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1,
@@ -832,114 +852,53 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
     expect(filmBounds[1].width).toBeLessThan(filmBounds[2].width);
     expect(filmBounds[0].height).toBeLessThan(filmBounds[2].height);
 
-    const origins = [];
-    const successors = [];
-    for (const progress of [0.26, 0.33, 0.4]) {
-      await scrollProgress(page, ".home-heritage-runway", progress);
-      origins.push(
-        await page
-          .locator(".home-heritage-origin")
-          .evaluate((element) => Number(getComputedStyle(element).opacity)),
+    const narratives: string[] = [];
+    for (const index of [0, 1, 2, 3]) {
+      await centerArchiveChapter(page, index);
+      const image = page.locator(
+        `.home-archive-chapter[data-era-image="${index}"] .home-archive-image`,
       );
-      successors.push(
-        await page
-          .locator(".home-heritage-r32")
-          .evaluate((element) => Number(getComputedStyle(element).opacity)),
+      await expect(image).toBeInViewport();
+      const bounds = (await image.boundingBox())!;
+      expect(bounds.width).toBeGreaterThanOrEqual(width * 0.7);
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(width + 1);
+      narratives.push(
+        await page.locator(".home-archive-narrative h2").innerText(),
       );
-      await expect(page.locator(".home-heritage-years span")).toHaveCount(1);
-      if (progress === 0.33)
-        expect(
-          await page
-            .locator(".home-heritage-years span")
-            .evaluate((element) => Number(getComputedStyle(element).opacity)),
-        ).toBeLessThan(0.05);
-      if (
-        (width === 390 && height === 700) ||
-        (width === 430 && height === 932)
-      ) {
-        await page.screenshot({
-          path: info.outputPath(
-            `portrait-${width}x${height}-crossfade-${progress}.png`,
-          ),
-          scale: "css",
-        });
-      }
+      const heading = (await page
+        .locator(".home-archive-narrative h2")
+        .boundingBox())!;
+      expect(heading.y).toBeGreaterThanOrEqual(0);
+      expect(heading.y + heading.height).toBeLessThanOrEqual(height);
     }
-    expect(origins[0]).toBeGreaterThan(origins[1]);
-    expect(origins[1]).toBeGreaterThan(origins[2]);
-    expect(successors[0]).toBeLessThan(successors[1]);
-    expect(successors[1]).toBeLessThan(successors[2]);
-    await scrollProgress(page, ".home-heritage-runway", 0.26);
-    expect(
-      await page
-        .locator(".home-heritage-origin")
-        .evaluate((element) => Number(getComputedStyle(element).opacity)),
-    ).toBeCloseTo(origins[0], 2);
-    const caption = await page
-      .locator(".home-heritage-mobile-caption")
-      .boundingBox();
-    const heading = await page.locator("#heritage-title").boundingBox();
-    const description = await page
-      .locator(".home-era-description")
-      .boundingBox();
-    const timeline = await page.locator(".home-era-navigation").boundingBox();
-    expect(caption!.y + caption!.height).toBeLessThanOrEqual(heading!.y - 16);
-    expect(description!.y + description!.height).toBeLessThanOrEqual(
-      timeline!.y - 8,
+    expect(new Set(narratives).size).toBe(4);
+    await centerArchiveChapter(page, 1);
+    await expect(page.locator(".home-archive-narrative h2")).toHaveText(
+      narratives[1],
     );
-    for (const control of await page
-      .getByRole("navigation", { name: "GT-R eras" })
-      .getByRole("button")
-      .all()) {
-      const box = (await control.boundingBox())!;
-      expect(box.x).toBeGreaterThanOrEqual(20);
-      expect(box.x + box.width).toBeLessThanOrEqual(width - 20);
-      expect(box.y + box.height).toBeLessThanOrEqual(height - 52);
-      expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    for (const [index, name] of [
-      "1969: Skyline GT-R",
-      "1989: R32 GT-R",
-      "2007: R35 GT-R",
-    ].entries()) {
-      await page.getByRole("button", { name, exact: true }).click();
-      await expect(page.locator(".home-heritage-runway")).toHaveAttribute(
+    for (const [index, name] of archiveNames.entries()) {
+      const button = page.getByRole("button", { name, exact: true });
+      const bounds = (await button.boundingBox())!;
+      expect(bounds.height).toBeGreaterThanOrEqual(44);
+      expect(bounds.width).toBeGreaterThanOrEqual(44);
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(width + 1);
+      await button.click();
+      await expect(page.locator(".home-archive-runway")).toHaveAttribute(
         "data-active-era",
         String(index),
       );
       await expect
         .poll(() =>
           page
-            .locator(".home-heritage-runway")
-            .evaluate((element) =>
-              Number(
-                (element as HTMLElement).style.getPropertyValue("--progress"),
-              ),
-            ),
+            .locator(`.home-archive-chapter[data-era-image="${index}"]`)
+            .evaluate((chapter) => {
+              const rect = chapter.getBoundingClientRect();
+              return Math.abs(rect.top + rect.height / 2 - innerHeight / 2);
+            }),
         )
-        .toBeCloseTo(index / 2, 1);
-      expect(
-        await page
-          .locator(
-            [
-              ".home-heritage-origin",
-              ".home-heritage-r32",
-              ".home-heritage-r35",
-            ][index],
-          )
-          .evaluate((element) => Number(getComputedStyle(element).opacity)),
-      ).toBe(1);
-      const copy = (await page.locator(".home-heritage-copy").boundingBox())!;
-      const eraControls = (await page
-        .locator(".home-era-navigation")
-        .boundingBox())!;
-      const archiveCredit = (await page
-        .locator(".home-heritage-credit")
-        .boundingBox())!;
-      expect(copy.y + copy.height).toBeLessThanOrEqual(eraControls.y - 8);
-      expect(eraControls.y + eraControls.height).toBeLessThanOrEqual(
-        archiveCredit.y - 8,
-      );
+        .toBeLessThan(3);
     }
     await page.screenshot({
       path: info.outputPath(`portrait-staging-${width}x${height}.png`),
@@ -956,7 +915,17 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
     "data-sequential-motion",
     "true",
   );
-  expect(await page.locator(".home-heritage-years").isVisible()).toBe(false);
+  expect(
+    await page
+      .locator(".home-archive-stage")
+      .evaluate((element) => getComputedStyle(element).position),
+  ).not.toBe("sticky");
+  for (const chapter of await page.locator(".home-archive-chapter").all()) {
+    await expect(chapter.getByRole("heading")).toBeVisible();
+    expect(
+      await chapter.evaluate((element) => getComputedStyle(element).transform),
+    ).toBe("none");
+  }
   for (const image of await page.locator(".home-editorial-image").all()) {
     expect(
       await image.evaluate((element) => getComputedStyle(element).clipPath),
@@ -964,5 +933,150 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
     expect(
       await image.evaluate((element) => getComputedStyle(element).transform),
     ).toBe("none");
+  }
+});
+
+test("archive chapters follow native forward and reverse wheel input", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await centerArchiveChapter(page, 0);
+  const narrative = await page
+    .locator(".home-archive-narrative h2")
+    .innerText();
+  for (const index of [1, 2, 3, 2, 1, 0]) {
+    const distance = await page
+      .locator(`.home-archive-chapter[data-era-image="${index}"]`)
+      .evaluate((chapter) => {
+        const rect = chapter.getBoundingClientRect();
+        return rect.top + rect.height / 2 - innerHeight / 2;
+      });
+    await page.mouse.move(10, Math.round(page.viewportSize()!.height / 2));
+    await page.mouse.wheel(0, distance);
+    await settleNativeScroll(
+      page,
+      info,
+      `archive-wheel-${index}-${distance > 0 ? "forward" : "reverse"}`,
+    );
+    await expect(page.locator(".home-archive-runway")).toHaveAttribute(
+      "data-active-era",
+      String(index),
+    );
+    await expect(
+      page.getByRole("button", { name: archiveNames[index], exact: true }),
+    ).toHaveAttribute("aria-current", "step");
+  }
+  await expect(page.locator(".home-archive-narrative h2")).toHaveText(
+    narrative,
+  );
+});
+
+test("rear signature reveals the credited photograph continuously and reversibly", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  const photo = page.locator(".home-signature-photo img");
+  await expect(photo).toHaveAttribute("src", "/images/gtr-nismo.webp");
+  await expect(photo).toHaveAttribute("alt", /rear/i);
+  const samples = [];
+  for (const progress of [0.1, 0.5, 0.9, 0.1]) {
+    await scrollProgress(page, ".home-signature-runway", progress);
+    samples.push(
+      await photo.evaluate((element) => ({
+        scale: new DOMMatrixReadOnly(getComputedStyle(element).transform).a,
+        source: (element as HTMLImageElement).currentSrc,
+      })),
+    );
+    await expect(page.locator(".home-signature-mark")).toBeVisible();
+  }
+  expect(samples[0].scale).toBeGreaterThan(samples[1].scale);
+  expect(samples[1].scale).toBeGreaterThan(samples[2].scale);
+  expect(samples[3].scale).toBeCloseTo(samples[0].scale, 3);
+  expect(new Set(samples.map((sample) => sample.source)).size).toBe(1);
+  await expect(
+    page.locator(".home-signature-runway canvas, .home-signature-runway video"),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: info.outputPath("signature-photographic-reveal.png"),
+    scale: "css",
+  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(
+    await photo.evaluate((element) => getComputedStyle(element).transform),
+  ).toBe("none");
+  expect(
+    await page
+      .locator(".home-signature-sticky")
+      .evaluate((element) => getComputedStyle(element).position),
+  ).not.toBe("sticky");
+});
+
+test("enlarged driving film preserves focus, scroll and one-player lifecycle", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await scrollProgress(page, ".home-expanding-runway", 0.5);
+  const trigger = page.getByRole("button", {
+    name: "Enlarge driving film",
+    exact: true,
+  });
+  await expect(trigger).toBeVisible();
+  await trigger.focus();
+  await settleNativeScroll(page, info, "dialog-before-open");
+  const before = await page.evaluate(() => scrollY);
+  for (const closeMethod of ["escape", "button"] as const) {
+    await trigger.press("Enter");
+    const dialog = page.getByRole("dialog", {
+      name: "GT-R driving film",
+      exact: true,
+    });
+    await expect(dialog).toBeVisible();
+    const close = dialog.getByRole("button", {
+      name: "Close driving film",
+      exact: true,
+    });
+    await expect(close).toBeFocused();
+    await expect(dialog.locator("iframe")).toHaveCount(1);
+    await expect(dialog.locator("iframe")).toHaveAttribute(
+      "src",
+      "https://media.flixel.com/cinemagraph/t53p8d1vu4miy763a938?hd=true",
+    );
+    await expect(page.locator(".home-film--detail iframe")).toHaveCount(0);
+    for (const element of [dialog, close, dialog.locator("iframe")]) {
+      const bounds = (await element.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(-1);
+      expect(bounds.y).toBeGreaterThanOrEqual(-1);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+        page.viewportSize()!.width + 1,
+      );
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+        page.viewportSize()!.height + 1,
+      );
+    }
+    await close.focus();
+    await page.keyboard.press("Shift+Tab");
+    expect(
+      await dialog.evaluate((element) =>
+        element.contains(document.activeElement),
+      ),
+    ).toBe(true);
+    await page.keyboard.press("Tab");
+    expect(
+      await dialog.evaluate((element) =>
+        element.contains(document.activeElement),
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: info.outputPath(`enlarged-driving-film-${closeMethod}.png`),
+      scale: "css",
+    });
+    if (closeMethod === "escape") await page.keyboard.press("Escape");
+    else await close.click();
+    await expect(dialog).not.toBeVisible();
+    await expect(dialog.locator("iframe")).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    expect(
+      Math.abs((await page.evaluate(() => scrollY)) - before),
+    ).toBeLessThanOrEqual(2);
   }
 });

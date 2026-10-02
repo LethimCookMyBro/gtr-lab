@@ -21,7 +21,16 @@ function Harness({ reduced }: { reduced: boolean }) {
         <figure data-motion-anchor="detail" />
         <figure data-motion-anchor="cockpit" />
       </section>
-      <section data-motion-section="heritage" />
+      <section data-motion-section="heritage">
+        <div />
+        <article className="home-archive-chapter" />
+        <article className="home-archive-chapter" />
+        <article className="home-archive-chapter" />
+        <article className="home-archive-chapter" />
+      </section>
+      <section data-motion-section="signature">
+        <div />
+      </section>
     </div>
   );
 }
@@ -90,13 +99,18 @@ it("reads untransformed editorial geometry before writing any scroll styles", ()
   expect(order.lastIndexOf("read-section")).toBeLessThan(
     order.indexOf("write"),
   );
+  const chapter = container.querySelector<HTMLElement>(
+    ".home-archive-chapter",
+  )!;
+  expect(chapter.style.getPropertyValue("--chapter-progress")).not.toBe("");
   rerender(<Harness reduced />);
+  expect(chapter.style.getPropertyValue("--chapter-progress")).toBe("");
   expect(detail.style.getPropertyValue("--item-progress")).toBe("");
   expect(detail.style.getPropertyValue("--item-reveal")).toBe("");
   expect(
     container
-      .querySelector<HTMLElement>('[data-motion-section="heritage"]')!
-      .style.getPropertyValue("--era-0-opacity"),
+      .querySelector<HTMLElement>('[data-motion-section="signature"]')!
+      .style.getPropertyValue("--progress"),
   ).toBe("");
 });
 it("clears every scroll-derived value when reduced motion is enabled mid-story", () => {

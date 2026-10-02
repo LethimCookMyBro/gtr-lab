@@ -7,8 +7,14 @@ interface FilmProps {
   kind: "hero" | "detail";
   reducedMotion: boolean;
   saveData: boolean;
+  suspended?: boolean;
 }
-export function Film({ kind, reducedMotion, saveData }: FilmProps) {
+export function Film({
+  kind,
+  reducedMotion,
+  saveData,
+  suspended = false,
+}: FilmProps) {
   const holder = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [visible, setVisible] = useState(kind === "hero");
@@ -24,6 +30,7 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
   const name = kind === "hero" ? "opening" : "detail";
   const title = kind === "hero" ? "Opening" : "Detail";
   const active =
+    !suspended &&
     !failed &&
     visible &&
     documentVisible &&

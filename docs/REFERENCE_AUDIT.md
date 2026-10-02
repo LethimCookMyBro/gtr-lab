@@ -178,3 +178,34 @@ A configurator PNG finally returned after 16.422 seconds, but inspection shows a
 Consequently, rendered reference configurator behavior, cabin/camera response and toolbar details remain unverified beyond the user's supplied static screenshots. This bounded retry closes the current cloud-renderer attempt; there will be no further retry loop. Continue judging GT-R LAB against its explicitly requested functionality and actual independent browser evidence, not imagined reference behavior.
 
 Artifact: `reference-configurator-bounded-evidence`, SHA-256 `813c14d9fa88ad25ac091b39e3b6808ed916d0960a2d9bc7dcf73f916a2819ba`. Workflow: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/36880375364
+
+
+## Fresh interaction audit, 2 October 2026
+
+
+Observed in the cloud browser at https://everymatrix-porchelab.netlify.app/ with real scrolling, menu and card clicks. This is behavioral evidence, not permission to copy assets, branding or source. Approximate visual timing only; no precise durations were measured.
+
+## Sequence and interaction grammar
+
+1. Full-height driving-film hero: centered brand, menu at upper left, headline/description and model CTA near lower composition. Scroll exits into light editorial space.
+2. Editorial: large rounded images alternate with concise text. Images overlap neighboring compositions and move at different rates; staggered opacity/position avoids a repeated uniform card-grid rhythm.
+3. Expanding film: scrolling grows a rounded frame toward viewport width while surrounding background darkens. Central Play opens a full-viewport modal over a dim/blur backdrop. Close returns to underlying page. YouTube playback itself stalled at 0:00 in this browser; do not report full-film playback verified.
+4. History: large photographic panels alternate across a long vertical gallery. Center narrative stays spatially anchored and changes with the chapter. Observed captions include The Visionary Engineer (1931), First Porsche Legend (1948) and A New Era (2000s). The movement is a story progression rather than a fixed giant heading above small toggled photos.
+5. History exit: a separate dark rear-light/brand scene gradually reveals the rear car and The Modern Vision. It changes visual pace before lineup.
+6. Model selection: dominant campaign imagery and minimal overlaid identity. Clicking a card transitions through a blurred/preparing state into /configurator. Hover behavior was not verified; do not claim exact hover animation. Responsive card columns require additional breakpoint testing.
+7. Menu: Open Menu reveals a white category column and pale-gray secondary link column over a dim/blur homepage. Selecting Services changes the secondary links without route navigation. Adapt only meaningful GT-R routes/anchors, never dead commerce links. The reference uses some weak category semantics; do not reproduce accessibility defects.
+8. Configurator: Model Detail, custom color, roughness, metalness and Back appeared in DOM. WebGL context failed with GL_VENDOR/GL_RENDERER Disabled in this browser. No claim of verified 3D toolbar/camera behavior. Back returned to homepage.
+
+### Verified GT-R gaps
+
+- Current history keeps one oversized static heading with small photo/era switches. Replace with alternating large photographic chapters and changing narrative.
+- No distinct transition between heritage and model lineup. Existing cleared NISMO rear-quarter photo can support honest photographic detail-to-rear reveal, not a simulated straight-rear 3D camera pullback.
+- Detail film has ambient loop and Stop but no intentional enlarged viewing interaction. Reuse verified publisher iframe in accessible focused-view dialog, explicitly not a promised longer movie.
+- Existing showroom/cockpit images are technically real but weaker campaign compositions. UI changes cannot alone solve asset realism or the five missing accepted vehicle variants.
+- An initial observation suggested iframe scroll capture after one action. A subsequent test reproduced actual native wheel over both hero and detail iframe, with measured page displacement; suspicion disproven. No overlay workaround warranted. Physical touch was not tested.
+
+## Release boundary and QA
+
+Driving-film release a5d4d1d979be6cf0db46863e13d077ff75b01840 is complete per deployment/CI evidence. Review confirmed final 390px hero and detail screenshots: real footage visible; former large black detail void removed. Screenshots used CSS-sized app viewport, not a physical phone. Temporary wrappers removed and framing policy restored by builder.
+
+Next revision: heritage story gallery, truthful rear-photo transition and focused film viewing. Test forward/reverse scroll, reduced motion, keyboard/focus, dialog close/return, 390/430 widths and desktop. Preserve public credits and provider controls.

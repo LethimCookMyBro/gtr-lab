@@ -66,44 +66,103 @@ const setup = () =>
   );
 
 describe("cinematic homepage", () => {
-  it("renders a single decorative year while era photographs transition", async () => {
-    const onEra = vi.fn();
+  it("changes one anchored narrative across all four archive chapters", () => {
     const scene = (activeEra: number) => (
       <MemoryRouter>
         <HeritageJourney
           activeEra={activeEra}
-          onEra={onEra}
+          onEra={() => {}}
           sequentialMotion={false}
         />
       </MemoryRouter>
     );
     const { container, rerender } = render(scene(0));
-    const years = container.querySelector(".home-heritage-years")!;
-    expect(years.children).toHaveLength(1);
-    expect(years.textContent).toBe("1969");
-    rerender(scene(2));
-    expect(years.children).toHaveLength(1);
-    expect(years.textContent).toBe("2007");
+    const narratives: string[] = [];
+    for (const index of [0, 1, 2, 3]) {
+      rerender(scene(index));
+      const narrative = container.querySelector(".home-archive-narrative")!;
+      expect(
+        within(narrative as HTMLElement).getAllByRole("heading", { level: 2 }),
+      ).toHaveLength(1);
+      narratives.push(
+        within(narrative as HTMLElement).getByRole("heading", { level: 2 })
+          .textContent!,
+      );
+      expect(container.querySelectorAll(".home-archive-chapter")).toHaveLength(
+        4,
+      );
+      expect(container.querySelectorAll('[aria-current="step"]')).toHaveLength(
+        1,
+      );
+      expect(
+        container
+          .querySelector('[aria-current="step"]')
+          ?.getAttribute("aria-label"),
+      ).toContain(["1969", "1989", "1999", "2007"][index]);
+    }
+    expect(new Set(narratives).size).toBe(4);
+    rerender(scene(1));
+    expect(
+      container.querySelector(".home-archive-narrative h2")?.textContent,
+    ).toBe(narratives[1]);
   });
-  it("lets actual scroll progress select the visible era during normal timeline navigation", async () => {
+  it("centers the actual selected chapter instead of a fixed fraction of the runway", async () => {
     const onEra = vi.fn();
-    render(
+    const { container } = render(
       <MemoryRouter>
         <HeritageJourney activeEra={0} onEra={onEra} sequentialMotion={false} />
       </MemoryRouter>,
     );
-    await userEvent
-      .setup()
-      .click(screen.getByRole("button", { name: "2007: R35 GT-R" }));
-    expect(window.scrollTo).toHaveBeenCalledWith(
-      expect.objectContaining({ behavior: "smooth" }),
+    const target = container.querySelector<HTMLElement>(
+      '[data-era-image="2"]',
+    )!;
+    vi.spyOn(target, "getBoundingClientRect").mockReturnValue({
+      top: 2100,
+      height: 960,
+      bottom: 3060,
+      left: 0,
+      right: 1200,
+      width: 1200,
+      x: 0,
+      y: 2100,
+      toJSON: () => ({}),
+    });
+    const button = screen.getByRole("button", { name: "1999: R34 GT-R" });
+    button.focus();
+    await userEvent.setup().keyboard("{Enter}");
+    expect(window.scrollTo).toHaveBeenCalledWith({
+      top: 2100 + 480 - innerHeight / 2,
+      behavior: "smooth",
+    });
+    expect(onEra).toHaveBeenCalledWith(2);
+  });
+  it("keeps all four inline narratives and credited photos in sequential reading order", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <HeritageJourney activeEra={0} onEra={() => {}} sequentialMotion />
+      </MemoryRouter>,
     );
-    expect(onEra).not.toHaveBeenCalled();
+    const chapters = [
+      ...container.querySelectorAll<HTMLElement>(".home-archive-chapter"),
+    ];
+    expect(chapters.map((chapter) => chapter.dataset.eraImage)).toEqual([
+      "0",
+      "1",
+      "2",
+      "3",
+    ]);
+    for (const chapter of chapters) {
+      expect(
+        within(chapter).getByRole("heading", { level: 3 }).textContent,
+      ).not.toBe("");
+      expect(within(chapter).getByRole("img").getAttribute("alt")).not.toBe("");
+      expect(chapter.querySelector("figcaption")?.textContent).not.toBe("");
+    }
     expect(
       screen
-        .getByRole("button", { name: "1969: Skyline GT-R" })
-        .getAttribute("aria-current"),
-    ).toBe("step");
+        .getByRole("link", { name: "Archive photography & sources" })
+        .getAttribute("href"),
+    ).toBe("/credits#story-photography");
   });
   it("contains two hosted-film sections and all six full-row model destinations", () => {
     const { container } = setup();
@@ -242,7 +301,16 @@ describe("cinematic homepage", () => {
   it("offers a keyboard-operable era timeline and a working back-to-top", async () => {
     setup();
     const timeline = screen.getByRole("navigation", { name: "GT-R eras" });
-    expect(within(timeline).getAllByRole("button")).toHaveLength(3);
+    expect(
+      within(timeline)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("aria-label")),
+    ).toEqual([
+      "1969: Skyline GT-R",
+      "1989: R32 GT-R",
+      "1999: R34 GT-R",
+      "2007: R35 GT-R",
+    ]);
     expect(
       within(timeline)
         .getByRole("button", { name: "1969: Skyline GT-R" })

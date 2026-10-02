@@ -3,7 +3,11 @@ import { ArrowRight } from "lucide-react";
 import { models } from "../../data/models";
 export function ModelInvitations() {
   return (
-    <section className="home-invitations" aria-labelledby="home-models-title">
+    <section
+      id="home-lineup"
+      className="home-invitations"
+      aria-labelledby="home-models-title"
+    >
       <header>
         <h2 id="home-models-title">
           Six expressions.

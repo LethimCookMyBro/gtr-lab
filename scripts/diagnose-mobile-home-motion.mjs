@@ -66,7 +66,7 @@ try {
         }
       });
       const measure = () => page.evaluate(() => {
-        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-heritage-runway', '.home-heritage-copy', '.home-heritage-origin', '.home-heritage-r32', '.home-heritage-r35'];
+        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-archive-runway', '.home-archive-stage', '.home-archive-narrative', '.home-archive-navigation', '.home-signature-runway', '.home-signature-photo', '.home-signature-mark'];
         return {
           scrollY, width: innerWidth, height: innerHeight,
           visualViewport: { width: visualViewport.width, height: visualViewport.height },
@@ -119,7 +119,21 @@ try {
         await page.evaluate(() => { window.__motionProbe.active = false; window.__motionProbe.last = 0; });
       };
       await checkpoint('00-hero-entry');
-      for (const kind of ['hero', 'editorial', 'expanding', 'heritage']) {
+      for (const kind of ['hero', 'editorial', 'expanding', 'heritage', 'signature']) {
+        if (kind === 'heritage') {
+          for (const chapter of await page.locator('.home-archive-chapter').all()) {
+            const geometry = await chapter.evaluate(element => {
+              const rect = element.getBoundingClientRect();
+              return { index: element.dataset.eraImage, target: scrollY + rect.top + rect.height / 2 - innerHeight / 2 };
+            });
+            await wheelTo(Math.max(0, geometry.target));
+            await checkpoint(`heritage-chapter-${geometry.index}`);
+          }
+          await page.mouse.wheel(0, -Math.round(plan.height * .35));
+          await page.waitForTimeout(150);
+          await checkpoint('heritage-reverse');
+          continue;
+        }
         const geometry = await page.locator(`[data-motion-section="${kind}"]`).evaluate(element => {
           const rect = element.getBoundingClientRect();
           return { top: scrollY + rect.top, height: rect.height, viewport: innerHeight };
@@ -136,7 +150,7 @@ try {
       // Reverse input records whether the staging follows scroll in both directions.
       await page.mouse.wheel(0, -Math.round(plan.height * .35));
       await page.waitForTimeout(150);
-      await checkpoint('heritage-reverse');
+      await checkpoint('signature-reverse');
       view.performance = await page.evaluate(() => {
         const { frames, longTasks } = window.__motionProbe;
         const sorted = [...frames].sort((a, b) => a - b);

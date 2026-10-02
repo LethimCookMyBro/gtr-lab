@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import type { RefObject } from "react";
 import {
-  activeEraAt,
   clamp01,
   expansionAt,
-  heritageLayersAt,
-  heritageYearOpacityAt,
   sectionProgress,
   viewportProgress,
 } from "./motion";
@@ -64,6 +61,11 @@ export function useHomeMotion(
         (element) => ({ element, section }),
       ),
     );
+    const chapters = [
+      ...(root.current?.querySelectorAll<HTMLElement>(
+        ".home-archive-chapter",
+      ) ?? []),
+    ];
     if (reduced) {
       const properties = [
         "--progress",
@@ -78,18 +80,21 @@ export function useHomeMotion(
         "--era-1-opacity",
         "--era-2-opacity",
         "--year-opacity",
+        "--chapter-progress",
       ];
-      [...sections, ...anchors.map((anchor) => anchor.element)].forEach(
-        (section) => {
-          properties.forEach((property) =>
-            section.style.removeProperty(property),
-          );
-          section.removeAttribute("data-copy-inactive");
-          section
-            .querySelector(".home-hero-support a")
-            ?.removeAttribute("tabindex");
-        },
-      );
+      [
+        ...sections,
+        ...chapters,
+        ...anchors.map((anchor) => anchor.element),
+      ].forEach((section) => {
+        properties.forEach((property) =>
+          section.style.removeProperty(property),
+        );
+        section.removeAttribute("data-copy-inactive");
+        section
+          .querySelector(".home-hero-support a")
+          ?.removeAttribute("tabindex");
+      });
       return;
     }
     let frame = 0;
@@ -135,6 +140,11 @@ export function useHomeMotion(
               };
             })
           : [];
+      const chapterMeasurements = chapters.map((element, index) => ({
+        element,
+        index,
+        rect: element.getBoundingClientRect(),
+      }));
       // All geometry above is read before the first style mutation below.
       for (const { element, rect, stickyHeight } of measurements) {
         const kind = element.dataset.motionSection;
@@ -166,22 +176,26 @@ export function useHomeMotion(
             `rgb(${bounds.shade} ${bounds.shade} ${bounds.shade})`,
           );
         }
-        if (kind === "heritage") {
-          write(
-            element,
-            "--year-opacity",
-            heritageYearOpacityAt(progress).toFixed(5),
-          );
-          heritageLayersAt(progress).forEach((opacity, index) =>
-            write(element, `--era-${index}-opacity`, opacity.toFixed(5)),
-          );
-          const era = activeEraAt(progress);
-          if (era !== lastEra) {
-            lastEra = era;
-            onEra(era);
-          }
-        }
       }
+      let nextEra = 0;
+      let nearest = Infinity;
+      for (const { element, index, rect } of chapterMeasurements) {
+        const distance = Math.abs(rect.top + rect.height / 2 - viewport / 2);
+        if (distance < nearest) {
+          nearest = distance;
+          nextEra = index;
+        }
+        write(
+          element,
+          "--chapter-progress",
+          viewportProgress(rect.top, rect.height, viewport).toFixed(5),
+        );
+      }
+      if (chapters.length && nextEra !== lastEra) {
+        lastEra = nextEra;
+        onEra(nextEra);
+      }
+
       for (const { element, top, height } of anchorMeasurements) {
         const progress = viewportProgress(top, height, viewport);
         write(element, "--item-progress", progress.toFixed(5));

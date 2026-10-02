@@ -38,3 +38,10 @@ The live baseline disabled scroll staging for every viewport at or below 740px h
 The mobile hero has a controlled exit, the two editorial photographs stage independently, the second film grows continuously toward the viewport edges, and heritage photographs crossfade with a single large year fading through zero at each era boundary. Timeline navigation remains native scrolling; there is no scroll interception. The implementation batches geometry reads before style writes and removes motion styles when preferences change.
 
 Product source is frozen at 4aa490a110954b41c0b4aac586ba216a85c6872a. The test-only follow-up 0538e2f8123aba3de1f7cb41b3f7c65f58b8676f waits for native focus scrolling to finish before issuing an independent film stability probe. It does not weaken the 14-frame/2px stability assertion. These changes do not add vehicle assets or change the outstanding interior/six-variant acceptance gates.
+
+
+## Homepage story revision under review
+
+The next bounded homepage revision replaces the fixed three-era composition with four naturally scrolled photographic chapters and a pinned narrative selected from the actual chapter centers. R34 receives its own1999 chapter. Photographic dates remain distinct from generation introduction dates. A separate abstract four-circle motif transitions into a detail-to-rear-three-quarter reveal of the existing licensed2024NISMO photograph; it is not a simulated3D camera or newly generated car.
+
+The expanding track loop gains an enlarged-view dialog using the already verified publisher iframe. Its ambient player unmounts while the dialog is open, background-tab playback unloads, Escape/Close return focus, and normal page scrolling is restored. The label promises enlarged viewing of a short loop, not an unverified longer film. Reduced motion and short layouts expose all chapter content sequentially. The menu remains unchanged; further menu/category work is outside this bounded revision. Exact responsive browser and visual acceptance are still required before release.
