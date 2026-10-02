@@ -2069,3 +2069,43 @@
 .home-film-enlarge:active:not(:disabled) {
   transform: translate(-50%, -50%) scale(0.98);
 }
+
+/* Give each model invitation its own breathing room while preserving the image-led card. */
+.home-invitations > nav {
+  display: grid;
+  gap: 24px;
+  padding: 0 var(--home-gutter) 72px;
+}
+.home-model-invitation {
+  border-radius: 16px;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+@media (max-width: 700px) {
+  .home-invitations > nav {
+    gap: 20px;
+    padding: 0 16px 48px;
+  }
+  .home-model-invitation {
+    min-height: 285px;
+    height: 72vw;
+    max-height: 330px;
+    border-radius: 14px;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 20px 18px 16px;
+  }
+  .home-model-invitation h3 {
+    font-size: clamp(30px, 8vw, 35px);
+    line-height: 1.05;
+  }
+  .home-invitation-cta {
+    width: 100%;
+    min-height: 32px;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 12px;
+  }
+}

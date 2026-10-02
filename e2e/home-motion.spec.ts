@@ -1015,6 +1015,18 @@ test("rear signature reveals the credited photograph continuously and reversibly
   const samples = [];
   for (const progress of [0.1, 0.5, 0.9, 0.1]) {
     await scrollProgress(page, ".home-signature-runway", progress);
+    await expect
+      .poll(() =>
+        photo.evaluate((element) => {
+          const image = element as HTMLImageElement;
+          return (
+            image.complete &&
+            image.naturalWidth > 0 &&
+            image.currentSrc.length > 0
+          );
+        }),
+      )
+      .toBe(true);
     samples.push(
       await photo.evaluate((element) => ({
         scale: new DOMMatrixReadOnly(getComputedStyle(element).transform).a,
@@ -1117,5 +1129,96 @@ test("enlarged driving film preserves focus, scroll and one-player lifecycle", a
     expect(
       Math.abs((await page.evaluate(() => scrollY)) - before),
     ).toBeLessThanOrEqual(2);
+  }
+});
+
+test("model invitations keep all six cards separated and keyboard reachable", async ({
+  page,
+}, info) => {
+  test.skip(
+    info.project.name !== "home-desktop",
+    "One bounded responsive card sweep",
+  );
+  const models = [
+    ["premium", "Premium"],
+    ["nismo", "NISMO"],
+    ["tspec", "T-spec"],
+    ["gtr50", "GT-R50"],
+    ["gt3", "GT3"],
+    ["gt500", "GT500"],
+  ];
+  for (const [width, height] of [
+    [390, 844],
+    [430, 932],
+    [1440, 900],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    const cards = page.locator(".home-model-invitation");
+    await expect(cards).toHaveCount(6);
+    const gaps = await cards.evaluateAll((nodes) =>
+      nodes
+        .slice(1)
+        .map(
+          (node, index) =>
+            node.getBoundingClientRect().top -
+            nodes[index].getBoundingClientRect().bottom,
+        ),
+    );
+    for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(18);
+    await cards.first().focus();
+    for (let index = 0; index < models.length; index++) {
+      const [id, name] = models[index];
+      const card = cards.nth(index);
+      await expect(card).toBeFocused();
+      await expect(card).toHaveAttribute("href", `/configurator/${id}`);
+      await expect(card).toHaveAccessibleName(`Explore ${name}`);
+      await card.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() =>
+          card
+            .locator("img")
+            .evaluate(
+              (node) =>
+                (node as HTMLImageElement).complete &&
+                (node as HTMLImageElement).naturalWidth > 0,
+            ),
+        )
+        .toBe(true);
+      const box = (await card.boundingBox())!;
+      const title = (await card.locator("h3").boundingBox())!;
+      const cta = (await card.locator(".home-invitation-cta").boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(width <= 700 ? 14 : 24);
+      expect(box.x + box.width).toBeLessThanOrEqual(
+        width - (width <= 700 ? 14 : 24),
+      );
+      expect(box.height).toBeGreaterThanOrEqual(240);
+      expect(title.x).toBeGreaterThanOrEqual(box.x + 12);
+      expect(title.x + title.width).toBeLessThanOrEqual(box.x + box.width - 12);
+      expect(cta.x + cta.width).toBeLessThanOrEqual(box.x + box.width - 12);
+      expect(cta.y + cta.height).toBeLessThanOrEqual(box.y + box.height - 8);
+      expect(
+        await card.evaluate((node) => getComputedStyle(node).outlineStyle),
+      ).not.toBe("none");
+      if (width <= 700) {
+        expect(cta.y - title.y - title.height).toBeGreaterThanOrEqual(6);
+        expect(
+          Number.parseFloat(
+            await card.evaluate((node) => getComputedStyle(node).borderRadius),
+          ),
+        ).toBeGreaterThanOrEqual(12);
+      } else expect(title.x + title.width).toBeLessThanOrEqual(cta.x - 16);
+      await card.screenshot({
+        path: info.outputPath(`model-card-${width}-${id}.png`),
+        animations: "disabled",
+        scale: "css",
+      });
+      if (index < models.length - 1) await page.keyboard.press("Tab");
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
   }
 });
