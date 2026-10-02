@@ -36,6 +36,23 @@ export function FilmDialog({
       ref={dialog}
       className="home-film-dialog"
       aria-label="GT-R driving film"
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const targets = [
+          ...event.currentTarget.querySelectorAll<HTMLElement>(
+            'button, a[href], iframe, [tabindex="0"]',
+          ),
+        ];
+        const first = targets[0];
+        const last = targets[targets.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }}
       onCancel={(event) => {
         event.preventDefault();
         onClose();

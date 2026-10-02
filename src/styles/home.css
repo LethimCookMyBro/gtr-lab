@@ -1875,7 +1875,7 @@
     bottom: 10px;
   }
   .home-archive-chapter {
-    min-height: 105svh;
+    min-height: 80svh;
     padding: 24svh 18px 8svh;
   }
   .home-archive-image {
@@ -2019,5 +2019,31 @@
   .home-film-enlarge-icon {
     animation: none;
     transition: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .home-archive-stage::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 150px;
+    background: linear-gradient(transparent, #f5f4f0 30%);
+  }
+  .home-archive-navigation,
+  .home-archive-source {
+    z-index: 2;
+  }
+}
+@media (max-width: 700px) {
+  /* Let the final80svh chapter reach center before its pinned narrative exits. */
+  .home-archive-track {
+    padding-bottom: 20svh;
+  }
+  [data-sequential-motion="true"] .home-archive-track {
+    padding-bottom: 0;
   }
 }

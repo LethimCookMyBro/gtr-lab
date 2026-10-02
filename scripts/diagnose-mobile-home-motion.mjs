@@ -66,7 +66,7 @@ try {
         }
       });
       const measure = () => page.evaluate(() => {
-        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-archive-runway', '.home-archive-stage', '.home-archive-narrative', '.home-archive-navigation', '.home-signature-runway', '.home-signature-photo', '.home-signature-mark'];
+        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-archive-runway', '.home-archive-stage', '.home-archive-narrative', '.home-archive-navigation', '.home-signature-runway', '.home-signature-photo', '.home-signature-mark', '.home-signature-footer'];
         return {
           scrollY, width: innerWidth, height: innerHeight,
           visualViewport: { width: visualViewport.width, height: visualViewport.height },

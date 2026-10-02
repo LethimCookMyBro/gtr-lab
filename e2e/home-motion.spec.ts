@@ -1001,6 +1001,10 @@ test("rear signature reveals the credited photograph continuously and reversibly
     scale: "css",
   });
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator(".cinematic-home")).toHaveAttribute(
+    "data-sequential-motion",
+    "true",
+  );
   expect(
     await photo.evaluate((element) => getComputedStyle(element).transform),
   ).toBe("none");

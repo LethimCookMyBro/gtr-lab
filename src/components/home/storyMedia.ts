@@ -18,6 +18,14 @@ export const storyMedia = {
     height: 1407,
     position: "57% 50%",
   },
+  r35: {
+    src: "/images/gtr-premium.webp",
+    small: "/images/gtr-premium.small.webp",
+    smallWidth: 800,
+    alt: "Front three-quarter photograph of a 2018 Nissan GT-R Premium in Super Silver",
+    width: 1920,
+    height: 1016,
+  },
   cockpit: {
     src: "/media/cockpit-r35-2017-portrait.webp",
     small: "/media/cockpit-r35-2017-portrait-small.webp",
@@ -69,7 +77,7 @@ export const eras = [
     title: "A new kind of control.",
     note: "The R32 generation brought all-wheel-drive performance into the story.",
     image: storyMedia.r32,
-    caption: "1992 R32 · generation introduced in1989",
+    caption: "1992 R32 · generation introduced in 1989",
   },
   {
     year: "1999",
@@ -86,7 +94,7 @@ export const eras = [
     generation: "R35",
     title: "The pursuit continues.",
     note: "A new nameplate and a new form, with the same restless attention to performance.",
-    image: storyMedia.detail,
-    caption: "2024 GT-R NISMO · R35 generation introduced in2007",
+    image: storyMedia.r35,
+    caption: "2018 GT-R Premium · R35 generation introduced in 2007",
   },
 ] as const;

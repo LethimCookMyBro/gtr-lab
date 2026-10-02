@@ -196,3 +196,23 @@ it("restores body scrolling if the enlarged view unmounts during navigation", as
   expect(document.body.style.overflow).toBe("");
   expect(document.querySelector(".home-film-dialog iframe")).toBeNull();
 });
+
+it("wraps both keyboard Tab boundaries inside the enlarged film dialog", async () => {
+  scene(true);
+  const user = userEvent.setup();
+  await user.click(
+    screen.getByRole("button", { name: "Enlarge driving film" }),
+  );
+  const dialog = screen.getByRole("dialog", { name: "GT-R driving film" });
+  const close = within(dialog).getByRole("button", {
+    name: "Close driving film",
+  });
+  const original = within(dialog).getByRole("link", {
+    name: /Original on Flixel/,
+  });
+  close.focus();
+  await user.tab({ shift: true });
+  expect(document.activeElement).toBe(original);
+  await user.tab();
+  expect(document.activeElement).toBe(close);
+});
