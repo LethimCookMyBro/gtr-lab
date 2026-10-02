@@ -47,3 +47,12 @@ Functional scaffold or a photographic fallback is not completion of required liv
 `Film` uses native muted, inline, looping video, with real playback events driving controls. Intersection and document visibility pause decoding offscreen/background. Reduced-motion and Save-Data preferences prevent automatic playback while preserving explicit Play. Sequenced intent guards late playback promises. Missing media shows a credited still and an explicit failure state, never an image pretending to be video.
 
 The server supports video MIME types, bounded byte-range streaming, HEAD and 416 responses so film metadata and seeking do not require buffering the complete file. Homepage and configurator resource states are independent. Original rendered films are separate outputs based on the credited Ciasny asset; they do not imply that all six variant GLBs or an accepted interior are available.
+
+
+## Homepage chapter and focused-film flow
+
+HeritageJourney renders four independent photographic articles. Desktop photographs alternate sides while a pinned narrative changes with the nearest image; mobile uses natural image heights and a bounded inter-photo gap. useHomeMotion reads section, chapter and figure geometry before writing CSS properties, uses one passive scroll listener/RAF and only changes React chapter state at a real handoff. Chapter buttons scroll to the actual photograph while keeping the sticky narrative inside its section. Reduced motion and short viewports render the complete archive in sequential document order.
+
+RearSignature is a separate photographic transition using the already credited NISMO rear-quarter image and four abstract red circles. Scale/opacity reveal a crop of that real photograph; it is not a vehicle model, synthetic asset or reconstructed camera movement.
+
+ExpandingFilm owns the enlarged-view state. FilmDialog uses a native modal dialog and the same verified hosted track loop, removes the ambient iframe while open, unloads when the document is hidden, contains first/last keyboard focus and restores focus/scroll on Close or Escape. The modal promises enlarged viewing of a short film, not a longer unverified video.
