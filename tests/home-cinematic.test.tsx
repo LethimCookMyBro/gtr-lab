@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  within,
+  waitFor,
+} from "@testing-library/react";
 import { HeritageJourney } from "../src/components/home/HeritageJourney";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -367,9 +373,28 @@ describe("cinematic homepage", () => {
       within(dialog).getByRole("button", { name: "Close menu" }),
     );
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(dialog.getAttribute("data-phase")).toBe("closing");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(document.activeElement).toBe(trigger);
     expect(document.body.style.overflow).toBe("");
+  });
+  it("provides truthful footer context and direct links to all six variants", () => {
+    setup();
+    const footer = document.querySelector(".home-footer") as HTMLElement;
+    expect(
+      within(footer).getByText(/independent digital exhibition/i),
+    ).toBeTruthy();
+    for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"]) {
+      expect(
+        footer.querySelector(`a[href="/configurator/${id}"]`),
+      ).toBeTruthy();
+    }
+  });
+  it("replaces the decorative photographic signature with an explicit 3D stage", () => {
+    setup();
+    expect(document.querySelector(".home-signature-rings")).toBeNull();
+    expect(document.querySelector(".home-signature-photo")).toBeNull();
+    expect(screen.getByText(/Ciasny.*CC BY 4.0/i)).toBeTruthy();
   });
   it("offers a keyboard-operable era timeline and a working back-to-top", async () => {
     setup();

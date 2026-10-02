@@ -6,6 +6,7 @@ export function ModelInvitations() {
     <section
       id="home-lineup"
       className="home-invitations"
+      data-motion-section="lineup"
       aria-labelledby="home-models-title"
     >
       <header>
@@ -16,22 +17,29 @@ export function ModelInvitations() {
         </h2>
       </header>
       <nav aria-label="Explore all six models">
-        {models.map((model) => (
+        {models.map((model, index) => (
           <Link
             key={model.id}
             to={`/configurator/${model.id}`}
             className={`home-model-invitation home-model-invitation--${model.id}`}
             aria-label={`Explore ${model.shortName}`}
+            data-motion-anchor={`model-${model.id}`}
           >
             <img
               src={model.image}
               srcSet={`/images/gtr-${model.id}.small.webp 800w, ${model.image} 1920w`}
-              sizes="100vw"
+              sizes="(max-width: 700px) 92vw, 46vw"
               alt={model.imageCaption}
               style={{ objectPosition: model.imagePosition }}
               loading="lazy"
             />
-            <h3>{model.shortName}</h3>
+            <span className="home-invitation-meta">
+              {String(index + 1).padStart(2, "0")} / {model.category}
+            </span>
+            <div className="home-invitation-copy">
+              <h3>{model.shortName}</h3>
+              <p>{model.tagline}</p>
+            </div>
             <span className="home-invitation-cta">
               <span>Explore {model.shortName}</span>
               <ArrowRight size={28} strokeWidth={1.5} aria-hidden="true" />

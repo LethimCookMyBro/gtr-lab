@@ -146,7 +146,7 @@ export function CreditsPage() {
           </div>
         ))}
       </section>
-      <section>
+      <section id="models">
         <h2>3D assets</h2>
         <p>
           Only licensed vehicle assets with recorded provenance are eligible for

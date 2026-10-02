@@ -16,6 +16,8 @@ on:
       - "filmdata/**"
       - "scripts/prepare-films.mjs"
       - "e2e/home-motion.spec.ts"
+      - "e2e/rear-signature.spec.ts"
+      - "playwright.rear.config.ts"
       - "tests/hosted-film.test.tsx"
       - "docs/film-sources/QA_PROVIDER_LIMITATION.md"
       - "playwright.home.config.ts"
@@ -48,7 +50,9 @@ jobs:
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
           External NissanNews/Flixel playback checks were **not exercised** by this workflow.
-          This run checks application layout, motion and iframe lifecycle; an iframe load is not proof of playback.
+          The home job checks application layout, motion and iframe lifecycle; an iframe load is not proof of playback.
+          The home job deliberately fails the GLB request to exercise a lightweight readable fallback.
+          The separate rear job loads the actual already-published GLB and verifies rendered camera pixels, recovery and disposal.
           GitHub runners have received provider HTTP 403 / SAMEORIGIN responses. Do not bypass those restrictions.
           Release acceptance requires real public-origin browser playback verification; see docs/film-sources/QA_PROVIDER_LIMITATION.md for evidence and the explicit opt-in command.
           SUMMARY
@@ -59,4 +63,25 @@ jobs:
           path: |
             test-results/home-motion/
             playwright-home-report/
+          retention-days: 14
+  rear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Render the already-published R35 rear scene
+        run: npx playwright test -c playwright.rear.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rear-signature-evidence
+          path: |
+            rear-signature-results/
+            playwright-rear-report/
           retention-days: 14

@@ -31,7 +31,7 @@ export function HomePage() {
         onEra={setActiveEra}
         sequentialMotion={sequential}
       />
-      <RearSignature />
+      <RearSignature {...preferences} />
       <ModelInvitations />
     </div>
   );

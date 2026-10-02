@@ -1,6 +1,18 @@
 import { test, expect } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
 
+// Layout suite deliberately exercises the recoverable model fallback. The separate
+// rear-signature job renders the real published GLB and verifies camera pixels.
+test.beforeEach(async ({ page }) => {
+  await page.route("**/models/ciasny-r35.glb", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "text/plain",
+      body: "Deliberate layout-suite asset failure",
+    }),
+  );
+});
+
 async function settleNativeScroll(page: Page, info: TestInfo, name: string) {
   const samples = await page.evaluate(async () => {
     const frames = [];
@@ -249,8 +261,9 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     const cockpit = await page
       .locator(".home-editorial-image--cockpit")
       .boundingBox();
-    expect(cockpit!.x + cockpit!.width).toBeGreaterThan(detail!.x);
-    expect(cockpit!.y).toBeLessThan(detail!.y + detail!.height - 20);
+    expect(cockpit!.y - (detail!.y + detail!.height)).toBeGreaterThanOrEqual(
+      24,
+    );
   }
   if ((page.viewportSize()?.width || 0) <= 700) {
     await page.locator(".home-editorial").evaluate((element) =>
@@ -678,6 +691,7 @@ test("additional viewport sanity stays within bounds with usable navigation", as
   );
   test.setTimeout(60000);
   for (const [width, height] of [
+    [1920, 900],
     [1600, 900],
     [1366, 768],
     [768, 1024],
@@ -1045,45 +1059,20 @@ test("archive chapters follow native forward and reverse wheel input", async ({
   );
 });
 
-test("rear signature reveals the credited photograph continuously and reversibly", async ({
+test("rear signature keeps truthful fallback, credits and reduced-motion reading order", async ({
   page,
 }, info) => {
   await page.goto("/");
-  const photo = page.locator(".home-signature-photo img");
-  await expect(photo).toHaveAttribute("src", "/images/gtr-nismo.webp");
-  await expect(photo).toHaveAttribute("alt", /rear/i);
-  const samples = [];
-  for (const progress of [0.1, 0.5, 0.9, 0.1]) {
-    await scrollProgress(page, ".home-signature-runway", progress);
-    await expect
-      .poll(() =>
-        photo.evaluate((element) => {
-          const image = element as HTMLImageElement;
-          return (
-            image.complete &&
-            image.naturalWidth > 0 &&
-            image.currentSrc.length > 0
-          );
-        }),
-      )
-      .toBe(true);
-    samples.push(
-      await photo.evaluate((element) => ({
-        scale: new DOMMatrixReadOnly(getComputedStyle(element).transform).a,
-        source: (element as HTMLImageElement).currentSrc,
-      })),
-    );
-    await expect(page.locator(".home-signature-mark")).toBeVisible();
-  }
-  expect(samples[0].scale).toBeGreaterThan(samples[1].scale);
-  expect(samples[1].scale).toBeGreaterThan(samples[2].scale);
-  expect(samples[3].scale).toBeCloseTo(samples[0].scale, 3);
-  expect(new Set(samples.map((sample) => sample.source)).size).toBe(1);
+  await scrollProgress(page, ".home-signature-runway", 0.5);
   await expect(
-    page.locator(".home-signature-runway canvas, .home-signature-runway video"),
+    page.locator(".home-signature-rings, .home-signature-photo"),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: /Custom-aero R35 by Ciasny/ }),
+  ).toBeVisible();
+  await expect(page.locator(".home-signature-status")).toBeVisible();
   await page.screenshot({
-    path: info.outputPath("signature-photographic-reveal.png"),
+    path: info.outputPath("signature-explicit-fallback.png"),
     scale: "css",
   });
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -1092,12 +1081,9 @@ test("rear signature reveals the credited photograph continuously and reversibly
     "true",
   );
   expect(
-    await photo.evaluate((element) => getComputedStyle(element).transform),
-  ).toBe("none");
-  expect(
     await page
       .locator(".home-signature-sticky")
-      .evaluate((element) => getComputedStyle(element).position),
+      .evaluate((el) => getComputedStyle(el).position),
   ).not.toBe("sticky");
 });
 
@@ -1197,13 +1183,15 @@ test("model invitations keep all six cards separated and keyboard reachable", as
     const cards = page.locator(".home-model-invitation");
     await expect(cards).toHaveCount(6);
     const gaps = await cards.evaluateAll((nodes) =>
-      nodes
-        .slice(1)
-        .map(
-          (node, index) =>
-            node.getBoundingClientRect().top -
-            nodes[index].getBoundingClientRect().bottom,
-        ),
+      nodes.slice(1).map((node, index) => {
+        const current = node.getBoundingClientRect(),
+          previous = nodes[index].getBoundingClientRect();
+        if (Math.abs(current.top - previous.top) < 2)
+          return current.left - previous.right;
+        const above =
+          nodes[index + 1 - (innerWidth > 700 ? 2 : 1)].getBoundingClientRect();
+        return current.top - above.bottom;
+      }),
     );
     for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(18);
     await cards.first().focus();
@@ -1247,7 +1235,10 @@ test("model invitations keep all six cards separated and keyboard reachable", as
             await card.evaluate((node) => getComputedStyle(node).borderRadius),
           ),
         ).toBeGreaterThanOrEqual(12);
-      } else expect(title.x + title.width).toBeLessThanOrEqual(cta.x - 16);
+      } else {
+        expect(box.height).toBeGreaterThanOrEqual(390);
+        expect(cta.y - title.y - title.height).toBeGreaterThanOrEqual(20);
+      }
       await card.screenshot({
         path: info.outputPath(`model-card-${width}-${id}.png`),
         animations: "disabled",
@@ -1260,5 +1251,60 @@ test("model invitations keep all six cards separated and keyboard reachable", as
         () => document.documentElement.scrollWidth <= innerWidth + 1,
       ),
     ).toBe(true);
+  }
+});
+
+test("desktop captions never cross era controls during intermediate scrolling", async ({
+  page,
+}, info) => {
+  test.skip(
+    info.project.name !== "home-desktop",
+    "One focused user-height collision sweep",
+  );
+  test.setTimeout(60000);
+  for (const [width, height] of [
+    [1920, 900],
+    [1440, 900],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    for (const index of [0, 1, 2, 3]) {
+      const center = await archiveImageDestination(page, index);
+      for (const offset of [-0.22, 0, 0.22]) {
+        await page.evaluate(
+          (y) => window.scrollTo({ top: y, behavior: "instant" }),
+          center + height * offset,
+        );
+        await settleNativeScroll(
+          page,
+          info,
+          `collision-${width}-${index}-${offset}`,
+        );
+        const overlaps = await page.evaluate(() => {
+          const nav = document
+            .querySelector(".home-archive-navigation")!
+            .getBoundingClientRect();
+          return [
+            ...document.querySelectorAll(".home-archive-image figcaption"),
+          ]
+            .filter((el) => {
+              const r = el.getBoundingClientRect();
+              return (
+                r.top < nav.bottom &&
+                r.bottom > nav.top &&
+                r.left < nav.right &&
+                r.right > nav.left
+              );
+            })
+            .map((el) => el.textContent);
+        });
+        expect(overlaps).toEqual([]);
+      }
+    }
+    await centerArchiveChapter(page, 1);
+    await page.screenshot({
+      path: info.outputPath(`collision-fixed-${width}x${height}.png`),
+      scale: "css",
+    });
   }
 });

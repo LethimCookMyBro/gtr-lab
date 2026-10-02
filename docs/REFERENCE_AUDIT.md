@@ -209,3 +209,8 @@ Observed in the cloud browser at https://everymatrix-porchelab.netlify.app/ with
 Driving-film release a5d4d1d979be6cf0db46863e13d077ff75b01840 is complete per deployment/CI evidence. Review confirmed final 390px hero and detail screenshots: real footage visible; former large black detail void removed. Screenshots used CSS-sized app viewport, not a physical phone. Temporary wrappers removed and framing policy restored by builder.
 
 Next revision: heritage story gallery, truthful rear-photo transition and focused film viewing. Test forward/reverse scroll, reduced motion, keyboard/focus, dialog close/return, 390/430 widths and desktop. Preserve public credits and provider controls.
+
+
+## Motion-component follow-up, 2 October2026
+
+User feedback rejected the earlier intentional image overlap and the photographic four-circle bridge. These are updated product requirements, not newly inferred reference behavior. React Bits Staggered Menu was actually opened and closed: layered underlays precede sequential numbered links. Proposed implementation timings are design choices, not measured reference timings. The current original implementation and primary-source motion references are recorded in `MOTION_NOTES.md`. Desktop QA now includes900px content height and positions between archive anchors because a1920×1080-only composition check missed a caption/timeline collision.

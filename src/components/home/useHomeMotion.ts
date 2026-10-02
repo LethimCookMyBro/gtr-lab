@@ -121,25 +121,21 @@ export function useHomeMotion(
       }));
       // offsetTop/offsetHeight ignore our visual transforms. Accumulate the layout's offset
       // parents, so section padding and nested positioning never feed back into the motion.
-      const anchorMeasurements =
-        window.innerWidth <= 700
-          ? anchors.map(({ element, section }) => {
-              let top = 0;
-              let current: HTMLElement | null = element;
-              while (current && current !== section) {
-                top += current.offsetTop;
-                current = current.offsetParent as HTMLElement | null;
-              }
-              return {
-                element,
-                top:
-                  top +
-                  measurements.find((item) => item.element === section)!.rect
-                    .top,
-                height: element.offsetHeight,
-              };
-            })
-          : [];
+      const anchorMeasurements = anchors.map(({ element, section }) => {
+        let top = 0;
+        let current: HTMLElement | null = element;
+        while (current && current !== section) {
+          top += current.offsetTop;
+          current = current.offsetParent as HTMLElement | null;
+        }
+        return {
+          element,
+          top:
+            top +
+            measurements.find((item) => item.element === section)!.rect.top,
+          height: element.offsetHeight,
+        };
+      });
       const chapterMeasurements = chapters.map((element, index) => ({
         element,
         index,

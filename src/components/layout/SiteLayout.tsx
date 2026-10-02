@@ -97,6 +97,17 @@ export function Footer() {
 
 function HomeMenu({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestClose = useCallback(() => {
+    if (closeTimer.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onClose();
+      return;
+    }
+    setClosing(true);
+    closeTimer.current = setTimeout(onClose, 260);
+  }, [onClose]);
   useEffect(() => {
     const dialog = ref.current;
     const previous = document.activeElement as HTMLElement | null;
@@ -108,7 +119,7 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        requestClose();
       }
       if (event.key !== "Tab" || !dialog) return;
       const focusable = [
@@ -131,20 +142,26 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
       document.body.style.overflow = overflow;
       document.removeEventListener("keydown", handleKey);
       previous?.focus();
+      if (closeTimer.current) clearTimeout(closeTimer.current);
     };
-  }, [onClose]);
+  }, [requestClose]);
   return (
     <dialog
       ref={ref}
       className="home-menu-dialog"
+      data-phase={closing ? "closing" : "open"}
       aria-labelledby="home-menu-title"
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        requestClose();
       }}
     >
+      <div className="home-menu-underlays" aria-hidden="true">
+        <span />
+        <span />
+      </div>
       <div className="home-menu-top">
-        <button type="button" onClick={onClose} aria-label="Close menu">
+        <button type="button" onClick={requestClose} aria-label="Close menu">
           <X size={26} strokeWidth={1.5} />
           <span>Close</span>
         </button>
@@ -156,13 +173,22 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
       <div className="home-menu-body">
         <nav aria-label="Main navigation" className="home-menu-primary">
           <Link to="/models" onClick={onClose}>
-            Models <ArrowUpRight strokeWidth={1} />
+            <span>
+              <small aria-hidden="true">01</small>Models
+            </span>{" "}
+            <ArrowUpRight strokeWidth={1} />
           </Link>
           <Link to="/heritage" onClick={onClose}>
-            Heritage <ArrowUpRight strokeWidth={1} />
+            <span>
+              <small aria-hidden="true">02</small>Heritage
+            </span>{" "}
+            <ArrowUpRight strokeWidth={1} />
           </Link>
           <Link to="/configurator/premium" onClick={onClose}>
-            Enter the lab <ArrowUpRight strokeWidth={1} />
+            <span>
+              <small aria-hidden="true">03</small>Enter the lab
+            </span>{" "}
+            <ArrowUpRight strokeWidth={1} />
           </Link>
         </nav>
         <nav aria-label="Model navigation" className="home-menu-models">
@@ -221,16 +247,51 @@ export function HomeFooter() {
   return (
     <footer className="home-footer">
       <div className="home-footer-top">
-        <Brand />
-        <nav aria-label="Footer navigation">
-          <Link to="/models">Models</Link>
-          <Link to="/heritage">Heritage</Link>
-          <Link to="/configurator/premium">Enter configurator</Link>
-        </nav>
+        <div className="home-footer-about" id="about-project">
+          <p className="home-footer-eyebrow">ENGINEERING · CULTURE · MOTION</p>
+          <Brand />
+          <p>
+            An independent digital exhibition of the GT-R. Explore its history,
+            its different expressions and the details that make it unmistakable.
+          </p>
+          <Link to="/models" className="home-footer-enter">
+            Find your expression <ArrowUpRight size={22} />
+          </Link>
+        </div>
+        <div className="home-footer-columns">
+          <nav aria-label="Road models">
+            <h2>Road</h2>
+            {models
+              .filter((m) => m.category === "Road")
+              .map((m) => (
+                <Link key={m.id} to={`/configurator/${m.id}`}>
+                  {m.shortName}
+                </Link>
+              ))}
+          </nav>
+          <nav aria-label="Bespoke and motorsport models">
+            <h2>Beyond the road</h2>
+            {models
+              .filter((m) => m.category !== "Road")
+              .map((m) => (
+                <Link key={m.id} to={`/configurator/${m.id}`}>
+                  {m.shortName}
+                </Link>
+              ))}
+          </nav>
+          <nav aria-label="Footer navigation">
+            <h2>Explore</h2>
+            <Link to="/models">All models</Link>
+            <Link to="/heritage">Heritage</Link>
+            <Link to="/credits">Credits & sources</Link>
+          </nav>
+        </div>
       </div>
       <div className="home-footer-bottom">
-        <p>Independent fan project. Not affiliated with Nissan.</p>
-        <Link to="/credits">Credits & sources</Link>
+        <p>
+          Independent fan project. Not affiliated with or endorsed by Nissan,
+          NISMO or Italdesign.
+        </p>
         <button type="button" onClick={backToTop}>
           Back to top
           <ArrowUp size={20} strokeWidth={1.5} aria-hidden="true" />
