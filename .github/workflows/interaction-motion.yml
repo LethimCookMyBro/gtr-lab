@@ -1,0 +1,36 @@
+name: Interaction motion QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/interaction-motion.yml'
+      - 'e2e/interaction-motion.spec.ts'
+      - 'playwright.interaction.config.ts'
+      - 'src/styles.css'
+      - 'src/styles/home.css'
+      - 'src/components/ui/Drawer.tsx'
+      - 'src/components/configurator/ConfiguratorPanels.tsx'
+      - 'src/components/layout/SiteLayout.tsx'
+permissions:
+  contents: read
+jobs:
+  motion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test -c playwright.interaction.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: interaction-motion-evidence
+          path: |
+            interaction-test-results/
+            playwright-interaction-report/
+          retention-days: 14
