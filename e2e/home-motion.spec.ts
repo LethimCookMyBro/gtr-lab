@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
 
-// Layout suite deliberately exercises the recoverable model fallback. The separate
-// rear-signature job renders the real published GLB and verifies camera pixels.
+// The unapproved rear prototype is not mounted on the public homepage.
+// This layout suite never claims model rendering from a placeholder or iframe.
 test.beforeEach(async ({ page }) => {
   await page.route("**/models/ciasny-r35.glb", (route) =>
     route.fulfill({
@@ -1073,34 +1073,6 @@ test("archive chapters follow native forward and reverse wheel input", async ({
   await expect(page.locator(".home-archive-narrative h2")).toHaveText(
     narrative,
   );
-});
-
-test("rear signature keeps truthful fallback, credits and reduced-motion reading order", async ({
-  page,
-}, info) => {
-  await page.goto("/");
-  await scrollProgress(page, ".home-signature-runway", 0.5);
-  await expect(
-    page.locator(".home-signature-rings, .home-signature-photo"),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("link", { name: /Custom-aero R35 by Ciasny/ }),
-  ).toBeVisible();
-  await expect(page.locator(".home-signature-status")).toBeVisible();
-  await page.screenshot({
-    path: info.outputPath("signature-explicit-fallback.png"),
-    scale: "css",
-  });
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(page.locator(".cinematic-home")).toHaveAttribute(
-    "data-sequential-motion",
-    "true",
-  );
-  expect(
-    await page
-      .locator(".home-signature-sticky")
-      .evaluate((el) => getComputedStyle(el).position),
-  ).not.toBe("sticky");
 });
 
 test("enlarged driving film preserves focus, scroll and one-player lifecycle", async ({

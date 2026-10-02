@@ -85,3 +85,8 @@ A narrow `/release-home-story-approved.txt` watch gate isolates staging commits.
 Tested application candidate `e10ad46cff66f6f0d44f395b30f28d7d9e3a4f51` replaces arbitrary-height desktop provider boxes with full-width native-aspect frames and a separate controls row. Heritage photography grows to66% width with alternating dark narrative columns. Exact homepage workflow37005595356 and mobile workflow37005595301 passed. The short-landscape regression caught controls below the viewport and the candidate restores a fitted frame with reachable controls there. No provider footage or model asset was uploaded.
 
 The original14 Railway watch patterns were snapshotted before temporarily selecting only `/release-home-story-approved.txt`. Restore that exact list after the released application is healthy and its actual hosted playback/framing is checked. No route framing exception, temporary wrapper, extra service or plan change is part of this release.
+
+
+## Independent motion UI release boundary
+
+The menu, editorial/caption collision corrections, desktop model invitations and footer are released independently of the unapproved rear3D study. Both the rejected photographic signature runway and the experimental rear canvas are absent from the public HomePage. The experimental source and historical captures do not represent a completed production feature. All source/model bytes used by the existing configurator remain unchanged. The temporary release-marker gate must be restored to the saved14 patterns after the verified UI deployment.

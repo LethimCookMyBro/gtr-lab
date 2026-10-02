@@ -51,8 +51,8 @@ jobs:
           cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
           External NissanNews/Flixel playback checks were **not exercised** by this workflow.
           The home job checks application layout, motion and iframe lifecycle; an iframe load is not proof of playback.
-          The home job deliberately fails the GLB request to exercise a lightweight readable fallback.
-          The separate rear job loads the actual already-published GLB and verifies rendered camera pixels, recovery and disposal.
+          The experimental rear3D view is not mounted on the public homepage; its visual quality remains unapproved.
+          This release verifies the independently accepted menu, layout, model invitations and footer.
           GitHub runners have received provider HTTP 403 / SAMEORIGIN responses. Do not bypass those restrictions.
           Release acceptance requires real public-origin browser playback verification; see docs/film-sources/QA_PROVIDER_LIMITATION.md for evidence and the explicit opt-in command.
           SUMMARY
@@ -63,25 +63,4 @@ jobs:
           path: |
             test-results/home-motion/
             playwright-home-report/
-          retention-days: 14
-  rear:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - name: Render the already-published R35 rear scene
-        run: npx playwright test -c playwright.rear.config.ts
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: rear-signature-evidence
-          path: |
-            rear-signature-results/
-            playwright-rear-report/
           retention-days: 14

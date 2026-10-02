@@ -30,3 +30,6 @@ A separate six-portrait-viewport sweep includes 375×600 and 390×667. After all
 
 
 The archive/rear-signature revision reuses existing optimized photographs and the same hosted film URL; it adds no GLB, new media binary, animation framework or runtime service. Mobile articles use their natural photographic dimensions rather than long empty viewport slots. Image geometry is read in one scheduled pass before style updates; the focused film replaces the ambient iframe instead of decoding both. Exact physical-device GPU/thermal and touch-performance testing remains outstanding.
+
+
+The current UI release excludes the unapproved rear3D prototype from HomePage, so it does not add a homepage GLB request or WebGL context. The layered menu uses original CSS keyframes, and the existing passive requestAnimationFrame loop supplies bounded editorial/card motion. No new animation dependency is installed. Experimental rear software-render captures remain separate from production acceptance; physical device performance is not certified.

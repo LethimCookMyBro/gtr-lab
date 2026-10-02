@@ -390,11 +390,11 @@ describe("cinematic homepage", () => {
       ).toBeTruthy();
     }
   });
-  it("replaces the decorative photographic signature with an explicit 3D stage", () => {
+  it("keeps rejected photographic and unapproved 3D signatures out of the public homepage", () => {
     setup();
     expect(document.querySelector(".home-signature-rings")).toBeNull();
     expect(document.querySelector(".home-signature-photo")).toBeNull();
-    expect(screen.getByText(/Ciasny.*CC BY 4.0/i)).toBeTruthy();
+    expect(document.querySelector(".home-signature-runway")).toBeNull();
   });
   it("offers a keyboard-operable era timeline and a working back-to-top", async () => {
     setup();

@@ -122,6 +122,12 @@ try {
       };
       await checkpoint('00-hero-entry');
       for (const kind of ['hero', 'editorial', 'expanding', 'heritage', 'signature']) {
+        if (await page.locator(`[data-motion-section="${kind}"]`).count() === 0) {
+          view.omittedSections ||= [];
+          view.omittedSections.push({ kind, reason: 'Not mounted in the public homepage; prototype remains unapproved.' });
+          await save();
+          continue;
+        }
         if (kind === 'heritage') {
           for (const chapter of await page.locator('.home-archive-chapter').all()) {
             const geometry = await chapter.evaluate(element => {

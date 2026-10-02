@@ -1,3 +1,9 @@
+# Current motion-component release boundary
+
+The public homepage now goes from heritage directly to the model lineup. The earlier photographic four-circle runway was rejected and removed. A real rear-camera prototype was tested with the already-public Ciasny model, but its material/normal fidelity was not accepted; it is not mounted on the public page. No new or blocked model asset was uploaded. The six-variant model and cabin acceptance gates remain open.
+
+The independently accepted changes are the original layered menu animation, non-overlapping editorial grid rows, dedicated archive navigation away from captions, full-photo desktop model invitations and a richer independent-project footer. Mobile gutters, keyboard behavior and reduced motion are preserved. See MOTION_NOTES.md for original implementation and source research.
+
 # Implementation status / honest limitations
 
 ## Implemented, not yet full product acceptance

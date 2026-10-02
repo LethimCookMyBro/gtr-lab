@@ -1,5 +1,7 @@
 # GT-R motion direction — official-source research, 2 October 2026
 
+**Release boundary:** the menu, editorial/caption collision fixes, model invitations and footer are the production UI change. The rejected photographic rear runway is removed. The experimental WebGL rear view remains outside the public homepage because its source surface quality does not meet the requested realism. It is not a completed feature or an OEM-quality model. Its source and historical proof harness are retained for further asset review.
+
 ## User acceptance feedback
 
 The user rejected a static menu, overlapping editorial components and caption/navigation collision, ordinary desktop image strips, the photographic four-circle bridge and a sparse footer. Six supplied images were actually inspected. The new direction must use controlled automotive motion and a real upright/straight-on vehicle presentation, not randomly accumulated effects.
