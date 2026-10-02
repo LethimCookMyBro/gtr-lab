@@ -1,5 +1,5 @@
-Release grouped mobile caption and disclosure readability.
-Tested application:b42c764c861be237e64ba7eb1e3b5d68bda3e40b
-Homepage browser QA:37001014633
-Mobile captures:37001014570
+Release desktop native-aspect films and large photographic archive.
+Tested application:e10ad46cff66f6f0d44f395b30f28d7d9e3a4f51
+Homepage browser QA:37005595356
+Mobile captures:37005595301
 Restore all14 saved normal Railway watch patterns after verified deployment.

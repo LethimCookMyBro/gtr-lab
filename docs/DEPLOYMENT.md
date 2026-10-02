@@ -78,3 +78,10 @@ Application candidate `aa63a90c68eabb37379480feb15897377097fef1` adds four nativ
 The first candidate exposed native dialog focus leaving the modal on Shift+Tab; explicit boundary wrapping fixed it. Capture review also identified photo/timeline contrast and excessively long mobile gaps. The final layout uses natural image heights, a bounded gap, a protected timeline background and a distinct2018Premium photo in the last chapter so the immediate NISMO rear reveal does not repeat the same shot. Showroom background and mixed photographic quality remain visible source limitations.
 
 A narrow `/release-home-story-approved.txt` watch gate isolates staging commits. The release marker promotes the tested application tree; all14 saved normal patterns must be restored after the new deployment is healthy. This release adds no framing-policy exceptions or temporary browser wrapper, and changes no vehicle asset or hosting plan. The final public-origin dialog playback check remains distinct from GitHub runner provider restrictions.
+
+
+## Desktop composition release, 2 October 2026
+
+Tested application candidate `e10ad46cff66f6f0d44f395b30f28d7d9e3a4f51` replaces arbitrary-height desktop provider boxes with full-width native-aspect frames and a separate controls row. Heritage photography grows to66% width with alternating dark narrative columns. Exact homepage workflow37005595356 and mobile workflow37005595301 passed. The short-landscape regression caught controls below the viewport and the candidate restores a fitted frame with reachable controls there. No provider footage or model asset was uploaded.
+
+The original14 Railway watch patterns were snapshotted before temporarily selecting only `/release-home-story-approved.txt`. Restore that exact list after the released application is healthy and its actual hosted playback/framing is checked. No route framing exception, temporary wrapper, extra service or plan change is part of this release.
