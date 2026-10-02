@@ -118,6 +118,32 @@ afterEach(() => {
 });
 
 describe("camera motion and fixed-seat controls", () => {
+  it("reapplies the same exterior preset after a manual orbit", () => {
+    const result = render(
+      <CameraRig
+        preset="hero"
+        requestId={0}
+        autoRotate={false}
+        reducedMotion
+        onManual={() => {}}
+      />,
+    );
+    frame();
+    const canonical = host.state.camera.position.clone();
+    key("ArrowLeft", 5);
+    expect(host.state.camera.position.distanceTo(canonical)).toBeGreaterThan(0.1);
+    result.rerender(
+      <CameraRig
+        preset="hero"
+        requestId={1}
+        autoRotate={false}
+        reducedMotion
+        onManual={() => {}}
+      />,
+    );
+    frame();
+    expect(host.state.camera.position.distanceTo(canonical)).toBeLessThan(0.00001);
+  });
   it.each([
     [1440, 744],
     [390, 602],

@@ -1,24 +1,47 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 export function Drawer({
+  open = true,
   title,
   onClose,
   children,
   wide = false,
 }: {
+  open?: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const reduced = useReducedMotion();
+  const [present, setPresent] = useState(open);
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
+    if (open) {
+      setPresent(true);
+      return;
+    }
+    if (reduced) {
+      setPresent(false);
+      return;
+    }
+    const timeout = setTimeout(() => setPresent(false), 280);
+    return () => clearTimeout(timeout);
+  }, [open, reduced]);
+  useEffect(() => {
+    if (!present) return;
     const before = document.activeElement as HTMLElement | null;
     const element = ref.current;
     element?.focus();
     const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close.current();
+      }
       if (event.key === "Tab" && element) {
         const elements = [
           ...element.querySelectorAll<HTMLElement>(
@@ -47,11 +70,12 @@ export function Drawer({
     document.addEventListener("keydown", key);
     return () => {
       document.removeEventListener("keydown", key);
-      before?.focus();
+      if (before?.isConnected) before.focus({ preventScroll: true });
     };
-  }, [onClose]);
+  }, [present]);
+  if (!present) return null;
   return (
-    <div className="drawer-layer">
+    <div className="drawer-layer" data-phase={open ? "open" : "closing"}>
       <button
         className="drawer-backdrop"
         onClick={onClose}
@@ -62,6 +86,7 @@ export function Drawer({
         ref={ref}
         tabIndex={-1}
         className={"drawer " + (wide ? "drawer-wide" : "")}
+        data-phase={open ? "open" : "closing"}
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"

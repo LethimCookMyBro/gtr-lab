@@ -9,6 +9,7 @@ interface ConfigState {
   selectedPaint: string;
   selectedEnvironment: EnvironmentId;
   cameraPreset: string;
+  cameraRequest: number;
   autoRotate: boolean;
   lightsEnabled: boolean;
   audioEnabled: boolean;
@@ -36,6 +37,7 @@ const initial = {
   selectedPaint: "silver",
   selectedEnvironment: "studio" as EnvironmentId,
   cameraPreset: "hero",
+  cameraRequest: 0,
   autoRotate: false,
   lightsEnabled: false,
   audioEnabled: false,
@@ -71,7 +73,11 @@ export const useConfigurator = create<ConfigState>((set) => ({
   },
   setCamera: (id) => {
     if (cameraPresets.some((c) => c.id === id))
-      set({ cameraPreset: id, autoRotate: false });
+      set((state) => ({
+        cameraPreset: id,
+        cameraRequest: state.cameraRequest + 1,
+        autoRotate: false,
+      }));
   },
   togglePanel: (panel) =>
     set((state) => ({ panel: state.panel === panel ? null : panel })),

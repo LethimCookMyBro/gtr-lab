@@ -11,6 +11,14 @@ describe("predictable configurator state", () => {
       ready: false,
     });
   });
+  it("issues a fresh camera request when the already selected preset is chosen again", () => {
+    const initialRequest = useConfigurator.getState().cameraRequest;
+    useConfigurator.getState().setCamera("hero");
+    const firstRequest = useConfigurator.getState().cameraRequest;
+    useConfigurator.getState().setCamera("hero");
+    expect(firstRequest).toBe(initialRequest + 1);
+    expect(useConfigurator.getState().cameraRequest).toBe(firstRequest + 1);
+  });
   it("ignores an unknown paint", () => {
     const old = useConfigurator.getState().selectedPaint;
     useConfigurator.getState().setPaint("made-up");

@@ -19,7 +19,13 @@ export function Brand() {
     </Link>
   );
 }
-export function SoundButton({ compact = false }: { compact?: boolean }) {
+export function SoundButton({
+  compact = false,
+  cueOnly = false,
+}: {
+  compact?: boolean;
+  cueOnly?: boolean;
+}) {
   const audio = useAudio();
   return (
     <button
@@ -27,10 +33,20 @@ export function SoundButton({ compact = false }: { compact?: boolean }) {
       onClick={audio.toggle}
       aria-label={audio.enabled ? "Turn sound off" : "Turn sound on"}
       aria-pressed={audio.enabled}
-      title={audio.enabled ? "Sound on" : "Sound off"}
+      title={
+        cueOnly
+          ? "Interface click cues · No engine recording"
+          : audio.enabled
+            ? "Sound on"
+            : "Sound off"
+      }
     >
       {audio.enabled ? <Volume2 size={18} /> : <VolumeX size={18} />}{" "}
-      {!compact && <span>Sound {audio.enabled ? "on" : "off"}</span>}
+      {!compact && (
+        <span>
+          {cueOnly ? "UI sound" : "Sound"} {audio.enabled ? "on" : "off"}
+        </span>
+      )}
     </button>
   );
 }
@@ -198,7 +214,7 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
               to={`/configurator/${model.id}`}
               onClick={onClose}
             >
-              {model.shortName}
+              <span>{model.shortName}</span>
               <ArrowRight size={19} strokeWidth={1.5} />
             </Link>
           ))}

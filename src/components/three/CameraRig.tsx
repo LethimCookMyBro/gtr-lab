@@ -16,6 +16,7 @@ import {
 
 type Props = {
   preset: string;
+  requestId?: number;
   autoRotate: boolean;
   reducedMotion: boolean;
   onManual: () => void;
@@ -24,6 +25,7 @@ type Props = {
 
 export function CameraRig({
   preset,
+  requestId = 0,
   autoRotate,
   reducedMotion,
   onManual,
@@ -88,7 +90,7 @@ export function CameraRig({
     }
     wasInterior.current = preset === "interior";
     invalidate();
-  }, [destination, view.fov, invalidate, camera, preset]);
+  }, [destination, view.fov, invalidate, camera, preset, requestId]);
 
   useEffect(() => {
     // User can deliberately enable rotation again after a drag cancelled it.

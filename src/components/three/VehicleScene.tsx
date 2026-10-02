@@ -141,6 +141,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
         <AdaptiveDpr />
         <CameraRig
           preset={props.preset}
+          requestId={props.cameraRequest}
           cameraViews={props.cameraViews}
           autoRotate={props.autoRotate}
           reducedMotion={props.reducedMotion}

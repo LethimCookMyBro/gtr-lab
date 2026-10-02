@@ -1,5 +1,5 @@
 import { AssetDisclosure } from "./AssetDisclosure";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
 import { useConfigurator } from "../../stores/configurator";
@@ -17,13 +17,18 @@ export function ConfiguratorPanels({
   interactive: boolean;
 }) {
   const state = useConfigurator();
+  const [lastPanel, setLastPanel] = useState(state.panel);
+  useEffect(() => {
+    if (state.panel) setLastPanel(state.panel);
+  }, [state.panel]);
+  const panel = state.panel ?? lastPanel;
   const navigate = useNavigate();
   const audio = useAudio();
   const close = useCallback(
     () => useConfigurator.setState({ panel: null }),
     [],
   );
-  if (!state.panel) return null;
+  if (!panel) return null;
   const titles = {
     camera: "A new perspective.",
     environment: "Change the atmosphere.",
@@ -33,12 +38,13 @@ export function ConfiguratorPanels({
   };
   return (
     <Drawer
-      title={titles[state.panel]}
+      open={state.panel !== null}
+      title={titles[panel]}
       onClose={close}
-      wide={state.panel === "models"}
+      wide={panel === "models"}
     >
-      {state.panel === "details" && <ModelDetails model={model} />}
-      {state.panel === "models" && (
+      {panel === "details" && <ModelDetails model={model} />}
+      {panel === "models" && (
         <div className="variant-choices">
           {models.map((m) => (
             <button
@@ -65,7 +71,7 @@ export function ConfiguratorPanels({
           ))}
         </div>
       )}
-      {state.panel === "camera" && (
+      {panel === "camera" && (
         <>
           <p className="panel-intro">
             Find the form from every angle. Drag to orbit; scroll or pinch to
@@ -77,12 +83,23 @@ export function ConfiguratorPanels({
               available.
             </p>
           )}
+          {interactive && !model.asset.interior && (
+            <p className="availability-note" id="cabin-availability">
+              Exterior-only model. A detailed cabin is not included in this
+              asset, so Interior is unavailable.
+            </p>
+          )}
           <div className="camera-choices">
             {cameraPresets.map((p) => (
               <button
                 key={p.id}
                 disabled={
                   !interactive || (p.id === "interior" && !model.asset.interior)
+                }
+                aria-describedby={
+                  p.id === "interior" && interactive && !model.asset.interior
+                    ? "cabin-availability"
+                    : undefined
                 }
                 className={state.cameraPreset === p.id ? "selected" : ""}
                 onClick={() => {
@@ -104,7 +121,7 @@ export function ConfiguratorPanels({
           </div>
         </>
       )}
-      {state.panel === "environment" && (
+      {panel === "environment" && (
         <>
           <p className="panel-intro">
             Lighting, reflections and background change together.
@@ -140,7 +157,7 @@ export function ConfiguratorPanels({
           </div>
         </>
       )}
-      {state.panel === "assets" && (
+      {panel === "assets" && (
         <AssetDisclosure model={model} interactive={interactive} />
       )}
     </Drawer>

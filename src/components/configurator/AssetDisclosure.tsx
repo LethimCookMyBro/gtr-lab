@@ -89,7 +89,7 @@ export function AssetDisclosure({
               ? study
                 ? "Modeled study cabin"
                 : "Verified"
-              : "Not yet verified"}
+              : "Unavailable in this asset"}
           </dd>
         </div>
         <div>

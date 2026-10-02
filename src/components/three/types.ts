@@ -7,6 +7,7 @@ export type VehicleSceneProps = {
   paint: string;
   environment: StudioEnvironment;
   preset: string;
+  cameraRequest?: number;
   autoRotate: boolean;
   lights: boolean;
   reducedMotion: boolean;

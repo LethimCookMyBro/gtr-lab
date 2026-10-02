@@ -6,6 +6,7 @@ import {
   cleanup,
   waitFor,
   fireEvent,
+  act,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
@@ -97,6 +98,26 @@ describe("configurator honest functional flow", () => {
       (screen.getByRole("button", { name: /Interior/ }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
+  });
+  it("explains the missing cabin beside the ready exterior camera choices", async () => {
+    setup();
+    act(() => useConfigurator.setState({ ready: true }));
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Camera" }));
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "A detailed cabin is not included in this asset",
+    );
+    const interior = screen.getByRole("button", { name: /Interior/ });
+    expect(interior.getAttribute("aria-describedby")).toBe(
+      "cabin-availability",
+    );
+  });
+  it("labels configurator sound as interface cues rather than engine audio", () => {
+    setup();
+    const sound = screen.getByRole("button", { name: "Turn sound on" });
+    expect(sound.textContent).toContain("UI sound");
+    expect(sound.getAttribute("title")).toContain("Interface click cues");
   });
   it("returns to models", async () => {
     setup();

@@ -6,7 +6,10 @@ export default defineConfig({
   workers: 1,
   timeout: 45000,
   retries: 0,
-  reporter: [["list"], ["html", { outputFolder: "playwright-interaction-report", open: "never" }]],
+  reporter: [
+    ["list"],
+    ["html", { outputFolder: "playwright-interaction-report", open: "never" }],
+  ],
   use: {
     ...devices["Desktop Chrome"],
     baseURL: process.env.INTERACTION_URL || "http://127.0.0.1:4173",
@@ -16,11 +19,13 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "on",
   },
-  webServer: process.env.INTERACTION_URL ? undefined : {
-    command: "npm run build && npm start",
-    url: "http://127.0.0.1:4173",
-    env: { PORT: "4173" },
-    reuseExistingServer: false,
-    timeout: 180000,
-  },
+  webServer: process.env.INTERACTION_URL
+    ? undefined
+    : {
+        command: "npm run build && npm start",
+        url: "http://127.0.0.1:4173",
+        env: { PORT: "4173" },
+        reuseExistingServer: false,
+        timeout: 180000,
+      },
 });

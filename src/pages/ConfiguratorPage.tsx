@@ -147,6 +147,7 @@ export function ConfiguratorPage() {
               paint={paint.color}
               environment={state.selectedEnvironment}
               preset={state.cameraPreset}
+              cameraRequest={state.cameraRequest}
               autoRotate={state.autoRotate}
               lights={state.lightsEnabled}
               reducedMotion={reduced}
@@ -211,13 +212,16 @@ export function ConfiguratorPage() {
           disabled={
             !interactive || !model.asset.lights || !state.lightsAvailable
           }
+          aria-label="Lights"
           aria-pressed={state.lightsEnabled}
           title={
-            !interactive ? "Lights require a ready 3D model" : "Toggle lights"
+            !interactive
+              ? "Lights require a ready 3D model"
+              : "Toggle headlamps and taillamps"
           }
         >
           <Sun />
-          <span>Lights</span>
+          <span>Lights {state.lightsEnabled ? "on" : "off"}</span>
         </button>
         <button
           disabled={!interactive || reduced}
@@ -225,15 +229,16 @@ export function ConfiguratorPage() {
             useConfigurator.setState({ autoRotate: !state.autoRotate });
             audio.play();
           }}
+          aria-label="Rotate"
           aria-pressed={state.autoRotate}
           title={
             reduced ? "Showcase disabled for reduced motion" : "Auto rotate"
           }
         >
           <RotateCw />
-          <span>Rotate</span>
+          <span>{state.autoRotate ? "Stop rotation" : "Rotate"}</span>
         </button>
-        <SoundButton />
+        <SoundButton cueOnly />
       </div>
       <div className="scene-bottom">
         <button className="switch-model" onClick={() => open("models")}>
@@ -338,7 +343,11 @@ export function ConfiguratorPage() {
           </button>
         </div>
       )}
-      <ConfiguratorPanels model={model} interactive={interactive} />
+      <ConfiguratorPanels
+        key={model.id}
+        model={model}
+        interactive={interactive}
+      />
       {audio.error && (
         <p role="status" className="audio-error">
           {audio.error}

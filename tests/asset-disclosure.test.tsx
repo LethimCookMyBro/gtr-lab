@@ -1,11 +1,21 @@
 // @vitest-environment jsdom
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ConfiguratorPanels } from "../src/components/configurator/ConfiguratorPanels";
 import { AudioProvider } from "../src/hooks/useAudio";
 import { models, type VehicleModel } from "../src/data/models";
 import { useConfigurator } from "../src/stores/configurator";
+beforeEach(() => {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: () => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }),
+  });
+});
 afterEach(() => {
   cleanup();
   useConfigurator.getState().reset();
