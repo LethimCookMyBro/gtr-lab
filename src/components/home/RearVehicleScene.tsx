@@ -236,8 +236,14 @@ export default function RearVehicleScene(props: Props) {
           progress={props.progress}
           reducedMotion={props.reducedMotion}
         />
-        <RearStudio />
-        {asset && <RearVehicle asset={asset} onReady={props.onReady} />}
+        {asset ? (
+          <>
+            <RearStudio />
+            <RearVehicle asset={asset} onReady={props.onReady} />
+          </>
+        ) : (
+          <color attach="background" args={["#11151a"]} />
+        )}
       </Canvas>
     </SceneBoundary>
   );
