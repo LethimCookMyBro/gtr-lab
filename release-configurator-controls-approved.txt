@@ -1,0 +1,9 @@
+Release reviewed configurator controls, running-light feedback and hover/close interaction polish.
+Approved application: 04527bfa36508c7adcf25c7b22db91413df61b2b
+Complete Quality: 37029064775 SUCCESS
+Actual desktop/mobile control matrix: 37029064458 SUCCESS (38/38 each; zero browser errors)
+Enhanced vehicle checkpoint: 37029064506 SUCCESS (includes exact camera reset)
+Normal-motion hover/focus/exit: 37025495645 SUCCESS (4 tests; unchanged interaction implementation)
+Interior remains unavailable; other five variants remain photographic references.
+Running-light strips and rear rings only; no projector bulb/beam, engine-audio or OEM-realism claim.
+Restore all14 saved Railway watch patterns after the exact live release and reset smoke pass.
