@@ -27,7 +27,12 @@ try {
     page.on('console', message => { if (message.type() === 'error') result.errors.push(message.text()); if (message.type() === 'warning') result.warnings.push(message.text()); });
     const canvas = page.locator('.scene-stage canvas');
     const shot = async label => {
+      // Actions run with normal motion. Stop demand-frame animation only for
+      // deterministic SwiftShader pixel readback, as in the existing vehicle suite.
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const bytes = await canvas.screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000 });
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
       return createHash('sha256').update(bytes).digest('hex');
     };
     const pause = () => page.waitForTimeout(1800);
@@ -45,7 +50,9 @@ try {
       await page.goto(baseURL + '/configurator/premium', { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => { const button = document.querySelector('button[aria-label="Ultimate Silver"]'); return !!button && !button.disabled; }, {}, { timeout: 90000 });
       assert.equal(await canvas.count(), 1); await pause();
-      await page.screenshot({ path: `${directory}/${name}-initial-page.png` });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.screenshot({ path: `${directory}/${name}-initial-page.png`, timeout: 45000 });
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
       for (const label of ['Camera', 'Environment', 'Model detail', 'Switch model', 'Model provenance & limitations', 'Asset information']) {
         await check(`${label} opens and closes`, async () => {
           await open(label); const text = await page.getByRole('dialog').innerText();
@@ -78,7 +85,7 @@ try {
       await check('Rotate on, visible movement, and stop', async () => { const before = await shot('rotate-before'); const button = page.getByRole('button', { name: 'Rotate', exact: true }); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); await page.waitForTimeout(2200); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); await pause(); const after = await shot('rotate-after'); assert.notEqual(after, before); return { before, after, pixelsChanged: true }; });
       await check('Sound is an opt-in interface cue', async () => { const button = page.locator('.config-toolbar .sound-button'); const count = await page.evaluate(() => window.__audioStarts); await button.click(); await page.waitForTimeout(300); const starts = await page.evaluate(() => window.__audioStarts); assert.ok(starts > count); const enabledText = await button.innerText(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); return { enabledText, actualOscillatorStarts: starts - count, soundType: 'interface cue, not engine audio' }; });
       for (const [id, label] of [['nismo', 'NISMO'], ['tspec', 'T-spec'], ['gtr50', 'GT-R50'], ['gt3', 'GT3'], ['gt500', 'GT500']]) {
-        await check(`${label} remains an honest photo fallback`, async () => { await page.goto(baseURL + '/configurator/' + id); assert.equal(await canvas.count(), 0); assert.equal(await page.getByRole('button', { name: 'Photo reference · 3D asset pending', exact: true }).isVisible(), true); assert.equal(await page.getByRole('button', { name: 'Ultimate Silver', exact: true }).isDisabled(), true); await open('Camera'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: 'Front', exact: true }).isDisabled(), true); await close(); await open('Environment'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: /^Studio/ }).isDisabled(), true); await close(); return { canvas: false, photoFallback: true, cameraDisabled: true, environmentDisabled: true }; });
+        await check(`${label} remains an honest photo fallback`, async () => { await page.goto(baseURL + '/configurator/' + id); await page.getByRole('button', { name: 'Photo reference · 3D asset pending', exact: true }).waitFor(); assert.equal(await canvas.count(), 0); assert.equal(await page.getByRole('button', { name: 'Photo reference · 3D asset pending', exact: true }).isVisible(), true); assert.equal(await page.getByRole('button', { name: 'Ultimate Silver', exact: true }).isDisabled(), true); await open('Camera'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: 'Front', exact: true }).isDisabled(), true); await close(); await open('Environment'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: /^Studio/ }).isDisabled(), true); await close(); return { canvas: false, photoFallback: true, cameraDisabled: true, environmentDisabled: true }; });
       }
     } catch (error) { result.errors.push(String(error)); report.failures.push(`${name}: ${error.message}`); }
     if (result.errors.length) report.failures.push(`${name}: unexpected browser errors`);
