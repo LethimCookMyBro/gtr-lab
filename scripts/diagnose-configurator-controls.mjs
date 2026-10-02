@@ -43,7 +43,7 @@ try {
     const chooseCamera = async label => { await open('Camera'); await page.getByRole('dialog').getByRole('button', { name: label, exact: true }).click(); await page.getByRole('dialog').waitFor({ state: 'hidden' }); await pause(); };
     try {
       await page.goto(baseURL + '/configurator/premium', { waitUntil: 'domcontentloaded' });
-      await page.waitForFunction(() => !document.querySelector('button[aria-label="Ultimate Silver"]')?.disabled, {}, { timeout: 90000 });
+      await page.waitForFunction(() => { const button = document.querySelector('button[aria-label="Ultimate Silver"]'); return !!button && !button.disabled; }, {}, { timeout: 90000 });
       assert.equal(await canvas.count(), 1); await pause();
       await page.screenshot({ path: `${directory}/${name}-initial-page.png` });
       for (const label of ['Camera', 'Environment', 'Model detail', 'Switch model', 'Model provenance & limitations', 'Asset information']) {
