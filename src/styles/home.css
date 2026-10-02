@@ -2131,3 +2131,183 @@
     line-height: 1.5;
   }
 }
+
+/* Desktop uses the publisher's complete native landscape frame. The section may
+   extend below a short viewport; normal page scrolling exposes it without cropping
+   the provider, stretching the footage, or adding a second letterbox. */
+.home-archive-year {
+  display: none;
+}
+@media (min-width: 768px) {
+  .home-hero-sticky {
+    height: calc(56.25vw + 64px);
+    min-height: 0;
+    top: min(0px, calc(100svh - 56.25vw - 64px));
+  }
+  .home-hero-runway {
+    height: calc(56.25vw + 64px + 60svh);
+  }
+  .home-film--hero .home-film-provider,
+  .home-film--detail .home-film-provider {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .home-hero-copy {
+    top: clamp(280px, calc(56.25vw - 300px), calc(100svh - 300px));
+    bottom: auto;
+  }
+  .home-hero-copy h1 {
+    font-size: clamp(76px, 7.3vw, 132px);
+  }
+  .home-expanding-runway {
+    height: calc(max(100svh, 56.25vw + 64px) + 110svh);
+  }
+  .home-expanding-sticky {
+    height: max(100svh, calc(56.25vw + 64px));
+    top: min(0px, calc(100svh - 56.25vw - 64px));
+  }
+  .home-expanding-frame {
+    box-sizing: content-box;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    padding-bottom: 64px;
+  }
+  .home-film-enlarge {
+    top: auto;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-height: 44px;
+    flex-direction: row;
+    gap: 10px;
+    font-size: 12px;
+    text-shadow: none;
+  }
+  .home-film-enlarge-icon {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+  .home-film-enlarge:active:not(:disabled) {
+    transform: translateX(-50%) scale(0.98);
+  }
+}
+
+/* A large photographic archive with a changing editorial column. Alternating
+   image placement follows the actual chapter, rather than leaving a blank center. */
+@media (min-width: 701px) {
+  .home-archive-runway {
+    background: #0c0e10;
+    color: #f3f2ef;
+  }
+  .home-archive-stage {
+    z-index: 3;
+  }
+  .home-archive-narrative {
+    left: auto;
+    right: 4%;
+    top: 23%;
+    width: 25%;
+    text-align: left;
+  }
+  .home-archive-runway[data-active-era="1"] .home-archive-narrative,
+  .home-archive-runway[data-active-era="3"] .home-archive-narrative {
+    left: 4%;
+    right: auto;
+  }
+  .home-archive-kicker {
+    color: #c9a6a8;
+    margin-bottom: 14px;
+  }
+  .home-archive-year {
+    display: block;
+    color: #aeb2b5;
+    font-size: clamp(72px, 7.8vw, 150px);
+    letter-spacing: -0.07em;
+    line-height: 1;
+    margin: 0 0 26px;
+  }
+  .home-archive-narrative h2 {
+    font-size: clamp(32px, 3.4vw, 62px);
+  }
+  .home-archive-description {
+    margin: 20px 0 0;
+    max-width: 340px;
+    color: #b6bdc2;
+    font-size: clamp(15px, 1.15vw, 19px);
+  }
+  .home-archive-chapter {
+    min-height: 100svh;
+    padding: 6svh 0;
+  }
+  .home-archive-image {
+    width: 66%;
+  }
+  .home-archive-image img {
+    border-radius: 0 12px 12px 0;
+    max-height: 76svh;
+    object-fit: contain;
+  }
+  .home-archive-chapter:nth-child(even) .home-archive-image img {
+    border-radius: 12px 0 0 12px;
+  }
+  .home-archive-image figcaption {
+    color: #aab0b4;
+    font-size: 12px;
+    padding: 0 28px;
+  }
+  .home-archive-image figcaption span {
+    color: #f3f2ef;
+  }
+  .home-archive-navigation {
+    bottom: 6%;
+  }
+  .home-archive-navigation button {
+    color: #c4c8cb;
+  }
+  .home-archive-navigation button[aria-current] {
+    color: #f2a3a7;
+  }
+  .home-archive-source {
+    bottom: 4px;
+    color: #aab0b4;
+    font-size: 11px;
+  }
+  .home-archive-runway :focus-visible {
+    outline-color: #f2a3a7;
+  }
+  [data-sequential-motion="true"] .home-archive-inline-copy > p:first-child {
+    color: #e4a5a9;
+  }
+  [data-sequential-motion="true"] .home-archive-inline-copy > p:last-child {
+    color: #b6bdc2;
+  }
+}
+@media (min-width: 768px) and (prefers-reduced-motion: reduce),
+  (min-width: 768px) and (max-height: 740px) {
+  .home-hero-runway,
+  .home-expanding-runway {
+    height: auto;
+  }
+  .home-hero-sticky,
+  .home-expanding-sticky {
+    top: auto;
+  }
+  .home-expanding-sticky {
+    height: auto;
+  }
+  .home-expanding-frame {
+    height: auto !important;
+  }
+}
+@media (min-width: 768px) {
+  .home-expanding-frame .home-film-controls {
+    pointer-events: none;
+  }
+  .home-expanding-frame .home-film-controls > * {
+    pointer-events: auto;
+  }
+}

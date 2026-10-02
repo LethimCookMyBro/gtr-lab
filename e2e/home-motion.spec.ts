@@ -193,6 +193,18 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
         Number.parseFloat(getComputedStyle(element).fontSize),
       ),
     ).toBeGreaterThanOrEqual(11);
+  } else if (page.viewportSize()!.width >= 768) {
+    const media = (await page
+      .locator(".home-film--hero iframe")
+      .boundingBox())!;
+    expect(media.x).toBeCloseTo(0, 0);
+    expect(media.width).toBeCloseTo(page.viewportSize()!.width, 0);
+    expect(media.height).toBeCloseTo((media.width * 9) / 16, 0);
+    const copy = (await page.locator(".home-hero-copy").boundingBox())!;
+    expect(copy.x).toBeGreaterThan(20);
+    expect(copy.y + copy.height).toBeLessThanOrEqual(
+      page.viewportSize()!.height,
+    );
   }
   await page.screenshot({
     animations: "disabled",
@@ -310,7 +322,14 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       .boundingBox();
     expect(controls!.y - (player!.y + player!.height)).toBeLessThanOrEqual(32);
   } else {
-    expect(expanded!.height).toBeCloseTo(page.viewportSize()!.height, 0);
+    expect(expanded!.height).toBeCloseTo((expanded!.width * 9) / 16 + 64, 0);
+    const player = (await page
+      .locator(".home-film--detail iframe")
+      .boundingBox())!;
+    expect(player.height).toBeCloseTo((player.width * 9) / 16, 0);
+    await expect(
+      page.getByRole("button", { name: "Enlarge driving film" }),
+    ).toContainText("Expand film");
   }
   await page.screenshot({
     animations: "disabled",
@@ -329,6 +348,22 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     await expect(image).toBeInViewport();
     const bounds = (await image.boundingBox())!;
     expect(bounds.width).toBeGreaterThan(page.viewportSize()!.width * 0.3);
+    if (page.viewportSize()!.width > 767) {
+      expect(bounds.width).toBeGreaterThan(page.viewportSize()!.width * 0.6);
+      const narrative = (await page
+        .locator(".home-archive-narrative")
+        .boundingBox())!;
+      const horizontalGap =
+        index % 2 === 0
+          ? narrative.x - (bounds.x + bounds.width)
+          : bounds.x - (narrative.x + narrative.width);
+      expect(horizontalGap).toBeGreaterThanOrEqual(20);
+      expect(
+        await page
+          .locator(".home-archive-runway")
+          .evaluate((el) => getComputedStyle(el).backgroundColor),
+      ).toBe("rgb(12, 14, 16)");
+    }
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(
       page.viewportSize()!.width + 1,
@@ -341,6 +376,11 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       await page.locator(".home-archive-narrative h2").innerText(),
     );
     await expect(page.locator(".home-archive-narrative h2")).toBeInViewport();
+    await page.screenshot({
+      animations: "disabled",
+      path: info.outputPath(`07-archive-chapter-${index}.png`),
+      scale: "css",
+    });
   }
   expect(new Set(narratives).size).toBe(4);
   if (page.viewportSize()!.width > 767) {

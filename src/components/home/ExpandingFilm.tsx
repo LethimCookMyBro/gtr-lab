@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play } from "lucide-react";
+import { Expand } from "lucide-react";
 import { Film } from "./Film";
 import { FilmDialog } from "./FilmDialog";
 export function ExpandingFilm({
@@ -31,14 +31,9 @@ export function ExpandingFilm({
             aria-label="Enlarge driving film"
           >
             <span className="home-film-enlarge-icon">
-              <Play
-                size={22}
-                fill="currentColor"
-                strokeWidth={1}
-                aria-hidden="true"
-              />
+              <Expand size={22} strokeWidth={1.5} aria-hidden="true" />
             </span>
-            <span>Take a closer look</span>
+            <span>Expand film</span>
           </button>
         </div>
       </div>

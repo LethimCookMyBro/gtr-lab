@@ -60,6 +60,9 @@ export function HeritageJourney({
           <p className="home-archive-kicker">
             {String(activeEra + 1).padStart(2, "0")} / 04 · {chapter.year}
           </p>
+          <p className="home-archive-year" aria-hidden="true">
+            {chapter.year}
+          </p>
           <h2 key={chapter.year}>{chapter.title}</h2>
           <p className="home-archive-description">{chapter.note}</p>
         </div>
@@ -100,7 +103,7 @@ export function HeritageJourney({
               <img
                 src={era.image.src}
                 srcSet={`${era.image.small} ${era.image.smallWidth || 800}w, ${era.image.src} ${era.image.width}w`}
-                sizes="(max-width: 700px) 92vw, 40vw"
+                sizes="(max-width: 700px) 92vw, 66vw"
                 width={era.image.width}
                 height={era.image.height}
                 alt={era.image.alt}
