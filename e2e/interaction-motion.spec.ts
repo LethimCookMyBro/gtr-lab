@@ -23,7 +23,11 @@ test("menu hover and keyboard focus share restrained movement, close reverses th
     .toBeGreaterThan(5);
   await page.screenshot({ path: info.outputPath("menu-link-hover.png") });
   await page.mouse.move(1, 1);
-  await models.focus();
+  // Enter keyboard modality and traverse the actual close → brand → first-link order.
+  await dialog.getByRole("button", { name: "Close menu" }).focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(models).toBeFocused();
   await expect
     .poll(() =>
       models
