@@ -54,23 +54,9 @@ export function createAppServer(directory = resolve("dist")) {
       return;
     }
     try {
-      const requestUrl = new URL(req.url, "http://localhost");
-      const path = decodeURIComponent(requestUrl.pathname);
-      // Temporary same-origin responsive review only; remove with the QA wrapper.
-      if (path === "/" && requestUrl.search === "?film-responsive-check=1") {
-        res.setHeader(
-          "Content-Security-Policy",
-          CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
-        );
-      } else if (path === "/film-embed-check.html") {
-        res.setHeader(
-          "Content-Security-Policy",
-          CSP.replace(
-            "frame-src https://media.flixel.com",
-            "frame-src 'self' https://media.flixel.com",
-          ),
-        );
-      }
+      const path = decodeURIComponent(
+        new URL(req.url, "http://localhost").pathname,
+      );
       let file = resolve(root, "." + path);
       if (file !== root && !file.startsWith(root + sep)) {
         res.writeHead(403);

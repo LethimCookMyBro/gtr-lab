@@ -1,8 +1,5 @@
-Release the reviewed publisher-hosted NissanNews driving films.
-Application candidate: b0cbfea2528f1c33c090fdfde2b7b5bd31591ca5
-Public-origin probe: 06500737ec87880d451984c8e9b40487bf07a2db
-Both exact players advance; final composed review follows this deployment.
-Temporary responsive wrapper and its route-scoped headers must be removed after review.
-Restore the recorded 14 normal Railway watch patterns after verified release.
-
-Responsive follow-up: landscape detail frame plus nearby controls and hero copy.
+Reviewed real GT-R driving films released.
+Application revision: c6db05ef45df53222cb2c43762c8b352ff1531f2
+Public desktop and measured390/430 CSS-width playback verified.
+This commit removes the temporary responsive wrapper and framing exception.
+Restore the recorded14 normal Railway watch patterns after this healthy cleanup deployment.

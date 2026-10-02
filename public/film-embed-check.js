@@ -1,1 +1,0 @@
-const frame=document.querySelector('iframe');for(const button of document.querySelectorAll('button[data-size]'))button.addEventListener('click',()=>{const width=Number(button.dataset.size);frame.style.width=width+'px';frame.style.height=({390:844,430:932,1440:900}[width])+'px';});

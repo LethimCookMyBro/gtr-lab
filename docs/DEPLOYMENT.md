@@ -19,7 +19,7 @@ The driving-film revision separates deterministic app/scroll checks from provide
 
 ## Normal service watch patterns
 
-The driving-film revision temporarily uses only `/release-driving-films-approved.txt`; restore the exact 14 patterns below after the tested live release. The two film-pipeline paths were already part of the recorded pre-mobile list. No other service settings change.
+The driving-film revision used `/release-driving-films-approved.txt` temporarily. The release procedure restores the exact 14 patterns below after live verification. The two film-pipeline paths were already part of the recorded pre-mobile list. No other service settings change.
 
 ```json
 [
@@ -62,3 +62,10 @@ The user approved this preview on the existing Hobby plan after disclosure that 
 ## Repository presentation
 
 GitHub About Website is set to the exact live Railway URL. Only `main` remains; the temporary WIP branch was removed after verifying its commits were retained on main.
+
+
+## Driving-film release, 2 October 2026
+
+Application revision `c6db05ef45df53222cb2c43762c8b352ff1531f2` deployed successfully as `f94a3e69-31d2-4d0f-9e11-da6332286341`. Both real NissanNews films advanced on the public Railway origin. Actual cloud-browser review covered the desktop hero/detail, Stop/Play, offscreen unloading, continuous detail width/radius growth, and the full responsive app at measured390×844 and430×932 iframe viewports. These are CSS-sized browser checks, not physical-phone performance benchmarks.
+
+The mobile correction preserves the whole landscape film, brings hero copy28px below it and keeps detail controls in an adjacent76px row. Exact-revision homepage and mobile-motion workflows passed. The follow-up cleanup removes the unlinked temporary responsive wrapper and its route-only same-origin framing exception; ordinary pages retain `frame-ancestors 'none'`. No player headers were removed, no media was extracted or rehosted, and no model asset changed.

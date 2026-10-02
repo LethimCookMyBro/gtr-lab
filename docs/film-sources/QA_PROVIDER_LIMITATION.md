@@ -26,3 +26,8 @@ npx playwright test -c playwright.home.config.ts --project=home-desktop \
 Use `--project=home-mobile` for the mobile acceptance pass. A blocked environment must report blocked/unverified, not convert the test into a success. Do not repeat a known-blocked provider matrix on every push.
 
 For each release, verify the exact deployed revision in a real browser on its public origin. Observe successive video frames for both films, Stop then Play, offscreen unloading, and reduced-motion/Save-Data explicit playback. Check desktop and mobile presentation and record the revision, origin, browser, date and results. The probe above supports the provider decision; it does not replace this final homepage verification.
+
+
+## Composed public homepage verification
+
+The deployed application at `c6db05ef45df53222cb2c43762c8b352ff1531f2` was inspected in the cloud browser. Desktop hero and expanding detail showed advancing real driving footage, with Stop/restart and offscreen unloading. A temporary same-origin wrapper provided measured390×844 and430×932 app viewports; both exact hosted players also advanced there. The revised mobile detail panel is native16:9 plus a76px control row, while width/radius scroll staging remains continuous. The opening copy sits28px beneath the landscape player. No physical-device benchmark is claimed. The wrapper and narrowly scoped framing exception are removed after this review.
