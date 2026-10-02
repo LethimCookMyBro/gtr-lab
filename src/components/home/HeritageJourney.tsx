@@ -18,12 +18,27 @@ export function HeritageJourney({
     );
     if (!target) return;
     onEra(index);
-    const bounds = target.getBoundingClientRect();
+    const bounds = (
+      target.querySelector<HTMLElement>(".home-archive-image") || target
+    ).getBoundingClientRect();
+    const sectionBounds = section.current!.getBoundingClientRect();
+    const sectionTop = scrollY + sectionBounds.top;
+    const stageHeight =
+      section.current!.querySelector<HTMLElement>(".home-archive-stage")
+        ?.offsetHeight || innerHeight;
+    const desired =
+      scrollY +
+      bounds.top +
+      bounds.height / 2 -
+      innerHeight * (innerWidth <= 700 ? 0.59 : 0.5);
+    const destination = sequentialMotion
+      ? Math.max(0, desired)
+      : Math.max(
+          sectionTop,
+          Math.min(sectionTop + sectionBounds.height - stageHeight, desired),
+        );
     window.scrollTo({
-      top: Math.max(
-        0,
-        scrollY + bounds.top + bounds.height / 2 - innerHeight / 2,
-      ),
+      top: destination,
       behavior: sequentialMotion ? "instant" : "smooth",
     });
   };

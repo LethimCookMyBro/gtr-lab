@@ -2047,3 +2047,21 @@
     padding-bottom: 0;
   }
 }
+
+/* Natural photo lengths keep another chapter entering while the previous one leaves. */
+@media (max-width: 700px) {
+  .home-archive-track {
+    padding: 32svh 0 14svh;
+  }
+  .home-archive-chapter {
+    min-height: 0;
+    display: block;
+    padding: 0 18px 14svh;
+  }
+  [data-sequential-motion="true"] .home-archive-track {
+    padding: 0;
+  }
+}
+.home-archive-runway :focus-visible {
+  outline-color: #952129;
+}

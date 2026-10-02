@@ -144,6 +144,9 @@ export function useHomeMotion(
         element,
         index,
         rect: element.getBoundingClientRect(),
+        imageRect: (
+          element.querySelector<HTMLElement>(".home-archive-image") || element
+        ).getBoundingClientRect(),
       }));
       // All geometry above is read before the first style mutation below.
       for (const { element, rect, stickyHeight } of measurements) {
@@ -179,8 +182,12 @@ export function useHomeMotion(
       }
       let nextEra = 0;
       let nearest = Infinity;
-      for (const { element, index, rect } of chapterMeasurements) {
-        const distance = Math.abs(rect.top + rect.height / 2 - viewport / 2);
+      for (const { element, index, rect, imageRect } of chapterMeasurements) {
+        const distance = Math.abs(
+          imageRect.top +
+            imageRect.height / 2 -
+            viewport * (window.innerWidth <= 700 ? 0.59 : 0.5),
+        );
         if (distance < nearest) {
           nearest = distance;
           nextEra = index;

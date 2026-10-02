@@ -101,16 +101,36 @@ const archiveNames = [
   "2007: R35 GT-R",
 ];
 
-async function centerArchiveChapter(page: Page, index: number) {
-  await page
-    .locator(`.home-archive-chapter[data-era-image="${index}"]`)
-    .evaluate((chapter) => {
-      const rect = chapter.getBoundingClientRect();
-      window.scrollTo({
-        top: scrollY + rect.top + rect.height / 2 - innerHeight / 2,
-        behavior: "instant",
-      });
+async function archiveImageDestination(page: Page, index: number) {
+  return page
+    .locator(
+      `.home-archive-chapter[data-era-image="${index}"] .home-archive-image`,
+    )
+    .evaluate((image) => {
+      const rect = image.getBoundingClientRect();
+      const section = image.closest<HTMLElement>(".home-archive-runway")!;
+      const bounds = section.getBoundingClientRect();
+      const start = scrollY + bounds.top;
+      const end =
+        start +
+        bounds.height -
+        (section.querySelector<HTMLElement>(".home-archive-stage")
+          ?.offsetHeight || innerHeight);
+      const desired =
+        scrollY +
+        rect.top +
+        rect.height / 2 -
+        innerHeight * (innerWidth <= 700 ? 0.59 : 0.5);
+      return Math.max(start, Math.min(end, desired));
     });
+}
+
+async function centerArchiveChapter(page: Page, index: number) {
+  const top = await archiveImageDestination(page, index);
+  await page.evaluate(
+    (target) => window.scrollTo({ top: target, behavior: "instant" }),
+    top,
+  );
   await expect(page.locator(".home-archive-runway")).toHaveAttribute(
     "data-active-era",
     String(index),
@@ -118,6 +138,26 @@ async function centerArchiveChapter(page: Page, index: number) {
   await expect(
     page.getByRole("button", { name: archiveNames[index], exact: true }),
   ).toHaveAttribute("aria-current", "step");
+}
+
+async function expectArchiveControlsInView(page: Page, index: number) {
+  // Independently verify the result of native navigation, including clamped endpoints.
+  await expect(
+    page.locator(
+      `.home-archive-chapter[data-era-image="${index}"] .home-archive-image`,
+    ),
+  ).toBeInViewport();
+  for (const selector of [
+    ".home-archive-narrative h2",
+    ".home-archive-navigation",
+  ]) {
+    await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
+    const rect = (await page.locator(selector).boundingBox())!;
+    expect(rect.y).toBeGreaterThanOrEqual(-1);
+    expect(rect.y + rect.height).toBeLessThanOrEqual(
+      page.viewportSize()!.height + 1,
+    );
+  }
 }
 
 test("cinematic layout, real scroll geometry, menu and six destinations", async ({
@@ -331,16 +371,17 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     "data-active-era",
     "3",
   );
-  await expect
-    .poll(() =>
-      page
-        .locator('.home-archive-chapter[data-era-image="3"]')
-        .evaluate((chapter) => {
-          const rect = chapter.getBoundingClientRect();
-          return Math.abs(rect.top + rect.height / 2 - innerHeight / 2);
-        }),
-    )
-    .toBeLessThan(3);
+  await settleNativeScroll(page, info, "archive-last-button-arrival");
+  await expectArchiveControlsInView(page, 3);
+  await page
+    .getByRole("button", { name: archiveNames[0], exact: true })
+    .click();
+  await settleNativeScroll(page, info, "archive-first-button-arrival");
+  await expect(page.locator(".home-archive-runway")).toHaveAttribute(
+    "data-active-era",
+    "0",
+  );
+  await expectArchiveControlsInView(page, 0);
   await page.screenshot({
     animations: "disabled",
     path: info.outputPath("07-home-heritage.png"),
@@ -889,16 +930,12 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
         "data-active-era",
         String(index),
       );
-      await expect
-        .poll(() =>
-          page
-            .locator(`.home-archive-chapter[data-era-image="${index}"]`)
-            .evaluate((chapter) => {
-              const rect = chapter.getBoundingClientRect();
-              return Math.abs(rect.top + rect.height / 2 - innerHeight / 2);
-            }),
-        )
-        .toBeLessThan(3);
+      await settleNativeScroll(
+        page,
+        info,
+        `archive-button-${width}x${height}-${index}`,
+      );
+      await expectArchiveControlsInView(page, index);
     }
     await page.screenshot({
       path: info.outputPath(`portrait-staging-${width}x${height}.png`),
@@ -945,12 +982,9 @@ test("archive chapters follow native forward and reverse wheel input", async ({
     .locator(".home-archive-narrative h2")
     .innerText();
   for (const index of [1, 2, 3, 2, 1, 0]) {
-    const distance = await page
-      .locator(`.home-archive-chapter[data-era-image="${index}"]`)
-      .evaluate((chapter) => {
-        const rect = chapter.getBoundingClientRect();
-        return rect.top + rect.height / 2 - innerHeight / 2;
-      });
+    const distance =
+      (await archiveImageDestination(page, index)) -
+      (await page.evaluate(() => scrollY));
     await page.mouse.move(10, Math.round(page.viewportSize()!.height / 2));
     await page.mouse.wheel(0, distance);
     await settleNativeScroll(

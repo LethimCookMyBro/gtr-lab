@@ -123,8 +123,15 @@ try {
         if (kind === 'heritage') {
           for (const chapter of await page.locator('.home-archive-chapter').all()) {
             const geometry = await chapter.evaluate(element => {
-              const rect = element.getBoundingClientRect();
-              return { index: element.dataset.eraImage, target: scrollY + rect.top + rect.height / 2 - innerHeight / 2 };
+              const rect = element.querySelector('.home-archive-image').getBoundingClientRect();
+              const section = element.closest('.home-archive-runway');
+              const bounds = section.getBoundingClientRect();
+              const start = scrollY + bounds.top;
+              const stageHeight = section.querySelector('.home-archive-stage').offsetHeight || innerHeight;
+              const desired = scrollY + rect.top + rect.height / 2 - innerHeight * (innerWidth <= 700 ? .59 : .5);
+              const sequential = document.querySelector('.cinematic-home').dataset.sequentialMotion === 'true';
+              const target = sequential ? Math.max(0, desired) : Math.max(start, Math.min(start + bounds.height - stageHeight, desired));
+              return { index: element.dataset.eraImage, target };
             });
             await wheelTo(Math.max(0, geometry.target));
             await checkpoint(`heritage-chapter-${geometry.index}`);
