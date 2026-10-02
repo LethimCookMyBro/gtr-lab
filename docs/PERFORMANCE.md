@@ -3,7 +3,7 @@
 ## Implemented
 - Vite production bundle with route-level lazy configurator and separate renderer / Three chunks; homepage does not fetch renderer code until configuration needs it
 - Rights-cleared photos resized to max1920px, WebP quality82; six desktop images total1.06MB, six small copies342KB
-- The opening and expanding film slots use intact NissanNews/Flixel hosted players. Only visible, active sections mount an iframe; offscreen and hidden-tab states unload it. Reduced motion and Save-Data prevent automatic third-party requests, with explicit play available. Provider media size/format may vary by device; real browser QA measures playback instead of claiming the old local MP4 byte sizes. The earlier original CGI files remain archived but are not requested by the homepage.
+- Two original native-film slots on the redesigned homepage, with lazy below-fold photos. Films pause offscreen and in background tabs; reduced-motion and Save-Data disable autoplay and set preload to none. The hero MP4 is886,469bytes, rear detail934,416bytes, and both posters together58,546bytes. Each native720p clip is8seconds at24fps with no audio. Only MP4 is shipped; unused WebM exports are kept outside the app.
 - HDRIs load only for selected outdoor environment:2K desktop (6.9MB forest/6.4MB coast),1K mobile (1.7MB/1.6MB); CC0 panorama-derived previews
 - One Canvas, demand render loop, adaptive DPR capped1.75,1024 shadow map,512 contact shadows,256 studio reflection map
 - Manual interaction cancels auto-rotation; hidden assets/resources disposed; GLB stream aborted on model change/unmount;45s timeout and120MB hard input bound

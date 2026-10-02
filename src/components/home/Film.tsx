@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Square, Play } from "lucide-react";
-import { homeFilms } from "../../data/films";
+import { Pause, Play } from "lucide-react";
 import { mayAutoplay } from "./motion";
 interface FilmProps {
   kind: "hero" | "detail";
@@ -9,27 +8,21 @@ interface FilmProps {
   saveData: boolean;
 }
 export function Film({ kind, reducedMotion, saveData }: FilmProps) {
+  const ref = useRef<HTMLVideoElement>(null);
   const holder = useRef<HTMLDivElement>(null);
-  const frame = useRef<HTMLIFrameElement>(null);
+  const userPaused = useRef(false);
+  const intent = useRef(0);
+  const wantsPlayback = useRef(false);
   const [visible, setVisible] = useState(kind === "hero");
   const [documentVisible, setDocumentVisible] = useState(
     () =>
       typeof document === "undefined" || document.visibilityState !== "hidden",
   );
-  const [choice, setChoice] = useState<"auto" | "play" | "stop">("auto");
-  const [loaded, setLoaded] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
-  const previousPolicy = useRef({ reducedMotion, saveData });
-  const film = homeFilms[kind];
   const name = kind === "hero" ? "opening" : "detail";
   const title = kind === "hero" ? "Opening" : "Detail";
-  const active =
-    !failed &&
-    visible &&
-    documentVisible &&
-    choice !== "stop" &&
-    (choice === "play" ||
-      mayAutoplay({ reducedMotion, saveData, visible, documentVisible }));
   useEffect(() => {
     const observer =
       typeof IntersectionObserver === "undefined"
@@ -39,52 +32,87 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
             { threshold: 0.1 },
           );
     if (holder.current) observer?.observe(holder.current);
-    const onVisibility = () =>
+    const visibility = () =>
       setDocumentVisible(document.visibilityState !== "hidden");
-    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("visibilitychange", visibility);
     return () => {
       observer?.disconnect();
-      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("visibilitychange", visibility);
     };
   }, []);
   useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const sequence = ++intent.current;
     if (
-      (!previousPolicy.current.reducedMotion && reducedMotion) ||
-      (!previousPolicy.current.saveData && saveData)
+      !failed &&
+      !userPaused.current &&
+      mayAutoplay({ reducedMotion, saveData, visible, documentVisible })
     ) {
-      setChoice((current) => (current === "play" ? "auto" : current));
+      wantsPlayback.current = true;
+      setPending(true);
+      video.muted = true;
+      const attempt = video.play();
+      void attempt
+        ?.then(() => {
+          if (!wantsPlayback.current) video.pause();
+        })
+        .catch(() => {
+          if (intent.current === sequence) {
+            wantsPlayback.current = false;
+            setPending(false);
+            setPlaying(false);
+          }
+        });
+    } else {
+      wantsPlayback.current = false;
+      setPending(false);
+      video.pause();
     }
-    previousPolicy.current = { reducedMotion, saveData };
-  }, [reducedMotion, saveData]);
-  useEffect(() => {
-    setLoaded(false);
-  }, [active, kind]);
-  useEffect(() => {
-    if (!active || loaded) return;
-    const timeout = window.setTimeout(() => setFailed(true), 20000);
-    return () => window.clearTimeout(timeout);
-  }, [active, loaded, kind]);
-  const toggle = () => {
-    if (active) setChoice("stop");
-    else {
-      setFailed(false);
-      setLoaded(false);
-      setChoice("play");
+    return () => {
+      intent.current++;
+      wantsPlayback.current = false;
+      video.pause();
+    };
+  }, [reducedMotion, saveData, visible, documentVisible, failed]);
+  const toggle = async () => {
+    const video = ref.current;
+    if (!video || failed) return;
+    const sequence = ++intent.current;
+    if (wantsPlayback.current || playing || pending) {
+      userPaused.current = true;
+      wantsPlayback.current = false;
+      setPending(false);
+      video.pause();
+      return;
+    }
+    userPaused.current = false;
+    wantsPlayback.current = true;
+    setPending(true);
+    try {
+      video.muted = true;
+      await video.play();
+      if (!wantsPlayback.current) video.pause();
+    } catch {
+      if (intent.current === sequence) {
+        wantsPlayback.current = false;
+        setPending(false);
+        setPlaying(false);
+      }
     }
   };
   return (
     <div
       ref={holder}
       className={`home-film home-film--${kind}`}
-      data-film-provider="flixel"
       data-film-state={
         failed
           ? "unavailable"
-          : active
-            ? loaded
-              ? "embedded"
-              : "loading"
-            : "stopped"
+          : pending
+            ? "loading"
+            : playing
+              ? "playing"
+              : "paused"
       }
     >
       <img
@@ -92,55 +120,88 @@ export function Film({ kind, reducedMotion, saveData }: FilmProps) {
         src="/images/gtr-premium.webp"
         alt="2018 Nissan GT-R Premium in Super Silver"
         loading={kind === "hero" ? "eager" : "lazy"}
-        hidden={active}
+        aria-hidden={!failed}
       />
-      {active && (
-        <iframe
-          ref={frame}
-          className="home-film-provider"
-          src={film.embed}
-          title={`${title} film: ${film.description}`}
-          allow="autoplay; fullscreen"
-          allowFullScreen
-          referrerPolicy="strict-origin-when-cross-origin"
-          onLoad={(event) => {
-            if (event.currentTarget === frame.current) setLoaded(true);
-          }}
-        />
-      )}
+      <video
+        ref={ref}
+        className="home-film-video"
+        src={`/films/gtr-${kind}.mp4`}
+        poster={`/films/gtr-${kind}.webp`}
+        muted
+        loop
+        playsInline
+        preload={
+          saveData || reducedMotion
+            ? "none"
+            : kind === "hero"
+              ? "auto"
+              : "metadata"
+        }
+        aria-label={`${title} film: an original CGI study of a custom-aero Nissan GT-R R35`}
+        onPlaying={() => {
+          setPending(false);
+          if (wantsPlayback.current) setPlaying(true);
+          else {
+            ref.current?.pause();
+            setPlaying(false);
+          }
+        }}
+        onPause={(event) => {
+          // A pause event from an older request can arrive after a new play().
+          if (event.currentTarget.paused || !wantsPlayback.current) {
+            setPending(false);
+            setPlaying(false);
+          }
+        }}
+        onError={() => {
+          setFailed(true);
+          setPending(false);
+          setPlaying(false);
+        }}
+        hidden={failed}
+      />
       <div className="home-film-shade" aria-hidden="true" />
       <div className="home-film-controls">
         <button
           type="button"
           className="home-film-toggle"
           onClick={toggle}
-          aria-label={`${active ? "Stop" : failed ? "Retry" : "Play"} ${name} film`}
+          disabled={failed}
+          aria-label={
+            failed
+              ? `${title} film unavailable`
+              : pending
+                ? `Cancel ${name} film loading`
+                : `${playing ? "Pause" : "Play"} ${name} film`
+          }
         >
-          {active ? (
-            <Square size={14} strokeWidth={1.5} aria-hidden="true" />
+          {playing || pending ? (
+            <Pause size={16} strokeWidth={1.5} aria-hidden="true" />
           ) : (
             <Play size={16} strokeWidth={1.5} aria-hidden="true" />
           )}
           <span>
-            {active ? "Stop film" : failed ? "Retry film" : "Play film"}
+            {failed
+              ? "Film unavailable"
+              : pending
+                ? "Cancel loading"
+                : playing
+                  ? "Pause film"
+                  : "Play film"}
           </span>
         </button>
-        <div className="home-film-credit">
-          <a
-            href={film.page}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Watch original ${name} film by NissanNews on Flixel`}
-          >
-            © NissanNews · Flixel
-          </a>
-          <span aria-hidden="true">·</span>
-          <Link to="/credits#films">Film credits</Link>
-        </div>
+        <Link
+          to={failed ? "/credits" : "/credits#films"}
+          className="home-film-credit"
+        >
+          {failed ? "Still photograph" : "R35 CGI study"}{" "}
+          <span aria-hidden="true">·</span>{" "}
+          {failed ? "Photography credits" : "Film credits"}
+        </Link>
       </div>
       {failed && (
         <p className="home-film-error" role="status">
-          {title} film could not load. Try again or open the credited original.
+          {title} film unavailable. Showing a still photograph.
         </p>
       )}
     </div>
