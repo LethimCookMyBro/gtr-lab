@@ -13,7 +13,7 @@ Original home, cinematic six-variant selector, heritage/engineering, sources/cre
 - Different photographs and specification sources for all six variants; no same-mesh renaming
 - GT3 photograph is2015 context; GT-R50 photograph is2018 concept; Premium photo2018. Specs explicitly identify their other relevant year/market. Correct hp vs PS,2020GT500 inline-four RWD
 - Concept paint palette is clearly non-official; no OEM availability claim
-- The redesigned homepage uses native original-CGI films with credited photographic failure fallbacks, true-white asymmetric editorial sections, scroll-expanding film and a pinned heritage sequence. Generated layout concepts are design references only, not runtime vehicle imagery. The original cinematic homepage and films are available in the live preview. The later mobile-motion revision has its own exact-commit release checks.
+- The redesigned homepage uses real NissanNews track footage through publisher-provided Flixel players with credited photographic fallbacks, true-white asymmetric editorial sections, scroll-expanding film and a pinned heritage sequence. Generated layout concepts are design references only, not runtime vehicle imagery. The original cinematic homepage was released before this hosted-film update; the new footage requires its own browser and release verification. The later mobile-motion revision has its own exact-commit release checks.
 - Doors/hood/trunk omitted because unsupported asset animation is not faked
 - No placeholder shopping/checkout/Finish control
 - Generated sounds are short quiet interface cues, not genuine recorded engine audio

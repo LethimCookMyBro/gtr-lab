@@ -94,24 +94,6 @@ async function scrollProgress(
     .toBeCloseTo(progress, 1);
 }
 
-async function seekPlayingFilm(page: Page, selector: string) {
-  await page.locator(selector).evaluate(
-    (element) =>
-      new Promise<void>((resolve) => {
-        const video = element as HTMLVideoElement;
-        video.addEventListener("seeked", () => resolve(), { once: true });
-        video.currentTime = 0.5;
-      }),
-  );
-  await expect
-    .poll(() =>
-      page
-        .locator(selector)
-        .evaluate((element) => (element as HTMLVideoElement).currentTime),
-    )
-    .toBeGreaterThan(0.6);
-}
-
 test("cinematic layout, real scroll geometry, menu and six destinations", async ({
   page,
 }, info) => {
@@ -124,11 +106,11 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   ).toBeVisible();
   if ((page.viewportSize()?.width || 0) <= 700) {
     const media = await page
-      .locator(".home-film--hero .home-film-backup")
+      .locator(".home-film--hero .home-film-provider")
       .boundingBox();
     expect(media!.width).toBeCloseTo(page.viewportSize()!.width, 0);
-    expect(media!.height).toBeCloseTo(page.viewportSize()!.height, 0);
-    expect(media!.y).toBeCloseTo(0, 0);
+    expect(media!.height).toBeCloseTo((page.viewportSize()!.width * 9) / 16, 0);
+    expect(media!.y).toBeGreaterThanOrEqual(70);
     const credit = page.locator(".home-film--hero .home-film-credit");
     const creditBox = await credit.boundingBox();
     expect(creditBox!.height).toBeGreaterThanOrEqual(44);
@@ -377,11 +359,7 @@ test("reduced motion stays sequential and permits explicit film playback", async
       .locator(".home-hero-sticky")
       .evaluate((element) => getComputedStyle(element).position),
   ).toBe("relative");
-  expect(
-    await page
-      .locator(".home-film--hero video")
-      .evaluate((video) => (video as HTMLVideoElement).paused),
-  ).toBe(true);
+  await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
   await page.getByRole("button", { name: "Open menu" }).click();
   await page.keyboard.press("Escape");
   await page.locator(".home-heritage-runway").scrollIntoViewIfNeeded();
@@ -402,49 +380,67 @@ test("reduced motion stays sequential and permits explicit film playback", async
   ).toBe(true);
 });
 
-test("real films advance, pause offscreen and respond to native controls", async ({
+// These acceptance cases inspect the real provider's rendered video, without
+// downloading it or modifying the provider document/player. Other layout tests
+// remain separate from this external playback evidence.
+async function hostedPlayback(page: Page, kind: "hero" | "detail") {
+  const player = page
+    .frameLocator(`.home-film--${kind} iframe`)
+    .locator("video");
+  await expect
+    .poll(
+      () =>
+        player.evaluate((v) => ({
+          duration: (v as HTMLVideoElement).duration,
+          ready: (v as HTMLVideoElement).readyState,
+          paused: (v as HTMLVideoElement).paused,
+        })),
+      { timeout: 45000 },
+    )
+    .toMatchObject({ ready: 4, paused: false });
+  const start = await player.evaluate(
+    (v) => (v as HTMLVideoElement).currentTime,
+  );
+  await expect
+    .poll(
+      () =>
+        player.evaluate(
+          (v, initial) =>
+            Math.abs((v as HTMLVideoElement).currentTime - initial),
+          start,
+        ),
+      { timeout: 15000 },
+    )
+    .toBeGreaterThan(0.3);
+  return player;
+}
+test("real films advance, stop by unloading and stop offscreen", async ({
   page,
 }, info) => {
-  test.setTimeout(60000);
-  const frames: Array<{
-    film: string;
-    phase: string;
-    time: number;
-    duration: number;
-    paused: boolean;
-  }> = [];
+  test.setTimeout(120000);
   test.skip(
     process.env.REQUIRE_HOME_FILMS !== "1",
-    "Real-film acceptance enabled by REQUIRE_HOME_FILMS=1 after the media quality gate",
+    "Requires actual publisher playback",
   );
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
   await page.goto("/");
-  const hero = page.locator(".home-film--hero video");
-  await expect
-    .poll(() => hero.evaluate((video) => (video as HTMLVideoElement).duration))
-    .toBeGreaterThan(1);
-  await expect(
-    page.getByRole("button", { name: "Pause opening film" }),
-  ).toBeVisible();
-  const start = await hero.evaluate(
-    (video) => (video as HTMLVideoElement).currentTime,
+  await expect(page.locator(".home-film--hero iframe")).toHaveAttribute(
+    "src",
+    "https://media.flixel.com/cinemagraph/7x5domma49p8pb7z8k1l?hd=true",
   );
-  await expect
-    .poll(() =>
-      hero.evaluate((video) => (video as HTMLVideoElement).currentTime),
-    )
-    .toBeGreaterThan(start + 0.3);
-  await seekPlayingFilm(page, ".home-film--hero video");
+  const frames: object[] = [];
+  const hero = await hostedPlayback(page, "hero");
   frames.push(
-    await hero.evaluate((video) => ({
+    await hero.evaluate((v) => ({
       film: "hero",
-      phase: "early",
-      time: (video as HTMLVideoElement).currentTime,
-      duration: (video as HTMLVideoElement).duration,
-      paused: (video as HTMLVideoElement).paused,
+      time: (v as HTMLVideoElement).currentTime,
+      duration: (v as HTMLVideoElement).duration,
+      muted: (v as HTMLVideoElement).muted,
+      paused: (v as HTMLVideoElement).paused,
     })),
   );
   await page.screenshot({
-    animations: "disabled",
     path: info.outputPath("11-actual-hero-early.png"),
     scale: "css",
   });
@@ -452,57 +448,38 @@ test("real films advance, pause offscreen and respond to native controls", async
     .poll(
       () =>
         hero.evaluate(
-          (video) =>
-            (video as HTMLVideoElement).currentTime /
-            (video as HTMLVideoElement).duration,
+          (v) =>
+            (v as HTMLVideoElement).currentTime /
+            (v as HTMLVideoElement).duration,
         ),
       { timeout: 15000 },
     )
     .toBeGreaterThan(0.6);
-  frames.push(
-    await hero.evaluate((video) => ({
-      film: "hero",
-      phase: "late",
-      time: (video as HTMLVideoElement).currentTime,
-      duration: (video as HTMLVideoElement).duration,
-      paused: (video as HTMLVideoElement).paused,
-    })),
-  );
   await page.screenshot({
-    animations: "disabled",
     path: info.outputPath("12-actual-hero-late.png"),
     scale: "css",
   });
-  await page.getByRole("button", { name: "Pause opening film" }).click();
-  expect(
-    await hero.evaluate((video) => (video as HTMLVideoElement).paused),
-  ).toBe(true);
+  await page.getByRole("button", { name: "Stop opening film" }).click();
+  await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
   await page.getByRole("button", { name: "Play opening film" }).click();
-  await expect(
-    page.getByRole("button", { name: "Pause opening film" }),
-  ).toBeVisible();
+  await hostedPlayback(page, "hero");
   await scrollProgress(page, ".home-expanding-runway", 0.5);
-  await expect
-    .poll(() => hero.evaluate((video) => (video as HTMLVideoElement).paused))
-    .toBe(true);
-  const detail = page.locator(".home-film--detail video");
-  await expect
-    .poll(() =>
-      detail.evaluate((video) => (video as HTMLVideoElement).currentTime),
-    )
-    .toBeGreaterThan(0.3);
-  await seekPlayingFilm(page, ".home-film--detail video");
+  await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
+  await expect(page.locator(".home-film--detail iframe")).toHaveAttribute(
+    "src",
+    "https://media.flixel.com/cinemagraph/t53p8d1vu4miy763a938?hd=true",
+  );
+  const detail = await hostedPlayback(page, "detail");
   frames.push(
-    await detail.evaluate((video) => ({
+    await detail.evaluate((v) => ({
       film: "detail",
-      phase: "early",
-      time: (video as HTMLVideoElement).currentTime,
-      duration: (video as HTMLVideoElement).duration,
-      paused: (video as HTMLVideoElement).paused,
+      time: (v as HTMLVideoElement).currentTime,
+      duration: (v as HTMLVideoElement).duration,
+      muted: (v as HTMLVideoElement).muted,
+      paused: (v as HTMLVideoElement).paused,
     })),
   );
   await page.screenshot({
-    animations: "disabled",
     path: info.outputPath("13-actual-detail-early.png"),
     scale: "css",
   });
@@ -511,52 +488,47 @@ test("real films advance, pause offscreen and respond to native controls", async
     .poll(
       () =>
         detail.evaluate(
-          (video) =>
-            (video as HTMLVideoElement).currentTime /
-            (video as HTMLVideoElement).duration,
+          (v) =>
+            (v as HTMLVideoElement).currentTime /
+            (v as HTMLVideoElement).duration,
         ),
       { timeout: 15000 },
     )
     .toBeGreaterThan(0.6);
-  frames.push(
-    await detail.evaluate((video) => ({
-      film: "detail",
-      phase: "late",
-      time: (video as HTMLVideoElement).currentTime,
-      duration: (video as HTMLVideoElement).duration,
-      paused: (video as HTMLVideoElement).paused,
-    })),
-  );
   await page.screenshot({
-    animations: "disabled",
     path: info.outputPath("14-actual-detail-late.png"),
     scale: "css",
   });
-  await info.attach("actual-film-frame-times", {
-    body: JSON.stringify(frames, null, 2),
+  await page.getByRole("button", { name: "Stop detail film" }).click();
+  await expect(page.locator(".home-film--detail iframe")).toHaveCount(0);
+  await page.getByRole("button", { name: "Play detail film" }).click();
+  await hostedPlayback(page, "detail");
+  await page.locator(".home-footer").scrollIntoViewIfNeeded();
+  await expect(page.locator(".home-film iframe")).toHaveCount(0);
+  expect(
+    requests.some((url) => /\/films\/gtr-(hero|detail)\.mp4/.test(url)),
+  ).toBe(false);
+  await info.attach("actual-hosted-film-evidence", {
+    body: JSON.stringify({ frames, requests }, null, 2),
     contentType: "application/json",
   });
-  await page.locator(".home-footer").scrollIntoViewIfNeeded();
-  await expect
-    .poll(() => detail.evaluate((video) => (video as HTMLVideoElement).paused))
-    .toBe(true);
-  for (const video of [hero, detail])
-    expect(
-      await video.evaluate((node) => (node as HTMLVideoElement).muted),
-    ).toBe(true);
 });
-
 for (const policy of ["reduced-motion", "save-data"] as const) {
-  test(`${policy} keeps both real films paused until explicit play and pauses them offscreen`, async ({
+  test(`${policy} keeps both hosted films unloaded until explicit play and unloads them offscreen`, async ({
     page,
   }) => {
+    test.setTimeout(120000);
     test.skip(
       process.env.REQUIRE_HOME_FILMS !== "1",
-      "Real-film acceptance enabled only after final media passes its quality gate",
+      "Requires actual publisher playback",
     );
-    if (policy === "reduced-motion") {
+    const providerRequests: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("media.flixel.com")) providerRequests.push(r.url());
+    });
+    if (policy === "reduced-motion")
       await page.emulateMedia({ reducedMotion: "reduce" });
-    } else {
+    else
       await page.addInitScript(() => {
         const connection = new EventTarget();
         Object.defineProperty(connection, "saveData", { value: true });
@@ -565,87 +537,17 @@ for (const policy of ["reduced-motion", "save-data"] as const) {
           value: connection,
         });
       });
-    }
     await page.goto("/");
-    const hero = page.locator(".home-film--hero video");
-    const detail = page.locator(".home-film--detail video");
-    for (const film of [hero, detail]) {
-      expect(
-        await film.evaluate((element) => ({
-          paused: (element as HTMLVideoElement).paused,
-          muted: (element as HTMLVideoElement).muted,
-          time: (element as HTMLVideoElement).currentTime,
-          preload: (element as HTMLVideoElement).preload,
-          autoplay: (element as HTMLVideoElement).autoplay,
-        })),
-      ).toEqual({
-        paused: true,
-        muted: true,
-        time: 0,
-        preload: "none",
-        autoplay: false,
-      });
-    }
+    await expect(page.locator(".home-film iframe")).toHaveCount(0);
+    expect(providerRequests).toEqual([]);
     await page.getByRole("button", { name: "Play opening film" }).click();
-    await expect(
-      page.getByRole("button", { name: "Pause opening film" }),
-    ).toBeVisible();
-    await expect
-      .poll(() =>
-        hero.evaluate((element) => (element as HTMLVideoElement).duration),
-      )
-      .toBeGreaterThan(1);
-    await expect
-      .poll(() =>
-        hero.evaluate((element) => (element as HTMLVideoElement).currentTime),
-      )
-      .toBeGreaterThan(0.35);
+    await hostedPlayback(page, "hero");
     await page.locator(".home-expanding-frame").scrollIntoViewIfNeeded();
-    await expect
-      .poll(() =>
-        hero.evaluate((element) => (element as HTMLVideoElement).paused),
-      )
-      .toBe(true);
-    expect(
-      await detail.evaluate((element) => (element as HTMLVideoElement).paused),
-    ).toBe(true);
+    await expect(page.locator(".home-film iframe")).toHaveCount(0);
     await page.getByRole("button", { name: "Play detail film" }).click();
-    await expect(
-      page.getByRole("button", { name: "Pause detail film" }),
-    ).toBeVisible();
-    await expect
-      .poll(() =>
-        detail.evaluate((element) => (element as HTMLVideoElement).duration),
-      )
-      .toBeGreaterThan(1);
-    await expect
-      .poll(() =>
-        detail.evaluate((element) => (element as HTMLVideoElement).currentTime),
-      )
-      .toBeGreaterThan(0.35);
+    await hostedPlayback(page, "detail");
     await page.locator(".home-footer").scrollIntoViewIfNeeded();
-    for (const film of [hero, detail]) {
-      await expect
-        .poll(() =>
-          film.evaluate((element) => (element as HTMLVideoElement).paused),
-        )
-        .toBe(true);
-    }
-    const before = await page.locator("video").evaluateAll((videos) =>
-      videos.map((video) => ({
-        time: (video as HTMLVideoElement).currentTime,
-        muted: (video as HTMLVideoElement).muted,
-      })),
-    );
-    await page.waitForTimeout(450);
-    const after = await page.locator("video").evaluateAll((videos) =>
-      videos.map((video) => ({
-        time: (video as HTMLVideoElement).currentTime,
-        muted: (video as HTMLVideoElement).muted,
-      })),
-    );
-    expect(after).toEqual(before);
-    expect(after.every((film) => film.muted)).toBe(true);
+    await expect(page.locator(".home-film iframe")).toHaveCount(0);
   });
 }
 

@@ -61,7 +61,9 @@ describe("production static server", () => {
       directives.filter((value) => value.startsWith("script-src ")),
     ).toEqual(["script-src 'self' 'wasm-unsafe-eval'"]);
     expect(directives).toContain("object-src 'none'");
-    expect(directives.join(";")).not.toMatch(/https?:|wss?:|\*/);
+    expect(
+      directives.filter((value) => /https?:|wss?:|\*/.test(value)),
+    ).toEqual(["frame-src https://media.flixel.com"]);
   });
   it("serves film types with byte-range support for browser metadata and seeking", async () => {
     const mp4 = await fetch(url + "/film.mp4");

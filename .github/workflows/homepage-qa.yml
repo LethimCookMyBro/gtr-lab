@@ -3,18 +3,21 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/pages/HomePage.tsx'
-      - 'src/components/home/**'
-      - 'src/components/layout/SiteLayout.tsx'
-      - 'src/styles/home.css'
-      - 'src/data/home-media-credits.json'
-      - 'public/media/**'
-      - 'public/films/**'
-      - 'filmdata/**'
-      - 'scripts/prepare-films.mjs'
-      - 'e2e/home-motion.spec.ts'
-      - 'playwright.home.config.ts'
-      - '.github/workflows/homepage-qa.yml'
+      - "src/pages/HomePage.tsx"
+      - "src/components/home/**"
+      - "src/data/films.ts"
+      - "src/pages/CreditsPage.tsx"
+      - "server.mjs"
+      - "src/components/layout/SiteLayout.tsx"
+      - "src/styles/home.css"
+      - "src/data/home-media-credits.json"
+      - "public/media/**"
+      - "public/films/**"
+      - "filmdata/**"
+      - "scripts/prepare-films.mjs"
+      - "e2e/home-motion.spec.ts"
+      - "playwright.home.config.ts"
+      - ".github/workflows/homepage-qa.yml"
 permissions:
   contents: read
 concurrency:

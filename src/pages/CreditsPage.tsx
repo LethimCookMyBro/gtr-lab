@@ -1,5 +1,6 @@
 import { imageCredits, models } from "../data/models";
 import homeMedia from "../data/home-media-credits.json";
+import { homeFilms } from "../data/films";
 export function CreditsPage() {
   return (
     <article className="credits-page page-enter">
@@ -90,28 +91,40 @@ export function CreditsPage() {
         ))}
       </section>
       <section id="films">
-        <h2>Original CGI films</h2>
+        <h2>Track films · NissanNews / Flixel</h2>
         <p>
-          The two eight-second films use original GT-R LAB camera animation,
-          studio lighting, silver materials and editing around Ciasny’s licensed
-          R35 exterior. The source vehicle geometry and normals are preserved.
-          These are CGI visual studies, not Nissan campaign footage or
-          factory-accurate trim scans. No interior has been added.
+          Real GT-R track footage is presented through the intact
+          publisher-provided Flixel players. Copyright remains with Nissan and
+          the respective creators. These clips depict the 2020 GT-R NISMO and
+          its camera car; they do not represent every model year or configurator
+          variant on this independent site.
         </p>
-        <a
-          href="https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Ciasny · original exterior
-        </a>
-        <span> · </span>
-        <a
-          href="https://creativecommons.org/licenses/by/4.0/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          CC BY 4.0
+        {Object.entries(homeFilms).map(([kind, film]) => (
+          <div className="source-row" key={kind}>
+            <h3>
+              {kind === "hero" ? "Opening film" : "Expanding film"}:{" "}
+              {film.title}
+            </h3>
+            <p>{film.description}.</p>
+            <a href={film.page} target="_blank" rel="noreferrer">
+              NissanNews · original hosted film
+            </a>
+            <span> · </span>
+            <a href={film.article} target="_blank" rel="noreferrer">
+              Publisher context
+            </a>
+          </div>
+        ))}
+        <p>
+          Each public film page supplies an Embed dialog for website use. This
+          is limited to those hosted players; no video file is extracted,
+          rehosted, sold or offered for download. No broader license or
+          manufacturer endorsement is claimed. Stop film unloads the player;
+          playing again restarts the provider loop. A still photograph remains
+          available when motion is disabled or the external player cannot load.
+        </p>
+        <a href="https://flixel.com/terms/" target="_blank" rel="noreferrer">
+          Flixel terms
         </a>
       </section>
       <section>

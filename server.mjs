@@ -22,7 +22,7 @@ const MIME = {
 };
 // ImageBitmapLoader fetches temporary blob URLs created from embedded GLB textures.
 const CSP =
-  "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+  "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; frame-src https://media.flixel.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
 /** One bounded byte range; browsers use these for film metadata and seeking. */
 function byteRange(header, size) {
   const match = /^bytes=(\d*)-(\d*)$/.exec(header);
