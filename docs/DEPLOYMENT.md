@@ -90,3 +90,6 @@ The original14 Railway watch patterns were snapshotted before temporarily select
 ## Independent motion UI release boundary
 
 The menu, editorial/caption collision corrections, desktop model invitations and footer are released independently of the unapproved rear3D study. Both the rejected photographic signature runway and the experimental rear canvas are absent from the public HomePage. The experimental source and historical captures do not represent a completed production feature. All source/model bytes used by the existing configurator remain unchanged. The temporary release-marker gate must be restored to the saved14 patterns after the verified UI deployment.
+
+
+Application candidate `57e0de0f093c92a6fe79935d7bd3207bbafca95c` passed homepage workflow37018776233, all five mobile motion captures in37018776203, production build and260 unit/DOM tests. Existing vehicle checkpoint37018776332 passed. Exact public deployment smoke and the restored watchlist are verified after promotion; the broader unchanged vehicle suite remains separately reported rather than being confused with acceptance of the excluded rear prototype.

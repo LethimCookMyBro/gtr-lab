@@ -1,5 +1,7 @@
-Release desktop native-aspect films and large photographic archive.
-Tested application:e10ad46cff66f6f0d44f395b30f28d7d9e3a4f51
-Homepage browser QA:37005595356
-Mobile captures:37005595301
-Restore all14 saved normal Railway watch patterns after verified deployment.
+Release reviewed homepage motion UI independently of the unapproved rear prototype.
+Tested application:57e0de0f093c92a6fe79935d7bd3207bbafca95c
+Homepage browser QA:37018776233 SUCCESS
+Mobile captures:37018776203 SUCCESS
+Existing vehicle visual checkpoint:37018776332 SUCCESS
+No rear photo runway or experimental rear canvas is mounted on HomePage.
+Restore all14 original Railway watch patterns after live verification.
