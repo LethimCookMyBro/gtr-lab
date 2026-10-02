@@ -65,6 +65,33 @@ describe("production static server", () => {
       directives.filter((value) => /https?:|wss?:|\*/.test(value)),
     ).toEqual(["frame-src https://media.flixel.com"]);
   });
+  it("scopes temporary review framing to the exact same-origin QA endpoints", async () => {
+    for (const path of [
+      "/",
+      "/?film-responsive-check=0",
+      "/?film-responsive-check=1&extra=1",
+      "/models?film-responsive-check=1",
+    ]) {
+      const r = await fetch(url + path);
+      expect(r.headers.get("content-security-policy")).toContain(
+        "frame-ancestors 'none'",
+      );
+      expect(r.headers.get("content-security-policy")).toContain(
+        "frame-src https://media.flixel.com;",
+      );
+    }
+    const review = await fetch(url + "/?film-responsive-check=1");
+    expect(review.headers.get("content-security-policy")).toContain(
+      "frame-ancestors 'self'",
+    );
+    const wrapper = await fetch(url + "/film-embed-check.html");
+    expect(wrapper.headers.get("content-security-policy")).toContain(
+      "frame-src 'self' https://media.flixel.com;",
+    );
+    expect(wrapper.headers.get("content-security-policy")).toContain(
+      "frame-ancestors 'none'",
+    );
+  });
   it("serves film types with byte-range support for browser metadata and seeking", async () => {
     const mp4 = await fetch(url + "/film.mp4");
     expect(mp4.headers.get("content-type")).toBe("video/mp4");

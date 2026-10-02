@@ -24,6 +24,8 @@ const report = {
   scrollPace: deliberateDemo ? 'Deliberate real input for an unretimed demonstration' : 'Diagnostic sweep',
   method: 'GitHub Chromium Android emulation using Pixel 7 user agent/touch settings and the stated CSS viewport. Real incremental mouse-wheel input, not native Android touch gestures. Video records the actual page while scrolling. No media or motion state is patched.',
   performanceScope: 'Unthrottled CI Chromium. RAF frame intervals and Long Tasks during wheel input are diagnostics, not physical-device performance certification.',
+  filmScope: 'Host iframe mounting, declared lifecycle state and geometry only. An iframe load or embedded state does not prove provider video playback. External playback acceptance must be performed in a real browser on the public origin.',
+  externalPlayback: { status: 'not-exercised', reason: 'This probe does not inspect or alter the cross-origin provider player.' },
   views: [],
 };
 const save = () => writeFile(path.join(output, 'observations.json'), JSON.stringify(report, null, 2));
@@ -64,7 +66,7 @@ try {
         }
       });
       const measure = () => page.evaluate(() => {
-        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero video', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-heritage-runway', '.home-heritage-copy', '.home-heritage-origin', '.home-heritage-r32', '.home-heritage-r35'];
+        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-heritage-runway', '.home-heritage-copy', '.home-heritage-origin', '.home-heritage-r32', '.home-heritage-r35'];
         return {
           scrollY, width: innerWidth, height: innerHeight,
           visualViewport: { width: visualViewport.width, height: visualViewport.height },
@@ -81,7 +83,21 @@ try {
               background: style.backgroundColor, position: style.position,
               progress: style.getPropertyValue('--progress'), activeEra: element.dataset.activeEra }];
           }),
-          films: [...document.querySelectorAll('video')].map(video => ({ time: video.currentTime, paused: video.paused, readyState: video.readyState, width: video.videoWidth, duration: Number.isFinite(video.duration) ? video.duration : null })),
+          films: [...document.querySelectorAll('.home-film')].map(holder => {
+            const frame = holder.querySelector('iframe.home-film-provider');
+            const rect = frame?.getBoundingClientRect();
+            return {
+              kind: holder.classList.contains('home-film--hero') ? 'hero' : 'detail',
+              provider: holder.dataset.filmProvider,
+              hostState: holder.dataset.filmState,
+              iframeMounted: Boolean(frame),
+              source: frame?.getAttribute('src') ?? null,
+              title: frame?.getAttribute('title') ?? null,
+              control: holder.querySelector('.home-film-toggle')?.getAttribute('aria-label') ?? null,
+              frameGeometry: rect ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : null,
+              playback: 'not-observed',
+            };
+          }),
         };
       });
       const checkpoint = async label => {

@@ -1,13 +1,13 @@
 # Railway preview deployment
 
-The public preview is https://gtr-lab-production.up.railway.app/. It uses one static Node service and one replica, with idle sleep enabled. There is no database, account backend, analytics service or external runtime media host.
+The public preview is https://gtr-lab-production.up.railway.app/. It uses one static Node service and one replica, with idle sleep enabled. There is no database, account backend or app analytics service. The two homepage driving films use external publisher-hosted Flixel players.
 
 ## Runtime configuration
 
 - Railpack builds with `npm run build`; Node starts with `npm start` and honors Railway’s `PORT`
 - One Singapore replica; no database, volume, custom domain or paid add-on
 - Idle sleep can introduce a cold-start delay
-- Model, film and HDRI files are self-contained at runtime; no external runtime asset credentials
+- Model and HDRI files are self-contained at runtime; homepage films use intact public Flixel embeds without credentials
 
 ## Release verification
 
@@ -15,11 +15,11 @@ The mobile-motion product candidate is `4aa490a110954b41c0b4aac586ba216a85c6872a
 
 A temporary release-marker watch gate kept unfinished homepage commits out of the existing preview. The reviewed release restores ordinary deployment triggers after the exact new Railway revision is healthy and its public browser smoke checks pass. The release marker records the tested application candidate; the release commit adds only deployment verification and documentation, not untested application changes.
 
-`Railway live smoke` waits for the exact GitHub commit's Railway status, verifies both movie hashes, HTTP MIME/HEAD and 206 byte ranges, checks the deployed real-car controls/environments, then captures the public homepage during native video playback at 1920, 1440 and 390 widths. It additionally records gradual live 390×700 scrolling and verifies 430×700 motion. Its evidence is retained as `railway-live-browser-proof`. The 390px demonstration uses slower actual wheel input; the footage is not retimed.
+The driving-film revision separates deterministic app/scroll checks from provider playback. GitHub runner requests to the Flixel players returned 403 with SAMEORIGIN protection; no headers were removed or requests proxied. Both exact intact players were then verified on the real Railway origin in the cloud browser, including advancing frames, Stop/Play and offscreen unloading. See `film-sources/QA_PROVIDER_LIMITATION.md`. The live browser workflow checks the deployed CSP, vehicle controls and responsive scroll layout; actual hosted-film playback requires the separate public-origin browser check.
 
 ## Normal service watch patterns
 
-The mobile revision temporarily uses only `/release-marker.json`; restore the exact 14 patterns below after the tested live release. The two film-pipeline paths were already part of the recorded pre-mobile list. No other service settings change.
+The driving-film revision temporarily uses only `/release-driving-films-approved.txt`; restore the exact 14 patterns below after the tested live release. The two film-pipeline paths were already part of the recorded pre-mobile list. No other service settings change.
 
 ```json
 [

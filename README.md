@@ -7,7 +7,7 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 
 One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The other five routes remain labeled photographic references, not renamed copies of the same mesh. Paint, lamps, cameras and outdoor environments work on the licensed exterior. Interior remains disabled until an accurate cabin preview is accepted. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
 
-The homepage combines two original eight-second CGI films, white overlapping editorial photography, a scroll-expanding second film, pinned heritage and six full-width model invitations. The reviewed page passed 225 unit/DOM/build-asset tests and all 20 applicable real-film browser cases, with desktop, mobile and landscape screenshots inspected. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
+The homepage combines two real NissanNews GT-R track films in intact Flixel players, white overlapping editorial photography, a scroll-expanding second film, pinned heritage and six full-width model invitations. The film revision passes 250 unit/DOM/build-asset tests. Both exact players were verified advancing on the actual Railway origin; GitHub runner playback is blocked by the provider, so runner layout checks and public-origin media verification are reported separately. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
 
 ## Run
 
@@ -27,9 +27,9 @@ A restricted environment may disallow Vite’s network-interface enumeration. Th
 
 The licensed GLB is reconstructed offline from small SHA-256-pinned binary chunks in `modeldata/`. The build verifies each chunk, the completed payload and the glTF container before publishing it to `public/models/`. See `docs/MODEL_TRANSPORT.md` and `docs/MODEL_PROVENANCE.md`. Model data is served locally at runtime.
 
-### Original CGI films
+### Archived original CGI films
 
-Two native720p MP4s total1,820,885bytes. `filmdata/` stores explicit64KiB chunks solely for reliable source publication. `prepare-films.mjs` validates every chunk and the completed film against the source manifest before writing self-contained `public/films/` outputs. There is no runtime chunk assembly or external video host. Posters and full author/license/modification credits ship alongside the films. The films animate real perspective-changing cameras around the unchanged licensed Ciasny exterior; they are CGI previews, not live-action footage or proof that all six variants are complete.
+Two native720p MP4s total1,820,885bytes. `filmdata/` stores explicit64KiB chunks solely for reliable source publication. `prepare-films.mjs` validates every chunk and the completed film against the source manifest before writing self-contained `public/films/` outputs. There is no runtime chunk assembly. These files are archived development media and are not requested by the homepage; the current homepage uses external publisher-hosted players. Posters and full author/license/modification credits ship alongside the films. The films animate real perspective-changing cameras around the unchanged licensed Ciasny exterior; they are CGI previews, not live-action footage or proof that all six variants are complete.
 
 ### Environment assets
 
@@ -74,10 +74,12 @@ Railway. `railway.json` defines build, Node start and healthcheck. Connect the a
 
 ## Privacy and licensing
 
-No analytics, account login, backend user data or checkout. Sound preference is stored locally. Audio cues are original procedural tones, activated only after user interaction. Photographs keep their individual CC licenses; HDRIs are CC0. User-uploaded reference screenshots and source originals are excluded from public git; no credential is part of this project. Code has no declared public license yet; media licenses do not grant trademark rights or official affiliation.
+The app has no analytics, account login, backend user data or checkout. Playing a hosted film connects the browser to Flixel; reduced motion and Save-Data prevent automatic film requests. Sound preference is stored locally. Audio cues are original procedural tones, activated only after user interaction. Photographs keep their individual CC licenses; HDRIs are CC0. User-uploaded reference screenshots and source originals are excluded from public git; no credential is part of this project. Code has no declared public license yet; media licenses do not grant trademark rights or official affiliation.
 
 ## Browser QA
 
 `npm run test:e2e` is the real-browser suite (install Chromium with `npx playwright install chromium` in a permitted environment). It exercises home→models→configurator→detail→back, all six variants, fallbacks, reduced motion and overflow at1920×1080,1440×900,390×844 and430×932. A prepared GitHub Actions workflow can run these on a standard cloud runner after an authorized push. The scaffold suite ran in GitHub Actions and its settled screenshots were inspected. `npm run test:vehicle` separately exercises the licensed vehicle through the production server and CSP. Fresh real-car screenshots must be inspected before visual acceptance; passing tests alone cannot establish premium realism.
 
-`REQUIRE_HOME_FILMS=1 npx playwright test -c playwright.home.config.ts` is the separate cinematic-homepage acceptance suite. It checks1920×1080,1440×900 and390×844 compositions, two temporal frames per real film, native playback/pause, reduced-motion and Save-Data behavior, and a bounded extra viewport/landscape sweep. The final composed images require human visual review before release.
+`REQUIRE_HOME_FILMS=1 npx playwright test -c playwright.home.config.ts` is the separate cinematic-homepage acceptance suite. It checks1920×1080,1440×900 and390×844 compositions, two temporal frames per real film, intact publisher playback, stop/restart and offscreen unloading, reduced-motion and Save-Data behavior, and a bounded extra viewport/landscape sweep. The final composed images require human visual review before release.
+
+The opening and expanding films now use real NissanNews track footage through the publisher’s intact Flixel embeds. See [film sources and bounded embedding permission](docs/film-sources/DRIVING_EMBEDS.md). No third-party video bytes are extracted or rehosted.

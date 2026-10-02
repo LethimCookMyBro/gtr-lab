@@ -1,1 +1,6 @@
-Public-origin film probe only. Stable homepage retained from4de8201. Candidate film application remains recorded atb0cbfea for later reviewed release.
+Release the reviewed publisher-hosted NissanNews driving films.
+Application candidate: b0cbfea2528f1c33c090fdfde2b7b5bd31591ca5
+Public-origin probe: 06500737ec87880d451984c8e9b40487bf07a2db
+Both exact players advance; final composed review follows this deployment.
+Temporary responsive wrapper and its route-scoped headers must be removed after review.
+Restore the recorded 14 normal Railway watch patterns after verified release.

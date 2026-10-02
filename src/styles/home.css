@@ -1431,3 +1431,40 @@
     bottom: 8px;
   }
 }
+
+/* Intact hosted films: keep the full provider viewport and its branding visible.
+   Flixel controls its own muted autoplay. Stop/offscreen removes the iframe. */
+.home-film-provider {
+  position: absolute;
+  inset: 0 0 auto;
+  display: block;
+  width: 100%;
+  height: calc(100% - 64px);
+  border: 0;
+  background: #070809;
+}
+.home-film-backup[hidden] {
+  display: none;
+}
+.home-film-credit a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+@media (max-width: 767px) {
+  .home-film--hero .home-film-provider {
+    top: 88px;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .home-film-credit {
+    gap: 5px;
+    font-size: 11px;
+  }
+  .home-film-controls {
+    gap: 10px;
+  }
+  .home-film--detail .home-film-provider {
+    height: calc(100% - 76px);
+  }
+}
