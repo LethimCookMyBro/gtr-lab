@@ -118,7 +118,7 @@ const licensedR35: AssetManifest = {
   limitations: [
     "Source exterior is a custom-aero R35; exact factory trim and model year are unverified.",
     "The licensed source has no cabin. Interior view remains unavailable while a fitted cabin is being authored.",
-    "Body paint and head/tail lights are independently controlled. Doors and other parts are not animated.",
+    "Body paint and running lights (front LED strips and rear rings) are independently controlled. Projector bulbs, beams, doors and other parts are not animated.",
   ],
   url: "/models/ciasny-r35.glb",
   source:
@@ -128,7 +128,7 @@ const licensedR35: AssetManifest = {
   author: "Ciasny",
   changes: [
     "Adapted for GT-R LAB: transforms normalized, exhaust and lamp/window materials separated, textures resized to 2K WebP, tangents generated and geometry Meshopt-compressed. Exterior topology retained; original source preserved unchanged.",
-    "Runtime lamp-cover transparency calibrated so the existing headlamp and taillamp emitters remain visible; window and housing materials are unchanged.",
+    "Runtime lamp-cover transparency and the unlit front LED substrate are calibrated so the existing running-light emitters have a visible on/off response; window and housing materials are unchanged.",
   ],
   materialRoles: {
     paint: ["CarPaint"],

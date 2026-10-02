@@ -1,8 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from "three";
-import { prepareVehicle } from "../src/components/three/materialAdapter";
+import { prepareVehicle, applyVehicleAppearance } from "../src/components/three/materialAdapter";
 
 describe("declared optical lamp covers", () => {
+  it("keeps a front LED substrate dark when off and lights its real emissive surface when on", () => {
+    const source = new Group();
+    const emitter = new MeshStandardMaterial({ color: 0xe7e7e7, emissive: 0xffffff, emissiveIntensity: 10 });
+    emitter.name = "Headlight_Emitter";
+    source.add(new Mesh(new BoxGeometry(2, 1, 4), emitter));
+    const originalColor = emitter.color.clone();
+    const asset = prepareVehicle(source, { paint: [], headlights: ["Headlight_Emitter"], taillights: [] });
+    const material = (asset.scene.children[0] as Mesh).material as MeshStandardMaterial;
+    applyVehicleAppearance(asset.bindings, "#aaaaaa", false);
+    expect(material.color.r).toBeLessThan(0.05);
+    expect(material.emissiveIntensity).toBe(0);
+    applyVehicleAppearance(asset.bindings, "#aaaaaa", true);
+    expect(material.emissiveIntensity).toBeGreaterThan(1);
+    expect(material.emissive.r).toBeGreaterThan(.8);
+    expect(emitter.color.equals(originalColor)).toBe(true);
+  });
   it("reveals emitters behind explicitly declared lenses while preserving windows and housings", () => {
     const source = new Group();
     const glass = new MeshStandardMaterial({

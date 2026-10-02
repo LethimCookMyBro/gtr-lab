@@ -98,6 +98,10 @@ export function prepareVehicle(
         paint.clearcoatRoughness = 0.12;
         // Retain the artist's base-layer PBR response beneath the lacquer.
       }
+      // A near-white diffuse substrate looks lit even with zero emission.
+      // Keep the actual LED surface subdued until its emissive channel is on.
+      if (role === "headlights" && material instanceof MeshStandardMaterial)
+        material.color.multiplyScalar(0.04);
       // The licensed source's smoked covers were nearly opaque and hid the
       // existing emitters. Adapt only declared lenses; retain all geometry,
       // enclosed housings and the independent black window materials.

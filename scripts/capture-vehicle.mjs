@@ -1,5 +1,6 @@
 /** Small production smoke capture, independent of the longer interaction suites. */
 import { chromium } from '@playwright/test';
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 const directory='vehicle-preview-results';await mkdir(directory,{recursive:true});
@@ -35,6 +36,25 @@ try{
     if(await page.getByRole('button',{name:'Lights',exact:true}).getAttribute('aria-pressed')!=='true')throw new Error('Lamp control did not update');
     await page.getByRole('button',{name:'Lights',exact:true}).click();
     view.interactions.push('Lamp control updates');
+    const frameHash = async label => {
+     await page.waitForFunction(() => { const canvas = document.querySelector('.scene-stage canvas'); return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.75)) < .02; }, {}, { timeout: 15000 });
+     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+     const bytes = await page.locator('.scene-stage canvas').screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000 });
+     return createHash('sha256').update(bytes).digest('hex');
+    };
+    const resetCamera = async () => {
+     await page.getByRole('button', { name: 'Camera', exact: true }).click();
+     await page.getByRole('dialog').getByRole('button', { name: 'Front ¾', exact: true }).click();
+     await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    };
+    await resetCamera(); const canonical = await frameHash('canonical-view');
+    await page.locator('.scene-stage canvas').focus(); await page.locator('.scene-stage canvas').press('ArrowLeft');
+    const manual = await frameHash('manual-orbit');
+    await resetCamera(); const restored = await frameHash('restored-view');
+    if (manual === canonical || restored !== canonical) throw new Error('Repeated camera request did not restore the canonical rendered view');
+    view.interactions.push('Same camera preset restores exact full-resolution pixels after manual orbit');
+    view.cameraReset = { canonical, manual, restored };
+
     await page.getByRole('button',{name:'Model detail',exact:true}).click();
     await page.getByRole('dialog').waitFor({state:'visible'});
     await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});

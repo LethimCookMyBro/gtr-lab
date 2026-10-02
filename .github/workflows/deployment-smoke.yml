@@ -17,6 +17,7 @@ on:
       - "scripts/prepare-films.mjs"
       - "release-driving-films-approved.txt"
       - "release-home-story-approved.txt"
+      - "release-configurator-controls-approved.txt"
 permissions:
   contents: read
 jobs:

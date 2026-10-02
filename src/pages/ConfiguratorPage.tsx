@@ -217,7 +217,7 @@ export function ConfiguratorPage() {
           title={
             !interactive
               ? "Lights require a ready 3D model"
-              : "Toggle headlamps and taillamps"
+              : "Toggle running lights: front LED strips and rear rings"
           }
         >
           <Sun />
