@@ -2065,3 +2065,7 @@
 .home-archive-runway :focus-visible {
   outline-color: #952129;
 }
+/* The shared pressed scale must not replace this button's centering transform. */
+.home-film-enlarge:active:not(:disabled) {
+  transform: translate(-50%, -50%) scale(0.98);
+}

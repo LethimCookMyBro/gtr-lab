@@ -1063,7 +1063,8 @@ test("enlarged driving film preserves focus, scroll and one-player lifecycle", a
   await settleNativeScroll(page, info, "dialog-before-open");
   const before = await page.evaluate(() => scrollY);
   for (const closeMethod of ["escape", "button"] as const) {
-    await trigger.press("Enter");
+    if (closeMethod === "escape") await trigger.click();
+    else await trigger.press("Enter");
     const dialog = page.getByRole("dialog", {
       name: "GT-R driving film",
       exact: true,
