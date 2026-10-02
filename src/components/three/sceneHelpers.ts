@@ -3,8 +3,10 @@ export type MaterialRoles = {
   paint: string[];
   headlights: string[];
   taillights: string[];
+  /** Exact optical-cover mesh names; never includes windows or lamp housings. */
+  lampCovers?: string[];
 };
-export type MaterialRole = keyof MaterialRoles;
+export type MaterialRole = "paint" | "headlights" | "taillights";
 export type Bounds = { min: VectorTuple; max: VectorTuple };
 export type CameraView = {
   position: VectorTuple;

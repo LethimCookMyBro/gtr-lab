@@ -65,19 +65,27 @@ export function prepareVehicle(
   const scene = clone(source);
   const bindings: Binding[] = [];
   const inactiveMaterials = new Set(disabledEmissive);
-  const copies = new Map<Material, Map<MaterialRole | null, Material>>();
+  const copies = new Map<
+    Material,
+    Map<MaterialRole | "lamp-cover" | null, Material>
+  >();
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return;
     object.castShadow = true;
     object.receiveShadow = true;
     const adapt = (original: Material) => {
       const role = materialRole(original.name, object.name, roles);
+      const opticalCover =
+        roles.lampCovers?.some(
+          (name) => name === object.name || name === object.userData.name,
+        ) ?? false;
+      const cacheRole = opticalCover ? "lamp-cover" : role;
       let variants = copies.get(original);
       if (!variants) {
         variants = new Map();
         copies.set(original, variants);
       }
-      const existing = variants.get(role);
+      const existing = variants.get(cacheRole);
       if (existing) return existing;
       let material = original.clone();
       if (role === "paint" && original instanceof MeshStandardMaterial) {
@@ -90,12 +98,22 @@ export function prepareVehicle(
         paint.clearcoatRoughness = 0.12;
         // Retain the artist's base-layer PBR response beneath the lacquer.
       }
+      // The licensed source's smoked covers were nearly opaque and hid the
+      // existing emitters. Adapt only declared lenses; retain all geometry,
+      // enclosed housings and the independent black window materials.
+      if (opticalCover && material instanceof MeshStandardMaterial) {
+        material.opacity = 0.12;
+        material.transparent = true;
+        material.depthWrite = false;
+        material.roughness = 0.08;
+        material.metalness = 0;
+      }
       const keepUnlit = inactiveMaterials.has(original.name);
       if (keepUnlit && material instanceof MeshStandardMaterial)
         material.emissiveIntensity = 0;
       if (role && !keepUnlit && material instanceof MeshStandardMaterial)
         bindings.push({ material, role });
-      variants.set(role, material);
+      variants.set(cacheRole, material);
       return material;
     };
     object.material = Array.isArray(object.material)

@@ -78,6 +78,8 @@ try {
       }
       await chooseCamera('Front');
       await check('Lights on and off', async () => { const button = page.getByRole('button', { name: 'Lights', exact: true }); const off = await shot('lights-off'); await button.click(); await pause(); const on = await shot('lights-on'); assert.equal(await button.getAttribute('aria-pressed'), 'true'); assert.notEqual(on, off); await button.click(); await pause(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); return { off, on, pixelsChanged: true }; });
+      await chooseCamera('Rear');
+      await check('Rear lamp rings on and off', async () => { const button = page.getByRole('button', { name: 'Lights', exact: true }); const off = await shot('rear-lights-off'); await button.click(); await pause(); const on = await shot('rear-lights-on'); assert.notEqual(on, off); await button.click(); return { off, on, pixelsChanged: true }; });
       await chooseCamera('Front ¾');
       let environmentPixels = await shot('environment-start');
       for (const [label, id] of [['Gallery', 'gallery'], ['After hours', 'night'], ['Forest road', 'forest'], ['Coastal road', 'coast'], ['Studio', 'studio']]) {

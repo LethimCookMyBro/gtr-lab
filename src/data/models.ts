@@ -19,6 +19,7 @@ export interface AssetManifest {
     paint: string[];
     headlights: string[];
     taillights: string[];
+    lampCovers?: string[];
   };
   interior: boolean;
   lights: boolean;
@@ -127,11 +128,17 @@ const licensedR35: AssetManifest = {
   author: "Ciasny",
   changes: [
     "Adapted for GT-R LAB: transforms normalized, exhaust and lamp/window materials separated, textures resized to 2K WebP, tangents generated and geometry Meshopt-compressed. Exterior topology retained; original source preserved unchanged.",
+    "Runtime lamp-cover transparency calibrated so the existing headlamp and taillamp emitters remain visible; window and housing materials are unchanged.",
   ],
   materialRoles: {
     paint: ["CarPaint"],
     headlights: ["Headlight_Emitter"],
     taillights: ["Taillight_Emitter"],
+    lampCovers: [
+      "Headlights_Glass_0",
+      "TailightsGlass_Glass_0",
+      "TailightsGlass_Glass.001_0",
+    ],
   },
   interior: false,
   lights: true,
