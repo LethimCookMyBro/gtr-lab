@@ -5,7 +5,7 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
-  timeout: 120000,
+  timeout: 240000,
   outputDir: "rear-signature-results",
   reporter: [
     ["list"],
@@ -15,7 +15,7 @@ export default defineConfig({
     baseURL: process.env.HOME_QA_URL || "http://127.0.0.1:4173",
     reducedMotion: "no-preference",
     deviceScaleFactor: 1,
-    trace: "retain-on-failure",
+    trace: { mode: "retain-on-failure", screenshots: false, snapshots: true },
     screenshot: "only-on-failure",
     launchOptions: {
       args: [

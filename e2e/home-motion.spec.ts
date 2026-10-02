@@ -441,6 +441,22 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     scale: "css",
   });
   await page.locator(".home-invitations").scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      page.locator(".home-model-invitation img").evaluateAll((nodes) =>
+        nodes
+          .filter((el) => {
+            const r = el.getBoundingClientRect();
+            return r.bottom > 0 && r.top < innerHeight;
+          })
+          .every(
+            (el) =>
+              (el as HTMLImageElement).complete &&
+              (el as HTMLImageElement).naturalWidth > 0,
+          ),
+      ),
+    )
+    .toBe(true);
   await page.screenshot({
     animations: "disabled",
     path: info.outputPath("08-home-invitations.png"),
@@ -1302,9 +1318,93 @@ test("desktop captions never cross era controls during intermediate scrolling", 
       }
     }
     await centerArchiveChapter(page, 1);
+    await expect
+      .poll(() =>
+        page
+          .locator(".home-archive-narrative h2")
+          .evaluate((el) => Number(getComputedStyle(el).opacity)),
+      )
+      .toBeGreaterThan(0.98);
+    const stableTitle = await page
+      .locator(".home-archive-narrative h2")
+      .innerText();
+    const opacitySamples: number[] = [];
+    for (const delta of [12, -12, 12, -12]) {
+      await page.mouse.wheel(0, delta);
+      await settleNativeScroll(
+        page,
+        info,
+        `stable-title-${width}-${delta}-${opacitySamples.length}`,
+      );
+      expect(await page.locator(".home-archive-narrative h2").innerText()).toBe(
+        stableTitle,
+      );
+      opacitySamples.push(
+        await page
+          .locator(".home-archive-narrative h2")
+          .evaluate((el) => Number(getComputedStyle(el).opacity)),
+      );
+    }
+    expect(Math.min(...opacitySamples)).toBeGreaterThan(0.98);
     await page.screenshot({
       path: info.outputPath(`collision-fixed-${width}x${height}.png`),
       scale: "css",
     });
   }
+});
+
+test("layered menu opens and closes with real motion and retains focus", async ({
+  browser,
+}, info) => {
+  test.skip(
+    info.project.name !== "home-desktop",
+    "One bounded recorded menu interaction",
+  );
+  const context = await browser.newContext({
+    baseURL: process.env.HOME_QA_URL || "http://127.0.0.1:4173",
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: "no-preference",
+    recordVideo: {
+      dir: info.outputPath("menu-video"),
+      size: { width: 1440, height: 900 },
+    },
+  });
+  const page = await context.newPage();
+  await page.goto("/");
+  const trigger = page.getByRole("button", { name: "Open menu" });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Explore GT-R LAB" }),
+    first = dialog.getByRole("link", { name: "Models", exact: true });
+  const early = await first.evaluate((el) =>
+    Number(getComputedStyle(el).opacity),
+  );
+  await page.screenshot({
+    path: info.outputPath("menu-opening.png"),
+    animations: "allow",
+    scale: "css",
+  });
+  await expect
+    .poll(() => first.evaluate((el) => Number(getComputedStyle(el).opacity)))
+    .toBeGreaterThan(0.99);
+  expect(early).toBeLessThan(0.99);
+  await page.screenshot({
+    path: info.outputPath("menu-open.png"),
+    animations: "allow",
+    scale: "css",
+  });
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await dialog.getByRole("button", { name: "Close menu" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await trigger.click();
+  expect(await first.evaluate((el) => getComputedStyle(el).animationName)).toBe(
+    "none",
+  );
+  await page.keyboard.press("Escape");
+  await expect(trigger).toBeFocused();
+  await context.close();
 });

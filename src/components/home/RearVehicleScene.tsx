@@ -3,13 +3,19 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ACESFilmicToneMapping,
   PerspectiveCamera,
+  Mesh,
+  MeshPhysicalMaterial,
+  MeshStandardMaterial,
   SRGBColorSpace,
 } from "three";
 import { models } from "../../data/models";
 import { useVehicleAsset } from "../three/useVehicleAsset";
 import { applyVehicleAppearance } from "../three/materialAdapter";
 import type { PreparedVehicle } from "../three/materialAdapter";
-import { StudioLighting } from "../three/StudioLighting";
+import { StageGeometry } from "../three/StageGeometry";
+import { Environment } from "@react-three/drei/core/Environment";
+import { Lightformer } from "@react-three/drei/core/Lightformer";
+import { ContactShadows } from "@react-three/drei/core/ContactShadows";
 import { SceneBoundary } from "../three/SceneBoundary";
 type Props = {
   progress: number;
@@ -67,15 +73,42 @@ function RearVehicle({
   const invalidate = useThree((s) => s.invalidate),
     frames = useRef(0);
   useEffect(() => {
-    applyVehicleAppearance(asset.bindings, "#70777c", true);
+    applyVehicleAppearance(asset.bindings, "#9fa6ac", true);
     for (const b of asset.bindings) {
       if (b.role === "paint") {
-        b.material.metalness = 0.45;
-        b.material.roughness = 0.29;
+        b.material.metalness = 0.12;
+        b.material.roughness = 0.43;
+        if (b.material instanceof MeshPhysicalMaterial) {
+          b.material.clearcoat = 0.55;
+          b.material.clearcoatRoughness = 0.3;
+        }
       }
-      if (b.role === "taillights") b.material.emissiveIntensity = 0.8;
+      if (b.role === "taillights") b.material.emissiveIntensity = 2;
       if (b.role === "headlights") b.material.emissiveIntensity = 0;
     }
+    // Exact materials verified in the already-public GLB. Only owned copies change.
+    asset.scene.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      for (const material of Array.isArray(object.material)
+        ? object.material
+        : [object.material]) {
+        if (!(material instanceof MeshStandardMaterial)) continue;
+        if (material.name === "Glass.001") {
+          material.color.set("#6d0208");
+          material.opacity = 0.38;
+          material.transparent = true;
+          material.depthWrite = false;
+          material.metalness = 0;
+          material.roughness = 0.18;
+        }
+        if (material.name === "Reverse_Emitter") {
+          material.color.set("#343941");
+          material.metalness = 0.05;
+          material.roughness = 0.4;
+          material.emissiveIntensity = 0;
+        }
+      }
+    });
     invalidate();
   }, [asset, invalidate]);
   useFrame(() => {
@@ -88,6 +121,68 @@ function RearVehicle({
     </group>
   );
 }
+function RearStudio() {
+  return (
+    <>
+      <color attach="background" args={["#11151a"]} />
+      <fog attach="fog" args={["#11151a", 10, 20]} />
+      <StageGeometry>
+        <ambientLight intensity={0.18} />
+        <directionalLight position={[0, 5, -7]} intensity={1.3} />
+        <Environment resolution={128} frames={1} environmentIntensity={0.65}>
+          <color attach="background" args={["#41474e"]} />
+          <Lightformer
+            form="rect"
+            intensity={2}
+            position={[0, 5, -3]}
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={[7, 6, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={1.5}
+            position={[-6, 2, -2]}
+            rotation={[0, Math.PI / 2, 0]}
+            scale={[6, 4, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={1.2}
+            position={[6, 2, 1]}
+            rotation={[0, -Math.PI / 2, 0]}
+            scale={[4, 5, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={0.8}
+            position={[0, 3, -8]}
+            scale={[8, 4, 1]}
+          />
+        </Environment>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+          <planeGeometry args={[150, 150]} />
+          <meshStandardMaterial
+            color="#11151a"
+            roughness={1}
+            metalness={0}
+            envMapIntensity={0.02}
+          />
+        </mesh>
+        <ContactShadows
+          position={[0, 0.001, 0]}
+          opacity={0.6}
+          scale={9}
+          blur={1.6}
+          far={3}
+          resolution={256}
+          frames={1}
+          color="#000000"
+        />
+      </StageGeometry>
+    </>
+  );
+}
+
 function ContextHealth({ onError }: Pick<Props, "onError">) {
   const gl = useThree((s) => s.gl);
   useEffect(() => {
@@ -141,7 +236,7 @@ export default function RearVehicleScene(props: Props) {
           progress={props.progress}
           reducedMotion={props.reducedMotion}
         />
-        <StudioLighting environment="studio" reducedMotion />
+        <RearStudio />
         {asset && <RearVehicle asset={asset} onReady={props.onReady} />}
       </Canvas>
     </SceneBoundary>

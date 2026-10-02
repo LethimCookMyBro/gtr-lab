@@ -2889,3 +2889,11 @@
     aspect-ratio: 1.8;
   }
 }
+@media (min-width: 701px) {
+  .home-model-invitation {
+    background: #11161a;
+  }
+  .home-model-invitation > img {
+    object-fit: contain;
+  }
+}

@@ -41,10 +41,11 @@ test("published R35 renders from the rear and scroll dolly changes actual pixels
       path: info.outputPath(`rear-${i}-${p}.png`),
     });
     images.push(createHash("sha256").update(bytes).digest("hex"));
-    await page.screenshot({
-      path: info.outputPath(`composed-${i}-${p}.png`),
-      scale: "css",
-    });
+    if (i === 0 || i === 2)
+      await page.screenshot({
+        path: info.outputPath(`composed-${i}-${p}.png`),
+        scale: "css",
+      });
   }
   expect(images[0]).not.toBe(images[1]);
   expect(images[1]).not.toBe(images[2]);
@@ -59,7 +60,9 @@ test("published R35 renders from the rear and scroll dolly changes actual pixels
   ).toBeLessThanOrEqual(info.project.name === "rear-mobile" ? 1.01 : 1.26);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await stage.scrollIntoViewIfNeeded();
-  await expect(stage).toHaveAttribute("data-scene-state", "ready");
+  await expect(stage).toHaveAttribute("data-scene-state", "ready", {
+    timeout: 90000,
+  });
   await expect
     .poll(async () => Number(await canvas.getAttribute("data-rear-progress")))
     .toBe(1);

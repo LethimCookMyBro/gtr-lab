@@ -66,7 +66,7 @@ try {
         }
       });
       const measure = () => page.evaluate(() => {
-        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-archive-runway', '.home-archive-stage', '.home-archive-narrative', '.home-archive-navigation', '.home-signature-runway', '.home-signature-photo', '.home-signature-mark', '.home-signature-footer'];
+        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-archive-runway', '.home-archive-stage', '.home-archive-narrative', '.home-archive-navigation', '.home-signature-runway', '.home-signature-canvas', '.home-signature-mark', '.home-signature-footer'];
         return {
           scrollY, width: innerWidth, height: innerHeight,
           visualViewport: { width: visualViewport.width, height: visualViewport.height },
@@ -83,6 +83,7 @@ try {
               background: style.backgroundColor, position: style.position,
               progress: style.getPropertyValue('--progress'), activeEra: element.dataset.activeEra }];
           }),
+          rearScene: { state: document.querySelector('.home-signature-runway')?.dataset.sceneState, canvasMounted: Boolean(document.querySelector('.home-signature-canvas canvas')), progress: document.querySelector('.home-signature-canvas canvas')?.dataset.rearProgress },
           films: [...document.querySelectorAll('.home-film')].map(holder => {
             const frame = holder.querySelector('iframe.home-film-provider');
             const rect = frame?.getBoundingClientRect();
@@ -103,6 +104,7 @@ try {
       const checkpoint = async label => {
         const state = await measure();
         view.checkpoints.push({ label, ...state });
+        console.log(`[motion] ${view.plan || planName(plan)} ${label} scroll=${state.scrollY} rear=${state.rearScene.state}`);
         await page.screenshot({ path: path.join(dir, `${label}.png`), animations: 'allow', timeout: 15000 });
         await save();
       };
