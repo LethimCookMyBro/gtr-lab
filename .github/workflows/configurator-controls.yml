@@ -1,0 +1,36 @@
+name: Configurator control audit
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose-configurator-controls.mjs'
+      - '.github/workflows/configurator-controls.yml'
+      - 'src/components/configurator/**'
+      - 'src/components/three/**'
+      - 'src/components/ui/Drawer.tsx'
+      - 'src/pages/ConfiguratorPage.tsx'
+      - 'src/stores/configurator.ts'
+      - 'src/styles.css'
+permissions:
+  contents: read
+jobs:
+  real-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: node scripts/diagnose-configurator-controls.mjs
+        timeout-minutes: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: configurator-control-evidence
+          path: configurator-controls-results/
+          retention-days: 14
