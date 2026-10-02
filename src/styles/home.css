@@ -2311,3 +2311,26 @@
     pointer-events: auto;
   }
 }
+/* Short landscape screens retain a fitted player and reachable controls. */
+@media (min-width: 768px) and (max-height: 740px) {
+  .home-hero-sticky {
+    height: 100svh;
+  }
+  .home-film--hero .home-film-provider {
+    width: min(100%, calc((100svh - 64px) * 16 / 9));
+    height: calc(100svh - 64px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .home-hero-copy {
+    top: auto;
+    bottom: 80px;
+  }
+  .home-hero-copy h1 {
+    font-size: clamp(32px, 6vw, 76px);
+  }
+  .home-hero-support p {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+}
