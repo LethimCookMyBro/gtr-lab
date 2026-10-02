@@ -2109,3 +2109,25 @@
     font-size: 12px;
   }
 }
+
+/* Secondary information remains readable on small screens without covering the car. */
+@media (max-width: 700px) {
+  .home-editorial-image figcaption {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .home-editorial-image figcaption a {
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: #070809b8;
+    max-width: 100%;
+  }
+  .home-archive-image figcaption,
+  .home-signature-footer a:first-child {
+    font-size: 11px;
+  }
+  .home-footer-bottom p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
