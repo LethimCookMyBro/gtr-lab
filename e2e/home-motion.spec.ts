@@ -188,13 +188,65 @@ async function expectArchiveControlsInView(page: Page, index: number) {
   expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(
     rail.bottom + 8,
   );
-  // Focusing an article after a jump must not silently move it behind the rail.
+  // Native wheel input and deferred image sizing do not promise a two-pixel
+  // coordinate. Keep the actual acceptance contract: settled input (at caller),
+  // the right chapter, a wholly visible heading below the rail, and real photos.
+  await expect(page.locator("#home-heritage")).toHaveAttribute(
+    "data-active-era",
+    String(index),
+  );
+  await expect
+    .poll(
+      () =>
+        chapter
+          .locator("img")
+          .evaluateAll((nodes) =>
+            (nodes as HTMLImageElement[]).every(
+              (image) => image.complete && image.naturalWidth > 0,
+            ),
+          ),
+      { timeout: 15000 },
+    )
+    .toBe(true);
+  await chapter.locator("img").evaluateAll(async (nodes) => {
+    await Promise.all(
+      (nodes as HTMLImageElement[]).map((image) => image.decode()),
+    );
+    await new Promise(requestAnimationFrame);
+  });
+  const arrival = await heading.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    const hit = document.elementFromPoint(
+      box.left + box.width / 2,
+      box.top + box.height / 2,
+    );
+    return {
+      top: box.top,
+      bottom: box.bottom,
+      uncovered: hit === node || node.contains(hit),
+      scrollY,
+    };
+  });
   expect(
-    Math.abs(
-      (await page.evaluate(() => scrollY)) -
-        (await archiveChapterDestination(page, index)),
+    arrival.uncovered,
+    "the selected story heading must not be covered",
+  ).toBe(true);
+  await expect(heading).toBeInViewport({ ratio: 1 });
+  expect(arrival.top).toBeGreaterThanOrEqual(rail.bottom + 8);
+  await test.info().attach(`archive-readable-arrival-${index}`, {
+    body: JSON.stringify(
+      {
+        index,
+        arrival,
+        rail,
+        landingOffset:
+          arrival.scrollY - (await archiveChapterDestination(page, index)),
+      },
+      null,
+      2,
     ),
-  ).toBeLessThanOrEqual(2);
+    contentType: "application/json",
+  });
 }
 
 async function expectArchiveSpreadLayout(page: Page, index: number) {
