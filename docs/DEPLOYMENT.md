@@ -120,3 +120,28 @@ The unchanged visual design now passes 32 browser cases at 1024, 1051, 1180, 136
 Final QA candidate `e2d16ff7b7f841e8f8f21c2d876016cf3ac4b239` passed [aggregate Quality 37103193941](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37103193941). Earlier attempts failed two existing unit focus assertions on separate runs; tests now await the same strict restored-focus identity after passive cleanup. A pointer observation timeout was also corrected after traces proved the cursor had already moved but GPU readback delayed the JavaScript observation. Those unsuccessful earlier attempts are not represented as green. Local 306 tests, typecheck and production build passed.
 
 The temporary gate is `/release-card-overflow-approved.txt`. The release changes only this verification note and that marker beyond the tested candidate. Live smoke includes all eight card widths and actual interactions. Restore the exact 14 normal watch patterns and verify the complete service config after healthy exact-revision deployment and public smoke. No loader, media asset, vehicle source, hosting plan or service size is changed.
+
+
+## Loading, identity and motion release, 3 October 2026
+
+Application candidate `00a137a5e2ace8c4d1354984a376e8cc344d00df` passed exact
+[Quality checks](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37117919398)
+and [homepage/component QA](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37117919389).
+The initial gate now prepares the real single rear scene before releasing;
+byte, texture-decode, shader and completed-render barriers are distinct. The
+same scene is paused rather than destroyed on scroll-away or visibility changes.
+Failures, retry, explicit skip, Save-Data and reduced-motion are covered.
+
+Original image marks, OFL display typography, neutral/red details and reversible
+heading/photo/evidence phases were visually reviewed. Actual roof, car-bottom,
+caption and footer clearance is checked, including 390x600; the approved 844px
+composition and vehicle camera/materials stay unchanged. All 12 heritage photos
+and truthful model-route labels remain. See HOME_LOADING_IDENTITY.md and
+BRAND_IDENTITY.md for implementation and source boundaries.
+
+The source-only main commits were held behind
+`/release-loading-identity-approved.txt`. This reviewed marker promotes the
+tested application; no new model asset or cabin is included. After exact live
+verification, restore and compare the complete saved service configuration,
+including all 14 original watch patterns. The controlled readiness clip is a
+UI lifecycle test, not a claim about a visitor's download speed or film playback.

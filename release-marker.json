@@ -1,12 +1,10 @@
 {
-  "release": "heritage-exhibition",
-  "testedApplicationCommit": "59fbc88902a5d0767c1a8a98461ac9d114875c19",
-  "testedCandidateCommit": "4e9282422e07ddbbda62648ea75b4da01b208196",
-  "homepageQaRun": 37099365344,
-  "qualityQaRun": 37099365343,
-  "mobileCaptureRun": 37098892949,
-  "vehicleCheckpointRun": 37098892955,
-  "verifiedAt": "2026-10-03T05:35:40.364067Z",
-  "scope": "Four compact, natural-flow, three-photo heritage spreads with sourced achievements and individual photography credits; slim era rail; reversible whole-panel hero exit and paper handoff. Existing opening, rear vehicle, model cards and controls retained.",
-  "providerPlayback": "Application iframe lifecycle and native geometry were tested; public-origin hosted playback is verified separately after deployment."
+  "release": "loading-identity-motion",
+  "testedApplicationCommit": "00a137a5e2ace8c4d1354984a376e8cc344d00df",
+  "homepageQaRun": 37117919389,
+  "qualityQaRun": 37117919398,
+  "vehicleCheckpointRun": 37117919387,
+  "verifiedAt": "2026-10-03T11:12:54Z",
+  "scope": "Real homepage render-readiness gate, retained rear scene, authentic image marks, OFL display type, reversible story phases and bounded short-portrait clearance. One licensed exterior only; no cabin or five additional GLBs.",
+  "providerPlayback": "Application iframe lifecycle and geometry are tested separately from public-origin provider playback; no playback claim follows from iframe document readiness."
 }

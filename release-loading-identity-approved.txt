@@ -1,0 +1,38 @@
+Publish the reviewed loading, authentic-identity and coherent-story-motion revision.
+Tested application/candidate: 00a137a5e2ace8c4d1354984a376e8cc344d00df
+Exact Quality run: 37117919398 SUCCESS
+Exact homepage/component run: 37117919389 SUCCESS
+Exact vehicle checkpoint: 37117919387 SUCCESS
+
+Verification: 344 unit tests; typecheck and production build; 44 general browser,
+6 renderer, 14 vehicle, 21 homepage, 10 loading, 11 heritage, 18 hero-exit,
+6 rear and 32 opening/card cases passed. Duplicate viewport and separately scoped
+provider playback checks are explicitly skipped, not counted as passes.
+
+The viewport-level gate now waits for a usable opening visual and the actual
+published R35 model/texture decode, shader preparation and completed rendering.
+It reports real bytes and named phases, with bounded failure, effective retry,
+explicit Continue without 3D, keyboard focus management, Save-Data opt-in and
+reduced-motion support. One owned rear scene survives scrolling and visibility
+changes; offscreen rendering pauses without disposing and re-decoding the model.
+Actual tests cover blocked transfer, pending render preparation, retry/skip,
+corrupt GLB, missing WebGL, context loss, and persistent canvas/model identity.
+The shader-completion stall is explicitly simulated; it is not a GPU benchmark.
+
+Original supplied chrome GT/red R badge plus a smaller unchanged chrome Nissan
+mark; self-hosted OFL Barlow Condensed headings; neutral/red accents; reversible
+heading -> photo -> details choreography. All 12 licensed heritage photographs,
+qualified captions, six truthful destinations and repaired model-card sizing
+remain intact. Root visual review accepted desktop/mobile loader, typography,
+heritage pointer and settled-detail frames, rear identity clearance, and the
+narrow 390x600 car/caption/footer separation. Standard 844px layout is unchanged.
+
+No vehicle asset, cabin, camera calibration, material or configurator control
+change. Only the previously published Ciasny custom-aero R35 exterior is present;
+the other five model routes remain photographic references. GT-R supplied-badge
+copyright is unverified; trademark/font/asset provenance is disclosed.
+
+Verify this exact release on Railway and via public-origin browser smoke, then
+restore all 14 saved normal watch patterns and compare the complete service
+configuration to the original snapshot. Hosted film playback remains a separate
+public-origin check; no provider restrictions are bypassed or video extracted.
