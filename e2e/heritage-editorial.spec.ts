@@ -28,10 +28,28 @@ async function open(page: Page, settled = true) {
   if (settled) await settleArchiveMedia(page);
   await page.locator("#home-heritage").scrollIntoViewIfNeeded();
 }
+async function waitForScrollRest(page: Page) {
+  const settled = await page.evaluate(async () => {
+    let previous = scrollY;
+    let stableFrames = 0;
+    for (let frame = 0; frame < 240; frame++) {
+      await new Promise(requestAnimationFrame);
+      const current = scrollY;
+      stableFrames = Math.abs(current - previous) < 0.5 ? stableFrames + 1 : 0;
+      previous = current;
+      if (stableFrames >= 8) return true;
+    }
+    return false;
+  });
+  expect(settled, "native scrolling must settle before the next gesture").toBe(
+    true,
+  );
+}
 async function select(page: Page, index: number) {
   const button = page.getByRole("button", { name: names[index], exact: true });
   await button.focus();
   await button.press("Enter");
+  await waitForScrollRest(page);
   const chapter = page.locator(`[data-era-image="${index}"]`);
   // Acceptance is a readable arrival below the rail, not an arbitrary
   // three-pixel scroll coordinate. The strict old threshold rejected harmless
@@ -213,6 +231,7 @@ test("native forward and reverse wheel scrolling tracks the chapter at the readi
       .evaluate((node) => scrollY + node.getBoundingClientRect().top - 190);
     const before = await page.evaluate(() => scrollY);
     await page.mouse.wheel(0, target - before);
+    await waitForScrollRest(page);
     await expect(page.locator("#home-heritage")).toHaveAttribute(
       "data-active-era",
       String(index),
