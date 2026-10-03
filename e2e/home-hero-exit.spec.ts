@@ -6,15 +6,17 @@ import type { Page, TestInfo } from "@playwright/test";
 async function resolveOpening(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".home-hero-runway")).toBeVisible();
-  const skip = page.getByRole("button", { name: "Continue to page" });
-  if (await skip.isVisible()) {
-    await skip.click();
-  }
+  // Generic layout checks wait for the real readiness/fallback path. Clicking a
+  // disappearing Continue button both races readiness and scrolls tall heroes.
   await expect(page.locator(".home-hero-runway")).toHaveAttribute(
     "data-opening-resolved",
     "true",
+    { timeout: 25000 },
   );
   await expect(page.locator(".home-opening")).toHaveCSS("visibility", "hidden");
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect.poll(() => surface(page)).toEqual({ opacity: 1, y: 0 });
 }
 
 async function progressTo(page: Page, progress: number) {
@@ -103,12 +105,15 @@ test("hero exit reverses cleanly and hands the complete player into paper", asyn
         mask: css.maskImage,
       };
     });
-    expect(geometry).toEqual({
-      ...original,
-      transform: "none",
-      clipPath: "none",
-      mask: "none",
-    });
+    // Composited translation can round DOMRect dimensions by a few ten-thousandths
+    // of a pixel. The provider still must keep its entire original native frame.
+    expect(Math.abs(geometry.width - original.width)).toBeLessThan(0.01);
+    expect(Math.abs(geometry.height - original.height)).toBeLessThan(0.01);
+    expect(geometry.width / geometry.height).toBeCloseTo(16 / 9, 4);
+    expect(geometry.source).toBe(original.source);
+    expect(geometry.transform).toBe("none");
+    expect(geometry.clipPath).toBe("none");
+    expect(geometry.mask).toBe("none");
     samples.push({ progress, ...state, ...geometry });
     await capture(page, info, `hero-exit-${samples.length}-${progress}`);
   }
@@ -172,6 +177,79 @@ test("hero exit reverses cleanly and hands the complete player into paper", asyn
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
   ).toBe(true);
+});
+
+test("continuous native wheel input reveals and reverses the hero handoff", async ({
+  page,
+}, info) => {
+  test.setTimeout(60000);
+  await resolveOpening(page);
+  await capture(page, info, "hero-native-start");
+  const destination = await page
+    .locator(".home-hero-handoff")
+    .evaluate(
+      (node) =>
+        scrollY + node.getBoundingClientRect().bottom - innerHeight * 0.35,
+    );
+  const samples: {
+    direction: string;
+    scrollY: number;
+    opacity: number;
+    lift: number;
+  }[] = [];
+  const wheel = async (direction: "forward" | "reverse", distance: number) => {
+    // Small real wheel events, paced by browser frames, produce continuous video.
+    // No scrollTo, style mutation, or synthetic progress changes occur in the sweep.
+    for (let moved = 0; moved < distance; moved += 48) {
+      await page.mouse.wheel(0, direction === "forward" ? 48 : -48);
+      const sample = await page.evaluate(async () => {
+        for (let frame = 0; frame < 4; frame++)
+          await new Promise(requestAnimationFrame);
+        const css = getComputedStyle(
+          document.querySelector(".home-hero-sticky")!,
+        );
+        return {
+          scrollY,
+          opacity: Number(css.opacity),
+          lift:
+            css.transform === "none"
+              ? 0
+              : new DOMMatrixReadOnly(css.transform).m42,
+        };
+      });
+      samples.push({ direction, ...sample });
+    }
+  };
+  await page.mouse.move(8, 8);
+  await wheel("forward", destination);
+  await expect
+    .poll(() => surface(page).then((state) => state.opacity))
+    .toBeCloseTo(0.76, 2);
+  await expect(page.locator(".home-hero-handoff")).toBeInViewport();
+  await capture(page, info, "hero-native-editorial-handoff");
+  await wheel("reverse", (await page.evaluate(() => scrollY)) + 96);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect.poll(() => surface(page)).toEqual({ opacity: 1, y: 0 });
+  await capture(page, info, "hero-native-reversed");
+  for (const direction of ["forward", "reverse"]) {
+    const phase = samples.filter((sample) => sample.direction === direction);
+    expect(
+      new Set(phase.map((sample) => Math.round(sample.scrollY))).size,
+    ).toBeGreaterThan(10);
+    expect(
+      phase.some((sample) => sample.opacity > 0.78 && sample.opacity < 0.98),
+    ).toBe(true);
+    for (let index = 1; index < phase.length; index++) {
+      const delta = phase[index].scrollY - phase[index - 1].scrollY;
+      expect(direction === "forward" ? delta : -delta).toBeGreaterThanOrEqual(
+        -1,
+      );
+    }
+  }
+  await info.attach("continuous-native-wheel-samples", {
+    body: JSON.stringify(samples, null, 2),
+    contentType: "application/json",
+  });
 });
 
 test("Continue keeps heading focus while native scrolling activates the hero exit", async ({
