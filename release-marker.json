@@ -1,10 +1,10 @@
 {
-  "release": "gradual-mobile-homepage-preview",
-  "testedApplicationCommit": "0538e2f8123aba3de1f7cb41b3f7c65f58b8676f",
-  "productSourceCommit": "4aa490a110954b41c0b4aac586ba216a85c6872a",
-  "homepageQaRun": 36889777177,
-  "qualityQaRun": 36889777218,
-  "mobileCaptureRun": 36887754236,
-  "verifiedAt": "2026-10-01T16:27:48.351465Z",
-  "scope": "Gradual mobile hero/editorial/film/heritage motion; one licensed exterior, five variant meshes and accepted cabin still pending"
+  "release": "cinematic-story-restoration",
+  "testedApplicationCommit": "951aeb58287e4aa0a2eb5d61c9a3cf9d5de7dbbf",
+  "homepageQaRun": 37089358867,
+  "qualityQaRun": 37089358928,
+  "mobileCaptureRun": 37089358916,
+  "vehicleCheckpointRun": 37089358838,
+  "verifiedAt": "2026-10-03T02:35:58Z",
+  "scope": "Readiness-linked metallic opening; truthful six-card interactions; real four-lamp-to-whole-rear reveal and contact shadows; four selected heritage chapters. One artist-built exterior; five meshes and accepted cabin remain unavailable."
 }

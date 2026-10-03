@@ -1,6 +1,6 @@
 # Cinematic homepage revision — review candidate
 
-This is a staged candidate, not a visually accepted release. Railway is held on the separately managed `/release-cinematic-story-approved.txt` watch marker until rendered evidence is reviewed.
+The bounded revision at `951aeb58287e4aa0a2eb5d61c9a3cf9d5de7dbbf` passed visual review and exact aggregate Quality run `37089358928`. The release marker promotes that tested application tree. Verify the exact Railway release and public-origin flows before restoring the saved 14 normal watch patterns.
 
 ## Scope
 
@@ -11,7 +11,7 @@ This is a staged candidate, not a visually accepted release. Railway is held on 
 
 ## Verification boundary
 
-The local full suite, TypeScript and production build must be rerun after final changes. Local Chromium process creation and CUA localhost access are restricted in this executor. Actual layout, WebGL, pointer and continuous-scroll screenshots/videos therefore come from the existing authorized GitHub Actions QA route while the Railway release gate is held. Physical mobile GPU performance, Safari and OEM-photorealism are not established by SwiftShader tests.
+The final local full suite passed 297 tests across 37 files; TypeScript and production build passed. Exact-candidate homepage/component run `37089358867` and mobile-motion run `37089358916` passed. Local Chromium process creation and CUA localhost access are restricted in this executor. Actual layout, WebGL, pointer and continuous-scroll screenshots/videos therefore come from the existing authorized GitHub Actions QA route while the Railway release gate is held. Physical mobile GPU performance, Safari and OEM-photorealism are not established by SwiftShader tests.
 
 No third-party video is downloaded, extracted, proxied or rehosted. Provider playback requires its separate public-origin check.
 

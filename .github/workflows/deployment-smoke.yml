@@ -18,6 +18,7 @@ on:
       - "release-driving-films-approved.txt"
       - "release-home-story-approved.txt"
       - "release-configurator-controls-approved.txt"
+      - "release-cinematic-story-approved.txt"
 permissions:
   contents: read
 jobs:

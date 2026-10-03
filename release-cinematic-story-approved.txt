@@ -1,0 +1,10 @@
+Release the visually reviewed GT-R cinematic opening, truthful model invitations, restored rear reveal and alternating heritage story.
+Tested application: 951aeb58287e4aa0a2eb5d61c9a3cf9d5de7dbbf
+Aggregate Quality: 37089358928 SUCCESS
+Homepage and component QA: 37089358867 SUCCESS (21 homepage, 10 heritage, 9 opening/cards, 4 real rear flows)
+Mobile native-motion captures: 37089358916 SUCCESS (all5viewports/preferences)
+Vehicle visual checkpoint: 37089358838 SUCCESS
+Local: 297/297tests; typecheck and build pass.
+Visual review confirmed red real lamps, softer paint, genuine contact shadows, whole-car framing and readable desktop/mobile heritage.
+This is a bounded restoration and interaction improvement. One artist-built custom-aero R35 exterior is available; cabin and five other 3D variants remain unavailable. No OEM-photorealism or full six-model completion claim.
+Restore the saved14normal Railway watch patterns only after exact release deployment and public smoke checks.
