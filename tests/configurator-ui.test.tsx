@@ -66,7 +66,7 @@ describe("configurator honest functional flow", () => {
     );
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(document.activeElement).toBe(details);
+    await waitFor(() => expect(document.activeElement).toBe(details));
   });
   it("switches variants without showing a renamed shared mesh", async () => {
     setup();

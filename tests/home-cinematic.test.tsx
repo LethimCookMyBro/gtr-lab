@@ -239,7 +239,7 @@ describe("cinematic homepage", () => {
     await user.keyboard("{Escape}");
     expect(dialog.getAttribute("data-phase")).toBe("closing");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(document.activeElement).toBe(trigger);
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
     expect(document.body.style.overflow).toBe("");
   });
   it("provides truthful footer context and direct links to all six variants", () => {
