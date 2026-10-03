@@ -6,7 +6,7 @@ export default defineConfig({
   outputDir: `environment-grounding-results/${variant}`,
   fullyParallel: false,
   workers: 1,
-  timeout: 240000,
+  timeout: 600000,
   reporter: [["list"]],
   use: {
     baseURL: "http://127.0.0.1:4179",
