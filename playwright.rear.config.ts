@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: "rear-signature.spec.ts",
+  testMatch: ["rear-signature.spec.ts", "rear-brand-layout.spec.ts"],
   workers: 1,
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,

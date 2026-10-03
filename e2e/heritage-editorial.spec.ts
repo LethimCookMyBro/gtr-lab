@@ -221,6 +221,125 @@ for (const mode of ["reduced", "short"] as const) {
   });
 }
 
+test("pointer era landings have no focus box and lower evidence reaches its readable hold", async ({
+  page,
+}, info) => {
+  test.setTimeout(60000);
+  await open(page);
+  // Keyboard navigation still has an intentional, visible destination outline.
+  const keyboardChapter = await select(page, 0);
+  await expect(keyboardChapter).toBeFocused();
+  expect(
+    await keyboardChapter.evaluate((node) => node.matches(":focus-visible")),
+  ).toBe(true);
+  await expect(keyboardChapter).toHaveCSS("outline-style", "solid");
+  await expect(keyboardChapter).toHaveCSS("outline-width", "2px");
+  await expect(keyboardChapter).toHaveCSS(
+    "outline-color",
+    "rgb(232, 107, 118)",
+  );
+  await page.screenshot({
+    path: info.outputPath("keyboard-destination-outline.png"),
+  });
+
+  const frames = [];
+  for (const index of [1, 2, 3, 0]) {
+    const button = page.getByRole("button", {
+      name: names[index],
+      exact: true,
+    });
+    // Actual pointer input must clear keyboard modality before focus is handed
+    // from the clicked control to the corresponding chapter.
+    await button.click();
+    await waitForScrollRest(page);
+    const chapter = page.locator(`[data-era-image="${index}"]`);
+    await expect(chapter).toBeFocused();
+    expect(
+      await chapter.evaluate((node) => node.matches(":focus-visible")),
+    ).toBe(false);
+    await expect(chapter).toHaveCSS("outline-style", "none");
+    await expect(chapter).toHaveCSS("outline-width", "0px");
+    await expect(button).toHaveAttribute("aria-current", "step");
+    await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
+    await page.screenshot({
+      path: info.outputPath(`pointer-landing-${index}.png`),
+    });
+
+    const lowerEvidence = chapter.locator(
+      ".home-archive-support-image:last-child, .home-archive-description",
+    );
+    const target = await lowerEvidence.evaluateAll((nodes) => {
+      const tops = nodes.map((node) => {
+        let top = 0;
+        let current: HTMLElement | null = node as HTMLElement;
+        while (current) {
+          top += current.offsetTop;
+          current = current.offsetParent as HTMLElement | null;
+        }
+        return top;
+      });
+      // Supporting details complete their entrance at43% viewport height.
+      // Put the later item just inside that reading hold using native scrolling.
+      return Math.max(...tops) - innerHeight * 0.42;
+    });
+    const viewport = page.viewportSize()!;
+    await page.mouse.move(viewport.width / 2, viewport.height * 0.8);
+    await page.mouse.wheel(0, target - (await page.evaluate(() => scrollY)));
+    await waitForScrollRest(page);
+    await expect(lowerEvidence).toHaveCount(2);
+    for (const item of await lowerEvidence.all()) {
+      await expect
+        .poll(() =>
+          item.evaluate((node) =>
+            Number(
+              (node as HTMLElement).style.getPropertyValue("--item-reveal"),
+            ),
+          ),
+        )
+        .toBe(1);
+      await expect(item).toHaveCSS("opacity", "1");
+      expect(
+        await item.evaluate(
+          (node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m42,
+        ),
+      ).toBe(0);
+      await expect(item).toBeInViewport();
+    }
+    // This pause is for the unretimed review video, after all readiness assertions.
+    // Production motion and opacity remain untouched throughout the capture.
+    await page.waitForTimeout(700);
+    await expect(chapter).toHaveCSS("outline-style", "none");
+    await page.screenshot({
+      path: info.outputPath(`pointer-lower-details-settled-${index}.png`),
+    });
+    frames.push({
+      index,
+      state: await chapter.evaluate((node) => ({
+        scrollY,
+        focused: node === document.activeElement,
+        focusVisible: node.matches(":focus-visible"),
+        outline: getComputedStyle(node).outline,
+        evidence: [
+          ...node.querySelectorAll<HTMLElement>(
+            ".home-archive-support-image:last-child, .home-archive-description",
+          ),
+        ].map((item) => ({
+          className: item.className,
+          reveal: Number(item.style.getPropertyValue("--item-reveal")),
+          opacity: Number(getComputedStyle(item).opacity),
+          transform: getComputedStyle(item).transform,
+          top: item.getBoundingClientRect().top,
+          bottom: item.getBoundingClientRect().bottom,
+        })),
+      })),
+    });
+  }
+  await info.attach("pointer-focus-and-settled-evidence", {
+    body: JSON.stringify(frames, null, 2),
+    contentType: "application/json",
+  });
+});
+
 test("native forward and reverse wheel scrolling tracks the chapter at the reading line", async ({
   page,
 }, info) => {

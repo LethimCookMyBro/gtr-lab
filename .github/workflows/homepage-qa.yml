@@ -17,6 +17,7 @@ on:
       - "scripts/prepare-films.mjs"
       - "e2e/home-motion.spec.ts"
       - "e2e/rear-signature.spec.ts"
+      - "e2e/rear-brand-layout.spec.ts"
       - "playwright.rear.config.ts"
       - "playwright.heritage.config.ts"
       - "playwright.opening-cards.config.ts"

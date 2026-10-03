@@ -600,7 +600,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       await page
         .locator("#home-heritage")
         .evaluate((el) => getComputedStyle(el).backgroundColor),
-    ).toBe("rgb(17, 20, 17)");
+    ).toBe("rgb(11, 13, 14)");
     headlines.push(
       await archiveChapter(page, index)
         .locator(".home-archive-inline-copy h3")
@@ -1116,28 +1116,40 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
         .evaluate((element) => getComputedStyle(element).transform),
     ).not.toBe(firstHero);
 
-    await page.locator(".home-editorial").evaluate((element) =>
-      window.scrollTo({
-        top: scrollY + element.getBoundingClientRect().top,
-        behavior: "instant",
-      }),
-    );
+    await page.evaluate(() => document.fonts.ready);
     const detail = page.locator(".home-editorial-image--detail");
-    await expect
-      .poll(() =>
-        detail.evaluate((element) =>
-          Number(
-            (element as HTMLElement).style.getPropertyValue("--item-progress"),
-          ),
-        ),
-      )
-      .toBeGreaterThan(0);
-    const before = await detail.evaluate((element) => ({
-      progress: Number(
-        (element as HTMLElement).style.getPropertyValue("--item-progress"),
-      ),
-      transform: getComputedStyle(element).transform,
-    }));
+    // Sample the designed entrance, rather than placing the section at the top
+    // after its image has already entered the deliberately stationary reading hold.
+    await detail.evaluate((element) => {
+      let top = 0;
+      let current: HTMLElement | null = element as HTMLElement;
+      while (current) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+      }
+      window.scrollTo({ top: top - innerHeight * 0.78, behavior: "instant" });
+    });
+    await settleNativeScroll(page, info, `entrance-settled-${width}x${height}`);
+    const readDetail = () =>
+      detail.evaluate((element) => {
+        const node = element as HTMLElement;
+        const styles = getComputedStyle(node);
+        const matrix = new DOMMatrixReadOnly(
+          styles.transform === "none" ? undefined : styles.transform,
+        );
+        return {
+          scrollY,
+          progress: Number(node.style.getPropertyValue("--item-progress")),
+          reveal: Number(node.style.getPropertyValue("--item-reveal")),
+          opacity: Number(styles.opacity),
+          lift: matrix.m42,
+        };
+      });
+    const before = await readDetail();
+    expect(before.reveal).toBeGreaterThan(0);
+    expect(before.reveal).toBeLessThan(0.5);
+    expect(before.opacity).toBeLessThan(1);
+    expect(before.lift).toBeGreaterThan(0);
     expect(
       await detail.evaluate((element) => {
         const section = element.closest(".home-editorial");
@@ -1147,20 +1159,51 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
         return current === section;
       }),
     ).toBe(true);
-    await page.mouse.wheel(0, 180);
-    await expect
-      .poll(() =>
-        detail.evaluate((element) =>
-          Number(
-            (element as HTMLElement).style.getPropertyValue("--item-progress"),
-          ),
-        ),
-      )
-      .toBeGreaterThan(before.progress + 0.1);
-    expect(
-      await detail.evaluate((element) => getComputedStyle(element).transform),
-    ).not.toBe(before.transform);
-    await settleNativeScroll(page, info, `wheel-settled-${width}x${height}`);
+    // Both directions use native input; no motion variables are injected.
+    await page.mouse.move(width / 2, height - 20);
+    await page.mouse.wheel(0, height * 0.12);
+    await settleNativeScroll(page, info, `entrance-forward-${width}x${height}`);
+    const forward = await readDetail();
+    expect(forward.scrollY).toBeGreaterThan(before.scrollY);
+    expect(forward.progress).toBeGreaterThan(before.progress);
+    expect(forward.reveal).toBeGreaterThan(0.65);
+    expect(forward.reveal).toBeLessThan(1);
+    expect(forward.opacity).toBeGreaterThan(before.opacity);
+    expect(forward.lift).toBeLessThan(before.lift);
+    expect(forward.lift).toBeGreaterThan(0);
+    await page.mouse.wheel(0, -height * 0.12);
+    await settleNativeScroll(page, info, `entrance-reverse-${width}x${height}`);
+    const reversed = await readDetail();
+    expect(reversed.scrollY).toBeLessThan(forward.scrollY);
+    expect(reversed.progress).toBeCloseTo(before.progress, 2);
+    expect(reversed.reveal).toBeCloseTo(before.reveal, 2);
+    expect(reversed.opacity).toBeCloseTo(before.opacity, 2);
+    expect(reversed.lift).toBeCloseTo(before.lift, 0);
+
+    // Motion completes before the reading area, then stays still while the
+    // document keeps moving. This intentionally rejects continuous parallax.
+    await page.mouse.wheel(0, height * 0.4);
+    await settleNativeScroll(page, info, `reading-hold-${width}x${height}`);
+    const hold = await readDetail();
+    expect(hold.reveal).toBe(1);
+    expect(hold.opacity).toBe(1);
+    expect(hold.lift).toBe(0);
+    await page.mouse.wheel(0, height * 0.1);
+    await settleNativeScroll(
+      page,
+      info,
+      `reading-hold-forward-${width}x${height}`,
+    );
+    const held = await readDetail();
+    expect(held.scrollY).toBeGreaterThan(hold.scrollY);
+    expect(held.progress).toBeGreaterThan(hold.progress);
+    expect(held.reveal).toBe(1);
+    expect(held.opacity).toBe(1);
+    expect(held.lift).toBe(0);
+    await info.attach(`editorial-phases-${width}x${height}`, {
+      body: JSON.stringify({ before, forward, reversed, hold, held }, null, 2),
+      contentType: "application/json",
+    });
     const photoCredit = page.getByRole("link", {
       name: "2017 GT-R Premium Edition · Photography credits",
     });

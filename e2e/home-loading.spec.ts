@@ -139,7 +139,7 @@ test("film-ready model-pending gate releases only into an already prepared reusa
   });
 });
 
-test("completed download and decoded geometry do not bypass pending GPU compilation", async ({
+test("completed download and decoded geometry do not bypass a simulated shader-completion stall", async ({
   page,
 }, info) => {
   test.skip(
@@ -149,17 +149,43 @@ test("completed download and decoded geometry do not bypass pending GPU compilat
   await page.addInitScript(() => {
     (window as any).__holdRearShaders = true;
     (window as any).__shaderWaits = 0;
+    (window as any).__shaderExtensionSupport = [];
+    const nativeCompletion = new WeakMap<object, boolean>();
+    const completionStatus = 0x91b1;
+    // This is deliberate test-only fault injection, not evidence that this GPU
+    // supports parallel compilation. Without the extension Three initializes
+    // programReady=true and never calls getProgramParameter(COMPLETION_STATUS_KHR).
+    // Expose the completion contract on every test renderer so that branch is
+    // exercised deterministically; all shader creation/linking stays real.
     for (const type of [WebGLRenderingContext, WebGL2RenderingContext]) {
-      const original = type.prototype.getProgramParameter;
+      const originalGetExtension = type.prototype.getExtension;
+      const originalGetProgramParameter = type.prototype.getProgramParameter;
+      type.prototype.getExtension = function (name: string) {
+        const extension = Reflect.apply(originalGetExtension, this, [name]);
+        if (name !== "KHR_parallel_shader_compile") return extension;
+        nativeCompletion.set(this, extension !== null);
+        (window as any).__shaderExtensionSupport.push(extension !== null);
+        return extension ?? { COMPLETION_STATUS_KHR: completionStatus };
+      };
       type.prototype.getProgramParameter = function (
         program: WebGLProgram,
         pname: number,
       ) {
-        if (pname === 0x91b1 && (window as any).__holdRearShaders) {
-          (window as any).__shaderWaits++;
-          return false;
+        if (pname === completionStatus) {
+          if ((window as any).__holdRearShaders) {
+            (window as any).__shaderWaits++;
+            return false;
+          }
+          // Never send an unsupported enum to WebGL or invent successful shader
+          // compilation: after release, use native completion when available,
+          // otherwise require the actual program's synchronous link result.
+          return originalGetProgramParameter.call(
+            this,
+            program,
+            nativeCompletion.get(this) ? completionStatus : this.LINK_STATUS,
+          );
         }
-        return original.call(this, program, pname);
+        return originalGetProgramParameter.call(this, program, pname);
       };
     }
   });
@@ -179,6 +205,23 @@ test("completed download and decoded geometry do not bypass pending GPU compilat
     (window as any).__holdRearShaders = false;
   });
   await ready(page);
+  await info.attach("simulated-shader-completion-evidence", {
+    body: JSON.stringify(
+      await page.evaluate(() => ({
+        mechanism:
+          "Test-only completion status stall; real GLB, texture decoding, shader linking and final rendering",
+        nativeExtensionSupport: (window as any).__shaderExtensionSupport,
+        heldCompletionQueries: (window as any).__shaderWaits,
+        readyAfterRelease:
+          document
+            .querySelector(".home-signature-runway")
+            ?.getAttribute("data-scene-state") === "ready",
+      })),
+      null,
+      2,
+    ),
+    contentType: "application/json",
+  });
 });
 
 test("a failed model request retries a fresh real scene and Continue without 3D remains a keyboard escape", async ({

@@ -12,7 +12,9 @@
 .home-signature-identity {
   position: absolute;
   z-index: 2;
-  top: 12%;
+  /* Keep the entire two-emblem stack in the upper 28% of the viewport.
+     Vehicle framing is unchanged; all identity dimensions share a height budget. */
+  top: clamp(12px, 3svh, 32px);
   left: 24px;
   right: 24px;
   text-align: center;
@@ -21,8 +23,9 @@
 .home-signature-identity > p {
   color: #95999e;
   font-size: 10px;
+  line-height: 1.2;
   letter-spacing: 0.24em;
-  margin-bottom: 18px;
+  margin-bottom: min(1svh, 10px);
 }
 .home-signature-identity h2 {
   margin: 0;
@@ -83,9 +86,6 @@
   .cinematic-home .home-signature-runway {
     height: 230svh;
   }
-  .home-signature-identity {
-    top: 16%;
-  }
   .home-signature-identity > p {
     font-size: 9px;
   }
@@ -130,12 +130,8 @@
 }
 
 .home-signature-identity .gtr-metal-wordmark {
-  --gtr-badge-width: clamp(160px, 16vw, 220px);
-  --gtr-nissan-width: 56px;
-}
-@media (max-width: 700px) {
-  .home-signature-identity .gtr-metal-wordmark {
-    --gtr-badge-width: 180px;
-    --gtr-nissan-width: 46px;
-  }
+  --gtr-badge-width: min(18svh, 170px);
+  --gtr-nissan-width: min(4.8svh, 44px);
+  gap: min(1.2svh, 12px);
+  filter: none;
 }

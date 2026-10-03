@@ -1,0 +1,172 @@
+import { expect, test } from "@playwright/test";
+import type { Page, TestInfo } from "@playwright/test";
+
+async function inspectHeader(page: Page, info: TestInfo, label: string) {
+  const stage = page.locator(".home-signature-runway");
+  const canvas = stage.locator("canvas");
+  await stage.evaluate((section) => {
+    const sticky = section.firstElementChild as HTMLElement;
+    window.scrollTo({
+      top:
+        scrollY +
+        section.getBoundingClientRect().top +
+        (section.clientHeight - sticky.clientHeight) * 0.75,
+      behavior: "instant",
+    });
+  });
+  await expect(stage).toHaveAttribute("data-render-active", "true");
+  await expect
+    .poll(async () => Number(await canvas.getAttribute("data-rear-progress")))
+    .toBeGreaterThan(0.7);
+  const bounds = await stage.evaluate((section) => {
+    const box = (selector: string) => {
+      const r = section.querySelector(selector)!.getBoundingClientRect();
+      return {
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+        bottom: r.bottom,
+      };
+    };
+    return {
+      sticky: box(".home-signature-sticky"),
+      header: box(".home-signature-identity"),
+      nissan: box(".gtr-brand-nissan"),
+      badge: box(".gtr-brand-badge-frame"),
+      image: box(".gtr-brand-badge"),
+    };
+  });
+  const height = page.viewportSize()!.height;
+  expect(bounds.header.bottom - bounds.sticky.y).toBeLessThanOrEqual(
+    height * 0.28,
+  );
+  expect(bounds.badge.bottom).toBeLessThanOrEqual(bounds.header.bottom + 1);
+  expect(bounds.nissan.width / bounds.nissan.height).toBeCloseTo(850 / 727, 2);
+  expect(bounds.image.width / bounds.image.height).toBeCloseTo(1, 2);
+  expect(bounds.badge.width / bounds.badge.height).toBeCloseTo(640 / 450, 2);
+  expect(bounds.nissan.width).toBeLessThan(bounds.badge.width * 0.35);
+
+  // Capture the actual rendered car without HTML overlays. This changes only
+  // screenshot presentation and leaves the camera, scene and persistent UI intact.
+  const carPixels = await canvas.screenshot({
+    scale: "css",
+    style:
+      ".home-signature-identity, .home-signature-caption, .home-signature-footer, .home-signature-status { visibility: hidden !important; }",
+  });
+  const roof = await page.evaluate(async (png) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${png}`;
+    await image.decode();
+    const sample = document.createElement("canvas");
+    sample.width = image.width;
+    sample.height = image.height;
+    const context = sample.getContext("2d")!;
+    context.drawImage(image, 0, 0);
+    const { data } = context.getImageData(0, 0, image.width, image.height);
+    const left = Math.floor(image.width * 0.15);
+    const right = Math.ceil(image.width * 0.85);
+    const baseline = [data[0], data[1], data[2]];
+    let consecutive = 0;
+    for (let y = Math.floor(image.height * 0.15); y < image.height * 0.5; y++) {
+      let foreground = 0;
+      for (let x = left; x < right; x++) {
+        const offset = (y * image.width + x) * 4;
+        if (
+          Math.max(
+            ...baseline.map((value, channel) => data[offset + channel] - value),
+          ) > 15
+        )
+          foreground++;
+      }
+      // A short contiguous run distinguishes a visible roof edge from isolated
+      // antialiasing noise; a full-width studio-floor gradient is not a roof.
+      consecutive =
+        foreground >= 3 && foreground < (right - left) * 0.85
+          ? consecutive + 1
+          : 0;
+      if (consecutive === 3) return y - 2;
+    }
+    return null;
+  }, carPixels.toString("base64"));
+  expect(
+    roof,
+    "A visible vehicle roof must be found in the actual canvas capture",
+  ).not.toBeNull();
+  expect(
+    bounds.header.bottom - bounds.sticky.y,
+    "Identity must finish above the rendered roof",
+  ).toBeLessThan(roof! - 12);
+  await expect(stage.locator(".home-signature-caption p")).toHaveText(
+    "Four lights. One unmistakable signature.",
+  );
+  await expect(stage.locator(".home-signature-caption > span")).toHaveText(
+    "From racing instinct to a presence all its own.",
+  );
+  await page.screenshot({
+    path: info.outputPath(`${label}-composed.png`),
+    scale: "css",
+  });
+  await info.attach(`${label}-header-and-roof`, {
+    body: JSON.stringify({
+      bounds,
+      vehicleRoofY: roof,
+      viewport: page.viewportSize(),
+    }),
+    contentType: "application/json",
+  });
+  const family = stage.getByRole("link", { name: "Meet the family" });
+  await expect(family).toHaveAttribute("href", "#home-lineup");
+  await family.focus();
+  await expect(family).toBeFocused();
+}
+
+test("rear identity clears the actual vehicle roof without changing the loader or captions", async ({
+  page,
+}, info) => {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/models/ciasny-r35.glb"))
+      requests.push(request.url());
+  });
+  await page.route("https://media.flixel.com/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><html><body>Document readiness only.</body></html>",
+    }),
+  );
+  let releaseModel!: () => void;
+  const holdModel = new Promise<void>((resolve) => {
+    releaseModel = resolve;
+  });
+  await page.route("**/models/ciasny-r35.glb", async (route) => {
+    await holdModel;
+    await route.continue();
+  });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  // Measure the real visible loader before releasing the same one model request.
+  // This guards the scope: only the rear identity may become compact.
+  await expect(page.locator(".home-loading-gate")).toBeVisible();
+  const loader = await page
+    .locator(".home-loading-gate .gtr-brand-badge-frame")
+    .boundingBox();
+  expect(loader!.width).toBeGreaterThanOrEqual(238);
+  expect(loader!.width).toBeLessThanOrEqual(280);
+  releaseModel();
+  await expect(page.locator(".home-loading-gate")).toHaveAttribute(
+    "data-state",
+    "resolved",
+    { timeout: 90000 },
+  );
+  await expect(page.locator(".home-signature-runway")).toHaveAttribute(
+    "data-scene-state",
+    "ready",
+  );
+  await inspectHeader(page, info, "native");
+  if (page.viewportSize()!.width < 701) {
+    // One additional bounded height case, reusing the already prepared scene.
+    await page.setViewportSize({ width: 390, height: 600 });
+    await inspectHeader(page, info, "short-portrait");
+  }
+  expect(requests).toHaveLength(1);
+});
