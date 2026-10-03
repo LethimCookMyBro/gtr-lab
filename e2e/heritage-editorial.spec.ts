@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Page, TestInfo } from "@playwright/test";
 
 const eraNames = [
   "1969: Skyline GT-R",
@@ -15,33 +15,76 @@ async function openHeritage(page: Page) {
   await page.locator("#home-heritage").scrollIntoViewIfNeeded();
 }
 
-async function selectEra(page: Page, index: number) {
+async function selectEra(page: Page, index: number, info: TestInfo) {
   const button = page.getByRole("button", {
     name: eraNames[index],
     exact: true,
   });
   await button.focus();
+  const inputAt = await page.evaluate(() => performance.now());
   await button.press("Enter");
+  // The click updates activeEra immediately; it does not mean native smooth
+  // scrolling has arrived. Observe actual scroll frames before probing geometry.
+  const settlement = await page.locator("#home-heritage").evaluate(
+    async (section, { index, inputAt }) => {
+      const samples = [];
+      let previous = scrollY;
+      let stable = 0;
+      for (let frame = 0; frame < 240; frame++) {
+        await new Promise(requestAnimationFrame);
+        const current = scrollY;
+        const image = section
+          .querySelector(`[data-era-image="${index}"] .home-archive-image`)!
+          .getBoundingClientRect();
+        samples.push({
+          frame,
+          elapsedMs: performance.now() - inputAt,
+          scrollY: current,
+          activeEra: section.getAttribute("data-active-era"),
+          targetEra: index,
+          targetCenterError:
+            image.top +
+            image.height / 2 -
+            innerHeight * (innerWidth <= 700 ? 0.59 : 0.5),
+          rearState: document
+            .querySelector(".home-signature-runway")
+            ?.getAttribute("data-scene-state"),
+        });
+        stable = Math.abs(current - previous) < 0.5 ? stable + 1 : 0;
+        previous = current;
+        if (stable >= 8) return { settled: true, samples };
+      }
+      return { settled: false, samples };
+    },
+    { index, inputAt },
+  );
+  await info.attach(`era-${index}-native-scroll-settlement`, {
+    body: JSON.stringify(settlement, null, 2),
+    contentType: "application/json",
+  });
+  expect(
+    settlement.settled,
+    "native archive scrolling should become stationary",
+  ).toBe(true);
   await expect(page.locator("#home-heritage")).toHaveAttribute(
     "data-active-era",
     String(index),
   );
   await expect(button).toHaveAttribute("aria-current", "step");
+  // Probe the requested chapter, never whichever chapter happens to be active
+  // while travelling. Keep the original independent 20px alignment requirement.
   await expect
     .poll(async () =>
-      page.evaluate(() => {
-        const section = document.querySelector("#home-heritage")!;
-        const image = section
-          .querySelector(
-            `[data-era-image="${section.getAttribute("data-active-era")}"] .home-archive-image`,
-          )!
-          .getBoundingClientRect();
-        return Math.abs(
-          image.top +
-            image.height / 2 -
-            innerHeight * (innerWidth <= 700 ? 0.59 : 0.5),
-        );
-      }),
+      page
+        .locator(`[data-era-image="${index}"] .home-archive-image`)
+        .evaluate((element) => {
+          const image = element.getBoundingClientRect();
+          return Math.abs(
+            image.top +
+              image.height / 2 -
+              innerHeight * (innerWidth <= 700 ? 0.59 : 0.5),
+          );
+        }),
     )
     .toBeLessThan(20);
 }
@@ -51,7 +94,7 @@ test("four alternating images pass a stable centered narrative and keyboard time
 }, info) => {
   await openHeritage(page);
   for (const index of [0, 1, 2, 3, 0]) {
-    await selectEra(page, index);
+    await selectEra(page, index, info);
     const narrative = (await page
       .locator(".home-archive-narrative")
       .boundingBox())!;
@@ -91,7 +134,7 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await openHeritage(page);
     for (const index of [0, 1, 2, 3]) {
-      await selectEra(page, index);
+      await selectEra(page, index, info);
       const copy = (await page
         .locator(".home-archive-narrative")
         .boundingBox())!;
@@ -152,7 +195,7 @@ test("forward and reverse native scrolling evolves the centered story", async ({
   page,
 }, info) => {
   await openHeritage(page);
-  await selectEra(page, 0);
+  await selectEra(page, 0, info);
   const travel = await page
     .locator("#home-heritage")
     .evaluate(

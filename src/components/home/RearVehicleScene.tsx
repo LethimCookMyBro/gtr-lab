@@ -174,7 +174,9 @@ const RearStudio = memo(function RearStudio() {
             scale={[8, 5, 1]}
           />
         </Environment>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+        {/* Drei blurs with an unparented plane at world Y=0. Its upward-facing
+            camera must stay below zero, with the receiver just above the floor. */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]}>
           <planeGeometry args={[150, 150]} />
           <meshStandardMaterial
             color="#0b0e11"
@@ -184,7 +186,7 @@ const RearStudio = memo(function RearStudio() {
           />
         </mesh>
         <ContactShadows
-          position={[0, 0.001, 0]}
+          position={[0, -0.001, 0]}
           opacity={0.6}
           scale={9}
           blur={1.6}
