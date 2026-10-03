@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
+import { PerspectiveCamera, Vector3 } from "three";
 
 async function inspectHeader(page: Page, info: TestInfo, label: string) {
   const stage = page.locator(".home-signature-runway");
@@ -35,6 +36,9 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
       nissan: box(".gtr-brand-nissan"),
       badge: box(".gtr-brand-badge-frame"),
       image: box(".gtr-brand-badge"),
+      canvas: box("canvas"),
+      caption: box(".home-signature-caption"),
+      footer: box(".home-signature-footer"),
     };
   });
   const height = page.viewportSize()!.height;
@@ -54,7 +58,7 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
     style:
       ".home-signature-identity, .home-signature-caption, .home-signature-footer, .home-signature-status { visibility: hidden !important; }",
   });
-  const roof = await page.evaluate(async (png) => {
+  const vehicle = await page.evaluate(async (png) => {
     const image = new Image();
     image.src = `data:image/png;base64,${png}`;
     await image.decode();
@@ -68,6 +72,7 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
     const right = Math.ceil(image.width * 0.85);
     const baseline = [data[0], data[1], data[2]];
     let consecutive = 0;
+    let roof: number | null = null;
     for (let y = Math.floor(image.height * 0.15); y < image.height * 0.5; y++) {
       let foreground = 0;
       for (let x = left; x < right; x++) {
@@ -85,18 +90,92 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
         foreground >= 3 && foreground < (right - left) * 0.85
           ? consecutive + 1
           : 0;
-      if (consecutive === 3) return y - 2;
+      if (consecutive === 3) {
+        roof = y - 2;
+        break;
+      }
     }
-    return null;
+    // Compare each lower row with its own far-side floor pixels, not the
+    // black sky. This excludes the studio's vertical floor gradient and most
+    // soft contact shadow while retaining the dark, hard-edged tires.
+    let bottom: number | null = null;
+    consecutive = 0;
+    for (
+      let y = Math.floor(image.height * 0.45);
+      y < image.height * 0.85;
+      y++
+    ) {
+      const leftOffset = (y * image.width + Math.floor(image.width * 0.04)) * 4;
+      const rightOffset =
+        (y * image.width + Math.floor(image.width * 0.96)) * 4;
+      const floor = [0, 1, 2].map(
+        (channel) =>
+          (data[leftOffset + channel] + data[rightOffset + channel]) / 2,
+      );
+      let foreground = 0;
+      for (let x = left; x < right; x++) {
+        const offset = (y * image.width + x) * 4;
+        if (
+          Math.max(
+            ...floor.map((value, channel) =>
+              Math.abs(data[offset + channel] - value),
+            ),
+          ) > 18
+        )
+          foreground++;
+      }
+      consecutive =
+        foreground >= 3 && foreground < (right - left) * 0.85
+          ? consecutive + 1
+          : 0;
+      if (consecutive >= 3) bottom = y;
+    }
+    return { roof, bottom };
   }, carPixels.toString("base64"));
   expect(
-    roof,
+    vehicle.roof,
     "A visible vehicle roof must be found in the actual canvas capture",
   ).not.toBeNull();
   expect(
     bounds.header.bottom - bounds.sticky.y,
     "Identity must finish above the rendered roof",
-  ).toBeLessThan(roof! - 12);
+  ).toBeLessThan(vehicle.roof! + bounds.canvas.y - bounds.sticky.y - 12);
+  expect(
+    vehicle.bottom,
+    "Actual lower vehicle pixels must be detected",
+  ).not.toBeNull();
+  expect(
+    bounds.caption.y,
+    "Caption must not paint over the tires or exhaust",
+  ).toBeGreaterThanOrEqual(bounds.canvas.y + vehicle.bottom! + 8);
+  expect(
+    bounds.caption.bottom,
+    "Caption must clear both footer links",
+  ).toBeLessThanOrEqual(bounds.footer.y - 8);
+  if (label === "short-portrait") {
+    const aspect = bounds.canvas.width / bounds.canvas.height;
+    const progress = Number(await canvas.getAttribute("data-rear-progress"));
+    const distance = Math.max(
+      5.3,
+      2.12 / (2 * Math.tan(Math.PI / 12) * aspect * 0.86),
+    );
+    const camera = new PerspectiveCamera(30, aspect, 0.05, 70);
+    camera.position.set(0, 0.96, -2.35 - distance * (0.9 + 0.1 * progress));
+    camera.lookAt(0, 0.66, -1.6);
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld();
+    const bottom =
+      ((1 - new Vector3(0, 0, -2.35).project(camera).y) *
+        bounds.canvas.height) /
+      2;
+    expect(bounds.caption.y).toBeGreaterThanOrEqual(
+      bounds.canvas.y + bottom + 12,
+    );
+  }
+  await info.attach(`${label}-vehicle-pixels`, {
+    body: carPixels,
+    contentType: "image/png",
+  });
   await expect(stage.locator(".home-signature-caption p")).toHaveText(
     "Four lights. One unmistakable signature.",
   );
@@ -110,7 +189,8 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
   await info.attach(`${label}-header-and-roof`, {
     body: JSON.stringify({
       bounds,
-      vehicleRoofY: roof,
+      vehicleRoofY: vehicle.roof,
+      vehicleBottomY: vehicle.bottom,
       viewport: page.viewportSize(),
     }),
     contentType: "application/json",

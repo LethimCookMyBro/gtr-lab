@@ -129,6 +129,23 @@
   }
 }
 
+/* Short portrait screens need separate car, caption and footer bands. The
+   normal 844px composition is unchanged; the camera and asset stay untouched. */
+@media (max-width: 700px) and (max-height: 700px) and (orientation: portrait) {
+  .cinematic-home .home-signature-canvas {
+    bottom: 8%;
+  }
+  .home-signature-caption {
+    /* Two 44px footer links + 6px gap + 16px inset + 16px breathing room. */
+    bottom: 126px;
+  }
+  .home-signature-caption p {
+    font-size: 20px;
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+}
+
 .home-signature-identity .gtr-metal-wordmark {
   --gtr-badge-width: min(18svh, 170px);
   --gtr-nissan-width: min(4.8svh, 44px);
