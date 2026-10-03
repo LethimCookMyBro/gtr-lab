@@ -3,6 +3,11 @@ import { createHash } from "node:crypto";
 import type { Page, TestInfo } from "@playwright/test";
 const variant = process.env.ENVIRONMENT_QA_VARIANT || "candidate";
 async function canvasHash(page: Page) {
+  // Locator screenshots include Chrome's focus outline. Compare rendering with
+  // identical focus state, rather than mistaking a 1px keyboard ring for drift.
+  await page
+    .locator(".scene-stage canvas")
+    .evaluate((element) => (element as HTMLCanvasElement).blur());
   await frames(page);
   return createHash("sha256")
     .update(await page.locator(".scene-stage canvas").screenshot())
