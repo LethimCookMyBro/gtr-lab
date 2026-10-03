@@ -93,3 +93,14 @@ The menu, editorial/caption collision corrections, desktop model invitations and
 
 
 Application candidate `57e0de0f093c92a6fe79935d7bd3207bbafca95c` passed homepage workflow37018776233, all five mobile motion captures in37018776203, production build and260 unit/DOM tests. Existing vehicle checkpoint37018776332 passed. Exact public deployment smoke and the restored watchlist are verified after promotion; the broader unchanged vehicle suite remains separately reported rather than being confused with acceptance of the excluded rear prototype.
+
+
+## Heritage exhibition release, 3 October 2026
+
+Application revision `59fbc88902a5d0767c1a8a98461ac9d114875c19` and QA-only follow-up `4e9282422e07ddbbda62648ea75b4da01b208196` passed aggregate Quality `37099365343` and homepage/component workflow `37099365344`. The final checks include nine heritage flows and eighteen hero-exit flows. All five mobile-motion plans passed in `37098892949`; the real-vehicle checkpoint passed in `37098892955`. The local suite passed 306 tests, typecheck and the production build.
+
+The archive now uses four compact, normal-flow, three-photo spreads. Each keeps its sourced competition milestone and individually credited captions beside the real image. The era rail follows the visible chapter through cold-load settling, reduced motion and normal scrolling. A native-wheel recording verifies the complete hero panel's bounded exit and reversal; its provider geometry and branding are unchanged. The paper transition is outside the provider frame.
+
+Review caught a boundary-sensitive active-era reading line and corrected it with short-window regressions. Browser navigation checks wait for actual native scroll rest and assert visible headings below the rail rather than imposing an arbitrary 3px landing coordinate. A model-card pointer check passed on an isolated repeat without modifying that component. External hosted-film readiness may require a retry; no provider restriction was bypassed.
+
+The temporary watch gate is `/release-heritage-exhibition-approved.txt`. The release commit changes only release metadata, this verification note and the corresponding live-smoke trigger. After this commit is healthy and its public-origin smoke and film verification pass, restore the exact 14 watch patterns recorded above. No hosting plan, service size, source branch, network permission or 3D asset is changed by this release.

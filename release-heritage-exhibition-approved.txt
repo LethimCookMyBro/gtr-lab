@@ -1,0 +1,12 @@
+Publish the visually reviewed compact heritage exhibition and reversible hero exit.
+Tested application: 59fbc88902a5d0767c1a8a98461ac9d114875c19
+Final QA candidate: 4e9282422e07ddbbda62648ea75b4da01b208196
+Aggregate Quality: 37099365343 SUCCESS
+Homepage and component QA: 37099365344 SUCCESS (including 9 heritage and 18 hero-exit cases)
+Mobile motion: 37098892949 SUCCESS; vehicle checkpoint: 37098892955 SUCCESS
+Local: 306 tests, typecheck and production build passed.
+Four normal-flow spreads have 12 real photographs, sourced achievements, individual captions and accessible copyright credits. Eight new CC/public-domain photos preserve native framing; no AI historical imagery or Nissan official photos are rehosted.
+The provider-native hero frame, marks and controls are intact. Its complete surface fades and lifts subtly into a separate paper transition, reversing with native scrolling. Reduced motion, Save-Data and keyboard controls remain supported.
+Visual review accepted desktop/mobile archive composition and hero midpoint, handoff and reverse frames. Pixel-perfect landing is not a product requirement; visible headings, correct active era and no rail overlap are tested in cold and settled flow.
+No vehicle asset, opening, rear scene or model-card feature was removed. One licensed artist-built exterior remains available; five meshes and an accurate cabin remain unavailable.
+Verify this exact release on Railway and the public origin; restore the saved 14 normal watch patterns only after live verification.

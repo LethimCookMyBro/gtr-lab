@@ -1,10 +1,12 @@
 {
-  "release": "cinematic-story-restoration",
-  "testedApplicationCommit": "951aeb58287e4aa0a2eb5d61c9a3cf9d5de7dbbf",
-  "homepageQaRun": 37089358867,
-  "qualityQaRun": 37089358928,
-  "mobileCaptureRun": 37089358916,
-  "vehicleCheckpointRun": 37089358838,
-  "verifiedAt": "2026-10-03T02:35:58Z",
-  "scope": "Readiness-linked metallic opening; truthful six-card interactions; real four-lamp-to-whole-rear reveal and contact shadows; four selected heritage chapters. One artist-built exterior; five meshes and accepted cabin remain unavailable."
+  "release": "heritage-exhibition",
+  "testedApplicationCommit": "59fbc88902a5d0767c1a8a98461ac9d114875c19",
+  "testedCandidateCommit": "4e9282422e07ddbbda62648ea75b4da01b208196",
+  "homepageQaRun": 37099365344,
+  "qualityQaRun": 37099365343,
+  "mobileCaptureRun": 37098892949,
+  "vehicleCheckpointRun": 37098892955,
+  "verifiedAt": "2026-10-03T05:35:40.364067Z",
+  "scope": "Four compact, natural-flow, three-photo heritage spreads with sourced achievements and individual photography credits; slim era rail; reversible whole-panel hero exit and paper handoff. Existing opening, rear vehicle, model cards and controls retained.",
+  "providerPlayback": "Application iframe lifecycle and native geometry were tested; public-origin hosted playback is verified separately after deployment."
 }

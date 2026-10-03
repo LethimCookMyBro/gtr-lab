@@ -19,6 +19,7 @@ on:
       - "release-home-story-approved.txt"
       - "release-configurator-controls-approved.txt"
       - "release-cinematic-story-approved.txt"
+      - "release-heritage-exhibition-approved.txt"
 permissions:
   contents: read
 jobs:
