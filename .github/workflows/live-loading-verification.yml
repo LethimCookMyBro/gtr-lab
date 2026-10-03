@@ -1,0 +1,68 @@
+name: Reviewed live loading verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/live-loading-verification.yml"
+      - "e2e/home-loading.spec.ts"
+      - "e2e/home-opening-cards.spec.ts"
+      - "e2e/helpers/**"
+      - "playwright.loading.config.ts"
+      - "playwright.opening-cards.config.ts"
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [loading]
+    env:
+      HOME_QA_URL: https://gtr-lab-production.up.railway.app
+      REVIEWED_RELEASE: 34f72cdd8dbbbc4093de477aeb98998c26bc3d36
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify application is identical to the reviewed deployed release
+        run: |
+          git fetch --depth=1 origin "$REVIEWED_RELEASE"
+          git diff --exit-code "$REVIEWED_RELEASE" HEAD -- src public modeldata filmdata package.json package-lock.json index.html vite.config.ts tsconfig.json server.mjs railway.json scripts/prepare-models.mjs scripts/prepare-films.mjs scripts/fetch-environments.mjs
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { mkdir, writeFile } from 'node:fs/promises';
+          const sha = process.env.REVIEWED_RELEASE;
+          const url = process.env.HOME_QA_URL;
+          const statusResponse = await fetch(`https://api.github.com/repos/LethimCookMyBro/gtr-lab/commits/${sha}/status`, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(20000) });
+          assert.equal(statusResponse.status, 200);
+          const status = (await statusResponse.json()).statuses.find(item => item.context === 'GT-R LAB - gtr-lab');
+          assert.equal(status?.state, 'success');
+          const page = await fetch(url, { signal: AbortSignal.timeout(20000) });
+          assert.equal(page.status, 200);
+          const asset = await fetch(`${url}/models/ciasny-r35.glb`, { method: 'HEAD', signal: AbortSignal.timeout(20000) });
+          assert.equal(asset.status, 200);
+          assert.equal(asset.headers.get('content-length'), '8296356');
+          await mkdir('test-results', { recursive: true });
+          await writeFile('test-results/reviewed-live-source.json', JSON.stringify({ testedSource: process.env.GITHUB_SHA, reviewedDeployedRelease: sha, url, applicationDiff: 'empty', railwayCommitStatus: status.state, modelBytes: 8296356 }, null, 2));
+          NODE
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify actual live preparation and retained scene independently
+        if: matrix.suite == 'loading'
+        run: npx playwright test -c playwright.loading.config.ts
+      - name: Verify live card containment and real pointer/keyboard actions independently
+        if: matrix.suite == 'opening-cards'
+        run: npx playwright test -c playwright.opening-cards.config.ts --grep "model card borders|six model cards"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reviewed-live-${{ matrix.suite }}-evidence
+          path: |
+            test-results/
+            playwright-loading-report/
+            playwright-opening-cards-report/
+          retention-days: 14
