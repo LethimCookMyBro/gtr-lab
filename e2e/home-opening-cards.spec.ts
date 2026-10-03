@@ -1,6 +1,48 @@
 import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
-import type { Route } from "@playwright/test";
+import type { Locator, Route, TestInfo } from "@playwright/test";
+
+async function settleCardGeometry(card: Locator, info: TestInfo) {
+  await card.locator("img").evaluate(async (image: HTMLImageElement) => {
+    await document.fonts.ready;
+    await image.decode();
+  });
+  // Match the native-scroll probe's eight stable frames, also checking the
+  // target box so a stationary pointer cannot lose hover during layout motion.
+  const samples = await card.evaluate(async (element) => {
+    const read = () => {
+      const box = element.getBoundingClientRect();
+      return {
+        scrollY,
+        top: box.top,
+        left: box.left,
+        width: box.width,
+        height: box.height,
+      };
+    };
+    const frames = [];
+    let previous = read();
+    let stable = 0;
+    for (let frame = 0; frame < 240; frame++) {
+      await new Promise(requestAnimationFrame);
+      const current = read();
+      frames.push({ frame, ...current });
+      stable = Object.entries(current).every(
+        ([key, value]) =>
+          Math.abs(value - previous[key as keyof typeof previous]) < 0.5,
+      )
+        ? stable + 1
+        : 0;
+      previous = current;
+      if (stable >= 8) return frames;
+    }
+    throw new Error("Scroll and model card geometry did not become stationary");
+  });
+  await info.attach("premium-card-settled", {
+    body: JSON.stringify(samples, null, 2),
+    contentType: "application/json",
+  });
+}
 
 test("opening keeps authentic identity visible until real scene readiness or explicit skip", async ({
   page,
@@ -117,6 +159,7 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
   });
   await premium.scrollIntoViewIfNeeded();
   await expect(premium.getByText("Artist-built R35")).toBeVisible();
+  await settleCardGeometry(premium, info);
   if (!isMobile) {
     const bounds = (await premium.boundingBox())!;
     await premium.hover({
@@ -245,11 +288,7 @@ test("model card borders stay inside their grid tracks without overlapping", asy
       ...nav.querySelectorAll<HTMLElement>(".home-model-invitation"),
     ].map((card) => {
       const rect = card.getBoundingClientRect();
-      const text = [
-        ...card.querySelectorAll<HTMLElement>(
-          ".home-invitation-copy, .home-invitation-cta, .home-invitation-meta",
-        ),
-      ].map((element) => {
+      const measure = (element: Element) => {
         const bounds = element.getBoundingClientRect();
         return {
           text: element.textContent,
@@ -260,7 +299,16 @@ test("model card borders stay inside their grid tracks without overlapping", asy
           scrollWidth: element.scrollWidth,
           clientWidth: element.clientWidth,
         };
-      });
+      };
+      const text = [
+        ...card.querySelectorAll<HTMLElement>(
+          ".home-invitation-copy, .home-invitation-cta > span, .home-invitation-meta",
+        ),
+      ].map(measure);
+      // The arrow intentionally translates beyond the CTA's flex box on hover.
+      // Check its transformed rectangle against the card, separately from text.
+      const cta = measure(card.querySelector(".home-invitation-cta")!);
+      const arrow = measure(card.querySelector(".home-invitation-cta > svg")!);
       return {
         label: card.getAttribute("aria-label"),
         left: rect.left,
@@ -269,6 +317,8 @@ test("model card borders stay inside their grid tracks without overlapping", asy
         bottom: rect.bottom,
         width: rect.width,
         text,
+        cta,
+        arrow,
       };
     });
     return {
@@ -298,7 +348,11 @@ test("model card borders stay inside their grid tracks without overlapping", asy
     expect
       .soft(card.right, `${card.label} right border`)
       .toBeLessThanOrEqual(geometry.right + 1);
-    for (const text of card.text) {
+    for (const text of [
+      ...card.text,
+      { ...card.cta, text: "CTA" },
+      { ...card.arrow, text: "CTA arrow" },
+    ]) {
       expect
         .soft(text.left, `${card.label}: ${text.text} left`)
         .toBeGreaterThanOrEqual(card.left);
@@ -311,6 +365,8 @@ test("model card borders stay inside their grid tracks without overlapping", asy
       expect
         .soft(text.bottom, `${card.label}: ${text.text} bottom`)
         .toBeLessThanOrEqual(card.bottom);
+    }
+    for (const text of card.text) {
       expect
         .soft(text.scrollWidth, `${card.label}: ${text.text} text overflow`)
         .toBeLessThanOrEqual(text.clientWidth + 1);

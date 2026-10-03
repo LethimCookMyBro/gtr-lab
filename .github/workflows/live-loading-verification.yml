@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [loading]
+        suite: [loading, opening-cards]
     env:
       HOME_QA_URL: https://gtr-lab-production.up.railway.app
       REVIEWED_RELEASE: 34f72cdd8dbbbc4093de477aeb98998c26bc3d36
