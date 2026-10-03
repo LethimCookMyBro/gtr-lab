@@ -1,21 +1,61 @@
+import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
 import type { Route } from "@playwright/test";
 
-test("opening resolves on document readiness without making a playback claim", async ({
+test("opening keeps authentic identity visible until real scene readiness or explicit skip", async ({
   page,
 }, info) => {
   let release: Route | undefined;
   await page.route("https://media.flixel.com/**", (route) => {
     release = route;
   });
+  await page.route("**/models/ciasny-r35.glb", () => {});
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const opening = page.locator(".home-opening");
   await expect(opening).toHaveAttribute("data-state", "loading");
   await expect(opening.getByRole("img", { name: "Nissan GT-R" })).toBeVisible();
   await expect(
-    opening.getByRole("button", { name: "Continue to page" }),
+    opening.getByRole("button", { name: "Continue without 3D" }),
   ).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
+  const identity = await opening.locator("img").evaluateAll(async (nodes) => {
+    await Promise.all(nodes.map((node) => (node as HTMLImageElement).decode()));
+    return nodes.map((node) => {
+      const image = node as HTMLImageElement;
+      const box = image.getBoundingClientRect();
+      return {
+        src: image.getAttribute("src"),
+        naturalWidth: image.naturalWidth,
+        naturalHeight: image.naturalHeight,
+        width: box.width,
+        height: box.height,
+      };
+    });
+  });
+  expect(identity.map((image) => image.src)).toEqual([
+    "/brand/nissan-2001.svg",
+    "/brand/gtr-stacked-badge.png",
+  ]);
+  for (const image of identity)
+    expect(image.width / image.height).toBeCloseTo(
+      image.naturalWidth / image.naturalHeight,
+      3,
+    );
+  expect(identity[1].width).toBeGreaterThanOrEqual(220);
+  expect(identity[1].width).toBeLessThanOrEqual(280);
+  expect(identity[0].width).toBeLessThan(identity[1].width / 3);
+  expect(
+    await page.evaluate(() =>
+      document.fonts.check('700 32px "Barlow Condensed"'),
+    ),
+  ).toBe(true);
+  await expect(
+    opening.getByRole("button", { name: "Continue without 3D" }),
+  ).toBeInViewport({ ratio: 1 });
+  await info.attach("authentic-brand-geometry", {
+    body: JSON.stringify(identity, null, 2),
+    contentType: "application/json",
+  });
   await page.screenshot({
     path: info.outputPath("opening-loader.png"),
     scale: "css",
@@ -26,14 +66,19 @@ test("opening resolves on document readiness without making a playback claim", a
     contentType: "text/html",
     body: "<html><body>Hosted document loaded; playback not tested.</body></html>",
   });
-  await expect(opening).toHaveAttribute("data-state", "resolved");
-  await expect(opening).toHaveCSS("visibility", "hidden");
+  // Film document readiness alone must never claim the rear model is ready.
+  await expect(opening).toHaveAttribute("data-state", "loading");
+  await continueHomeWithout3D(page);
+  await expect(page.locator(".home-signature-runway")).toHaveAttribute(
+    "data-scene-state",
+    "skipped",
+  );
   await expect(page.locator(".home-film--hero")).toHaveAttribute(
     "data-film-state",
     "embedded",
   );
   await expect(
-    page.getByRole("button", { name: "Continue to page" }),
+    page.getByRole("button", { name: "Continue without 3D" }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Stop opening film" }).click();
   await expect(
@@ -52,6 +97,7 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
     }),
   );
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await continueHomeWithout3D(page);
   const lineup = page.getByRole("navigation", {
     name: "Explore all six models",
   });
@@ -131,11 +177,12 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
   await expect(page).toHaveURL(/\/configurator\/premium$/);
 });
 
-test("reduced motion bypasses the opening and pointer effects without losing actions", async ({
+test("reduced motion keeps the gate static and preserves model card actions", async ({
   page,
 }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await continueHomeWithout3D(page);
   await expect(page.locator(".home-opening")).toHaveAttribute(
     "data-state",
     "resolved",
@@ -173,6 +220,7 @@ test("model card borders stay inside their grid tracks without overlapping", asy
     }),
   );
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await continueHomeWithout3D(page);
   const lineup = page.getByRole("navigation", {
     name: "Explore all six models",
   });

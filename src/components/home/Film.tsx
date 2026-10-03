@@ -10,6 +10,7 @@ interface FilmProps {
   saveData: boolean;
   suspended?: boolean;
   onStateChange?: (state: FilmState) => void;
+  onFallbackReady?: () => void;
 }
 export function Film({
   kind,
@@ -17,8 +18,27 @@ export function Film({
   saveData,
   suspended = false,
   onStateChange,
+  onFallbackReady,
 }: FilmProps) {
   const holder = useRef<HTMLDivElement>(null);
+  const backup = useRef<HTMLImageElement>(null);
+  const [fallbackLoaded, setFallbackLoaded] = useState(false);
+  useEffect(() => {
+    const image = backup.current;
+    if (!onFallbackReady || !image?.complete || !image.naturalWidth) return;
+    let live = true;
+    // decode() covers cached images too; a load event alone is not our readiness barrier.
+    const decoded =
+      typeof image.decode === "function" ? image.decode() : Promise.resolve();
+    void decoded
+      .then(() => {
+        if (live && image.naturalWidth) onFallbackReady();
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [fallbackLoaded, onFallbackReady]);
   const frame = useRef<HTMLIFrameElement>(null);
   const [visible, setVisible] = useState(kind === "hero");
   const [documentVisible, setDocumentVisible] = useState(
@@ -101,7 +121,9 @@ export function Film({
       data-film-state={state}
     >
       <img
+        ref={backup}
         className="home-film-backup"
+        onLoad={() => setFallbackLoaded(true)}
         src="/images/gtr-premium.webp"
         alt="2018 Nissan GT-R Premium in Super Silver"
         loading={kind === "hero" ? "eager" : "lazy"}

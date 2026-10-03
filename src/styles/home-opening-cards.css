@@ -32,95 +32,35 @@
   align-items: center;
   transform: translateY(-16px);
 }
+/* Image sources retain their original proportions and colors. Only the supplied
+   GT-R PNG's black canvas margins are cropped, not the emblem itself. */
 .gtr-metal-wordmark {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 22px;
   filter: drop-shadow(0 12px 20px #0009);
 }
-.gtr-metal-nissan {
-  padding-left: 0.46em;
-  font-size: var(--gtr-nissan-size, clamp(15px, 1.55vw, 24px));
-  font-weight: 650;
-  line-height: 1;
-  letter-spacing: 0.46em;
-  color: #cbd0d5;
-}
-.gtr-metal-letters {
-  display: flex;
-  align-items: baseline;
-  margin-top: 8px;
-  padding-right: 0.06em;
-  font-size: var(--gtr-mark-size, clamp(98px, 18vw, 280px));
-  font-style: italic;
-  font-weight: 900;
-  line-height: 1.06;
-  letter-spacing: -0.085em;
-}
-.gtr-metal-letters > span,
-.gtr-metal-letters > b {
+.gtr-brand-nissan {
   display: block;
-  padding-right: 0.075em;
-  color: #dce1e6;
-  background-image:
-    linear-gradient(
-      112deg,
-      transparent 36%,
-      #ffffff00 44%,
-      #ffffffdc 48%,
-      #fff5 50%,
-      #ffffff00 54%,
-      transparent 64%
-    ),
-    linear-gradient(
-      180deg,
-      #f6f8fa 0%,
-      #b7c0c9 21%,
-      #f9fbfc 40%,
-      #7b858f 45%,
-      #38424b 52%,
-      #b4bcc3 72%,
-      #edf0f3 86%,
-      #818b95 100%
-    );
-  background-size:
-    260% 100%,
-    100% 100%;
-  background-position:
-    100% 0,
-    0 0;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.6px #c8d1da88;
+  width: var(--gtr-nissan-width, 64px);
+  height: auto;
+  flex: none;
 }
-.gtr-metal-wordmark[data-sweep="true"] .gtr-metal-letters > * {
-  animation: home-metal-sweep 3.8s ease-in-out infinite;
+.gtr-brand-badge-frame {
+  display: block;
+  width: var(--gtr-badge-width, clamp(238px, 22vw, 280px));
+  aspect-ratio: 640 / 450;
+  overflow: hidden;
+  flex: none;
 }
-.gtr-metal-letters > b {
-  margin-left: -0.04em;
-  font-weight: inherit;
-  background-image:
-    linear-gradient(
-      112deg,
-      transparent 36%,
-      #ffffff00 44%,
-      #ffffffc9 48%,
-      #fff3 50%,
-      #ffffff00 54%,
-      transparent 64%
-    ),
-    linear-gradient(
-      180deg,
-      #ff6770 0%,
-      #f13542 26%,
-      #ae121f 47%,
-      #570b13 53%,
-      #cb1d2b 73%,
-      #fa4954 90%,
-      #8c1320 100%
-    );
-  -webkit-text-stroke-color: #ef6b7577;
+.gtr-brand-badge {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  /* 170 of 640 source pixels; visible emblem occupies y=182 through y=595. */
+  transform: translateY(-26.5625%);
 }
 .home-opening-rule {
   width: 54px;
@@ -157,21 +97,6 @@
 .home-hero-sticky > .home-film[data-film-state="loading"] .home-film-provider {
   opacity: 0;
 }
-@keyframes home-metal-sweep {
-  0%,
-  12% {
-    background-position:
-      100% 0,
-      0 0;
-  }
-  74%,
-  100% {
-    background-position:
-      0% 0,
-      0 0;
-  }
-}
-
 /* The fixed hit area does not tilt; only the photo responds to a fine pointer. */
 .home-invitations .home-model-invitation {
   perspective: 1100px;
@@ -260,9 +185,6 @@
   .home-opening-center {
     transform: translateY(-28px);
   }
-  .home-opening .gtr-metal-letters {
-    font-size: clamp(96px, 27vw, 180px);
-  }
   .home-opening-continue {
     bottom: 96px;
     right: 24px;
@@ -305,9 +227,6 @@
   .home-hero-sticky > .home-opening[data-state="resolved"] {
     transition: none;
   }
-  .gtr-metal-wordmark[data-sweep="true"] .gtr-metal-letters > * {
-    animation: none;
-  }
   .home-invitations .home-model-invitation > img {
     transition: none;
     transform: none;
@@ -317,10 +236,7 @@
   }
 }
 @media (forced-colors: active) {
-  .gtr-metal-letters > span,
-  .gtr-metal-letters > b {
-    background: none;
-    -webkit-text-fill-color: CanvasText;
-    -webkit-text-stroke: 0;
+  .gtr-metal-wordmark {
+    forced-color-adjust: none;
   }
 }

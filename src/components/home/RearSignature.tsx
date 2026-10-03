@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useMemo,
   useState,
 } from "react";
 import { Link } from "react-router-dom";
@@ -11,7 +12,12 @@ import { ArrowDown, RotateCcw } from "lucide-react";
 import { GtrWordmark } from "./GtrWordmark";
 import { SceneBoundary } from "../three/SceneBoundary";
 import { sectionProgress } from "./motion";
-const RearVehicleScene = lazy(() => import("./RearVehicleScene"));
+import {
+  formatModelBytes,
+  sceneLoadLabel,
+  SCENE_STAGE_TIMEOUT,
+} from "./homeReadiness";
+import type { HomeSceneLoadState } from "./homeReadiness";
 function canRenderWebGL() {
   if (typeof WebGLRenderingContext === "undefined") return false;
   const canvas = document.createElement("canvas");
@@ -24,60 +30,135 @@ function canRenderWebGL() {
     return false;
   }
 }
-export function RearSignature({
-  reducedMotion = false,
-  saveData = false,
-}: {
+type RearSignatureProps = {
   reducedMotion?: boolean;
   saveData?: boolean;
+  disabled?: boolean;
+  attempt?: number;
+  onLoadState?: (state: HomeSceneLoadState) => void;
+};
+export function RearSignature(props: RearSignatureProps) {
+  const [retry, setRetry] = useState(0);
+  const [optedIn, setOptedIn] = useState(false);
+  return (
+    <RearSignatureAttempt
+      key={`${props.attempt ?? 0}:${retry}`}
+      {...props}
+      optedIn={optedIn}
+      onOptIn={() => setOptedIn(true)}
+      onRetry={() => setRetry((value) => value + 1)}
+    />
+  );
+}
+function RearSignatureAttempt({
+  reducedMotion = false,
+  saveData = false,
+  disabled = false,
+  onLoadState,
+  onRetry,
+  optedIn,
+  onOptIn,
+}: RearSignatureProps & {
+  onRetry: () => void;
+  optedIn: boolean;
+  onOptIn: () => void;
 }) {
   const section = useRef<HTMLElement>(null);
-  const [near, setNear] = useState(false),
-    [visible, setVisible] = useState(true),
-    [optedIn, setOptedIn] = useState(false),
-    [supported, setSupported] = useState<boolean | null>(null),
-    [ready, setReady] = useState(false),
-    [error, setError] = useState(""),
-    [requiresReload, setRequiresReload] = useState(false),
-    [loaded, setLoaded] = useState(0),
-    [progress, setProgress] = useState(0),
-    [attempt, setAttempt] = useState(0);
-  const onReady = useCallback(() => {
-      setReady(true);
-      setLoaded(100);
-    }, []),
-    onError = useCallback((message: string) => {
-      setError(message);
-      setReady(false);
-    }, []),
-    onModuleError = useCallback(() => {
-      // A rejected React.lazy import is cached. Do not offer an ineffective
-      // scene retry; a full page reload obtains the current application chunks.
-      setRequiresReload(true);
-      setError(
-        "The rear viewer could not start. Reload the page to try again.",
-      );
-      setReady(false);
-    }, []);
+  const [near, setNear] = useState(false);
+  const [visible, setVisible] = useState(
+    () =>
+      typeof document === "undefined" || document.visibilityState !== "hidden",
+  );
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const [state, setState] = useState<HomeSceneLoadState>({ phase: "module" });
+  const [progress, setProgress] = useState(0);
+  const callback = useRef(onLoadState);
+  callback.current = onLoadState;
+  // Each attempt owns its lazy boundary as well as its one parsed scene.
+  const RearVehicleScene = useMemo(
+    () => lazy(() => import("./RearVehicleScene")),
+    [],
+  );
+  const permitted = !disabled && (!saveData || optedIn);
+  const reported: HomeSceneLoadState = disabled
+    ? { phase: "skipped" }
+    : !permitted
+      ? { phase: "deferred" }
+      : state;
+  const ready = state.phase === "ready";
+  const error = state.phase === "error";
+  const mount = permitted && supported === true && !error;
+  const active = visible && (!ready || near);
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => setNear(entries.some((e) => e.isIntersecting)),
-      { rootMargin: "240px 0px" },
+    callback.current?.(reported);
+  }, [state, disabled, permitted]);
+  const onReady = useCallback(() => setState({ phase: "ready" }), []);
+  const onError = useCallback(
+    (message: string) =>
+      setState({ phase: "error", message, recovery: "retry" }),
+    [],
+  );
+  const onModuleError = useCallback(
+    () =>
+      setState({
+        phase: "error",
+        message:
+          "The rear viewer could not start. Reload the page to try again.",
+        recovery: "reload",
+      }),
+    [],
+  );
+  const ignoreLegacyProgress = useCallback(() => {}, []);
+  useEffect(() => {
+    if (!permitted || supported !== null) return;
+    const available = canRenderWebGL();
+    setSupported(available);
+    if (!available)
+      setState({
+        phase: "error",
+        message:
+          "A closer look needs WebGL. Continue without 3D or enable hardware acceleration and retry.",
+        recovery: "retry",
+      });
+  }, [permitted, supported]);
+  useEffect(() => {
+    if (
+      !mount ||
+      !visible ||
+      (state.phase !== "module" && state.phase !== "preparing")
+    )
+      return;
+    const phase = state.phase;
+    const timer = window.setTimeout(
+      () =>
+        setState({
+          phase: "error",
+          message:
+            phase === "module"
+              ? "The 3D viewer took too long to start. Reload the page to try again."
+              : "The 3D render took too long to prepare. Please retry.",
+          recovery: phase === "module" ? "reload" : "retry",
+        }),
+      SCENE_STAGE_TIMEOUT,
     );
-    if (section.current) observer.observe(section.current);
+    return () => window.clearTimeout(timer);
+  }, [mount, visible, state.phase]);
+  useEffect(() => {
+    const observer =
+      typeof IntersectionObserver === "undefined"
+        ? undefined
+        : new IntersectionObserver(
+            (entries) => setNear(entries.some((entry) => entry.isIntersecting)),
+            { rootMargin: "240px 0px" },
+          );
+    if (section.current) observer?.observe(section.current);
     const visibility = () => setVisible(document.visibilityState !== "hidden");
-    visibility();
     document.addEventListener("visibilitychange", visibility);
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       document.removeEventListener("visibilitychange", visibility);
     };
   }, []);
-  const mount = near && visible && (!saveData || optedIn) && !error;
-  useEffect(() => {
-    if (mount && supported === null) setSupported(canRenderWebGL());
-    if (!mount) setReady(false);
-  }, [mount, supported]);
   useEffect(() => {
     if (!near || !visible) return;
     let frame = 0;
@@ -107,81 +188,90 @@ export function RearSignature({
       window.removeEventListener("resize", schedule);
     };
   }, [near, visible, reducedMotion]);
-  const retry = () => {
-    setError("");
-    setSupported(null);
-    setAttempt((n) => n + 1);
-  };
   return (
     <section
       ref={section}
       className="home-signature-runway"
       data-motion-section="signature"
       data-scene-state={
-        error
-          ? "error"
-          : supported === false
-            ? "unsupported"
+        !permitted
+          ? reported.phase
+          : error
+            ? "error"
             : ready
               ? "ready"
-              : mount
-                ? "loading"
-                : "idle"
+              : "loading"
       }
+      data-load-phase={reported.phase}
+      data-render-active={mount && active}
       style={{ "--rear-progress": progress } as import("react").CSSProperties}
       aria-label="The GT-R rear-light signature"
     >
       <div className="home-signature-sticky">
-        <div
-          className="home-signature-canvas"
-          aria-busy={mount && !ready && supported !== false}
-        >
-          {mount && supported && (
+        <div className="home-signature-canvas" aria-busy={mount && !ready}>
+          {mount && (
             <SceneBoundary onError={onModuleError}>
               <Suspense fallback={null}>
                 <RearVehicleScene
-                  key={attempt}
                   progress={progress}
                   reducedMotion={reducedMotion}
+                  active={active}
                   onReady={onReady}
                   onError={onError}
-                  onProgress={setLoaded}
+                  onProgress={ignoreLegacyProgress}
+                  onLoadState={setState}
                 />
               </Suspense>
             </SceneBoundary>
           )}
         </div>
-        {!ready && (
+        {(!ready || !permitted) && (
           <div className="home-signature-status" role="status">
-            {supported === false ? (
+            {disabled ? (
               <>
-                <p>A closer look needs WebGL.</p>
+                <p>3D view skipped for this visit.</p>
                 <Link to="/configurator/premium">Explore the R35 details</Link>
               </>
-            ) : error ? (
+            ) : !permitted ? (
               <>
-                <p>{error}</p>
+                <p>A real, interactive rear view.</p>
+                <button type="button" onClick={onOptIn}>
+                  Load 3D view · 8.3 MB
+                </button>
+              </>
+            ) : state.phase === "error" ? (
+              <>
+                <p>{state.message}</p>
+                {supported === false && (
+                  <Link to="/configurator/premium">
+                    Explore the R35 details
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={
-                    requiresReload ? () => window.location.reload() : retry
+                    state.recovery === "reload"
+                      ? () => window.location.reload()
+                      : onRetry
                   }
                 >
                   <RotateCcw size={16} />
-                  {requiresReload ? "Reload page" : "Retry 3D view"}
-                </button>
-              </>
-            ) : saveData && !optedIn ? (
-              <>
-                <p>A real, interactive rear view.</p>
-                <button type="button" onClick={() => setOptedIn(true)}>
-                  Load 3D view · 8.3 MB
+                  {state.recovery === "reload"
+                    ? "Reload page"
+                    : "Retry 3D view"}
                 </button>
               </>
             ) : (
               <>
-                <p>Preparing the rear view</p>
-                <span>{loaded}%</span>
+                <p>{sceneLoadLabel(state)}</p>
+                {state.phase === "downloading" && (
+                  <span>
+                    {formatModelBytes(state.loadedBytes)}
+                    {state.totalBytes
+                      ? ` / ${formatModelBytes(state.totalBytes)}`
+                      : " received"}
+                  </span>
+                )}
               </>
             )}
           </div>

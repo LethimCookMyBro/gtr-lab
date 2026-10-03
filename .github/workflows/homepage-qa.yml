@@ -20,6 +20,11 @@ on:
       - "playwright.rear.config.ts"
       - "playwright.heritage.config.ts"
       - "playwright.opening-cards.config.ts"
+      - "playwright.loading.config.ts"
+      - "e2e/home-loading.spec.ts"
+      - "e2e/helpers/**"
+      - "public/brand/**"
+      - "public/fonts/**"
       - "e2e/heritage-editorial.spec.ts"
       - "e2e/home-opening-cards.spec.ts"
       - "e2e/home-hero-exit.spec.ts"
@@ -77,7 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [rear, heritage, opening-cards, hero-exit]
+        suite: [rear, heritage, opening-cards, hero-exit, loading]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -97,4 +102,5 @@ jobs:
             rear-signature-results/
             playwright-rear-report/
             playwright-opening-cards-report/
+            playwright-loading-report/
           retention-days: 14

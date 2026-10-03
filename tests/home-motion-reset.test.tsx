@@ -24,8 +24,8 @@ function Harness({
       </section>
       <section data-motion-section="expanding" />
       <section data-motion-section="editorial">
-        <figure data-motion-anchor="detail" />
-        <figure data-motion-anchor="cockpit" />
+        <figure data-motion-anchor="detail" data-motion-stage="media" />
+        <figure data-motion-anchor="cockpit" data-motion-stage="detail" />
       </section>
       <section data-motion-section="heritage">
         <div className="home-archive-stage" />
@@ -110,12 +110,16 @@ it("reads untransformed editorial geometry before writing any scroll styles", ()
     ".home-archive-chapter",
   )!;
   expect(chapter.style.getPropertyValue("--chapter-progress")).not.toBe("");
+  expect(detail.style.getPropertyValue("--item-opacity")).not.toBe("");
+  expect(detail.style.getPropertyValue("--item-shift")).not.toBe("");
   expect(Number(chapter.style.getPropertyValue("--chapter-reveal"))).toBe(1);
   rerender(<Harness reduced />);
   expect(chapter.style.getPropertyValue("--chapter-progress")).toBe("");
   expect(chapter.style.getPropertyValue("--chapter-reveal")).toBe("");
   expect(detail.style.getPropertyValue("--item-progress")).toBe("");
   expect(detail.style.getPropertyValue("--item-reveal")).toBe("");
+  expect(detail.style.getPropertyValue("--item-opacity")).toBe("");
+  expect(detail.style.getPropertyValue("--item-shift")).toBe("");
   expect(
     container
       .querySelector<HTMLElement>('[data-motion-section="signature"]')!

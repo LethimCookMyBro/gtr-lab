@@ -28,6 +28,38 @@ export function expansionAt(progress: number) {
     shade: Math.round(255 - 248 * p),
   };
 }
+export type StoryStage = "heading" | "media" | "detail";
+const storyStages = {
+  heading: { start: 0.97, end: 0.67, rise: 16 },
+  media: { start: 0.9, end: 0.55, rise: 24 },
+  detail: { start: 0.83, end: 0.43, rise: 18 },
+} as const;
+const smoothstep = (value: number) => {
+  const phase = clamp01(value);
+  return phase * phase * (3 - 2 * phase);
+};
+/** One calm entrance, readable hold and edge-only exit, driven by layout rather
+ * than elapsed time. A sibling may cue the entrance; the item's own bounds
+ * always determine its exit, including when the document is read backwards. */
+export function storyItemAt(
+  top: number,
+  height: number,
+  viewport: number,
+  stage: StoryStage = "media",
+  entranceTop = top,
+) {
+  const timing = storyStages[stage];
+  const view = Math.max(1, viewport);
+  const reveal = smoothstep(
+    (view * timing.start - entranceTop) / (view * (timing.start - timing.end)),
+  );
+  const exit = smoothstep((view * 0.14 - (top + height)) / (view * 0.22));
+  return {
+    reveal,
+    opacity: (0.16 + reveal * 0.84) * (1 - exit),
+    shift: (1 - reveal) * timing.rise,
+  };
+}
 export function mayAutoplay(preferences: {
   reducedMotion: boolean;
   saveData: boolean;

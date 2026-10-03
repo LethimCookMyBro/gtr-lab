@@ -9,6 +9,23 @@ One licensed Ciasny R35 exterior renders in the real WebGL configurator on the P
 
 The homepage combines two real NissanNews GT-R track films in intact Flixel players, a reversible hero-to-paper exit, white editorial photography, focused film viewing, four compact multi-photo heritage spreads with a slim era index, an animated layered menu, six larger model invitations and an expanded independent-project footer. Keyboard, reduced-motion and responsive checks cover the complete flow. Both exact hosted players were verified on the public Railway origin; GitHub runners have received provider playback restrictions, so deterministic app checks and public-origin media verification are reported separately. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
 
+## Homepage preparation and identity
+
+The opening now waits for a usable hero visual and the actual rear R35 scene's
+geometry/textures plus render preparation. Byte progress and named decode/render
+phases describe real work. Retry and Continue without 3D are explicit; Save-Data
+keeps model loading opt-in. The same rear scene stays alive on the home route and
+pauses offscreen instead of loading again when visitors reach it.
+
+The image-based chrome/red GT-R badge and smaller chrome Nissan emblem retain
+their original proportions/colors. Bold self-hosted Barlow Condensed headings
+and neutral/red accents support a reversible heading → photograph → details
+sequence. All 12 heritage photographs and their qualified captions remain.
+See [implementation and verification boundaries](docs/HOME_LOADING_IDENTITY.md)
+and [brand/font provenance](docs/BRAND_IDENTITY.md). This remains an independent
+enthusiast project with one licensed exterior, no accepted cabin and five
+photographic-reference routes.
+
 ## Run
 
 Requires Node22.12+ or24 and npm.
@@ -66,6 +83,7 @@ Railway. `railway.json` defines build, Node start and healthcheck. Connect the a
 - `docs/ARCHITECTURE.md`: application/state/rendering boundaries and plan
 - `docs/ASSETS_REQUIRED.md`: six-variant readiness and qualified source candidates
 - `public/films/ATTRIBUTION.txt`, `public/films/provenance.json`: original film provenance and modifications
+- `docs/BRAND_IDENTITY.md`: original badge sources, trademark limits and self-hosted display font
 - `docs/HOME_MEDIA_CREDITS.md`: authentic editorial and heritage imagery
 - `docs/IMAGE_CREDITS.md`, `docs/ENVIRONMENT_CREDITS.md`, `docs/SPECIFICATIONS.md`: rights and factual sources
 - `docs/PERFORMANCE.md`: actual bundle/assets and pending measurements
@@ -74,7 +92,7 @@ Railway. `railway.json` defines build, Node start and healthcheck. Connect the a
 
 ## Privacy and licensing
 
-The app has no analytics, account login, backend user data or checkout. Playing a hosted film connects the browser to Flixel; reduced motion and Save-Data prevent automatic film requests. Sound preference is stored locally. Audio cues are original procedural tones, activated only after user interaction. Photographs keep their individual CC licenses; HDRIs are CC0. User-uploaded reference screenshots and source originals are excluded from public git; no credential is part of this project. Code has no declared public license yet; media licenses do not grant trademark rights or official affiliation.
+The app has no analytics, account login, backend user data or checkout. Playing a hosted film connects the browser to Flixel; reduced motion and Save-Data prevent automatic film requests. Sound preference is stored locally. Audio cues are original procedural tones, activated only after user interaction. Photographs keep their individual CC licenses; HDRIs are CC0. Unrelated user-uploaded reference screenshots and source originals are excluded from public git. The supplied GT-R badge is deliberately included for the approved design; its copyright permission remains unverified and is disclosed in the brand credits; no credential is part of this project. Code has no declared public license yet; media licenses do not grant trademark rights or official affiliation.
 
 ## Browser QA
 

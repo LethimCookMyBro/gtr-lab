@@ -18,6 +18,41 @@ export function CreditsPage() {
           trademarks identify their respective subjects and owners.
         </p>
       </section>
+      <section id="brand-marks">
+        <h2>Brand marks & typography</h2>
+        <p>
+          Nissan and GT-R names and logos are trademarks of Nissan Motor Co.,
+          Ltd. They identify the subject of this independent enthusiast project;
+          no manufacturer endorsement or trademark license is implied.
+        </p>
+        <p>
+          The stacked chrome GT / red R badge is the supplied reference image,
+          displayed in its original proportions and colors. Its copyright
+          permission has not been verified. The 2001–2020 chrome Nissan emblem
+          is an unmodified SVG from Wikimedia Commons, which classifies that
+          file as PD-textlogo and separately warns of trademark restrictions.
+          That classification does not grant Nissan approval or trademark
+          rights.
+        </p>
+        <a
+          href="https://commons.wikimedia.org/wiki/File:Nissan_logo_2001.svg"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Nissan emblem · source and trademark notice
+        </a>
+        <p>
+          Headings use Barlow Condensed Bold by Jeremy Tribby and the Barlow
+          Project Authors, self-hosted without modification under the SIL Open
+          Font License 1.1. Body copy retains DM Sans. No official Nissan
+          typeface is claimed.
+        </p>
+        <a href="/fonts/barlow-condensed/OFL.txt">
+          Barlow Condensed · SIL Open Font License
+        </a>
+        <span> · </span>
+        <a href="/brand/ATTRIBUTION.txt">Brand asset provenance</a>
+      </section>
       <section>
         <h2>Photography</h2>
         <p>

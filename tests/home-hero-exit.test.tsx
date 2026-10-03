@@ -99,10 +99,8 @@ describe("bounded reversible hero exit", () => {
     expect(
       handoff?.nextElementSibling?.classList.contains("home-editorial"),
     ).toBe(true);
-    expect(hero.dataset.openingResolved).toBe("false");
-    expect(
-      hero.querySelector(".home-hero-sticky > .home-opening"),
-    ).toBeTruthy();
+    expect(hero.dataset.openingResolved).toBe("true");
+    expect(hero.querySelector(".home-hero-sticky > .home-opening")).toBeNull();
     expect(hero.querySelector("iframe")?.src).toBe(homeFilms.hero.embed);
     expect(hero.querySelector("iframe")?.style.transform).toBe("");
     fireEvent.load(hero.querySelector("iframe")!);
@@ -157,7 +155,7 @@ describe("bounded reversible hero exit", () => {
       ) as CSSStyleRule;
       const { container } = render(<Scene />);
       const panel = container.querySelector<HTMLElement>(".home-hero-sticky")!;
-      fireEvent.click(screen.getByRole("button", { name: "Continue to page" }));
+      act(() => screen.getByRole("heading", { level: 1 }).focus());
       expect(document.activeElement).toBe(
         screen.getByRole("heading", { level: 1 }),
       );

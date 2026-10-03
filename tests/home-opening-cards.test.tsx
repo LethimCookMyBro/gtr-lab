@@ -56,8 +56,6 @@ const hero = (reducedMotion = false, saveData = false) =>
       <HeroFilm reducedMotion={reducedMotion} saveData={saveData} />
     </MemoryRouter>,
   );
-const opening = (container: HTMLElement) =>
-  container.querySelector<HTMLElement>(".home-opening");
 const cards = () =>
   render(
     <MemoryRouter>
@@ -81,69 +79,44 @@ const movePointer = (card: HTMLElement, pointerType = "mouse") => {
   act(() => vi.advanceTimersByTime(32));
 };
 
-describe("readiness-linked metallic opening", () => {
-  it("shows a Nissan GT-R opening while the hosted document is loading", () => {
-    const { container } = hero();
-    expect(opening(container)?.dataset.state).toBe("loading");
-    expect(
-      within(opening(container)!).getByRole("img", { name: "Nissan GT-R" }),
-    ).toBeTruthy();
-    expect(within(opening(container)!).getByRole("status").textContent).toBe(
-      "Preparing the film",
+describe("hero delegates whole-page readiness", () => {
+  it("reports the loaded hosted document without claiming playback or owning a gate", () => {
+    const ready = vi.fn();
+    const { container } = render(
+      <MemoryRouter>
+        <HeroFilm
+          reducedMotion={false}
+          saveData={false}
+          openingResolved={false}
+          onVisualReady={ready}
+        />
+      </MemoryRouter>,
     );
-    expect(container.querySelector("iframe")).toBeTruthy();
-  });
-  it("releases immediately on iframe load without claiming actual playback", () => {
-    vi.useFakeTimers();
-    const { container } = hero();
-    fireEvent.load(container.querySelector("iframe")!);
-    expect(opening(container)?.dataset.state).toBe("resolved");
-    expect(opening(container)?.getAttribute("aria-hidden")).toBe("true");
+    expect(container.querySelector(".home-opening")).toBeNull();
     expect(
-      opening(container)
-        ?.querySelector("[data-sweep]")
-        ?.getAttribute("data-sweep"),
+      container
+        .querySelector(".home-hero-runway")
+        ?.getAttribute("data-opening-resolved"),
     ).toBe("false");
+    expect(ready).not.toHaveBeenCalled();
+    fireEvent.load(container.querySelector("iframe")!);
+    expect(ready).toHaveBeenCalledOnce();
+    // The parent still owns readiness even when this document finishes.
     expect(
-      container.querySelector(".home-film")?.getAttribute("data-film-state"),
-    ).toBe("embedded");
+      container
+        .querySelector(".home-hero-runway")
+        ?.getAttribute("data-opening-resolved"),
+    ).toBe("false");
     expect(screen.queryByText(/film (is )?playing/i)).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: "Continue to page" }),
-    ).toBeNull();
   });
-  it("allows an immediate keyboard skip without stopping the film or replaying the opening", async () => {
-    const { container } = hero();
-    const skip = screen.getByRole("button", { name: "Continue to page" });
-    skip.focus();
-    await userEvent.setup().keyboard("{Enter}");
-    expect(opening(container)?.dataset.state).toBe("resolved");
-    expect(container.querySelector("iframe")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Stop opening film" }));
-    fireEvent.click(screen.getByRole("button", { name: "Play opening film" }));
-    expect(opening(container)?.dataset.state).toBe("resolved");
-  });
-  it("keeps a photo behind loading film and resolves into fallback after the network timeout", () => {
+  it("keeps the real local photograph available while the film times out", () => {
     vi.useFakeTimers();
     const { container } = hero();
     expect(
       container.querySelector<HTMLImageElement>(".home-film-backup")?.hidden,
     ).toBe(false);
     act(() => vi.advanceTimersByTime(20001));
-    expect(opening(container)?.dataset.state).toBe("resolved");
     expect(container.querySelector("iframe")).toBeNull();
-    expect(
-      screen.getByRole("button", { name: "Retry opening film" }),
-    ).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toContain("could not load");
-  });
-  it("does not wait for a decorative animation and exits on the existing network timeout", () => {
-    vi.useFakeTimers();
-    const { container } = hero();
-    act(() => vi.advanceTimersByTime(1500));
-    expect(opening(container)?.dataset.state).toBe("loading");
-    act(() => vi.advanceTimersByTime(18501));
-    expect(opening(container)?.dataset.state).toBe("resolved");
     expect(
       screen.getByRole("button", { name: "Retry opening film" }),
     ).toBeTruthy();
@@ -152,10 +125,9 @@ describe("readiness-linked metallic opening", () => {
     [true, false],
     [false, true],
   ])(
-    "bypasses the opening under reduced-motion/data-saving policy %s/%s",
+    "retains explicit film controls for reduced-motion/data policy %s/%s",
     (motion, data) => {
       const { container } = hero(motion, data);
-      expect(opening(container)?.dataset.state).toBe("resolved");
       expect(container.querySelector("iframe")).toBeNull();
       expect(
         screen.getByRole("button", { name: "Play opening film" }),

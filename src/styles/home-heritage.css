@@ -1,10 +1,10 @@
 /* The exhibition is always ordinary document flow. Only its slim index is sticky. */
 #home-heritage.home-heritage-editorial {
-  --archive-paper: #e9e7df;
-  --archive-muted: #a3a6a3;
+  --archive-paper: #f4f4f4;
+  --archive-muted: #a5a9ad;
   position: relative;
   color: var(--archive-paper);
-  background: #111411;
+  background: #0b0d0e;
   isolation: isolate;
   padding: 0 clamp(24px, 4.5vw, 88px);
 }
@@ -16,7 +16,7 @@
 #home-heritage .home-archive-eyebrow {
   position: static;
   margin: 0 0 18px;
-  color: #cfa99a;
+  color: #e86b76;
   font-size: 10px;
   line-height: 1.4;
   text-transform: uppercase;
@@ -25,9 +25,10 @@
 #home-heritage .home-archive-intro h2 {
   margin: 0 0 16px;
   font-size: clamp(38px, 4.6vw, 76px);
-  font-weight: 400;
+  font-family: var(--font-display);
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.02em;
 }
 #home-heritage .home-archive-intro > p:last-child {
   margin: 0;
@@ -47,9 +48,9 @@
   max-width: 1480px;
   margin: 0 auto;
   padding: 0;
-  background: #111411;
-  border-top: 1px solid #4b4e46;
-  border-bottom: 1px solid #4b4e46;
+  background: #0b0d0e;
+  border-top: 1px solid #373c40;
+  border-bottom: 1px solid #373c40;
   pointer-events: auto;
 }
 #home-heritage .home-archive-stage::after {
@@ -57,7 +58,7 @@
 }
 #home-heritage .home-archive-rail-label {
   flex-shrink: 0;
-  color: #afb1a9;
+  color: #a5a9ad;
   font-size: 10px;
   letter-spacing: 0.13em;
 }
@@ -76,13 +77,13 @@
   min-width: 64px;
   min-height: 64px;
   padding: 0;
-  color: #93978f;
+  color: #999fa5;
   border-bottom: 2px solid transparent;
   font-size: 11px;
 }
 #home-heritage .home-archive-navigation button[aria-current] {
-  color: #f1ddbc;
-  border-bottom-color: #c8a783;
+  color: #f4f4f4;
+  border-bottom-color: #c82435;
 }
 #home-heritage .home-archive-navigation button span {
   width: auto;
@@ -104,7 +105,7 @@
   min-height: 44px;
   margin: 0;
   transform: none;
-  color: #aeb1a9;
+  color: #a5a9ad;
   font-size: 10px;
   gap: 9px;
   white-space: normal;
@@ -121,7 +122,7 @@
   max-width: none;
   margin: 0;
   padding: 44px 0 52px;
-  border-bottom: 1px solid #41463d;
+  border-bottom: 1px solid #30353a;
   scroll-margin-top: 160px;
 }
 #home-heritage .home-archive-heading-row {
@@ -140,7 +141,7 @@
   display: flex;
   gap: 22px;
   margin: 0 0 16px;
-  color: #cfa99a;
+  color: #e86b76;
   font-size: 10px;
   line-height: 1.4;
   letter-spacing: 0.11em;
@@ -154,39 +155,41 @@
   margin: 0;
   color: var(--archive-paper);
   font-size: clamp(34px, 3.4vw, 57px);
-  font-weight: 400;
+  font-family: var(--font-display);
+  font-weight: 700;
   line-height: 1.04;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.02em;
 }
 #home-heritage .home-archive-achievement {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   padding: 0 0 2px 18px;
-  border-left: 2px solid #b69571;
+  border-left: 2px solid #c82435;
   gap: 6px;
 }
 #home-heritage .home-archive-fact-label {
-  color: #abae9f;
+  color: #a5a9ad;
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.13em;
 }
 #home-heritage .home-archive-achievement strong {
-  color: #e0c69f;
+  color: #f4f4f4;
   font-size: clamp(22px, 2.1vw, 36px);
   line-height: 1.05;
-  font-weight: 500;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 #home-heritage .home-archive-achievement > span:not(:first-child) {
-  color: #c2c4b9;
+  color: #bdc1c5;
   font-size: 11px;
   line-height: 1.45;
 }
 #home-heritage .home-archive-achievement a {
   margin-top: 3px;
-  color: #949b8f;
+  color: #a5a9ad;
   font-size: 10px;
   text-underline-offset: 4px;
 }
@@ -205,8 +208,7 @@
   gap: 24px;
 }
 #home-heritage .home-archive-image,
-#home-heritage .home-archive-support-image,
-#home-heritage .home-archive-chapter:nth-child(n) .home-archive-image {
+#home-heritage .home-archive-support-image {
   position: relative;
   width: 100%;
   margin: 0;
@@ -227,12 +229,12 @@
   gap: 3px 12px;
   margin: 10px 0 0;
   padding: 0;
-  color: #a3aaa0;
+  color: #a5a9ad;
   font-size: 10px;
   line-height: 1.5;
 }
 #home-heritage figure figcaption .home-archive-photo-label {
-  color: #d0d2c6;
+  color: #d8dcdf;
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -240,7 +242,7 @@
 }
 #home-heritage figure figcaption > span:nth-child(2) {
   grid-column: 1;
-  color: #a3aaa0;
+  color: #a5a9ad;
   letter-spacing: normal;
   font-size: 10px;
 }
@@ -251,13 +253,13 @@
   min-height: 44px;
   display: flex;
   justify-content: center;
-  color: #d0d2c6;
+  color: #d8dcdf;
   font-size: 17px;
 }
 #home-heritage .home-archive-description {
   max-width: 680px;
   margin: 22px 0 0;
-  color: #bbc0b6;
+  color: #bdc1c5;
   font-size: clamp(14px, 1.18vw, 17px);
   line-height: 1.65;
   text-wrap: pretty;
@@ -266,22 +268,26 @@
   max-width: 1480px;
   margin: 0 auto;
   padding: 26px 0 36px;
-  color: #90988a;
+  color: #a5a9ad;
   font-size: 11px;
   line-height: 1.5;
 }
 #home-heritage :focus-visible {
-  outline: 2px solid #e0c69f;
+  outline: 2px solid #e86b76;
   outline-offset: 5px;
 }
 #home-heritage .home-archive-chapter:focus:not(:focus-visible) {
   outline: none;
 }
-/* Images rise only 14px and are already readable before reaching the viewport.
-   Native flow and unchanged image geometry are the source of every measurement. */
-#home-heritage[data-heritage-sequential="false"] .home-archive-spread {
-  opacity: calc(0.55 + var(--chapter-reveal, 1) * 0.45);
-  transform: translateY(calc((1 - var(--chapter-reveal, 1)) * 14px));
+/* One cue language: heading, lead photograph, then its supporting evidence.
+   Every figure and caption travel together; no scaling, clipping or pinned body. */
+#home-heritage[data-heritage-sequential="false"] [data-motion-anchor] {
+  opacity: var(--item-opacity, 1);
+  transform: translate3d(0, var(--item-shift, 0px), 0);
+}
+#home-heritage [data-motion-anchor]:focus-within {
+  opacity: 1;
+  transform: none;
 }
 @media (min-width: 1600px) {
   #home-heritage .home-archive-spread,
@@ -376,7 +382,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  #home-heritage .home-archive-spread {
+  #home-heritage [data-motion-anchor] {
     transform: none !important;
     opacity: 1 !important;
   }

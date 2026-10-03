@@ -1,8 +1,9 @@
+import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
 
-// The unapproved rear prototype is not mounted on the public homepage.
-// This layout suite never claims model rendering from a placeholder or iframe.
+// Keep this layout suite independent of GPU/model transfer: explicitly continue
+// without 3D after a deliberate asset failure. Loading/render acceptance is separate.
 test.beforeEach(async ({ page }) => {
   await page.route("**/models/ciasny-r35.glb", (route) =>
     route.fulfill({
@@ -406,6 +407,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
+  await continueHomeWithout3D(page);
   await expect(page).toHaveTitle(/GT-R LAB/);
   await expect(
     page.getByRole("heading", { name: "Engineered to defy." }),
@@ -712,6 +714,7 @@ test("reduced motion stays sequential and permits explicit film playback", async
 }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await continueHomeWithout3D(page);
   await expect(page.locator(".cinematic-home")).toHaveAttribute(
     "data-reduced-motion",
     "true",
@@ -787,6 +790,7 @@ test("real films advance, stop by unloading and stop offscreen", async ({
   const requests: string[] = [];
   page.on("request", (request) => requests.push(request.url()));
   await page.goto("/");
+  await continueHomeWithout3D(page);
   await expect(page.locator(".home-film--hero iframe")).toHaveAttribute(
     "src",
     "https://media.flixel.com/cinemagraph/7x5domma49p8pb7z8k1l?hd=true",
@@ -900,6 +904,7 @@ for (const policy of ["reduced-motion", "save-data"] as const) {
         });
       });
     await page.goto("/");
+    await continueHomeWithout3D(page);
     await expect(page.locator(".home-film iframe")).toHaveCount(0);
     expect(providerRequests).toEqual([]);
     await page.getByRole("button", { name: "Play opening film" }).click();
@@ -930,6 +935,7 @@ test("additional viewport sanity stays within bounds with usable navigation", as
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
+    await continueHomeWithout3D(page);
     const menu = page.getByRole("button", { name: "Open menu" });
     const primary = page.getByRole("link", {
       name: "Explore the models",
@@ -984,6 +990,7 @@ test("hero fading preserves existing keyboard focus and suppresses invisible idl
   page,
 }) => {
   await page.goto("/");
+  await continueHomeWithout3D(page);
   const action = page.getByRole("link", {
     name: "Explore the models",
     exact: true,
@@ -1020,6 +1027,7 @@ test("short viewports use reachable sequential targets and keep playback control
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
+    await continueHomeWithout3D(page);
     await expect(page.locator(".cinematic-home")).toHaveAttribute(
       "data-sequential-motion",
       "true",
@@ -1088,6 +1096,7 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
+    await continueHomeWithout3D(page);
     await expect(page.locator(".cinematic-home")).toHaveAttribute(
       "data-sequential-motion",
       "false",
@@ -1276,6 +1285,7 @@ test("archive chapters follow native forward and reverse wheel input", async ({
   page,
 }, info) => {
   await page.goto("/");
+  await continueHomeWithout3D(page);
   await scrollArchiveChapter(page, 0);
   const headline = await archiveChapter(page, 0)
     .locator(".home-archive-inline-copy h3")
@@ -1309,6 +1319,7 @@ test("enlarged driving film preserves focus, scroll and one-player lifecycle", a
   page,
 }, info) => {
   await page.goto("/");
+  await continueHomeWithout3D(page);
   await scrollProgress(page, ".home-expanding-runway", 0.5);
   const trigger = page.getByRole("button", {
     name: "Enlarge driving film",
@@ -1398,6 +1409,7 @@ test("model invitations keep all six cards separated and keyboard reachable", as
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
+    await continueHomeWithout3D(page);
     const cards = page.locator(".home-model-invitation");
     await expect(cards).toHaveCount(6);
     const gaps = await cards.evaluateAll((nodes) =>
@@ -1486,6 +1498,7 @@ test("desktop archive captions stay attached and the era rail stays unobscured d
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
+    await continueHomeWithout3D(page);
     for (const index of [0, 1, 2, 3]) {
       const destination = await archiveChapterDestination(page, index);
       for (const offset of [0, 0.22, 0.44]) {
@@ -1567,6 +1580,7 @@ test("layered menu opens and closes with real motion and retains focus", async (
   });
   const page = await context.newPage();
   await page.goto("/");
+  await continueHomeWithout3D(page);
   const trigger = page.getByRole("button", { name: "Open menu" });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Explore GT-R LAB" }),

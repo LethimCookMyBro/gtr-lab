@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { continueHomeWithout3D } from "./helpers/home-gate";
 import { writeFile } from "node:fs/promises";
 import type { Page, TestInfo } from "@playwright/test";
 const names = [
@@ -23,6 +24,7 @@ async function settleArchiveMedia(page: Page) {
 async function open(page: Page, settled = true) {
   await page.route("https://media.flixel.com/**", (route) => route.abort());
   await page.goto("/");
+  await continueHomeWithout3D(page);
   // Layout composition is measured against settled document geometry. A separate
   // cold-load case below observes the real lazy/font path without this setup.
   if (settled) await settleArchiveMedia(page);
@@ -299,4 +301,79 @@ test("cold chapter jump stays readable while photographs and fonts settle", asyn
   await capture(page, info, "cold-r35-after-media-settles");
   // Repeated keyboard navigation must keep the same visible story and active era.
   await select(page, 3);
+});
+
+test("section motion has one ordered reversible phase and a fully readable reduced-motion state", async ({
+  page,
+}, info) => {
+  await open(page);
+  const readAt = async (topRatio: number) => {
+    const lead = page.locator('[data-era-image="0"] .home-archive-image');
+    const target = await lead.evaluate((node, ratio) => {
+      const element = node as HTMLElement;
+      // Motion transforms must never become input to the scroll measurement.
+      let top = 0;
+      let current: HTMLElement | null = element;
+      while (current) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+      }
+      return top - innerHeight * ratio;
+    }, topRatio);
+    await page.evaluate(
+      (y) => scrollTo({ top: y, behavior: "instant" }),
+      target,
+    );
+    await waitForScrollRest(page);
+    return page.locator('[data-era-image="0"]').evaluate((chapter) => {
+      const state = (selector: string) => {
+        const node = chapter.querySelector<HTMLElement>(selector)!;
+        const styles = getComputedStyle(node);
+        return {
+          reveal: Number(node.style.getPropertyValue("--item-reveal")),
+          opacity: Number(styles.opacity),
+          authoredOpacity: Number(
+            node.style.getPropertyValue("--item-opacity"),
+          ),
+          transform: styles.transform,
+          font: styles.fontFamily,
+        };
+      };
+      return {
+        heading: state(".home-archive-inline-copy"),
+        photo: state(".home-archive-image"),
+        detail: state(".home-archive-achievement"),
+      };
+    });
+  };
+  const entrance = await readAt(0.72);
+  expect(entrance.heading.reveal).toBeGreaterThan(entrance.photo.reveal);
+  expect(entrance.photo.reveal).toBeGreaterThan(entrance.detail.reveal);
+  expect(entrance.photo.opacity).toBeCloseTo(entrance.photo.authoredOpacity, 3);
+  expect(entrance.detail.opacity).toBeCloseTo(
+    entrance.detail.authoredOpacity,
+    3,
+  );
+  expect(entrance.photo.opacity).toBeLessThan(0.85);
+  await capture(page, info, "ordered-motion-entrance");
+  const reading = await readAt(0.3);
+  expect(reading.photo.opacity).toBe(1);
+  expect(reading.detail.opacity).toBe(1);
+  const reversed = await readAt(0.72);
+  expect(reversed).toEqual(entrance);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const selector of [
+    ".home-archive-inline-copy",
+    ".home-archive-image",
+    ".home-archive-achievement",
+    ".home-archive-support-image",
+    ".home-editorial-copy",
+    ".home-editorial-image",
+  ]) {
+    for (const element of await page.locator(selector).all()) {
+      await expect(element).toHaveCSS("opacity", "1");
+      await expect(element).toHaveCSS("transform", "none");
+    }
+  }
+  await capture(page, info, "reduced-motion-all-content-readable");
 });

@@ -10,6 +10,7 @@ beforeAll(async () => {
   await writeFile(join(root, "car.glb"), "glTF-test");
   await writeFile(join(root, "film.mp4"), "0123456789abcdef");
   await writeFile(join(root, "film.webm"), "webm-test");
+  await writeFile(join(root, "heading.ttf"), "font-test");
   server = createAppServer(root);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   url = "http://127.0.0.1:" + server.address().port;
@@ -19,6 +20,13 @@ afterAll(async () => {
   if (root) await rm(root, { recursive: true, force: true });
 });
 describe("production static server", () => {
+  it("serves the self-hosted display font with its declared MIME type", async () => {
+    const response = await fetch(url + "/heading.ttf");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("font/ttf");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(await response.text()).toBe("font-test");
+  });
   it("serves deep routes for React Router", async () => {
     const r = await fetch(url + "/configurator/nismo");
     expect(r.status).toBe(200);

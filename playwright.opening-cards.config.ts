@@ -23,6 +23,15 @@ export default defineConfig({
   ],
   use: {
     ...home.use,
+    launchOptions: {
+      args: [
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--enable-webgl",
+        "--ignore-gpu-blocklist",
+        "--enable-unsafe-swiftshader",
+      ],
+    },
     video: { mode: "on", size: { width: 1280, height: 900 } },
   },
   outputDir: "test-results/opening-cards",

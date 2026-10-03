@@ -27,9 +27,10 @@
 .home-signature-identity h2 {
   margin: 0;
   font-size: clamp(46px, 5.1vw, 84px);
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.02em;
   color: #d2d6da;
 }
 .home-signature-caption {
@@ -45,7 +46,7 @@
 }
 .home-signature-caption p {
   font-size: clamp(19px, 2.1vw, 32px);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.01em;
   margin: 0 0 10px;
 }
 .home-signature-caption > span {
@@ -129,12 +130,12 @@
 }
 
 .home-signature-identity .gtr-metal-wordmark {
-  --gtr-mark-size: clamp(60px, 6vw, 94px);
-  --gtr-nissan-size: 12px;
+  --gtr-badge-width: clamp(160px, 16vw, 220px);
+  --gtr-nissan-width: 56px;
 }
 @media (max-width: 700px) {
   .home-signature-identity .gtr-metal-wordmark {
-    --gtr-mark-size: 70px;
-    --gtr-nissan-size: 10px;
+    --gtr-badge-width: 180px;
+    --gtr-nissan-width: 46px;
   }
 }

@@ -222,6 +222,9 @@ describe("cinematic homepage", () => {
   });
   it("opens an accessible menu, traps focus, closes on Escape and restores focus", async () => {
     setup();
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Continue without 3D" }));
     const user = userEvent.setup();
     const trigger = screen.getByRole("button", { name: "Open menu" });
     await user.click(trigger);

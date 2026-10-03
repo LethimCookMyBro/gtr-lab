@@ -19,6 +19,7 @@ const MIME = {
   ".glb": "model/gltf-binary",
   ".hdr": "application/octet-stream",
   ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
 };
 // ImageBitmapLoader fetches temporary blob URLs created from embedded GLB textures.
 const CSP =

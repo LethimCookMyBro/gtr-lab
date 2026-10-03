@@ -1,6 +1,6 @@
 import "../../styles/home-opening-cards.css";
 
-/** CSS-metal type mark. Static by default; animation is reserved for the opening. */
+/** Original image marks, never recreated with type. See /brand/ATTRIBUTION.txt. */
 export function GtrWordmark({
   sweep = false,
   className = "",
@@ -15,12 +15,24 @@ export function GtrWordmark({
       role="img"
       aria-label="Nissan GT-R"
     >
-      <span className="gtr-metal-nissan" aria-hidden="true">
-        NISSAN
-      </span>
-      <span className="gtr-metal-letters" aria-hidden="true">
-        <span>GT-</span>
-        <b>R</b>
+      <img
+        className="gtr-brand-nissan"
+        src="/brand/nissan-2001.svg"
+        width="850"
+        height="727"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+      />
+      <span className="gtr-brand-badge-frame" aria-hidden="true">
+        <img
+          className="gtr-brand-badge"
+          src="/brand/gtr-stacked-badge.png"
+          width="640"
+          height="640"
+          alt=""
+          draggable="false"
+        />
       </span>
     </div>
   );

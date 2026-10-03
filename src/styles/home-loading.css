@@ -1,0 +1,108 @@
+/* The preparation gate belongs to the viewport, outside animated story panels. */
+dialog.home-loading-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: max(32px, env(safe-area-inset-top)) 24px
+    max(32px, env(safe-area-inset-bottom));
+  border: 0;
+  color: #edf0f2;
+  background: #000;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+dialog.home-loading-gate[open] {
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+dialog.home-loading-gate:not([open]) {
+  display: none;
+}
+dialog.home-loading-gate::backdrop {
+  background: #000;
+}
+.home-loading-gate .home-opening-center {
+  align-self: center;
+  justify-self: center;
+  max-width: 100%;
+  text-align: center;
+}
+.home-loading-gate .home-opening-center > p {
+  max-width: 440px;
+  line-height: 1.6;
+}
+.home-loading-gate .home-loading-detail {
+  margin-top: 20px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.home-loading-download {
+  width: min(280px, 76vw);
+  margin-top: 20px;
+  display: grid;
+  gap: 10px;
+  font-size: 11px;
+  color: #bbc2c8;
+  font-variant-numeric: tabular-nums;
+}
+.home-loading-download progress {
+  width: 100%;
+  height: 3px;
+  accent-color: #c1c8cf;
+}
+.home-loading-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+}
+.home-loading-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: #cbd1d6;
+}
+.home-loading-actions .home-opening-continue {
+  position: static;
+}
+.home-loading-actions > button:focus-visible {
+  outline: 2px solid #e2e6e9;
+  outline-offset: 4px;
+}
+.home-loading-actions > button:hover {
+  color: #fff;
+}
+@media (max-height: 500px) {
+  .home-loading-gate .home-opening-center {
+    transform: none;
+  }
+  .home-loading-gate .gtr-metal-wordmark {
+    --gtr-badge-width: min(32vh, 180px);
+    --gtr-nissan-width: 44px;
+    gap: 12px;
+  }
+  .home-loading-gate .home-opening-rule {
+    margin: 12px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-loading-gate *,
+  .home-loading-gate *::before,
+  .home-loading-gate *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

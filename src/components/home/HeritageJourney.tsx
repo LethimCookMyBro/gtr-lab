@@ -7,14 +7,19 @@ import "../../styles/home-heritage.css";
 function ArchiveFigure({
   photo,
   primary = false,
+  cue,
 }: {
   photo: ArchivePhoto;
   primary?: boolean;
+  cue: string;
 }) {
   const { image } = photo;
   return (
     <figure
       className={primary ? "home-archive-image" : "home-archive-support-image"}
+      data-motion-anchor={primary ? cue : photo.credit}
+      data-motion-stage={primary ? "media" : "detail"}
+      data-motion-enter-with={primary ? undefined : cue}
     >
       <img
         src={image.src}
@@ -94,7 +99,11 @@ export function HeritageJourney({
       data-active-era={activeEra}
       aria-labelledby="home-archive-title"
     >
-      <header className="home-archive-intro">
+      <header
+        className="home-archive-intro"
+        data-motion-anchor="archive-intro"
+        data-motion-stage="heading"
+      >
         <p className="home-archive-eyebrow">The competition archive</p>
         <h2 id="home-archive-title">The road remembers.</h2>
         <p>Four chapters. One restless idea: there is always more to find.</p>
@@ -135,7 +144,11 @@ export function HeritageJourney({
             aria-label={`${era.year} ${era.name}`}
           >
             <div className="home-archive-heading-row">
-              <div className="home-archive-inline-copy">
+              <div
+                className="home-archive-inline-copy"
+                data-motion-anchor={`era-${era.year}-heading`}
+                data-motion-stage="heading"
+              >
                 <p className="home-archive-kicker">
                   {String(index + 1).padStart(2, "0")} / {era.year}{" "}
                   <span>
@@ -144,7 +157,12 @@ export function HeritageJourney({
                 </p>
                 <h3>{era.title}</h3>
               </div>
-              <div className="home-archive-achievement">
+              <div
+                className="home-archive-achievement"
+                data-motion-anchor={`era-${era.year}-record`}
+                data-motion-stage="detail"
+                data-motion-enter-with={`era-${era.year}-lead`}
+              >
                 <span className="home-archive-fact-label">
                   Competition record
                 </span>
@@ -162,12 +180,28 @@ export function HeritageJourney({
             </div>
             <div className="home-archive-spread">
               <div className="home-archive-lead">
-                <ArchiveFigure photo={era.photos[0]} primary />
-                <p className="home-archive-description">{era.note}</p>
+                <ArchiveFigure
+                  photo={era.photos[0]}
+                  primary
+                  cue={`era-${era.year}-lead`}
+                />
+                <p
+                  className="home-archive-description"
+                  data-motion-anchor={`era-${era.year}-note`}
+                  data-motion-stage="detail"
+                >
+                  {era.note}
+                </p>
               </div>
               <div className="home-archive-support">
-                <ArchiveFigure photo={era.photos[1]} />
-                <ArchiveFigure photo={era.photos[2]} />
+                <ArchiveFigure
+                  photo={era.photos[1]}
+                  cue={`era-${era.year}-lead`}
+                />
+                <ArchiveFigure
+                  photo={era.photos[2]}
+                  cue={`era-${era.year}-lead`}
+                />
               </div>
             </div>
           </article>

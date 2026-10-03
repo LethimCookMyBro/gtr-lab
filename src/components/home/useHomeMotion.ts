@@ -5,8 +5,10 @@ import {
   expansionAt,
   heroExitAt,
   sectionProgress,
+  storyItemAt,
   viewportProgress,
 } from "./motion";
+import type { StoryStage } from "./motion";
 // Short landscape retains its safe layout; portrait phones keep the story with browser chrome open.
 const compactStoryQuery =
   "(max-height: 599px), (min-width: 701px) and (max-height: 740px)";
@@ -79,6 +81,8 @@ export function useHomeMotion(
         "--film-surround",
         "--item-progress",
         "--item-reveal",
+        "--item-opacity",
+        "--item-shift",
         "--era-0-opacity",
         "--era-1-opacity",
         "--era-2-opacity",
@@ -133,6 +137,7 @@ export function useHomeMotion(
         }
         return {
           element,
+          section,
           top:
             top +
             measurements.find((item) => item.element === section)!.rect.top,
@@ -225,14 +230,30 @@ export function useHomeMotion(
       }
 
       if (!reduced)
-        for (const { element, top, height } of anchorMeasurements) {
+        for (const { element, section, top, height } of anchorMeasurements) {
           const progress = viewportProgress(top, height, viewport);
+          const stage = (element.dataset.motionStage || "media") as StoryStage;
+          const reference = element.dataset.motionEnterWith;
+          const cue = reference
+            ? anchorMeasurements.find(
+                (anchor) =>
+                  anchor.section === section &&
+                  anchor.element.dataset.motionAnchor === reference,
+              )?.top
+            : undefined;
+          // Copy leads a side-by-side image. Evidence waits for that image,
+          // but photographs further down a mobile spread still enter locally.
+          const entranceTop =
+            cue === undefined
+              ? top
+              : stage === "heading"
+                ? Math.min(top, cue)
+                : Math.max(top, cue);
+          const item = storyItemAt(top, height, viewport, stage, entranceTop);
           write(element, "--item-progress", progress.toFixed(5));
-          write(
-            element,
-            "--item-reveal",
-            clamp01((progress - 0.08) / 0.44).toFixed(5),
-          );
+          write(element, "--item-reveal", item.reveal.toFixed(5));
+          write(element, "--item-opacity", item.opacity.toFixed(5));
+          write(element, "--item-shift", `${item.shift.toFixed(3)}px`);
         }
     };
     const schedule = () => {

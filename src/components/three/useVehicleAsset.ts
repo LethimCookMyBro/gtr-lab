@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { LoadingManager } from "three";
 import { createVehicleLoader } from "./createVehicleLoader";
 import { disposeVehicleObject, prepareVehicle } from "./materialAdapter";
 import type { PreparedVehicle } from "./materialAdapter";
 import type { MaterialRoles } from "./sceneHelpers";
 import { progressPercent } from "./sceneHelpers";
+
+import type { HomeSceneLoadState } from "../home/homeReadiness";
 
 const MAX_MODEL_BYTES = 120 * 1024 * 1024;
 
@@ -12,14 +15,35 @@ async function readModel(
   url: string,
   signal: AbortSignal,
   onProgress: (progress: number) => void,
+  onLoadState?: (state: HomeSceneLoadState) => void,
 ) {
   const response = await fetch(url, { signal });
   if (!response.ok)
     throw new Error(`The model could not be loaded (HTTP ${response.status}).`);
-  const total = Number(response.headers.get("content-length")) || 0;
+  // Compressed Content-Length describes wire bytes, not decoded stream bytes.
+  const encoding = response.headers.get("content-encoding");
+  const total =
+    !encoding || encoding === "identity"
+      ? Number(response.headers.get("content-length")) || 0
+      : 0;
+  onLoadState?.({
+    phase: "downloading",
+    loadedBytes: 0,
+    totalBytes: total || undefined,
+  });
   if (total > MAX_MODEL_BYTES)
     throw new Error("This model exceeds the 120 MB viewer limit.");
-  if (!response.body) return response.arrayBuffer();
+  if (!response.body) {
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > MAX_MODEL_BYTES)
+      throw new Error("This model exceeds the 120 MB viewer limit.");
+    onLoadState?.({
+      phase: "downloading",
+      loadedBytes: buffer.byteLength,
+      totalBytes: total || undefined,
+    });
+    return buffer;
+  }
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let received = 0;
@@ -32,6 +56,11 @@ async function readModel(
         throw new Error("This model exceeds the 120 MB viewer limit.");
       chunks.push(value);
       onProgress(progressPercent(received, total));
+      onLoadState?.({
+        phase: "downloading",
+        loadedBytes: received,
+        totalBytes: total >= received ? total : undefined,
+      });
     }
   } finally {
     reader.releaseLock();
@@ -60,10 +89,11 @@ export function useVehicleAsset(
   onProgress: (value: number) => void,
   onError: (message: string) => void,
   disabledEmissive: string[] = [],
+  onLoadState?: (state: HomeSceneLoadState) => void,
 ) {
   const [asset, setAsset] = useState<PreparedVehicle | null>(null);
-  const callbacks = useRef({ onProgress, onError });
-  callbacks.current = { onProgress, onError };
+  const callbacks = useRef({ onProgress, onError, onLoadState });
+  callbacks.current = { onProgress, onError, onLoadState };
   const rolesKey = JSON.stringify(roles);
   const disabledEmissiveKey = JSON.stringify(disabledEmissive);
   useEffect(() => {
@@ -79,28 +109,59 @@ export function useVehicleAsset(
     }, 45000);
     setAsset(null);
     callbacks.current.onProgress(0);
-    const loader = createVehicleLoader();
-    void readModel(url, abort.signal, (progress) => {
-      if (live) callbacks.current.onProgress(progress);
-    })
-      .then((buffer) =>
-        loader.parseAsync(
+    callbacks.current.onLoadState?.({ phase: "downloading", loadedBytes: 0 });
+    // GLTFLoader deliberately catches texture errors and can resolve geometry
+    // without its maps. Capture failures on this attempt's own manager.
+    const manager = new LoadingManager();
+    let failedResource = false;
+    manager.onError = () => {
+      failedResource = true;
+    };
+    const loader = createVehicleLoader(manager);
+    void readModel(
+      url,
+      abort.signal,
+      (progress) => {
+        if (live) callbacks.current.onProgress(progress);
+      },
+      (state) => {
+        if (live && !abort.signal.aborted)
+          callbacks.current.onLoadState?.(state);
+      },
+    )
+      .then((buffer) => {
+        if (!live || abort.signal.aborted) return null;
+        callbacks.current.onLoadState?.({ phase: "decoding" });
+        return loader.parseAsync(
           buffer,
           url.startsWith("blob:") ? "" : url.slice(0, url.lastIndexOf("/") + 1),
-        ),
-      )
-      .then((gltf) => {
+        );
+      })
+      .then(async (gltf) => {
+        if (!gltf) return;
         if (!live || abort.signal.aborted) {
           disposeVehicleObject(gltf.scene);
           return;
         }
         try {
+          const textures = await gltf.parser.getDependencies("texture");
+          // Blob construction and image decode can both be swallowed to null by
+          // GLTFLoader, before or after LoadingManager gets a chance to report.
+          if (failedResource || textures.some((texture: unknown) => !texture))
+            throw new Error(
+              "The model textures could not be decoded. Please retry.",
+            );
+          if (!live || abort.signal.aborted) {
+            disposeVehicleObject(gltf.scene);
+            return;
+          }
           owned = prepareVehicle(
             gltf.scene,
             JSON.parse(rolesKey) as MaterialRoles,
             JSON.parse(disabledEmissiveKey) as string[],
           );
           callbacks.current.onProgress(99);
+          callbacks.current.onLoadState?.({ phase: "preparing" });
           setAsset(owned);
         } catch (error) {
           disposeVehicleObject(gltf.scene);

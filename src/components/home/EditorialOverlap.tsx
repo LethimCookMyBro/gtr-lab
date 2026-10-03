@@ -11,6 +11,8 @@ export function EditorialOverlap() {
         <div
           className="home-editorial-copy home-editorial-copy--form"
           data-motion-anchor="form"
+          data-motion-stage="heading"
+          data-motion-enter-with="detail"
         >
           <h2 id="form-title">
             Form follows
@@ -26,6 +28,7 @@ export function EditorialOverlap() {
         <figure
           className="home-editorial-image home-editorial-image--detail"
           data-motion-anchor="detail"
+          data-motion-stage="media"
         >
           <img
             src={storyMedia.detail.src}
@@ -41,6 +44,7 @@ export function EditorialOverlap() {
         <figure
           className="home-editorial-image home-editorial-image--cockpit"
           data-motion-anchor="cockpit"
+          data-motion-stage="media"
         >
           <img
             src={storyMedia.cockpit.src}
@@ -60,6 +64,8 @@ export function EditorialOverlap() {
         <div
           className="home-editorial-copy home-editorial-copy--control"
           data-motion-anchor="control"
+          data-motion-stage="heading"
+          data-motion-enter-with="cockpit"
         >
           <h2>
             Control without

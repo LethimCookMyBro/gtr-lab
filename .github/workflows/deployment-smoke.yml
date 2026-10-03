@@ -21,13 +21,14 @@ on:
       - "release-cinematic-story-approved.txt"
       - "release-heritage-exhibition-approved.txt"
       - "release-card-overflow-approved.txt"
+      - "release-loading-identity-approved.txt"
 permissions:
   contents: read
 jobs:
   deployed-preview:
     if: ${{ !contains(github.event.head_commit.message, '[stage-driving-films]') && !contains(github.event.head_commit.message, '[stage-home-story]') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -69,6 +70,11 @@ jobs:
         env:
           HOME_QA_URL: https://gtr-lab-production.up.railway.app
         timeout-minutes: 5
+      - name: Verify live loading and scene persistence
+        run: npx playwright test -c playwright.loading.config.ts
+        env:
+          HOME_QA_URL: https://gtr-lab-production.up.railway.app
+        timeout-minutes: 8
       - name: Record live 390px gradual mobile scrolling
         run: node scripts/diagnose-mobile-home-motion.mjs
         env:
@@ -105,4 +111,6 @@ jobs:
             test-results/opening-cards/
             playwright-opening-cards-report/
             playwright-home-report/
+            test-results/home-loading/
+            playwright-loading-report/
           retention-days: 14

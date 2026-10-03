@@ -1,9 +1,11 @@
+import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
 
 test("menu hover and keyboard focus share restrained movement, close reverses the links", async ({
   page,
 }, info) => {
   await page.goto("/");
+  await continueHomeWithout3D(page);
   const trigger = page.getByRole("button", { name: "Open menu", exact: true });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Explore GT-R LAB" });
@@ -90,6 +92,7 @@ test("model invitation hover stays subtle and preserves card layout", async ({
   page,
 }, info) => {
   await page.goto("/");
+  await continueHomeWithout3D(page);
   const card = page.getByRole("link", { name: "Explore Premium", exact: true });
   await card.scrollIntoViewIfNeeded();
   const before = await card.boundingBox();
@@ -117,6 +120,7 @@ test("reduced motion removes hover transforms and dismisses immediately", async 
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await continueHomeWithout3D(page);
   const trigger = page.getByRole("button", { name: "Open menu" });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Explore GT-R LAB" });

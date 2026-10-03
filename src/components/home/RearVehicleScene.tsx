@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ACESFilmicToneMapping,
@@ -19,12 +19,16 @@ import { Environment } from "@react-three/drei/core/Environment";
 import { Lightformer } from "@react-three/drei/core/Lightformer";
 import { ContactShadows } from "@react-three/drei/core/ContactShadows";
 import { SceneBoundary } from "../three/SceneBoundary";
+import type { HomeSceneLoadState } from "./homeReadiness";
+import { useRearRenderPreparation } from "./useRearRenderPreparation";
 type Props = {
   progress: number;
   reducedMotion: boolean;
   onReady: () => void;
   onError: (message: string) => void;
   onProgress: (value: number) => void;
+  onLoadState?: (state: HomeSceneLoadState) => void;
+  active?: boolean;
 };
 const source = models.find((model) => model.id === "premium")!.asset;
 function RearCamera({
@@ -67,15 +71,8 @@ function RearCamera({
   });
   return null;
 }
-function RearVehicle({
-  asset,
-  onReady,
-}: {
-  asset: PreparedVehicle;
-  onReady: () => void;
-}) {
-  const invalidate = useThree((s) => s.invalidate),
-    frames = useRef(0);
+function RearVehicle({ asset }: { asset: PreparedVehicle }) {
+  const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
     applyVehicleAppearance(asset.bindings, "#68737b", true);
     for (const b of asset.bindings) {
@@ -121,10 +118,6 @@ function RearVehicle({
     });
     invalidate();
   }, [asset, invalidate]);
-  useFrame(() => {
-    if (++frames.current === 2) onReady();
-    if (frames.current < 2) invalidate();
-  });
   return (
     <group scale={asset.scale} position={asset.position} dispose={null}>
       <primitive object={asset.scene} dispose={null} />
@@ -212,6 +205,14 @@ function ContextHealth({ onError }: Pick<Props, "onError">) {
   }, [gl, onError]);
   return null;
 }
+function RearRenderPreparation({
+  onReady,
+  onError,
+}: Pick<Props, "onReady" | "onError">) {
+  useRearRenderPreparation(onReady, onError);
+  return null;
+}
+
 /** Uses only the already-published Ciasny asset; this owns and disposes its load. */
 export default function RearVehicleScene(props: Props) {
   const asset = useVehicleAsset(
@@ -220,11 +221,12 @@ export default function RearVehicleScene(props: Props) {
     props.onProgress,
     props.onError,
     source.disabledEmissive,
+    props.onLoadState,
   );
   return (
     <SceneBoundary onError={props.onError}>
       <Canvas
-        frameloop="demand"
+        frameloop={props.active === false ? "never" : "demand"}
         shadows
         dpr={
           typeof window === "undefined" || innerWidth < 701
@@ -255,8 +257,13 @@ export default function RearVehicleScene(props: Props) {
         />
         {asset ? (
           <>
+            {/* Capture shader failures before Drei renders its environment in a layout effect. */}
+            <RearRenderPreparation
+              onReady={props.onReady}
+              onError={props.onError}
+            />
             <RearStudio />
-            <RearVehicle asset={asset} onReady={props.onReady} />
+            <RearVehicle asset={asset} />
           </>
         ) : null}
       </Canvas>

@@ -1,19 +1,29 @@
+import { continueHomeWithout3D } from "./helpers/home-gate";
 import { expect, test } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
+
+test.beforeEach(async ({ page }) => {
+  await page.route("**/models/ciasny-r35.glb", (route) =>
+    route.fulfill({
+      status: 503,
+      body: "Deliberate motion-only failure; explicit non-3D path",
+    }),
+  );
+});
 
 // App-side transition evidence only. An iframe load or screenshot cannot establish
 // external Flixel playback; real provider acceptance remains a separate review.
 async function resolveOpening(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".home-hero-runway")).toBeVisible();
-  // Generic layout checks wait for the real readiness/fallback path. Clicking a
-  // disappearing Continue button both races readiness and scrolls tall heroes.
+  // This is a hero-layout test, so explicitly use the non-3D path.
+  await continueHomeWithout3D(page);
   await expect(page.locator(".home-hero-runway")).toHaveAttribute(
     "data-opening-resolved",
     "true",
     { timeout: 25000 },
   );
-  await expect(page.locator(".home-opening")).toHaveCSS("visibility", "hidden");
+  await expect(page.locator(".home-opening")).not.toBeVisible();
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   await expect.poll(() => surface(page)).toEqual({ opacity: 1, y: 0 });
@@ -267,16 +277,13 @@ test("Continue keeps heading focus while native scrolling activates the hero exi
   });
   try {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const skip = page.getByRole("button", { name: "Continue to page" });
+    const skip = page.getByRole("button", { name: "Continue without 3D" });
     await expect(skip).toBeVisible();
     await skip.click();
     const heading = page.locator("#home-title");
     await expect(heading).toBeFocused();
     releaseEmbed();
-    await expect(page.locator(".home-opening")).toHaveCSS(
-      "visibility",
-      "hidden",
-    );
+    await expect(page.locator(".home-opening")).not.toBeVisible();
     const runway = await page
       .locator(".home-hero-runway")
       .evaluate(

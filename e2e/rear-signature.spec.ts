@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 import { createHash } from "node:crypto";
 import type { Page } from "@playwright/test";
+test.beforeEach(async ({ page }) => {
+  await page.route("https://media.flixel.com/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<html><body>Document readiness only; playback not tested.</body></html>",
+    }),
+  );
+});
 async function reveal(page: Page, progress: number) {
   await page.locator(".home-signature-runway").evaluate((el, p) => {
     const r = el.getBoundingClientRect(),
@@ -21,9 +29,15 @@ test("published R35 renders from the rear and scroll dolly changes actual pixels
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  expect(requests).toHaveLength(0);
+  await expect(page.locator(".home-loading-gate")).toHaveAttribute(
+    "data-state",
+    "resolved",
+    { timeout: 90000 },
+  );
+  expect(requests).toHaveLength(1);
   const stage = page.locator(".home-signature-runway"),
     canvas = stage.locator("canvas");
+  const originalCanvas = await canvas.elementHandle();
   const images: string[] = [];
   for (const [i, p] of [0.08, 0.5, 0.92, 0.08].entries()) {
     await reveal(page, p);
@@ -89,7 +103,14 @@ test("published R35 renders from the rear and scroll dolly changes actual pixels
     scale: "css",
   });
   await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
-  await expect(canvas).toHaveCount(0, { timeout: 10000 });
+  await expect(canvas).toHaveCount(1);
+  expect(
+    await originalCanvas!.evaluate(
+      (el) => el === document.querySelector(".home-signature-canvas canvas"),
+    ),
+  ).toBe(true);
+  expect(requests).toHaveLength(1);
+  await expect(stage).toHaveAttribute("data-scene-state", "ready");
   expect(errors).toEqual([]);
   await info.attach("scene-evidence", {
     body: JSON.stringify({
@@ -112,15 +133,17 @@ test("failed rear asset remains readable and retry loads the real model", async 
       : route.continue(),
   );
   await page.goto("/");
-  await reveal(page, 0.5);
+  const gate = page.locator(".home-loading-gate");
   const stage = page.locator(".home-signature-runway");
   await expect(stage).toHaveAttribute("data-scene-state", "error");
   await expect(
-    stage.getByRole("button", { name: "Retry 3D view" }),
+    gate.getByRole("button", { name: "Retry 3D view" }),
   ).toBeVisible();
   fail = false;
-  await stage.getByRole("button", { name: "Retry 3D view" }).click();
+  await gate.getByRole("button", { name: "Retry 3D view" }).click();
   await expect(stage).toHaveAttribute("data-scene-state", "ready", {
     timeout: 90000,
   });
+  await expect(gate).toHaveAttribute("data-state", "resolved");
+  await reveal(page, 0.5);
 });

@@ -1,9 +1,11 @@
+import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
 const variants = ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"];
 test("homepage to models to details and back", async ({ page }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
+  await continueHomeWithout3D(page);
   await expect(page).toHaveTitle(/GT-R LAB/);
   await expect(
     page.getByRole("heading", { name: "Engineered to defy." }),
