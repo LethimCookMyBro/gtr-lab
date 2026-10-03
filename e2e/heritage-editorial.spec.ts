@@ -6,9 +6,25 @@ const names = [
   "1999: R34 GT-R",
   "2007: R35 GT-R",
 ];
-async function open(page: Page) {
+async function settleArchiveMedia(page: Page) {
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator("#home-heritage img").evaluateAll(async (nodes) => {
+    await Promise.all(
+      (nodes as HTMLImageElement[]).map(async (image) => {
+        image.loading = "eager";
+        await image.decode();
+      }),
+    );
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+  });
+}
+async function open(page: Page, settled = true) {
   await page.route("https://media.flixel.com/**", (route) => route.abort());
   await page.goto("/");
+  // Precision landing is measured against settled document geometry. A separate
+  // cold-load case below observes the real lazy/font path without this setup.
+  if (settled) await settleArchiveMedia(page);
   await page.locator("#home-heritage").scrollIntoViewIfNeeded();
 }
 async function select(page: Page, index: number) {
@@ -212,4 +228,53 @@ test("native forward and reverse wheel scrolling tracks the chapter at the readi
     body: JSON.stringify(frames, null, 2),
     contentType: "application/json",
   });
+});
+
+test("cold chapter jump stays readable while photographs and fonts settle", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await open(page, false);
+  const snapshot = () =>
+    page.locator("#home-heritage").evaluate((section) => ({
+      scrollY,
+      fonts: document.fonts.status,
+      articleTop: section
+        .querySelector('[data-era-image="3"]')!
+        .getBoundingClientRect().top,
+      images: [...section.querySelectorAll("img")].map((image) => ({
+        src: image.currentSrc,
+        complete: image.complete,
+        naturalWidth: image.naturalWidth,
+        height: image.getBoundingClientRect().height,
+      })),
+      sections: [...document.querySelectorAll("[data-motion-section]")].map(
+        (node) => ({
+          kind: (node as HTMLElement).dataset.motionSection,
+          height: node.getBoundingClientRect().height,
+        }),
+      ),
+    }));
+  const before = await snapshot();
+  await page.getByRole("button", { name: names[3], exact: true }).click();
+  const arrival = await snapshot();
+  const chapter = page.locator('[data-era-image="3"]');
+  await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
+  await expect(
+    page.getByRole("button", { name: names[3], exact: true }),
+  ).toHaveAttribute("aria-current", "step");
+  await settleArchiveMedia(page);
+  const settled = await snapshot();
+  await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
+  const rail = (await page.locator(".home-archive-stage").boundingBox())!;
+  expect((await chapter.getByRole("heading").boundingBox())!.y).toBeGreaterThan(
+    rail.y + rail.height + 8,
+  );
+  await info.attach("cold-to-settled-archive-geometry", {
+    body: JSON.stringify({ before, arrival, settled }, null, 2),
+    contentType: "application/json",
+  });
+  await capture(page, info, "cold-r35-after-media-settles");
+  // The exact three-pixel target is unchanged once the measured resources settle.
+  await select(page, 3);
 });
