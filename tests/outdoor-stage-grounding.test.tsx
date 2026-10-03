@@ -163,3 +163,16 @@ it.each(["forest", "coast"] as const)(
     expect((ground.material as any).depthWrite).toBe(false);
   },
 );
+
+it("releases the loaded HDR and owned projection resources when leaving outdoors", () => {
+  const textureDispose = vi.spyOn(runtime.texture, "dispose");
+  const { unmount } = render(
+    <StudioLighting environment="forest" reducedMotion />,
+  );
+  const geometryDispose = vi.spyOn(runtime.ground.geometry, "dispose");
+  const materialDispose = vi.spyOn(runtime.ground.material, "dispose");
+  unmount();
+  expect(geometryDispose).toHaveBeenCalledOnce();
+  expect(materialDispose).toHaveBeenCalledOnce();
+  expect(textureDispose).toHaveBeenCalledOnce();
+});

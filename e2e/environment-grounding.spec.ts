@@ -1,6 +1,13 @@
 import { test, expect } from "@playwright/test";
+import { createHash } from "node:crypto";
 import type { Page, TestInfo } from "@playwright/test";
 const variant = process.env.ENVIRONMENT_QA_VARIANT || "candidate";
+async function canvasHash(page: Page) {
+  await frames(page);
+  return createHash("sha256")
+    .update(await page.locator(".scene-stage canvas").screenshot())
+    .digest("hex");
+}
 async function frames(page: Page) {
   await page.evaluate(
     () =>
@@ -132,6 +139,8 @@ test("photographic environments remain grounded through camera and environment c
   await expect(page.locator(".scene-loading")).toHaveCount(0);
   await capture(page, info, "studio-hero");
   const canvas = page.locator(".scene-stage canvas");
+  const studioCanonical = await canvasHash(page);
+  let forestCanonical = "";
   for (const [id, label] of [
     ["forest", "Forest road"],
     ["coast", "Coastal road"],
@@ -139,6 +148,22 @@ test("photographic environments remain grounded through camera and environment c
     await environment(page, id, label);
     await camera(page, "Front ¾");
     await capture(page, info, `${id}-hero`);
+    const canonical = await canvasHash(page);
+    if (id === "forest") forestCanonical = canonical;
+    await canvas.focus();
+    for (let quarter = 1; quarter <= 4; quarter++) {
+      for (let step = 0; step < 10; step++)
+        await canvas.press("Shift+ArrowRight");
+      await capture(page, info, `${id}-azimuth-${quarter}`);
+    }
+    for (let step = 0; step < 25; step++) await canvas.press("+");
+    await capture(page, info, `${id}-minimum-zoom`);
+    await canvas.press("Home");
+    await capture(page, info, `${id}-manual-reset`);
+    expect(
+      await canvasHash(page),
+      `${id} Home restores canonical camera framing`,
+    ).toBe(canonical);
     await camera(page, "Rear ¾");
     await capture(page, info, `${id}-rear`);
     await canvas.focus();
@@ -161,8 +186,16 @@ test("photographic environments remain grounded through camera and environment c
   await environment(page, "forest", "Forest road");
   await camera(page, "Front ¾");
   await capture(page, info, "forest-return");
+  expect(
+    await canvasHash(page),
+    "Returning to Forest restores identical hero framing and lighting",
+  ).toBe(forestCanonical);
   await environment(page, "studio", "Studio");
   await capture(page, info, "studio-return");
+  expect(
+    await canvasHash(page),
+    "Returning to Studio restores identical hero framing and lighting",
+  ).toBe(studioCanonical);
   await expect(canvas).toHaveCount(1);
   await expect(page.locator(".render-error, vite-error-overlay")).toHaveCount(
     0,

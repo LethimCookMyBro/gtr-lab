@@ -192,8 +192,11 @@ function OutdoorEnvironment({
     () => () => {
       ground.geometry.dispose();
       ground.material.dispose();
+      // Preserve EnvironmentGround's ownership: disposing the HDR also releases
+      // Three's derived background cube and PMREM when leaving this panorama.
+      texture.dispose();
     },
-    [ground],
+    [ground, texture],
   );
   return (
     <StageGeometry>
