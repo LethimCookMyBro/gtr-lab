@@ -72,7 +72,7 @@ const setup = () =>
   );
 
 describe("cinematic homepage", () => {
-  it("changes one anchored narrative across all four archive chapters", () => {
+  it("keeps four complete exhibition stories visible while the era rail changes", () => {
     const scene = (activeEra: number) => (
       <MemoryRouter>
         <HeritageJourney
@@ -83,20 +83,18 @@ describe("cinematic homepage", () => {
       </MemoryRouter>
     );
     const { container, rerender } = render(scene(0));
-    const narratives: string[] = [];
-    for (const index of [0, 1, 2, 3]) {
+    for (const index of [0, 1, 2, 3, 0]) {
       rerender(scene(index));
-      const narrative = container.querySelector(".home-archive-narrative")!;
-      expect(
-        within(narrative as HTMLElement).getAllByRole("heading", { level: 2 }),
-      ).toHaveLength(1);
-      narratives.push(
-        within(narrative as HTMLElement).getByRole("heading", { level: 2 })
-          .textContent!,
-      );
-      expect(container.querySelectorAll(".home-archive-chapter")).toHaveLength(
-        4,
-      );
+      const chapters = [
+        ...container.querySelectorAll<HTMLElement>(".home-archive-chapter"),
+      ];
+      expect(chapters).toHaveLength(4);
+      for (const chapter of chapters) {
+        expect(
+          within(chapter).getByRole("heading", { level: 3 }).textContent,
+        ).not.toBe("");
+        expect(within(chapter).getAllByRole("img")).toHaveLength(3);
+      }
       expect(container.querySelectorAll('[aria-current="step"]')).toHaveLength(
         1,
       );
@@ -105,143 +103,9 @@ describe("cinematic homepage", () => {
           .querySelector('[aria-current="step"]')
           ?.getAttribute("aria-label"),
       ).toContain(["1969", "1989", "1999", "2007"][index]);
+      expect(container.querySelector(".home-archive-narrative")).toBeNull();
+      expect(container.querySelector(".home-archive-year")).toBeNull();
     }
-    expect(new Set(narratives).size).toBe(4);
-    rerender(scene(1));
-    expect(
-      container.querySelector(".home-archive-narrative h2")?.textContent,
-    ).toBe(narratives[1]);
-  });
-  it("centers the actual selected photograph instead of a fixed fraction of the runway", async () => {
-    const onEra = vi.fn();
-    const { container } = render(
-      <MemoryRouter>
-        <HeritageJourney activeEra={0} onEra={onEra} sequentialMotion={false} />
-      </MemoryRouter>,
-    );
-    const target = container.querySelector<HTMLElement>(
-      '[data-era-image="2"] .home-archive-image',
-    )!;
-    vi.spyOn(
-      container.querySelector<HTMLElement>(".home-archive-runway")!,
-      "getBoundingClientRect",
-    ).mockReturnValue({
-      top: 100,
-      height: 5000,
-      bottom: 5100,
-      left: 0,
-      right: 1200,
-      width: 1200,
-      x: 0,
-      y: 100,
-      toJSON: () => ({}),
-    });
-    vi.spyOn(
-      container.querySelector<HTMLElement>(".home-archive-stage")!,
-      "offsetHeight",
-      "get",
-    ).mockReturnValue(innerHeight);
-    vi.spyOn(target, "getBoundingClientRect").mockReturnValue({
-      top: 2100,
-      height: 960,
-      bottom: 3060,
-      left: 0,
-      right: 1200,
-      width: 1200,
-      x: 0,
-      y: 2100,
-      toJSON: () => ({}),
-    });
-    const button = screen.getByRole("button", { name: "1999: R34 GT-R" });
-    button.focus();
-    await userEvent.setup().keyboard("{Enter}");
-    expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 2100 + 480 - innerHeight / 2,
-      behavior: "smooth",
-    });
-    expect(onEra).toHaveBeenCalledWith(2);
-  });
-  it.each([
-    { index: 0, name: "1969: Skyline GT-R", top: 0, expected: "start" },
-    { index: 3, name: "2007: R35 GT-R", top: 3400, expected: "end" },
-  ])(
-    "keeps the $expected chapter destination inside the pinned archive",
-    async ({ index, name, top, expected }) => {
-      const { container } = render(
-        <MemoryRouter>
-          <HeritageJourney
-            activeEra={1}
-            onEra={() => {}}
-            sequentialMotion={false}
-          />
-        </MemoryRouter>,
-      );
-      const section = container.querySelector<HTMLElement>(
-        ".home-archive-runway",
-      )!;
-      const stage = container.querySelector<HTMLElement>(
-        ".home-archive-stage",
-      )!;
-      const image = container.querySelector<HTMLElement>(
-        `[data-era-image="${index}"] .home-archive-image`,
-      )!;
-      vi.spyOn(section, "getBoundingClientRect").mockReturnValue({
-        top: 100,
-        height: 3000,
-        bottom: 3100,
-        left: 0,
-        right: 1200,
-        width: 1200,
-        x: 0,
-        y: 100,
-        toJSON: () => ({}),
-      });
-      vi.spyOn(stage, "offsetHeight", "get").mockReturnValue(innerHeight);
-      vi.spyOn(image, "getBoundingClientRect").mockReturnValue({
-        top,
-        height: 400,
-        bottom: top + 400,
-        left: 40,
-        right: 540,
-        width: 500,
-        x: 40,
-        y: top,
-        toJSON: () => ({}),
-      });
-      await userEvent.setup().click(screen.getByRole("button", { name }));
-      expect(window.scrollTo).toHaveBeenCalledWith({
-        top: expected === "start" ? 100 : 3100 - innerHeight,
-        behavior: "smooth",
-      });
-    },
-  );
-  it("keeps all four inline narratives and credited photos in sequential reading order", () => {
-    const { container } = render(
-      <MemoryRouter>
-        <HeritageJourney activeEra={0} onEra={() => {}} sequentialMotion />
-      </MemoryRouter>,
-    );
-    const chapters = [
-      ...container.querySelectorAll<HTMLElement>(".home-archive-chapter"),
-    ];
-    expect(chapters.map((chapter) => chapter.dataset.eraImage)).toEqual([
-      "0",
-      "1",
-      "2",
-      "3",
-    ]);
-    for (const chapter of chapters) {
-      expect(
-        within(chapter).getByRole("heading", { level: 3 }).textContent,
-      ).not.toBe("");
-      expect(within(chapter).getByRole("img").getAttribute("alt")).not.toBe("");
-      expect(chapter.querySelector("figcaption")?.textContent).not.toBe("");
-    }
-    expect(
-      screen
-        .getByRole("link", { name: "Archive photography & sources" })
-        .getAttribute("href"),
-    ).toBe("/credits#story-photography");
   });
   it("contains two hosted-film sections and all six full-row model destinations", () => {
     const { container } = setup();
@@ -347,7 +211,7 @@ describe("cinematic homepage", () => {
       .setup()
       .click(screen.getByRole("button", { name: "2007: R35 GT-R" }));
     expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 800,
+      top: 784,
       behavior: "instant",
     });
     expect(

@@ -10,6 +10,15 @@ export function viewportProgress(
 export function sectionProgress(top: number, height: number, viewport: number) {
   return clamp01(-top / Math.max(1, height - viewport));
 }
+/** Late, reversible easing for the complete hero panel, never the provider iframe. */
+export function heroExitAt(progress: number) {
+  const phase = clamp01((progress - 0.52) / 0.48);
+  const eased = phase * phase * (3 - 2 * phase);
+  return {
+    opacity: 1 - eased * 0.24,
+    lift: eased === 0 ? 0 : -28 * eased,
+  };
+}
 export function expansionAt(progress: number) {
   const p = clamp01(progress);
   return {

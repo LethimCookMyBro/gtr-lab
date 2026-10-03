@@ -1,337 +1,383 @@
-/* The archive has its own composition, isolated from the older homepage styles.
-   Images travel in alternating outer lanes while one quiet narrative stays central. */
+/* The exhibition is always ordinary document flow. Only its slim index is sticky. */
 #home-heritage.home-heritage-editorial {
+  --archive-paper: #e9e7df;
+  --archive-muted: #a3a6a3;
   position: relative;
-  color: #f2f0eb;
-  background: #0b0d0f;
+  color: var(--archive-paper);
+  background: #111411;
   isolation: isolate;
+  padding: 0 clamp(24px, 4.5vw, 88px);
+}
+#home-heritage .home-archive-intro {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: clamp(52px, 6vw, 96px) 0 40px;
+}
+#home-heritage .home-archive-eyebrow {
+  position: static;
+  margin: 0 0 18px;
+  color: #cfa99a;
+  font-size: 10px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+#home-heritage .home-archive-intro h2 {
+  margin: 0 0 16px;
+  font-size: clamp(38px, 4.6vw, 76px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+#home-heritage .home-archive-intro > p:last-child {
+  margin: 0;
+  color: var(--archive-muted);
+  font-size: 15px;
+  line-height: 1.5;
 }
 #home-heritage .home-archive-stage {
   position: sticky;
-  top: 0;
-  height: 100svh;
+  top: 64px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  height: 66px;
+  max-width: 1480px;
+  margin: 0 auto;
   padding: 0;
-  z-index: 3;
-  pointer-events: none;
+  background: #111411;
+  border-top: 1px solid #4b4e46;
+  border-bottom: 1px solid #4b4e46;
+  pointer-events: auto;
 }
 #home-heritage .home-archive-stage::after {
   content: none;
 }
-#home-heritage .home-archive-eyebrow {
-  position: absolute;
-  top: max(92px, 10svh);
-  left: 0;
-  width: 100%;
-  margin: 0;
-  text-align: center;
-  text-transform: uppercase;
-  color: #919597;
+#home-heritage .home-archive-rail-label {
+  flex-shrink: 0;
+  color: #afb1a9;
   font-size: 10px;
-  line-height: 1.4;
-  letter-spacing: 0.2em;
-}
-#home-heritage .home-archive-narrative {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  right: auto;
-  width: min(26vw, 390px);
-  padding: 0;
-  text-align: center;
-  transform: translate(-50%, -50%);
-  background: none;
-}
-#home-heritage .home-archive-kicker {
-  margin: 0 0 18px;
-  color: #cf9293;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  line-height: 1.4;
-}
-#home-heritage .home-archive-year {
-  display: block;
-  margin: 0 0 22px;
-  color: #f2f0eb;
-  font-size: clamp(56px, 6.4vw, 108px);
-  font-weight: 300;
-  letter-spacing: -0.07em;
-  line-height: 0.9;
-}
-#home-heritage .home-archive-narrative h2 {
-  max-width: none;
-  margin: 0;
-  font-size: clamp(27px, 2.55vw, 43px);
-  line-height: 1.04;
-  letter-spacing: -0.045em;
-}
-#home-heritage .home-archive-description {
-  max-width: 350px;
-  margin: 20px auto 0;
-  color: #a7adaf;
-  font-size: clamp(13px, 1.02vw, 16px);
-  line-height: 1.6;
-  text-wrap: pretty;
+  letter-spacing: 0.13em;
 }
 #home-heritage .home-archive-navigation {
-  position: absolute;
-  top: auto;
-  bottom: 8svh;
-  left: 50%;
-  right: auto;
-  width: min(300px, 27vw);
+  position: static;
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  transform: translateX(-50%);
-  pointer-events: auto;
+  width: auto;
+  margin: 0;
+  gap: clamp(14px, 3vw, 52px);
+  transform: none;
 }
 #home-heritage .home-archive-navigation button {
-  min-width: 44px;
-  min-height: 52px;
-  color: #93999d;
+  display: flex;
+  flex-direction: row;
+  gap: 7px;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 0;
+  color: #93978f;
+  border-bottom: 2px solid transparent;
   font-size: 11px;
 }
 #home-heritage .home-archive-navigation button[aria-current] {
-  color: #f0c8c7;
+  color: #f1ddbc;
+  border-bottom-color: #c8a783;
+}
+#home-heritage .home-archive-navigation button span {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  outline: none;
+}
+#home-heritage .home-archive-rail-year {
+  font-size: 10px;
+}
+#home-heritage .home-archive-rail-generation {
+  font-size: 12px;
+  font-weight: 600;
 }
 #home-heritage .home-archive-source {
-  position: absolute;
-  top: auto;
-  bottom: 2svh;
-  left: 50%;
-  right: auto;
+  position: static;
   width: auto;
   min-height: 44px;
-  padding: 0 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translateX(-50%);
+  margin: 0;
+  transform: none;
+  color: #aeb1a9;
   font-size: 10px;
-  color: #858c90;
-  pointer-events: auto;
+  gap: 9px;
+  white-space: normal;
 }
 #home-heritage .home-archive-track {
   position: relative;
-  margin-top: -100svh;
-  padding: 9svh 0;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0;
 }
 #home-heritage .home-archive-chapter {
-  min-height: 82svh;
+  display: block;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 44px 0 52px;
+  border-bottom: 1px solid #41463d;
+  scroll-margin-top: 160px;
+}
+#home-heritage .home-archive-heading-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  gap: clamp(24px, 3vw, 48px);
+  align-items: end;
+  margin-bottom: 28px;
+}
+#home-heritage .home-archive-inline-copy {
+  display: block;
+  width: auto;
+  max-width: none;
+}
+#home-heritage .home-archive-kicker {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0 3vw;
+  gap: 22px;
+  margin: 0 0 16px;
+  color: #cfa99a;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
 }
-#home-heritage .home-archive-chapter:nth-child(even) {
-  justify-content: flex-end;
+#home-heritage .home-archive-kicker span {
+  color: var(--archive-muted);
 }
-#home-heritage .home-archive-image {
+#home-heritage .home-archive-inline-copy h3 {
+  white-space: pre-line;
+  margin: 0;
+  color: var(--archive-paper);
+  font-size: clamp(34px, 3.4vw, 57px);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
+#home-heritage .home-archive-achievement {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 0 2px 18px;
+  border-left: 2px solid #b69571;
+  gap: 6px;
+}
+#home-heritage .home-archive-fact-label {
+  color: #abae9f;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+}
+#home-heritage .home-archive-achievement strong {
+  color: #e0c69f;
+  font-size: clamp(22px, 2.1vw, 36px);
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+#home-heritage .home-archive-achievement > span:not(:first-child) {
+  color: #c2c4b9;
+  font-size: 11px;
+  line-height: 1.45;
+}
+#home-heritage .home-archive-achievement a {
+  margin-top: 3px;
+  color: #949b8f;
+  font-size: 10px;
+  text-underline-offset: 4px;
+}
+#home-heritage .home-archive-spread {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(24px, 3vw, 48px);
+}
+#home-heritage .home-archive-lead,
+#home-heritage .home-archive-support {
+  min-width: 0;
+}
+#home-heritage .home-archive-support {
+  display: grid;
+  gap: 24px;
+}
+#home-heritage .home-archive-image,
+#home-heritage .home-archive-support-image,
+#home-heritage .home-archive-chapter:nth-child(n) .home-archive-image {
   position: relative;
-  width: 32vw;
+  width: 100%;
   margin: 0;
   transform: none;
 }
-#home-heritage .home-archive-chapter:nth-child(2) .home-archive-image {
-  width: 31vw;
-}
-#home-heritage .home-archive-chapter:nth-child(3) .home-archive-image {
-  width: 30vw;
-  margin-left: 2vw;
-}
-#home-heritage .home-archive-image img {
+#home-heritage figure img {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 60svh;
+  max-height: none;
+  border-radius: 0;
   object-fit: contain;
-  border-radius: 2px;
 }
-#home-heritage .home-archive-image figcaption {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin: 14px 0 0;
+#home-heritage figure figcaption {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 20px;
+  gap: 3px 12px;
+  margin: 10px 0 0;
   padding: 0;
-  color: #848b8f;
+  color: #a3aaa0;
   font-size: 10px;
   line-height: 1.5;
 }
-#home-heritage .home-archive-image figcaption span {
-  flex-shrink: 0;
-  color: #b7bcbe;
+#home-heritage figure figcaption .home-archive-photo-label {
+  color: #d0d2c6;
   font-size: 9px;
-  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  grid-column: 1;
 }
-#home-heritage .home-archive-inline-copy {
-  display: none;
+#home-heritage figure figcaption > span:nth-child(2) {
+  grid-column: 1;
+  color: #a3aaa0;
+  letter-spacing: normal;
+  font-size: 10px;
+}
+#home-heritage figure figcaption a {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: start;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  color: #d0d2c6;
+  font-size: 17px;
+}
+#home-heritage .home-archive-description {
+  max-width: 680px;
+  margin: 22px 0 0;
+  color: #bbc0b6;
+  font-size: clamp(14px, 1.18vw, 17px);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+#home-heritage .home-archive-colophon {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 26px 0 36px;
+  color: #90988a;
+  font-size: 11px;
+  line-height: 1.5;
 }
 #home-heritage :focus-visible {
-  outline: 2px solid #f0c8c7;
-  outline-offset: 6px;
+  outline: 2px solid #e0c69f;
+  outline-offset: 5px;
 }
-
-@media (max-width: 700px) {
-  #home-heritage .home-archive-eyebrow {
+#home-heritage .home-archive-chapter:focus:not(:focus-visible) {
+  outline: none;
+}
+/* Images rise only 14px and are already readable before reaching the viewport.
+   Native flow and unchanged image geometry are the source of every measurement. */
+#home-heritage[data-heritage-sequential="false"] .home-archive-spread {
+  opacity: calc(0.55 + var(--chapter-reveal, 1) * 0.45);
+  transform: translateY(calc((1 - var(--chapter-reveal, 1)) * 14px));
+}
+@media (min-width: 1600px) {
+  #home-heritage .home-archive-spread,
+  #home-heritage .home-archive-heading-row {
+    grid-template-columns: minmax(0, 1.95fr) minmax(0, 1fr);
+  }
+}
+@media (max-width: 1050px) {
+  #home-heritage .home-archive-rail-label {
     display: none;
-  }
-  #home-heritage .home-archive-narrative {
-    top: max(76px, 11svh);
-    left: 50%;
-    width: calc(100% - 40px);
-    padding: 0;
-    transform: translateX(-50%);
-  }
-  #home-heritage .home-archive-kicker {
-    margin-bottom: 12px;
-  }
-  #home-heritage .home-archive-year {
-    display: none;
-  }
-  #home-heritage .home-archive-narrative h2 {
-    max-width: 330px;
-    margin: auto;
-    font-size: clamp(27px, 7.6vw, 34px);
-  }
-  #home-heritage .home-archive-description {
-    max-width: 340px;
-    margin-top: 12px;
-    font-size: 14px;
-    line-height: 1.45;
   }
   #home-heritage .home-archive-navigation {
-    bottom: 7svh;
-    width: 280px;
-    gap: 16px;
+    gap: 20px;
   }
   #home-heritage .home-archive-source {
-    bottom: 1svh;
+    max-width: 140px;
   }
-  #home-heritage .home-archive-track {
-    padding: 15svh 0 16svh;
+  #home-heritage .home-archive-achievement strong {
+    font-size: 23px;
   }
-  #home-heritage .home-archive-chapter {
-    min-height: 88svh;
-    padding: 0 18px;
-  }
-  /* Match the desktop chapter variants so neither their width nor offset leaks. */
-  #home-heritage .home-archive-chapter:nth-child(n) .home-archive-image {
-    width: 100%;
-    margin: 0;
-  }
-  #home-heritage .home-archive-image img {
-    max-height: 34svh;
-    border-radius: 2px;
-  }
-  #home-heritage .home-archive-image figcaption {
-    margin-top: 12px;
-    gap: 9px;
-    font-size: 9px;
-  }
-}
-
-/* Short windows and reduced-motion visitors read each entire chapter in order. */
-#home-heritage[data-heritage-sequential="true"] .home-archive-stage {
-  position: relative;
-  top: auto;
-  height: auto;
-  padding: 60px 20px 0;
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-eyebrow {
-  display: block;
-  position: static;
-  margin-bottom: 22px;
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-narrative {
-  display: none;
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-navigation,
-#home-heritage[data-heritage-sequential="true"] .home-archive-source {
-  position: relative;
-  inset: auto;
-  width: min(100%, 300px);
-  margin: 0 auto;
-  transform: none;
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-track {
-  margin: 0;
-  padding: 0 0 30px;
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-chapter {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  align-items: center;
-  gap: clamp(24px, 6vw, 96px);
-  min-height: 0;
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 64px var(--home-gutter, 28px);
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-inline-copy {
-  display: block;
-  width: 100%;
-  max-width: none;
-}
-#home-heritage[data-heritage-sequential="true"]
-  .home-archive-inline-copy
-  > p:first-child {
-  margin-bottom: 18px;
-  color: #cf9293;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-inline-copy h3 {
-  margin-bottom: 20px;
-  color: #f2f0eb;
-  font-size: clamp(30px, 3.4vw, 48px);
-  line-height: 1.08;
-  letter-spacing: -0.045em;
-}
-#home-heritage[data-heritage-sequential="true"]
-  .home-archive-inline-copy
-  > p:last-child {
-  color: #a7adaf;
-  font-size: 16px;
-  line-height: 1.6;
-}
-#home-heritage[data-heritage-sequential="true"]
-  .home-archive-chapter
-  .home-archive-image {
-  width: 100%;
-  margin: 0;
-}
-#home-heritage[data-heritage-sequential="true"] .home-archive-image img {
-  max-height: none;
 }
 @media (max-width: 700px) {
-  #home-heritage[data-heritage-sequential="true"] .home-archive-chapter {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
-    padding: 44px 24px;
+  #home-heritage.home-heritage-editorial {
+    padding: 0 20px;
+  }
+  #home-heritage .home-archive-intro {
+    padding: 48px 0 28px;
+  }
+  #home-heritage .home-archive-intro h2 {
+    font-size: clamp(35px, 9.6vw, 52px);
+  }
+  #home-heritage .home-archive-intro > p:last-child {
+    max-width: 300px;
+    font-size: 13px;
+  }
+  #home-heritage .home-archive-stage {
+    top: 60px;
+    height: 56px;
+    gap: 0;
+  }
+  #home-heritage .home-archive-navigation {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  #home-heritage .home-archive-navigation button {
+    min-width: 56px;
+    min-height: 54px;
+    flex-direction: column;
+    gap: 2px;
+  }
+  #home-heritage .home-archive-source {
+    display: none;
+  }
+  #home-heritage .home-archive-chapter {
+    padding: 30px 0 36px;
+  }
+  #home-heritage .home-archive-heading-row {
+    display: block;
+    margin-bottom: 22px;
+  }
+  #home-heritage .home-archive-kicker {
+    margin-bottom: 13px;
+    gap: 18px;
+    font-size: 9px;
+  }
+  #home-heritage .home-archive-inline-copy h3 {
+    font-size: clamp(34px, 9vw, 47px);
+  }
+  #home-heritage .home-archive-achievement {
+    margin-top: 23px;
+    padding-left: 12px;
+    gap: 5px;
+  }
+  #home-heritage .home-archive-achievement strong {
+    font-size: 26px;
+  }
+  #home-heritage .home-archive-spread {
+    display: block;
+  }
+  #home-heritage .home-archive-support {
+    margin-top: 25px;
+    gap: 24px;
+  }
+  #home-heritage .home-archive-description {
+    margin: 18px 0 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  #home-heritage .home-archive-colophon {
+    font-size: 10px;
   }
 }
-
-/* Browser chrome can leave a portrait phone only 600–740px tall. Keep a clear
-   reading band above the photograph instead of shrinking the whole story. */
-@media (max-width: 700px) and (max-height: 740px) {
-  #home-heritage:not([data-heritage-sequential="true"]) .home-archive-kicker {
-    margin-bottom: 9px;
-  }
-  #home-heritage:not([data-heritage-sequential="true"])
-    .home-archive-narrative
-    h2 {
-    font-size: 27px;
-    line-height: 1.05;
-  }
-  #home-heritage:not([data-heritage-sequential="true"])
-    .home-archive-description {
-    margin-top: 10px;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  #home-heritage:not([data-heritage-sequential="true"])
-    .home-archive-image
-    img {
-    max-height: 29svh;
+@media (prefers-reduced-motion: reduce) {
+  #home-heritage .home-archive-spread {
+    transform: none !important;
+    opacity: 1 !important;
   }
 }

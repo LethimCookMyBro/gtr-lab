@@ -27,7 +27,7 @@ export function CreditsPage() {
         </p>
         <div className="credit-list">
           {imageCredits.map((c) => (
-            <div key={c.id}>
+            <div key={c.id} id={`photography-${c.id}`}>
               <img
                 src={"/images/gtr-" + c.id + ".small.webp"}
                 alt={c.description}
@@ -53,7 +53,7 @@ export function CreditsPage() {
         <p>{homeMedia.historicalCaution}</p>
         <div className="credit-list">
           {homeMedia.assets.map((asset) => (
-            <div key={asset.id}>
+            <div key={asset.id} id={asset.id}>
               <img
                 src={
                   asset.derivatives.find((copy) =>
@@ -65,19 +65,62 @@ export function CreditsPage() {
               />
               <div>
                 <h3>{asset.caption}</h3>
-                <p>Photograph by {asset.author}</p>
-                <a href={asset.sourceUrl} target="_blank" rel="noreferrer">
+                <p>
+                  Photograph by{" "}
+                  <a href={asset.authorUrl} target="_blank" rel="noreferrer">
+                    {asset.author}
+                  </a>
+                </p>
+                <p>Photo date: {asset.photoDate}</p>
+                <a
+                  href={asset.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Original source for ${asset.caption}`}
+                >
                   Original source
                 </a>
                 <span> · </span>
                 <a href={asset.licenseUrl} target="_blank" rel="noreferrer">
                   {asset.license}
                 </a>
-                <p>
-                  Display copies are resized, compressed and cropped where
-                  stated. The cockpit derivatives remain CC BY-SA 4.0. No
-                  photographer or manufacturer endorsement is implied.
-                </p>
+                <p>{asset.framingNote}</p>
+                <details>
+                  <summary>Image changes & reuse</summary>
+                  <p>{asset.credit}</p>
+                  {asset.license.startsWith("CC BY-SA") && (
+                    <p>
+                      These display copies and any image adaptations are
+                      released under the same{" "}
+                      <a
+                        href={asset.licenseUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {asset.license}
+                      </a>{" "}
+                      license as the source photograph.
+                    </p>
+                  )}
+                  <ul>
+                    {asset.derivatives.map((copy) => (
+                      <li key={copy.path}>
+                        <a href={copy.path}>
+                          {copy.width} × {copy.height} display copy
+                        </a>
+                        : {copy.changes.join("; ")}. License:{" "}
+                        <a
+                          href={copy.licenseUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {copy.license}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                  <p>No photographer or manufacturer endorsement is implied.</p>
+                </details>
               </div>
             </div>
           ))}

@@ -66,7 +66,7 @@ try {
         }
       });
       const measure = () => page.evaluate(() => {
-        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-archive-runway', '.home-archive-stage', '.home-archive-narrative', '.home-archive-navigation', '.home-signature-runway', '.home-signature-canvas', '.home-signature-mark', '.home-signature-footer'];
+        const selectors = ['.home-hero-runway', '.home-hero-sticky', '.home-hero-copy', '.home-film--hero .home-film-provider', '.home-editorial', '.home-editorial-copy--form', '.home-editorial-image--detail', '.home-editorial-image--cockpit', '.home-editorial-copy--control', '.home-expanding-runway', '.home-expanding-frame', '.home-archive-runway', '.home-archive-stage', '.home-archive-inline-copy', '.home-archive-achievement', '.home-archive-navigation', '.home-signature-runway', '.home-signature-canvas', '.home-signature-mark', '.home-signature-footer'];
         return {
           scrollY, width: innerWidth, height: innerHeight,
           visualViewport: { width: visualViewport.width, height: visualViewport.height },
@@ -151,14 +151,11 @@ try {
         if (kind === 'heritage') {
           for (const chapter of await page.locator('.home-archive-chapter').all()) {
             const geometry = await chapter.evaluate(element => {
-              const rect = element.querySelector('.home-archive-image').getBoundingClientRect();
+              const rect = element.getBoundingClientRect();
               const section = element.closest('.home-archive-runway');
-              const bounds = section.getBoundingClientRect();
-              const start = scrollY + bounds.top;
-              const stageHeight = section.querySelector('.home-archive-stage').offsetHeight || innerHeight;
-              const desired = scrollY + rect.top + rect.height / 2 - innerHeight * (innerWidth <= 700 ? .59 : .5);
-              const sequential = document.querySelector('.cinematic-home').dataset.sequentialMotion === 'true';
-              const target = sequential ? Math.max(0, desired) : Math.max(start, Math.min(start + bounds.height - stageHeight, desired));
+              const railHeight = section.querySelector('.home-archive-stage').offsetHeight;
+              const padding = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 88;
+              const target = Math.max(0, scrollY + rect.top - padding - railHeight - 16);
               return { index: element.dataset.eraImage, target };
             });
             await wheelTo(Math.max(0, geometry.target), `heritage-chapter-${geometry.index}`);

@@ -1,160 +1,167 @@
 import { expect, test } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
-
-const eraNames = [
+const names = [
   "1969: Skyline GT-R",
   "1989: R32 GT-R",
   "1999: R34 GT-R",
   "2007: R35 GT-R",
 ];
-
-async function openHeritage(page: Page) {
-  // The archive's local images and motion remain real; remote films are unrelated to this layout test.
+async function open(page: Page) {
   await page.route("https://media.flixel.com/**", (route) => route.abort());
   await page.goto("/");
   await page.locator("#home-heritage").scrollIntoViewIfNeeded();
 }
-
-async function selectEra(page: Page, index: number, info: TestInfo) {
-  const button = page.getByRole("button", {
-    name: eraNames[index],
-    exact: true,
-  });
+async function select(page: Page, index: number) {
+  const button = page.getByRole("button", { name: names[index], exact: true });
   await button.focus();
-  const inputAt = await page.evaluate(() => performance.now());
   await button.press("Enter");
-  // The click updates activeEra immediately; it does not mean native smooth
-  // scrolling has arrived. Observe actual scroll frames before probing geometry.
-  const settlement = await page.locator("#home-heritage").evaluate(
-    async (section, { index, inputAt }) => {
-      const samples = [];
-      let previous = scrollY;
-      let stable = 0;
-      for (let frame = 0; frame < 240; frame++) {
-        await new Promise(requestAnimationFrame);
-        const current = scrollY;
-        const image = section
-          .querySelector(`[data-era-image="${index}"] .home-archive-image`)!
-          .getBoundingClientRect();
-        samples.push({
-          frame,
-          elapsedMs: performance.now() - inputAt,
-          scrollY: current,
-          activeEra: section.getAttribute("data-active-era"),
-          targetEra: index,
-          targetCenterError:
-            image.top +
-            image.height / 2 -
-            innerHeight * (innerWidth <= 700 ? 0.59 : 0.5),
-          rearState: document
-            .querySelector(".home-signature-runway")
-            ?.getAttribute("data-scene-state"),
-        });
-        stable = Math.abs(current - previous) < 0.5 ? stable + 1 : 0;
-        previous = current;
-        if (stable >= 8) return { settled: true, samples };
-      }
-      return { settled: false, samples };
-    },
-    { index, inputAt },
-  );
-  await info.attach(`era-${index}-native-scroll-settlement`, {
-    body: JSON.stringify(settlement, null, 2),
-    contentType: "application/json",
-  });
-  expect(
-    settlement.settled,
-    "native archive scrolling should become stationary",
-  ).toBe(true);
-  await expect(page.locator("#home-heritage")).toHaveAttribute(
-    "data-active-era",
-    String(index),
-  );
-  await expect(button).toHaveAttribute("aria-current", "step");
-  // Probe the requested chapter, never whichever chapter happens to be active
-  // while travelling. Keep the original independent 20px alignment requirement.
+  const chapter = page.locator(`[data-era-image="${index}"]`);
   await expect
-    .poll(async () =>
-      page
-        .locator(`[data-era-image="${index}"] .home-archive-image`)
-        .evaluate((element) => {
-          const image = element.getBoundingClientRect();
-          return Math.abs(
-            image.top +
-              image.height / 2 -
-              innerHeight * (innerWidth <= 700 ? 0.59 : 0.5),
-          );
-        }),
+    .poll(() =>
+      chapter.evaluate((node) => {
+        const rail = document.querySelector<HTMLElement>(
+          ".home-archive-stage",
+        )!;
+        return Math.abs(
+          node.getBoundingClientRect().top -
+            parseFloat(
+              getComputedStyle(document.documentElement).scrollPaddingTop,
+            ) -
+            rail.offsetHeight -
+            16,
+        );
+      }),
     )
-    .toBeLessThan(20);
+    .toBeLessThan(3);
+  await expect(chapter).toBeFocused();
+  await expect(button).toHaveAttribute("aria-current", "step");
+  await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
+  await chapter.locator("img").evaluateAll(async (nodes) => {
+    for (const node of nodes as HTMLImageElement[]) {
+      node.loading = "eager";
+      await node.decode();
+    }
+  });
+  return chapter;
+}
+async function capture(page: Page, info: TestInfo, name: string) {
+  await page.screenshot({
+    path: info.outputPath(`${name}.png`),
+    animations: "disabled",
+  });
 }
 
-test("four alternating images pass a stable centered narrative and keyboard timeline", async ({
+test("four compact editorial spreads have a dominant photo, supporting evidence and attached captions", async ({
   page,
 }, info) => {
-  await openHeritage(page);
+  await open(page);
   for (const index of [0, 1, 2, 3, 0]) {
-    await selectEra(page, index, info);
-    const narrative = (await page
-      .locator(".home-archive-narrative")
-      .boundingBox())!;
-    const image = (await page
-      .locator(`[data-era-image="${index}"] .home-archive-image`)
-      .boundingBox())!;
-    expect(Math.abs(narrative.x + narrative.width / 2 - 720)).toBeLessThan(3);
-    expect(narrative.width).toBeLessThan(460);
-    expect(image.width).toBeLessThan(650);
-    expect(index % 2 ? image.x : 1440 - image.x - image.width).toBeGreaterThan(
-      700,
+    const chapter = await select(page, index);
+    await expect(chapter.locator("figure")).toHaveCount(3);
+    await expect(chapter.locator(".home-archive-achievement")).toBeVisible();
+    const geometry = await chapter.evaluate((node) => {
+      const primary = node
+        .querySelector(".home-archive-image")!
+        .getBoundingClientRect();
+      const supports = [
+        ...node.querySelectorAll(".home-archive-support-image"),
+      ].map((n) => n.getBoundingClientRect());
+      const photos = [...node.querySelectorAll("figure")].map((n) => {
+        const image = n.querySelector("img")!,
+          imageRect = image.getBoundingClientRect(),
+          caption = n.querySelector("figcaption")!.getBoundingClientRect();
+        return {
+          loaded: image.complete && image.naturalWidth > 0,
+          ratio: Math.abs(
+            imageRect.width / imageRect.height -
+              image.naturalWidth / image.naturalHeight,
+          ),
+          gap: caption.top - imageRect.bottom,
+        };
+      });
+      return {
+        height: node.getBoundingClientRect().height,
+        primary: { x: primary.x, width: primary.width },
+        supports: supports.map((n) => ({ x: n.x, width: n.width })),
+        photos,
+      };
+    });
+    expect(geometry.height).toBeLessThan(1200);
+    expect(geometry.primary.width).toBeGreaterThan(
+      geometry.supports[0].width * 1.7,
     );
-    await expect(page.locator(".home-archive-navigation")).toBeInViewport({
-      ratio: 1,
-    });
-    await expect(page.locator(".home-archive-description")).toBeInViewport({
-      ratio: 1,
-    });
-    await page.screenshot({
-      path: info.outputPath(`desktop-heritage-${index}.png`),
+    for (const support of geometry.supports)
+      expect(support.x).toBeGreaterThan(
+        geometry.primary.x + geometry.primary.width,
+      );
+    for (const photo of geometry.photos) {
+      expect(photo.loaded).toBe(true);
+      expect(photo.ratio).toBeLessThan(0.02);
+      expect(photo.gap).toBeGreaterThanOrEqual(8);
+      expect(photo.gap).toBeLessThanOrEqual(16);
+    }
+    await capture(page, info, `desktop-spread-${index}`);
+    await chapter.screenshot({
+      path: info.outputPath(`desktop-entire-chapter-${index}.png`),
       animations: "disabled",
     });
   }
+  await expect(page.locator(".home-archive-narrative")).toHaveCount(0);
+  await expect(page.locator(".home-archive-year")).toHaveCount(0);
 });
 
 for (const viewport of [
   { width: 375, height: 600 },
-  { width: 375, height: 667 },
-  { width: 390, height: 600 },
   { width: 390, height: 667 },
   { width: 390, height: 844 },
   { width: 430, height: 932 },
 ]) {
-  test(`portrait ${viewport.width}×${viewport.height} keeps copy and captions separate`, async ({
+  test(`natural mobile reading at ${viewport.width}x${viewport.height}`, async ({
     page,
   }, info) => {
     await page.setViewportSize(viewport);
-    await openHeritage(page);
+    await open(page);
     for (const index of [0, 1, 2, 3]) {
-      await selectEra(page, index, info);
-      const copy = (await page
-        .locator(".home-archive-narrative")
-        .boundingBox())!;
-      const image = (await page
-        .locator(`[data-era-image="${index}"] .home-archive-image`)
-        .boundingBox())!;
-      const timeline = (await page
-        .locator(".home-archive-navigation")
-        .boundingBox())!;
-      // A desktop nth-child rule must never shrink an individual mobile era.
-      expect(image.width).toBeGreaterThanOrEqual(viewport.width * 0.7);
-      expect(copy.y + copy.height).toBeLessThan(image.y);
-      expect(image.y + image.height).toBeLessThan(timeline.y);
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
+      const chapter = await select(page, index);
+      const geometry = await chapter.evaluate((node) => {
+        const copy = node
+          .querySelector(".home-archive-heading-row")!
+          .getBoundingClientRect();
+        const description = node
+          .querySelector(".home-archive-description")!
+          .getBoundingClientRect();
+        const figures = [...node.querySelectorAll("figure")].map((n) =>
+          n.getBoundingClientRect(),
+        );
+        return {
+          copyBottom: copy.bottom,
+          descriptionBottom: description.bottom,
+          figures: figures.map((n) => ({
+            top: n.top,
+            bottom: n.bottom,
+            width: n.width,
+          })),
+          overflow: document.documentElement.scrollWidth > innerWidth,
+        };
+      });
+      expect(geometry.overflow).toBe(false);
+      expect(geometry.copyBottom).toBeLessThan(geometry.figures[0].top);
+      expect(geometry.descriptionBottom).toBeLessThan(geometry.figures[1].top);
+      expect(geometry.figures[1].bottom).toBeLessThan(geometry.figures[2].top);
+      expect(geometry.figures[2].top - geometry.figures[1].bottom).toBeLessThan(
+        40,
+      );
+      for (const figure of geometry.figures)
+        expect(figure.width).toBeGreaterThan(viewport.width * 0.85);
+      await capture(
+        page,
+        info,
+        `mobile-${viewport.width}x${viewport.height}-heading-${index}`,
+      );
+      await chapter.screenshot({
+        path: info.outputPath(
+          `mobile-${viewport.width}x${viewport.height}-entire-${index}.png`,
         ),
-      ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath(`portrait-heritage-${index}.png`),
         animations: "disabled",
       });
     }
@@ -162,91 +169,47 @@ for (const viewport of [
 }
 
 for (const mode of ["reduced", "short"] as const) {
-  test(`${mode} fallback presents every story and timeline jumps to the story heading`, async ({
+  test(`${mode} layout keeps natural chapters and keyboard rail`, async ({
     page,
   }, info) => {
     if (mode === "reduced")
       await page.emulateMedia({ reducedMotion: "reduce" });
     else await page.setViewportSize({ width: 1440, height: 600 });
-    await openHeritage(page);
-    await expect(page.locator(".home-archive-narrative")).toBeHidden();
-    for (const index of [0, 1, 2, 3]) {
-      const chapter = page.locator(`[data-era-image="${index}"]`);
-      await expect(chapter.getByRole("heading")).toBeVisible();
-      await expect(chapter.getByRole("img")).toHaveAttribute("alt", /.+/);
+    await open(page);
+    for (const index of [3, 0, 2]) {
+      const chapter = await select(page, index);
+      await expect(chapter.locator(".home-archive-spread")).toHaveCSS(
+        "transform",
+        "none",
+      );
     }
-    const button = page.getByRole("button", { name: eraNames[3], exact: true });
-    await button.focus();
-    await button.press("Enter");
-    const chapter = page.locator('[data-era-image="3"]');
-    await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
-    await expect(chapter).toBeFocused();
-    await page.screenshot({
-      path: info.outputPath(`${mode}-heritage.png`),
-      animations: "disabled",
-    });
-    await expect(
-      page.getByRole("link", { name: "Archive photography & sources" }),
-    ).toBeVisible();
+    await capture(page, info, `${mode}-archive`);
   });
 }
 
-test("forward and reverse native scrolling evolves the centered story", async ({
+test("native forward and reverse wheel scrolling tracks the chapter at the reading line", async ({
   page,
 }, info) => {
-  await openHeritage(page);
-  await selectEra(page, 0, info);
-  const travel = await page
-    .locator("#home-heritage")
-    .evaluate(
-      (section) =>
-        section.getBoundingClientRect().height -
-        section.querySelector<HTMLElement>(".home-archive-stage")!.offsetHeight,
+  await open(page);
+  await select(page, 0);
+  const frames = [];
+  for (const index of [1, 2, 3, 2, 1, 0]) {
+    const target = await page
+      .locator(`[data-era-image="${index}"]`)
+      .evaluate((node) => scrollY + node.getBoundingClientRect().top - 190);
+    const before = await page.evaluate(() => scrollY);
+    await page.mouse.wheel(0, target - before);
+    await expect(page.locator("#home-heritage")).toHaveAttribute(
+      "data-active-era",
+      String(index),
     );
-  const frames: {
-    direction: number;
-    scrollY: number;
-    era: string | null;
-    centerX: number;
-    centerY: number;
-  }[] = [];
-  for (const direction of [1, -1]) {
-    for (let step = 0; step < 28; step++) {
-      await page.mouse.wheel(0, (direction * travel) / 28);
-      await page.waitForTimeout(120);
-      frames.push(
-        await page.locator("#home-heritage").evaluate((section, direction) => {
-          const narrative = section
-            .querySelector(".home-archive-narrative")!
-            .getBoundingClientRect();
-          return {
-            direction,
-            scrollY,
-            era: section.getAttribute("data-active-era"),
-            centerX: narrative.x + narrative.width / 2,
-            centerY: narrative.y + narrative.height / 2,
-          };
-        }, direction),
-      );
-    }
+    await expect(
+      page.getByRole("button", { name: names[index], exact: true }),
+    ).toHaveAttribute("aria-current", "step");
+    frames.push({ index, scrollY: await page.evaluate(() => scrollY) });
   }
-  await info.attach("native-scroll-frames", {
+  await info.attach("native-forward-reverse", {
     body: JSON.stringify(frames, null, 2),
     contentType: "application/json",
   });
-  for (const direction of [1, -1]) {
-    expect(
-      [
-        ...new Set(
-          frames
-            .filter((frame) => frame.direction === direction)
-            .map((frame) => frame.era),
-        ),
-      ].sort(),
-    ).toEqual(["0", "1", "2", "3"]);
-  }
-  for (const frame of frames) {
-    expect(Math.abs(frame.centerX - 720)).toBeLessThan(3);
-    expect(Math.abs(frame.centerY - 450)).toBeLessThan(4);
-  }
 });

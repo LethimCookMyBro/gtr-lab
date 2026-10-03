@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import {
   clamp01,
   expansionAt,
+  heroExitAt,
   sectionProgress,
   viewportProgress,
 } from "./motion";
@@ -70,6 +71,8 @@ export function useHomeMotion(
       const properties = [
         "--progress",
         "--copy-opacity",
+        "--hero-exit-opacity",
+        "--hero-exit-lift",
         "--film-width",
         "--film-height",
         "--film-radius",
@@ -81,6 +84,7 @@ export function useHomeMotion(
         "--era-2-opacity",
         "--year-opacity",
         "--chapter-progress",
+        "--chapter-reveal",
       ];
       [
         ...sections,
@@ -95,7 +99,6 @@ export function useHomeMotion(
           .querySelector(".home-hero-support a")
           ?.removeAttribute("tabindex");
       });
-      return;
     }
     let frame = 0;
     let lastEra = -1;
@@ -140,74 +143,93 @@ export function useHomeMotion(
         element,
         index,
         rect: element.getBoundingClientRect(),
-        imageRect: (
-          element.querySelector<HTMLElement>(".home-archive-image") || element
-        ).getBoundingClientRect(),
       }));
+      const archiveRail = root.current?.querySelector<HTMLElement>(
+        ".home-archive-stage",
+      );
+      const readingLine =
+        (Number.parseFloat(
+          getComputedStyle(document.documentElement).scrollPaddingTop,
+        ) || 88) +
+        (archiveRail?.offsetHeight || 0) +
+        32;
       // All geometry above is read before the first style mutation below.
-      for (const { element, rect, stickyHeight } of measurements) {
-        const kind = element.dataset.motionSection;
-        const progress =
-          kind === "editorial"
-            ? clamp01((viewport - rect.top) / (rect.height + viewport))
-            : sectionProgress(rect.top, rect.height, stickyHeight);
-        write(element, "--progress", progress.toFixed(5));
-        if (kind === "hero") {
-          write(
-            element,
-            "--copy-opacity",
-            String(1 - clamp01((progress - 0.3) / 0.6)),
-          );
-          element.toggleAttribute("data-copy-inactive", progress >= 0.9);
-          const action = element.querySelector<HTMLAnchorElement>(
-            ".home-hero-support a",
-          );
-          if (action) action.tabIndex = progress >= 0.9 ? -1 : 0;
+      if (!reduced)
+        for (const { element, rect, stickyHeight } of measurements) {
+          const kind = element.dataset.motionSection;
+          const progress =
+            kind === "editorial"
+              ? clamp01((viewport - rect.top) / (rect.height + viewport))
+              : sectionProgress(rect.top, rect.height, stickyHeight);
+          write(element, "--progress", progress.toFixed(5));
+          if (kind === "hero") {
+            const exit = heroExitAt(progress);
+            write(element, "--hero-exit-opacity", exit.opacity.toFixed(5));
+            write(element, "--hero-exit-lift", `${exit.lift.toFixed(3)}px`);
+            write(
+              element,
+              "--copy-opacity",
+              String(1 - clamp01((progress - 0.3) / 0.6)),
+            );
+            element.toggleAttribute("data-copy-inactive", progress >= 0.9);
+            const action = element.querySelector<HTMLAnchorElement>(
+              ".home-hero-support a",
+            );
+            if (action) action.tabIndex = progress >= 0.9 ? -1 : 0;
+          }
+          if (kind === "expanding") {
+            const bounds = expansionAt(progress);
+            write(element, "--film-width", `${bounds.width}%`);
+            write(element, "--film-height", `${bounds.height}svh`);
+            write(element, "--film-radius", `${bounds.radius}px`);
+            write(
+              element,
+              "--film-surround",
+              `rgb(${bounds.shade} ${bounds.shade} ${bounds.shade})`,
+            );
+          }
         }
-        if (kind === "expanding") {
-          const bounds = expansionAt(progress);
-          write(element, "--film-width", `${bounds.width}%`);
-          write(element, "--film-height", `${bounds.height}svh`);
-          write(element, "--film-radius", `${bounds.radius}px`);
-          write(
-            element,
-            "--film-surround",
-            `rgb(${bounds.shade} ${bounds.shade} ${bounds.shade})`,
-          );
-        }
-      }
       let nextEra = 0;
       let nearest = Infinity;
-      for (const { element, index, rect, imageRect } of chapterMeasurements) {
-        const distance = Math.abs(
-          imageRect.top +
-            imageRect.height / 2 -
-            viewport * (window.innerWidth <= 700 ? 0.59 : 0.5),
-        );
+      for (const { element, index, rect } of chapterMeasurements) {
+        const distance =
+          rect.top > readingLine
+            ? rect.top - readingLine
+            : rect.bottom < readingLine
+              ? readingLine - rect.bottom
+              : 0;
         if (distance < nearest) {
           nearest = distance;
           nextEra = index;
         }
-        write(
-          element,
-          "--chapter-progress",
-          viewportProgress(rect.top, rect.height, viewport).toFixed(5),
-        );
+        if (!reduced) {
+          write(
+            element,
+            "--chapter-progress",
+            viewportProgress(rect.top, rect.height, viewport).toFixed(5),
+          );
+          write(
+            element,
+            "--chapter-reveal",
+            clamp01((viewport * 0.95 - rect.top) / (viewport * 0.3)).toFixed(5),
+          );
+        }
       }
       if (chapters.length && nextEra !== lastEra) {
         lastEra = nextEra;
         onEra(nextEra);
       }
 
-      for (const { element, top, height } of anchorMeasurements) {
-        const progress = viewportProgress(top, height, viewport);
-        write(element, "--item-progress", progress.toFixed(5));
-        write(
-          element,
-          "--item-reveal",
-          clamp01((progress - 0.08) / 0.44).toFixed(5),
-        );
-      }
+      if (!reduced)
+        for (const { element, top, height } of anchorMeasurements) {
+          const progress = viewportProgress(top, height, viewport);
+          write(element, "--item-progress", progress.toFixed(5));
+          write(
+            element,
+            "--item-reveal",
+            clamp01((progress - 0.08) / 0.44).toFixed(5),
+          );
+        }
     };
     const schedule = () => {
       if (!frame) frame = window.requestAnimationFrame(update);

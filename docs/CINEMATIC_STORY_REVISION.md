@@ -23,3 +23,12 @@ No third-party video is downloaded, extracted, proxied or rehosted. Provider pla
 - 2007 R35 Nissan GT-R, V6 and independent transaxle four-wheel drive: https://www.nissan-global.com/EN/HERITAGE_COLLECTION/418_nissan_gt-r.html
 
 Photograph model years and actual credited source images remain unchanged. See HOME_MEDIA_CREDITS.md and MODEL_PROVENANCE.md.
+
+
+## Heritage exhibition candidate, 3 October 2026
+
+The previous sparse, pinned-year archive has been replaced with four complete normal-flow editorial spreads. Each has one dominant photo, two supporting photographs, a sourced competition achievement, and captions that preserve the distinction between model year and photograph date. The slim era rail remains available while scrolling; keyboard jumps reveal the chapter heading and move focus to its article. Reduced-motion and short-height visitors retain the same natural reading flow and active era tracking without CSS motion.
+
+The eight new Commons photographs are documented individually in HOME_MEDIA_CREDITS.md and the public Credits page. All source framing is retained; there is no AI imagery, retouching, enlargement or Nissan official photo reuse. In particular, the Australian Oran Park photo is not presented as Japanese JTCC action; the PGC10 image is labeled a replica photographed in2012; the S20 donor is a KPGC10; Pennzoil is1999-spec photographed in2011; and the Bathurst photo is not claimed to show the winning lap.
+
+The hero exit operates on the complete panel as a unit, with a bounded reversible fade and lift plus a separate dark-to-paper transition outside the native provider frame. No iframe scaling, clipping, mask, provider mark alteration, model geometry change or rear-scene removal is part of this candidate. Real-browser evidence and final production review remain release gates.

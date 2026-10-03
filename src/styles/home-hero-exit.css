@@ -1,0 +1,48 @@
+/* Exit the complete hero panel as one unit. The publisher iframe, its native
+   aspect ratio, and all Flixel branding remain untouched and unmasked. */
+.home-hero-runway {
+  background: var(--home-black, #070809);
+}
+/* Continue focuses the heading; only interactive focus holds the player still. */
+.home-hero-runway:where(
+    [data-hero-exit-enabled="true"][data-opening-resolved="true"]:not(
+        :has(.home-film:focus-within, .home-hero-support:focus-within)
+      )
+  )
+  > .home-hero-sticky {
+  opacity: var(--hero-exit-opacity, 1);
+  transform: translate3d(0, var(--hero-exit-lift, 0px), 0);
+}
+
+/* The paper transition is in normal flow after the entire player and its
+   controls, so neither its image nor its provider marks are covered. */
+.home-hero-handoff {
+  height: clamp(96px, 14svh, 168px);
+  background: linear-gradient(
+    180deg,
+    #070809 0%,
+    #181a1c 15%,
+    #55595c 38%,
+    #b6b9ba 67%,
+    #eceeed 88%,
+    #fff 100%
+  );
+  pointer-events: none;
+}
+
+/* The same readable handoff remains, without scroll-driven movement. */
+[data-sequential-motion="true"] .home-hero-runway > .home-hero-sticky {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce),
+  (max-height: 599px),
+  (min-width: 701px) and (max-height: 740px) {
+  .home-hero-runway > .home-hero-sticky {
+    opacity: 1;
+    transform: none;
+  }
+  .home-hero-handoff {
+    height: clamp(64px, 10svh, 100px);
+  }
+}

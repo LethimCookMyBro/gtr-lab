@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
 import { useRef } from "react";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, act } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { useHomeMotion } from "../src/components/home/useHomeMotion";
 const onEra = () => {};
-function Harness({ reduced }: { reduced: boolean }) {
+function Harness({
+  reduced,
+  onEraChange = onEra,
+}: {
+  reduced: boolean;
+  onEraChange?: (era: number) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  useHomeMotion(ref, reduced, onEra);
+  useHomeMotion(ref, reduced, onEraChange);
   return (
     <div ref={ref}>
       <section data-motion-section="hero">
@@ -22,11 +28,11 @@ function Harness({ reduced }: { reduced: boolean }) {
         <figure data-motion-anchor="cockpit" />
       </section>
       <section data-motion-section="heritage">
-        <div />
-        <article className="home-archive-chapter" />
-        <article className="home-archive-chapter" />
-        <article className="home-archive-chapter" />
-        <article className="home-archive-chapter" />
+        <div className="home-archive-stage" />
+        <article className="home-archive-chapter" data-era-image="0" />
+        <article className="home-archive-chapter" data-era-image="1" />
+        <article className="home-archive-chapter" data-era-image="2" />
+        <article className="home-archive-chapter" data-era-image="3" />
       </section>
       <section data-motion-section="signature">
         <div />
@@ -38,6 +44,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  document.documentElement.style.scrollPaddingTop = "";
 });
 
 it("reads untransformed editorial geometry before writing any scroll styles", () => {
@@ -103,8 +110,10 @@ it("reads untransformed editorial geometry before writing any scroll styles", ()
     ".home-archive-chapter",
   )!;
   expect(chapter.style.getPropertyValue("--chapter-progress")).not.toBe("");
+  expect(Number(chapter.style.getPropertyValue("--chapter-reveal"))).toBe(1);
   rerender(<Harness reduced />);
   expect(chapter.style.getPropertyValue("--chapter-progress")).toBe("");
+  expect(chapter.style.getPropertyValue("--chapter-reveal")).toBe("");
   expect(detail.style.getPropertyValue("--item-progress")).toBe("");
   expect(detail.style.getPropertyValue("--item-reveal")).toBe("");
   expect(
@@ -170,4 +179,55 @@ it("takes the fully faded hero link out of tab order and restores it in sequenti
   rerender(<Harness reduced />);
   expect(link.tabIndex).toBe(0);
   expect(hero.hasAttribute("data-copy-inactive")).toBe(false);
+});
+
+it("keeps the slim era rail synchronized with native scrolling under reduced motion", () => {
+  vi.stubGlobal("innerHeight", 390);
+  document.documentElement.style.scrollPaddingTop = "100px";
+  vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+    function (this: HTMLElement) {
+      return this.classList.contains("home-archive-stage") ? 66 : 800;
+    },
+  );
+  let selected = 0;
+  let scheduled: FrameRequestCallback | undefined;
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+    scheduled = callback;
+    return 1;
+  });
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: HTMLElement) {
+      const top =
+        this.dataset.eraImage === undefined
+          ? 0
+          : (Number(this.dataset.eraImage) - selected) * 800 + 180;
+      return {
+        top,
+        bottom: top + 800,
+        height: 800,
+        left: 0,
+        right: 390,
+        width: 390,
+        x: 0,
+        y: top,
+        toJSON() {},
+      };
+    },
+  );
+  const changed = vi.fn();
+  const { container } = render(<Harness reduced onEraChange={changed} />);
+  expect(changed).toHaveBeenLastCalledWith(0);
+  for (selected of [1, 2, 3, 2, 0]) {
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+      scheduled?.(0);
+    });
+    expect(changed).toHaveBeenLastCalledWith(selected);
+  }
+  for (const chapter of container.querySelectorAll<HTMLElement>(
+    ".home-archive-chapter",
+  )) {
+    expect(chapter.style.getPropertyValue("--chapter-reveal")).toBe("");
+    expect(chapter.style.getPropertyValue("--chapter-progress")).toBe("");
+  }
 });

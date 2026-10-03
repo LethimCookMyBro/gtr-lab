@@ -1,5 +1,5 @@
 {
-  "historicalCaution": "1969 GT-R is PGC10 four-door sedan; KPGC10 two-door hardtop introduced in 1970. Photos are modern photographs of historic models, not period photographs. Photo date and model year are separate.",
+  "historicalCaution": "The 1969 GT-R is the PGC10 four-door sedan; the KPGC10 two-door hardtop followed in 1970. Model year, depicted specification and photograph capture date are separate. This collection combines period photographs with modern photographs of historic cars and replicas; each caption identifies the distinction.",
   "historySources": [
     {
       "url": "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/skyline_2000gtr_1969.html",
@@ -20,6 +20,14 @@
     {
       "url": "https://global.nissannews.com/en/releases/071024-01-e",
       "supports": "R35 GT-R announced October 24, 2007; Japan availability from December 6, 2007"
+    },
+    {
+      "url": "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/skyline_gt-r_1999.html",
+      "supports": "1999 Pennzoil Nismo GT-R and its JGTC championship"
+    },
+    {
+      "url": "https://australia.nissannews.com/en-AU/releases/nissan-confirms-driver-line-up-for-bathurst-12-hour-defence",
+      "supports": "2015 GT-R Nismo GT3 Bathurst 12 Hour win; the photograph itself is dated 7 February"
     }
   ],
   "assets": [
@@ -279,6 +287,470 @@
           "license": "CC BY 2.0",
           "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
           "path": "/media/heritage-kpgc10-detail-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-pgc10-no39-replica",
+      "sourceTitle": "Nissan Skyline 2000GT-R (PGC10) 1969 JAF Grand Prix winner replica front",
+      "caption": "1969 PGC10 JAF Grand Prix winner replica, photographed in 2012",
+      "alt": "Silver four-door PGC10 GT-R replica with a blue bonnet and number 39, displayed in a modern gallery",
+      "author": "Morio",
+      "authorUrl": "https://commons.wikimedia.org/wiki/User:Morio",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "photoDate": "2012-02-12",
+      "framingNote": "A replica of the 1969 JAF Grand Prix-winning PGC10, photographed at Nissan Global Headquarters in 2012. This is neither a period photograph nor a claim that the pictured chassis is the original winner. Native framing retains both bumpers, number 39 and the four-door body; the modern gallery remains visible.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nissan_Skyline_2000GT-R_(PGC10)_1969_JAF_Grand_Prix_winner_replica_front.jpg",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/7/74/Nissan_Skyline_2000GT-R_%28PGC10%29_1969_JAF_Grand_Prix_winner_replica_front.jpg",
+        "width": 2560,
+        "height": 1707,
+        "bytes": 779974,
+        "sha256": "b7c9308fd29e8717555a9a6d60350f5bff8857029025a01ba884af5c93b0352c"
+      },
+      "credit": "“Nissan Skyline 2000GT-R (PGC10) 1969 JAF Grand Prix winner replica front” — Morio, via Wikimedia Commons. CC BY-SA 3.0. Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1920,
+          "height": 1280,
+          "bytes": 179744,
+          "sha256": "67a8d238ba804038f4764e0ee11b875a55e3a6d8ab7f92edfbd6f33571fbc7a9",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY-SA 3.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+          "path": "/media/archive-pgc10-no39-replica.webp"
+        },
+        {
+          "width": 640,
+          "height": 427,
+          "bytes": 40522,
+          "sha256": "c9244b57acbc25ad3153484e5e5df2d79743736d04b45e30add61b5c4ca098d4",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY-SA 3.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+          "path": "/media/archive-pgc10-no39-replica-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-c10-s20",
+      "sourceTitle": "S20 in KPGC 10 Skyline GTR",
+      "caption": "S20 inline-six in a C10-generation GT-R; KPGC10 shown",
+      "alt": "S20 inline-six in a KPGC10 engine bay, with a NISSAN 2000 cam cover and red air-cleaner housing",
+      "author": "Iwao (Flickr: kemeko1971)",
+      "authorUrl": "https://www.flickr.com/people/8868801@N03/",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "photoDate": "2012-01-04",
+      "framingNote": "The donor car is a later KPGC10 two-door coupe, not the 1969 PGC10 four-door sedan. Used to document the shared C10-era S20 engine lineage. Complete 4:3 engine-bay frame is retained. Source softness and noise are preserved.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:S20_in_KPGC_10_Skyline_GTR_(6633394331).jpg",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/S20_in_KPGC_10_Skyline_GTR_%286633394331%29.jpg",
+        "width": 2560,
+        "height": 1920,
+        "bytes": 1187586,
+        "sha256": "4891a73ac8bd332f16ab9b6fdfaa863172ac8f0dc917be84301892e0975daa96"
+      },
+      "credit": "“S20 in KPGC 10 Skyline GTR” — Iwao (Flickr: kemeko1971), via Wikimedia Commons. CC BY 2.0. Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1440,
+          "height": 1080,
+          "bytes": 163158,
+          "sha256": "03c814e27c12b25d68db1a3f287691e190d4b97ca79067473076a985bfaeb47e",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/archive-c10-s20.webp"
+        },
+        {
+          "width": 640,
+          "height": 480,
+          "bytes": 57826,
+          "sha256": "2be6ee15a63dabb0af1dcedae385d0a34a2eb4bfc1bc301feb698fe0af1cf7bd",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/archive-c10-s20-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-r32-oran-park-1992",
+      "sourceTitle": "Oran Park 1992",
+      "caption": "Mark Skaife leads Jim Richards at Oran Park, 21 June 1992",
+      "alt": "Two red, white and yellow R32 GT-R race cars corner at Oran Park, with period spectators and trackside advertising behind them",
+      "author": "Plasticyabby3",
+      "authorUrl": "https://commons.wikimedia.org/wiki/User:Plasticyabby3",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "photoDate": "1992-06-21",
+      "framingNote": "Genuine period photograph from the Australian Touring Car Championship at Oran Park, not a Japanese Touring Car Championship event. Both cars, spectators and circuit context are retained. The 1032 × 688 original is not enlarged; display at medium size, ideally no wider than about 500 CSS pixels for a 2× display.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Oran_Park_1992.jpg",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/8/81/Oran_Park_1992.jpg",
+        "width": 1032,
+        "height": 688,
+        "bytes": 386140,
+        "sha256": "06eafea802d1251cfb5d0ab88292077df651382c7213264fe6dc195e3ad472cc"
+      },
+      "credit": "“Oran Park 1992” — Plasticyabby3, via Wikimedia Commons. CC BY-SA 4.0. Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1032,
+          "height": 688,
+          "bytes": 84754,
+          "sha256": "b2e612e9f8e47b44810f7c9d4763a471eb1bd5d98a82f33baa6ded6aaeda195d",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "original pixel dimensions retained, no enlargement",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "path": "/media/archive-r32-oran-park-1992.webp"
+        },
+        {
+          "width": 640,
+          "height": 427,
+          "bytes": 45562,
+          "sha256": "30357b35d1bd0197da0ba27908c97ba086db162853d4a34a7d037a6187b55719",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "path": "/media/archive-r32-oran-park-1992-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-r32-rb26",
+      "sourceTitle": "1990 Nissan Skyline GT-R engine",
+      "caption": "RB26DETT in a 1990 Skyline GT-R, photographed in 2025",
+      "alt": "RB26DETT engine in a 1990 R32 GT-R, showing its black cam cover, intake pipework and original engine-bay hardware",
+      "author": "TTTNIS",
+      "authorUrl": "https://commons.wikimedia.org/wiki/User:TTTNIS",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "photoDate": "2025-04-20",
+      "framingNote": "Contemporary photograph of a 1990 R32 engine, not a period development or factory image. Native 6048:4024 framing and the visibly used mechanical surfaces are retained.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:1990_Nissan_Skyline_GT-R_engine.jpg",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/1990_Nissan_Skyline_GT-R_engine.jpg",
+        "width": 6048,
+        "height": 4024,
+        "bytes": 8518115,
+        "sha256": "eed6e1067cc5cebd39b90782b011ebaaf44252a68798b781dba4f692332b37f0"
+      },
+      "credit": "“1990 Nissan Skyline GT-R engine” — TTTNIS, via Wikimedia Commons. CC0 1.0. Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 1065,
+          "bytes": 254046,
+          "sha256": "2f87a39e0cd1f82bf8974b76dae5ef7ddf0b93945810b53bd635a78f9d753aab",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/archive-r32-rb26.webp"
+        },
+        {
+          "width": 640,
+          "height": 426,
+          "bytes": 71504,
+          "sha256": "2a8775d3108f91e9f43025a3086302f636efcfd786bceef2e6b41770fa158d31",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/archive-r32-rb26-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-r34-pennzoil",
+      "sourceTitle": "Pennzoil Nismo GT-R (1999 JGTC)",
+      "caption": "1999-spec Pennzoil Nismo GT-R, photographed in 2011",
+      "alt": "Yellow Pennzoil Nismo R34 GT-R in a pit garage, with the car on the right and the grandstand beyond the open garage",
+      "author": "1/4th",
+      "authorUrl": "https://www.flickr.com/people/59225019@N05/",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "photoDate": "2011-12-04",
+      "framingNote": "Modern photograph of the 1999-spec JGTC car, not 1999 race action. The garage depth, full car and original high-contrast photographic treatment are retained. No additional grading, fabricated aging or detail reconstruction is applied.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pennzoil_Nismo_GT-R_(1999_JGTC)_(7093991081).jpg",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Pennzoil_Nismo_GT-R_%281999_JGTC%29_%287093991081%29.jpg",
+        "width": 4907,
+        "height": 3254,
+        "bytes": 2625263,
+        "sha256": "e2f247bd24da17b83f349ab6abedc4af43cd76a7c088946f6b19e61c2827e0a7"
+      },
+      "credit": "“Pennzoil Nismo GT-R (1999 JGTC)” — 1/4th, via Wikimedia Commons. CC BY 2.0. Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1920,
+          "height": 1273,
+          "bytes": 315244,
+          "sha256": "07fc4192ef743d8aa7b7b57bcdd149538631d35e2cc195516420362c84b7d4b8",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/archive-r34-pennzoil.webp"
+        },
+        {
+          "width": 640,
+          "height": 424,
+          "bytes": 53396,
+          "sha256": "7493f1aae6e5d4c52fbcdd992204a684845a197131f23845824c4611f833ab66",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/archive-r34-pennzoil-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-r34-rb26",
+      "sourceTitle": "RB26DETT R34",
+      "caption": "RB26DETT engine in an R34 Skyline GT-R",
+      "alt": "R34 GT-R engine bay with a red RB26DETT cam cover, silver strut brace and intake pipe",
+      "author": "X-Ray91270",
+      "authorUrl": "https://commons.wikimedia.org/wiki/User:X-Ray91270",
+      "license": "Public-domain dedication (PD-self)",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self",
+      "photoDate": "2008 (exact capture date uncertain)",
+      "framingNote": "The Commons summary gives 27 November 2008 while camera EXIF gives 20 May 2008, so no exact capture date is claimed. Full 4:3 frame retained. The 1024 × 768 original is not enlarged; intended as a small supporting technical photograph.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:RB26DETT_R34.jpg",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/7/7b/RB26DETT_R34.jpg",
+        "width": 1024,
+        "height": 768,
+        "bytes": 398289,
+        "sha256": "14f2ebf5a6eedf3bd40df132dc37c1a073234cf42e26a929f7ec766daf20f89b"
+      },
+      "credit": "“RB26DETT R34” — X-Ray91270, via Wikimedia Commons. Public-domain dedication (PD-self). Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1024,
+          "height": 768,
+          "bytes": 177992,
+          "sha256": "ad40cec3cb89942d00f41104c8d8a0eb5030c78ac058390cee3a061b916d65cf",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "original pixel dimensions retained, no enlargement",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "Public-domain dedication (PD-self)",
+          "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self",
+          "path": "/media/archive-r34-rb26.webp"
+        },
+        {
+          "width": 640,
+          "height": 480,
+          "bytes": 82608,
+          "sha256": "c60c7e30eb09f32e4b96d5bdfeafae58c031ada6dbf47fe22afd73b3f9281efc",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "Public-domain dedication (PD-self)",
+          "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self",
+          "path": "/media/archive-r34-rb26-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-r35-bathurst",
+      "sourceTitle": "Nissan GT-R Nismo GT3 2015 Bathurst 12 Hour",
+      "caption": "No.35 GT-R Nismo GT3 at Bathurst, February 2015",
+      "alt": "Red and white number 35 Nissan GT-R Nismo GT3 in a side-on pan at Bathurst, with a motion-blurred circuit backdrop",
+      "author": "jason goulding (Flickr: racin jason)",
+      "authorUrl": "https://www.flickr.com/people/14373548@N03/",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "photoDate": "2015-02-07",
+      "framingNote": "The source lists 7 February 2015, before the 8 February race. This frame is not described as the winning lap or the race itself. The full car, both bumpers and the original pan blur are retained. The 1080 × 720 source is not enlarged; intended for a medium archival tile.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nissan_GT-R_Nismo_GT3_2015_Bathurst_12_Hour.jpg",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/2/25/Nissan_GT-R_Nismo_GT3_2015_Bathurst_12_Hour.jpg",
+        "width": 1080,
+        "height": 720,
+        "bytes": 56228,
+        "sha256": "8aa19ff14c5ae76342699558143e2d96e5b42b0df0c9eb1a1992975a41b97bbd"
+      },
+      "credit": "“Nissan GT-R Nismo GT3 2015 Bathurst 12 Hour” — jason goulding (Flickr: racin jason), via Wikimedia Commons. CC BY 2.0. Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1080,
+          "height": 720,
+          "bytes": 54920,
+          "sha256": "41b1d561777ab01a0db09646eef6a4b268b17d8e5719deb3714f5983d18f2020",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "original pixel dimensions retained, no enlargement",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/archive-r35-bathurst.webp"
+        },
+        {
+          "width": 640,
+          "height": 427,
+          "bytes": 30088,
+          "sha256": "013756618a1e243c2bcfb1b4e5ebabf283a85dc6d7a3e4708c397a66207ca497",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC BY 2.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+          "path": "/media/archive-r35-bathurst-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "archive-r35-vr38",
+      "sourceTitle": "Nissan VR38DETT engine",
+      "caption": "VR38DETT engine bay, photographed in 2013",
+      "alt": "R35 VR38DETT engine bay with silver intake runners, a red engine cover and sunlight above the raised bonnet",
+      "author": "Tokumeigakarinoaoshima",
+      "authorUrl": "https://commons.wikimedia.org/wiki/User:Tokumeigakarinoaoshima",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "photoDate": "2013-08-17",
+      "framingNote": "Photographed at Suzuka in 2013. This is an engine-bay photograph, not a factory hand-assembly image. The complete native 4:3 layout, raised bonnet and original sun flare are retained.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nissan_VR38DETT_engine.JPG",
+      "licenseVerifiedDate": "2026-10-03",
+      "original": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Nissan_VR38DETT_engine.JPG",
+        "width": 2048,
+        "height": 1536,
+        "bytes": 2005892,
+        "sha256": "95f8ad03b177d8a4589e171df76404b6a7c75227c109893d8cbb5fb47b793bf8"
+      },
+      "credit": "“Nissan VR38DETT engine” — Tokumeigakarinoaoshima, via Wikimedia Commons. CC0 1.0. Complete source frame retained; proportionally resized where needed and encoded as WebP. No AI enhancement, retouching, added aging or color grading.",
+      "derivatives": [
+        {
+          "width": 1440,
+          "height": 1080,
+          "bytes": 175944,
+          "sha256": "d09c912da7d340c1508da9c96be110a8db25f7f60c69aa04efa1ac9a34595c05",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/archive-r35-vr38.webp"
+        },
+        {
+          "width": 640,
+          "height": 480,
+          "bytes": 57238,
+          "sha256": "5abee5e3d394cb185f98efd0f0015bfbd40217266d2672ee46968e80bb50a8fb",
+          "changes": [
+            "EXIF orientation normalized",
+            "full original frame retained, no crop",
+            "proportional downsize, no enlargement or geometry distortion",
+            "EXIF and XMP metadata stripped; source ICC color profile retained when present",
+            "lossy WebP encoding (quality 85)",
+            "no AI enhancement, retouching, added aging or color grading"
+          ],
+          "license": "CC0 1.0",
+          "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "path": "/media/archive-r35-vr38-small.webp"
         }
       ]
     }
