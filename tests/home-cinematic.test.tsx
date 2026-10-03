@@ -347,7 +347,7 @@ describe("cinematic homepage", () => {
       .setup()
       .click(screen.getByRole("button", { name: "2007: R35 GT-R" }));
     expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 666,
+      top: 800,
       behavior: "instant",
     });
     expect(
@@ -390,11 +390,12 @@ describe("cinematic homepage", () => {
       ).toBeTruthy();
     }
   });
-  it("keeps rejected photographic and unapproved 3D signatures out of the public homepage", () => {
+  it("restores the real rear signature without fabricated rings or photographic zoom", () => {
     setup();
     expect(document.querySelector(".home-signature-rings")).toBeNull();
     expect(document.querySelector(".home-signature-photo")).toBeNull();
-    expect(document.querySelector(".home-signature-runway")).toBeNull();
+    expect(document.querySelector(".home-signature-runway")).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "NISSAN GT-R" })).toBeTruthy();
   });
   it("offers a keyboard-operable era timeline and a working back-to-top", async () => {
     setup();

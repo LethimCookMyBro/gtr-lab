@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { eras } from "./storyMedia";
+import "../../styles/home-heritage.css";
 export function HeritageJourney({
   activeEra,
   onEra,
@@ -18,6 +19,21 @@ export function HeritageJourney({
     );
     if (!target) return;
     onEra(index);
+    if (sequentialMotion) {
+      const scrollPadding =
+        Number.parseFloat(
+          getComputedStyle(document.documentElement).scrollPaddingTop,
+        ) || 88;
+      window.scrollTo({
+        top: Math.max(
+          0,
+          scrollY + target.getBoundingClientRect().top - scrollPadding,
+        ),
+        behavior: "instant",
+      });
+      target.focus({ preventScroll: true });
+      return;
+    }
     const bounds = (
       target.querySelector<HTMLElement>(".home-archive-image") || target
     ).getBoundingClientRect();
@@ -31,30 +47,30 @@ export function HeritageJourney({
       bounds.top +
       bounds.height / 2 -
       innerHeight * (innerWidth <= 700 ? 0.59 : 0.5);
-    const destination = sequentialMotion
-      ? Math.max(0, desired)
-      : Math.max(
-          sectionTop,
-          Math.min(sectionTop + sectionBounds.height - stageHeight, desired),
-        );
+    const destination = Math.max(
+      sectionTop,
+      Math.min(sectionTop + sectionBounds.height - stageHeight, desired),
+    );
     window.scrollTo({
       top: destination,
-      behavior: sequentialMotion ? "instant" : "smooth",
+      behavior: "smooth",
     });
   };
   return (
     <section
       ref={section}
       id="home-heritage"
-      className="home-archive-runway"
+      className="home-archive-runway home-heritage-editorial"
+      data-heritage-sequential={sequentialMotion}
       data-motion-section="heritage"
       data-active-era={activeEra}
       aria-label="GT-R heritage"
     >
       <div className="home-archive-stage">
+        <p className="home-archive-eyebrow">Selected milestones · 1969—2007</p>
         <div
           className="home-archive-narrative"
-          aria-live="polite"
+          aria-live={sequentialMotion ? "off" : "polite"}
           aria-atomic="true"
         >
           <p className="home-archive-kicker">
@@ -73,6 +89,7 @@ export function HeritageJourney({
               type="button"
               aria-label={`${era.year}: ${era.name}`}
               aria-current={activeEra === index ? "step" : undefined}
+              aria-controls={`home-era-${era.year}`}
               onClick={() => navigateEra(index)}
             >
               <span aria-hidden="true" />
@@ -88,7 +105,9 @@ export function HeritageJourney({
         {eras.map((era, index) => (
           <article
             key={era.year}
+            id={`home-era-${era.year}`}
             className="home-archive-chapter"
+            tabIndex={-1}
             data-era-image={index}
             aria-label={`${era.year} ${era.name}`}
           >
@@ -103,7 +122,7 @@ export function HeritageJourney({
               <img
                 src={era.image.src}
                 srcSet={`${era.image.small} ${era.image.smallWidth || 800}w, ${era.image.src} ${era.image.width}w`}
-                sizes="(max-width: 700px) 92vw, 66vw"
+                sizes="(max-width: 700px) 92vw, (prefers-reduced-motion: reduce) 48vw, (max-height: 740px) 48vw, 32vw"
                 width={era.image.width}
                 height={era.image.height}
                 alt={era.image.alt}

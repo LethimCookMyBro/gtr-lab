@@ -36,3 +36,8 @@ public/films/*.mp4
 
 playwright-home-report/
 docs/design/home-redesign/*.png
+
+# Reviewed cinematic component QA stays in Actions artifacts, not source.
+playwright-rear-report/
+playwright-opening-cards-report/
+rear-signature-results/

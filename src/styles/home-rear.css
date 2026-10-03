@@ -1,0 +1,140 @@
+/* The licensed geometry supplies all four lamps; no decorative rings or photo stand-ins. */
+.cinematic-home .home-signature-runway {
+  height: 260svh;
+  background: #030405;
+}
+.cinematic-home .home-signature-sticky {
+  background: #030405;
+}
+.cinematic-home .home-signature-canvas {
+  background: #030405;
+}
+.home-signature-identity {
+  position: absolute;
+  z-index: 2;
+  top: 12%;
+  left: 24px;
+  right: 24px;
+  text-align: center;
+  pointer-events: none;
+}
+.home-signature-identity > p {
+  color: #95999e;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  margin-bottom: 18px;
+}
+.home-signature-identity h2 {
+  margin: 0;
+  font-size: clamp(46px, 5.1vw, 84px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: #d2d6da;
+}
+.home-signature-caption {
+  position: absolute;
+  z-index: 2;
+  left: 24px;
+  right: 24px;
+  bottom: 17%;
+  text-align: center;
+  pointer-events: none;
+  opacity: clamp(0, calc((var(--rear-progress, 0) - 0.45) * 2.5), 1);
+  transform: translateY(calc((1 - var(--rear-progress, 0)) * 16px));
+}
+.home-signature-caption p {
+  font-size: clamp(19px, 2.1vw, 32px);
+  letter-spacing: -0.035em;
+  margin: 0 0 10px;
+}
+.home-signature-caption > span {
+  color: #999ea4;
+  font-size: 13px;
+}
+.cinematic-home .home-signature-footer {
+  bottom: 20px;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: #aaaeb2;
+}
+.cinematic-home .home-signature-footer a {
+  min-height: 44px;
+}
+.cinematic-home .home-signature-status {
+  top: 48%;
+}
+[data-sequential-motion="true"] .home-signature-runway {
+  height: 100svh;
+  min-height: 620px;
+}
+[data-sequential-motion="true"] .home-signature-sticky {
+  position: relative;
+  height: 100svh;
+  min-height: 620px;
+}
+[data-sequential-motion="true"] .home-signature-caption {
+  opacity: 1;
+  transform: none;
+}
+@media (max-width: 700px) {
+  .cinematic-home .home-signature-runway {
+    height: 230svh;
+  }
+  .home-signature-identity {
+    top: 16%;
+  }
+  .home-signature-identity > p {
+    font-size: 9px;
+  }
+  .home-signature-identity h2 {
+    font-size: 64px;
+  }
+  .home-signature-caption {
+    bottom: 24%;
+    left: 28px;
+    right: 28px;
+  }
+  .home-signature-caption p {
+    font-size: 22px;
+  }
+  .home-signature-caption > span {
+    display: block;
+    max-width: 260px;
+    margin: auto;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .cinematic-home .home-signature-footer {
+    bottom: 16px;
+    left: 24px;
+    right: 24px;
+    flex-direction: column-reverse;
+    gap: 6px;
+    text-align: center;
+  }
+  .cinematic-home .home-signature-footer a:first-child {
+    font-size: 10px;
+  }
+  [data-sequential-motion="true"] .home-signature-runway {
+    height: 100svh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-signature-caption {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.home-signature-identity .gtr-metal-wordmark {
+  --gtr-mark-size: clamp(60px, 6vw, 94px);
+  --gtr-nissan-size: 12px;
+}
+@media (max-width: 700px) {
+  .home-signature-identity .gtr-metal-wordmark {
+    --gtr-mark-size: 70px;
+    --gtr-nissan-size: 10px;
+  }
+}

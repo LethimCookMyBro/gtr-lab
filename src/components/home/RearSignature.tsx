@@ -8,6 +8,8 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { ArrowDown, RotateCcw } from "lucide-react";
+import { GtrWordmark } from "./GtrWordmark";
+import { SceneBoundary } from "../three/SceneBoundary";
 import { sectionProgress } from "./motion";
 const RearVehicleScene = lazy(() => import("./RearVehicleScene"));
 function canRenderWebGL() {
@@ -36,6 +38,7 @@ export function RearSignature({
     [supported, setSupported] = useState<boolean | null>(null),
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
+    [requiresReload, setRequiresReload] = useState(false),
     [loaded, setLoaded] = useState(0),
     [progress, setProgress] = useState(0),
     [attempt, setAttempt] = useState(0);
@@ -45,6 +48,15 @@ export function RearSignature({
     }, []),
     onError = useCallback((message: string) => {
       setError(message);
+      setReady(false);
+    }, []),
+    onModuleError = useCallback(() => {
+      // A rejected React.lazy import is cached. Do not offer an ineffective
+      // scene retry; a full page reload obtains the current application chunks.
+      setRequiresReload(true);
+      setError(
+        "The rear viewer could not start. Reload the page to try again.",
+      );
       setReady(false);
     }, []);
   useEffect(() => {
@@ -116,6 +128,7 @@ export function RearSignature({
                 ? "loading"
                 : "idle"
       }
+      style={{ "--rear-progress": progress } as import("react").CSSProperties}
       aria-label="The GT-R rear-light signature"
     >
       <div className="home-signature-sticky">
@@ -124,16 +137,18 @@ export function RearSignature({
           aria-busy={mount && !ready && supported !== false}
         >
           {mount && supported && (
-            <Suspense fallback={null}>
-              <RearVehicleScene
-                key={attempt}
-                progress={progress}
-                reducedMotion={reducedMotion}
-                onReady={onReady}
-                onError={onError}
-                onProgress={setLoaded}
-              />
-            </Suspense>
+            <SceneBoundary onError={onModuleError}>
+              <Suspense fallback={null}>
+                <RearVehicleScene
+                  key={attempt}
+                  progress={progress}
+                  reducedMotion={reducedMotion}
+                  onReady={onReady}
+                  onError={onError}
+                  onProgress={setLoaded}
+                />
+              </Suspense>
+            </SceneBoundary>
           )}
         </div>
         {!ready && (
@@ -146,9 +161,14 @@ export function RearSignature({
             ) : error ? (
               <>
                 <p>{error}</p>
-                <button type="button" onClick={retry}>
+                <button
+                  type="button"
+                  onClick={
+                    requiresReload ? () => window.location.reload() : retry
+                  }
+                >
                   <RotateCcw size={16} />
-                  Retry 3D view
+                  {requiresReload ? "Reload page" : "Retry 3D view"}
                 </button>
               </>
             ) : saveData && !optedIn ? (
@@ -166,17 +186,15 @@ export function RearSignature({
             )}
           </div>
         )}
-        <div className="home-signature-intro">
-          <p>A signature that stays with you.</p>
-          <h2>
-            Unmistakable.
-            <br />
-            From every angle.
+        <header className="home-signature-identity">
+          <p>THE R35 SIGNATURE</p>
+          <h2 aria-label="NISSAN GT-R">
+            <GtrWordmark />
           </h2>
-        </div>
-        <div className="home-signature-mark" aria-hidden="true">
-          GT-R LAB
-          <span />
+        </header>
+        <div className="home-signature-caption">
+          <p>Four lights. One unmistakable signature.</p>
+          <span>From racing instinct to a presence all its own.</span>
         </div>
         <div className="home-signature-footer">
           <Link to="/credits#models">

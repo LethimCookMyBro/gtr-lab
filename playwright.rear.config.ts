@@ -17,6 +17,7 @@ export default defineConfig({
     deviceScaleFactor: 1,
     trace: { mode: "retain-on-failure", screenshots: false, snapshots: true },
     screenshot: "only-on-failure",
+    video: { mode: "on", size: { width: 1280, height: 900 } },
     launchOptions: {
       args: [
         "--use-gl=angle",

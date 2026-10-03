@@ -3,17 +3,20 @@ import { Link } from "react-router-dom";
 import { Square, Play } from "lucide-react";
 import { homeFilms } from "../../data/films";
 import { mayAutoplay } from "./motion";
+export type FilmState = "loading" | "embedded" | "stopped" | "unavailable";
 interface FilmProps {
   kind: "hero" | "detail";
   reducedMotion: boolean;
   saveData: boolean;
   suspended?: boolean;
+  onStateChange?: (state: FilmState) => void;
 }
 export function Film({
   kind,
   reducedMotion,
   saveData,
   suspended = false,
+  onStateChange,
 }: FilmProps) {
   const holder = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
@@ -37,6 +40,17 @@ export function Film({
     choice !== "stop" &&
     (choice === "play" ||
       mayAutoplay({ reducedMotion, saveData, visible, documentVisible }));
+  // A cross-origin iframe load ends document loading, but cannot verify media or playback.
+  const state: FilmState = failed
+    ? "unavailable"
+    : active
+      ? loaded
+        ? "embedded"
+        : "loading"
+      : "stopped";
+  useEffect(() => {
+    onStateChange?.(state);
+  }, [state, onStateChange]);
   useEffect(() => {
     const observer =
       typeof IntersectionObserver === "undefined"
@@ -84,22 +98,14 @@ export function Film({
       ref={holder}
       className={`home-film home-film--${kind}`}
       data-film-provider="flixel"
-      data-film-state={
-        failed
-          ? "unavailable"
-          : active
-            ? loaded
-              ? "embedded"
-              : "loading"
-            : "stopped"
-      }
+      data-film-state={state}
     >
       <img
         className="home-film-backup"
         src="/images/gtr-premium.webp"
         alt="2018 Nissan GT-R Premium in Super Silver"
         loading={kind === "hero" ? "eager" : "lazy"}
-        hidden={active}
+        hidden={active && loaded}
       />
       {active && (
         <iframe

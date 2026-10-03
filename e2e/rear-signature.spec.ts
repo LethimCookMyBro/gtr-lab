@@ -41,12 +41,30 @@ test("published R35 renders from the rear and scroll dolly changes actual pixels
       path: info.outputPath(`rear-${i}-${p}.png`),
     });
     images.push(createHash("sha256").update(bytes).digest("hex"));
-    if (i === 0 || i === 2)
+    if (i <= 3)
       await page.screenshot({
         path: info.outputPath(`composed-${i}-${p}.png`),
         scale: "css",
       });
   }
+  // Native wheel input drives the actual browser scroll and continuously lit model.
+  await reveal(page, 0.08);
+  for (let step = 0; step < 18; step++) {
+    await page.mouse.wheel(0, info.project.name === "rear-mobile" ? 55 : 70);
+    await page.waitForTimeout(100);
+  }
+  await page.screenshot({
+    path: info.outputPath("native-wheel-revealed.png"),
+    scale: "css",
+  });
+  for (let step = 0; step < 18; step++) {
+    await page.mouse.wheel(0, info.project.name === "rear-mobile" ? -55 : -70);
+    await page.waitForTimeout(100);
+  }
+  await page.screenshot({
+    path: info.outputPath("native-wheel-return.png"),
+    scale: "css",
+  });
   expect(images[0]).not.toBe(images[1]);
   expect(images[1]).not.toBe(images[2]);
   expect(requests.length).toBeGreaterThan(0);

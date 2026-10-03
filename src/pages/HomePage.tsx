@@ -3,12 +3,14 @@ import { HeroFilm } from "../components/home/HeroFilm";
 import { EditorialOverlap } from "../components/home/EditorialOverlap";
 import { ExpandingFilm } from "../components/home/ExpandingFilm";
 import { HeritageJourney } from "../components/home/HeritageJourney";
+import { RearSignature } from "../components/home/RearSignature";
 import { ModelInvitations } from "../components/home/ModelInvitations";
 import {
   useHomeMotion,
   useHomePreferences,
 } from "../components/home/useHomeMotion";
 import "../styles/home.css";
+import "../styles/home-rear.css";
 export function HomePage() {
   const root = useRef<HTMLDivElement>(null);
   const [activeEra, setActiveEra] = useState(0);
@@ -29,6 +31,10 @@ export function HomePage() {
         activeEra={activeEra}
         onEra={setActiveEra}
         sequentialMotion={sequential}
+      />
+      <RearSignature
+        reducedMotion={sequential}
+        saveData={preferences.saveData}
       />
       <ModelInvitations />
     </div>

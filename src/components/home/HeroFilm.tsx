@@ -1,6 +1,10 @@
 import { ArrowRight } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Film } from "./Film";
+import type { FilmState } from "./Film";
+import { OpeningMark } from "./OpeningMark";
+import "../../styles/home-opening-cards.css";
 export function HeroFilm({
   reducedMotion,
   saveData,
@@ -8,16 +12,42 @@ export function HeroFilm({
   reducedMotion: boolean;
   saveData: boolean;
 }) {
+  const [openingResolved, setOpeningResolved] = useState(
+    reducedMotion || saveData,
+  );
+  const heading = useRef<HTMLHeadingElement>(null);
+  const resolveOpening = useCallback((state: FilmState) => {
+    if (state !== "loading") setOpeningResolved(true);
+  }, []);
+  const continueToPage = useCallback(() => {
+    setOpeningResolved(true);
+    heading.current?.focus({ preventScroll: true });
+  }, []);
   return (
     <section
       className="home-hero-runway"
       data-motion-section="hero"
       aria-labelledby="home-title"
+      onFocusCapture={(event) => {
+        // Never leave keyboard focus visually covered by the nonmodal opening.
+        if (!(event.target as HTMLElement).closest(".home-opening")) {
+          setOpeningResolved(true);
+        }
+      }}
     >
       <div className="home-hero-sticky">
-        <Film kind="hero" reducedMotion={reducedMotion} saveData={saveData} />
+        <OpeningMark
+          pending={!openingResolved && !reducedMotion && !saveData}
+          onContinue={continueToPage}
+        />
+        <Film
+          kind="hero"
+          reducedMotion={reducedMotion}
+          saveData={saveData}
+          onStateChange={resolveOpening}
+        />
         <div className="home-hero-copy">
-          <h1 id="home-title">
+          <h1 id="home-title" ref={heading} tabIndex={-1}>
             Engineered
             <br />
             to defy.

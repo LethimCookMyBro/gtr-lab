@@ -360,12 +360,19 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     );
     await expect(image).toBeInViewport();
     const bounds = (await image.boundingBox())!;
-    expect(bounds.width).toBeGreaterThan(page.viewportSize()!.width * 0.3);
+    expect(bounds.width).toBeGreaterThanOrEqual(
+      page.viewportSize()!.width * 0.29,
+    );
     if (page.viewportSize()!.width > 767) {
-      expect(bounds.width).toBeGreaterThan(page.viewportSize()!.width * 0.6);
+      expect(bounds.width).toBeLessThan(page.viewportSize()!.width * 0.38);
       const narrative = (await page
         .locator(".home-archive-narrative")
         .boundingBox())!;
+      expect(
+        Math.abs(
+          narrative.x + narrative.width / 2 - page.viewportSize()!.width / 2,
+        ),
+      ).toBeLessThanOrEqual(2);
       const horizontalGap =
         index % 2 === 0
           ? narrative.x - (bounds.x + bounds.width)
@@ -375,7 +382,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
         await page
           .locator(".home-archive-runway")
           .evaluate((el) => getComputedStyle(el).backgroundColor),
-      ).toBe("rgb(12, 14, 16)");
+      ).toBe("rgb(11, 13, 15)");
     }
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(
