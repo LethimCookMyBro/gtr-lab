@@ -105,20 +105,40 @@ try {
         const state = await measure();
         view.checkpoints.push({ label, ...state });
         console.log(`[motion] ${view.plan || planName(plan)} ${label} scroll=${state.scrollY} rear=${state.rearScene.state}`);
+        const screenshotStarted = Date.now();
+        console.log(`[motion] ${name} screenshot-start ${label}`);
         await page.screenshot({ path: path.join(dir, `${label}.png`), animations: 'allow', timeout: 15000 });
+        console.log(`[motion] ${name} screenshot-end ${label} elapsedMs=${Date.now() - screenshotStarted}`);
         await save();
       };
-      const wheelTo = async target => {
+      const wheelTo = async (target, label) => {
+        const started = Date.now();
+        const sweep = { label, target, steps: 0, directionChanges: 0, reached: false, lastObservedScroll: null };
+        let previousDirection = 0;
+        console.log(`[motion] ${name} wheel-start ${label} target=${target}`);
         await page.evaluate(() => { window.__motionProbe.active = true; });
         for (let step = 0; step < (deliberateDemo ? 450 : 150); step++) {
           const current = await page.evaluate(() => scrollY);
           const remaining = target - current;
-          if (Math.abs(remaining) < 3) break;
-          await page.mouse.wheel(0, Math.sign(remaining) * Math.min(deliberateDemo ? 24 : 75, Math.abs(remaining)));
+          sweep.lastObservedScroll = current;
+          if (Math.abs(remaining) < 3) { sweep.reached = true; break; }
+          const direction = Math.sign(remaining);
+          if (previousDirection && direction !== previousDirection) sweep.directionChanges++;
+          previousDirection = direction;
+          const delta = direction * Math.min(deliberateDemo ? 24 : 75, Math.abs(remaining));
+          const wheelStarted = Date.now();
+          if (step % 10 === 0) console.log(`[motion] ${name} wheel-step-start ${label} step=${step} scroll=${current} remaining=${remaining} delta=${delta} elapsedMs=${wheelStarted - started}`);
+          await page.mouse.wheel(0, delta);
+          sweep.steps++;
+          const wheelMs = Date.now() - wheelStarted;
+          if (step % 10 === 0 || wheelMs > 1000) console.log(`[motion] ${name} wheel-step-end ${label} step=${step} wheelMs=${wheelMs} directionChanges=${sweep.directionChanges}`);
           await page.waitForTimeout(deliberateDemo ? 80 : 32);
         }
         await page.waitForTimeout(100);
         await page.evaluate(() => { window.__motionProbe.active = false; window.__motionProbe.last = 0; });
+        sweep.elapsedMs = Date.now() - started;
+        (view.wheelSweeps ||= []).push(sweep);
+        console.log(`[motion] ${name} wheel-end ${label} ${JSON.stringify(sweep)}`);
       };
       await checkpoint('00-hero-entry');
       for (const kind of ['hero', 'editorial', 'expanding', 'heritage', 'signature']) {
@@ -141,7 +161,7 @@ try {
               const target = sequential ? Math.max(0, desired) : Math.max(start, Math.min(start + bounds.height - stageHeight, desired));
               return { index: element.dataset.eraImage, target };
             });
-            await wheelTo(Math.max(0, geometry.target));
+            await wheelTo(Math.max(0, geometry.target), `heritage-chapter-${geometry.index}`);
             await checkpoint(`heritage-chapter-${geometry.index}`);
           }
           await page.mouse.wheel(0, -Math.round(plan.height * .35));
@@ -158,7 +178,7 @@ try {
           ? [geometry.top - geometry.viewport * .55, geometry.top, geometry.top + geometry.height * .4]
           : [.1, .5, .9].map(progress => geometry.top + run * progress);
         for (const [index, target] of samples.entries()) {
-          await wheelTo(Math.max(0, target));
+          await wheelTo(Math.max(0, target), `${kind}-${index + 1}`);
           await checkpoint(`${kind}-${index + 1}`);
         }
       }

@@ -89,7 +89,7 @@ describe("readiness-linked metallic opening", () => {
       within(opening(container)!).getByRole("img", { name: "Nissan GT-R" }),
     ).toBeTruthy();
     expect(within(opening(container)!).getByRole("status").textContent).toBe(
-      "Opening the hosted film",
+      "Preparing the film",
     );
     expect(container.querySelector("iframe")).toBeTruthy();
   });

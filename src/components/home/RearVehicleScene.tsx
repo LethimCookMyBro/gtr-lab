@@ -36,19 +36,15 @@ function RearCamera({
     invalidate = useThree((s) => s.invalidate),
     gl = useThree((s) => s.gl),
     scene = useThree((s) => s.scene);
-  const current = useRef(reducedMotion ? 1 : progress),
-    target = reducedMotion ? 1 : progress;
+  const target = reducedMotion ? 1 : progress;
   useEffect(() => {
     scene.background = new Color("#030405");
     invalidate();
   }, [target, size.width, size.height, invalidate, scene]);
-  useFrame((_, delta) => {
-    const diff = target - current.current;
-    current.current =
-      reducedMotion || Math.abs(diff) < 0.0005
-        ? target
-        : current.current + diff * (1 - Math.exp(-10 * Math.min(delta, 0.1)));
-    const p = current.current,
+  useFrame(() => {
+    // Browser scroll already supplies RAF-paced positions. Apply one demand frame
+    // instead of scheduling a second animation that can backlog on slower GPUs.
+    const p = target,
       aspect = size.width / Math.max(1, size.height);
     const t = Math.min(1, Math.max(0, (p - 0.13) / 0.64));
     const reveal = t * t * (3 - 2 * t);
@@ -56,7 +52,7 @@ function RearCamera({
     scene.environmentIntensity = reveal * 0.95;
     const key = scene.getObjectByName("rear-key"),
       fill = scene.getObjectByName("rear-fill");
-    if (key instanceof Light) key.intensity = reveal * 1.35;
+    if (key instanceof Light) key.intensity = reveal * 0.65;
     if (fill instanceof Light) fill.intensity = reveal * 0.06;
     const distance = Math.max(
       5.3,
@@ -68,7 +64,6 @@ function RearCamera({
     camera.lookAt(0, 0.66, -1.6);
     camera.updateProjectionMatrix();
     gl.domElement.dataset.rearProgress = p.toFixed(4);
-    if (Math.abs(target - p) > 0.0005) invalidate();
   });
   return null;
 }
@@ -85,16 +80,18 @@ function RearVehicle({
     applyVehicleAppearance(asset.bindings, "#68737b", true);
     for (const b of asset.bindings) {
       if (b.role === "paint") {
-        b.material.metalness = 0.82;
-        b.material.roughness = 0.26;
+        b.material.metalness = 0.58;
+        b.material.roughness = 0.36;
         if (b.material instanceof MeshPhysicalMaterial) {
           b.material.clearcoat = 1;
-          b.material.clearcoatRoughness = 0.12;
+          b.material.clearcoatRoughness = 0.22;
         }
       }
       if (b.role === "taillights") {
         b.material.emissive.set("#ff1007");
-        b.material.emissiveIntensity = 3.2;
+        b.material.emissiveIntensity = 1.35;
+        // ACES shifts strong red emitters toward orange. Keep the real LED hue.
+        b.material.toneMapped = false;
       }
       if (b.role === "headlights") b.material.emissiveIntensity = 0;
     }
@@ -107,11 +104,12 @@ function RearVehicle({
         if (!(material instanceof MeshStandardMaterial)) continue;
         if (material.name === "Glass.001") {
           material.color.set("#6d0208");
-          material.opacity = 0.15;
+          material.opacity = 0.2;
+          material.envMapIntensity = 0.08;
           material.transparent = true;
           material.depthWrite = false;
           material.metalness = 0;
-          material.roughness = 0.18;
+          material.roughness = 0.28;
         }
         if (material.name === "Reverse_Emitter") {
           material.color.set("#343941");
@@ -147,42 +145,42 @@ const RearStudio = memo(function RearStudio() {
           intensity={0}
         />
         <Environment resolution={256} frames={1}>
-          <color attach="background" args={["#030405"]} />
+          <color attach="background" args={["#0a0d11"]} />
           <Lightformer
             form="rect"
-            intensity={3.5}
+            intensity={1.6}
             position={[0, 5, -1]}
             rotation={[Math.PI / 2, 0, 0]}
-            scale={[7, 2, 1]}
+            scale={[9, 5, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={2.2}
+            intensity={1.2}
             position={[-6, 2, -2]}
             rotation={[0, Math.PI / 2, 0]}
-            scale={[5, 1.6, 1]}
+            scale={[6, 4, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={2}
+            intensity={1.2}
             position={[6, 2, 1]}
             rotation={[0, -Math.PI / 2, 0]}
-            scale={[4, 1, 1]}
+            scale={[6, 4, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={0.55}
+            intensity={0.8}
             position={[0, 3, -8]}
-            scale={[6, 1, 1]}
+            scale={[8, 5, 1]}
           />
         </Environment>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
           <planeGeometry args={[150, 150]} />
           <meshStandardMaterial
-            color="#06080a"
-            roughness={0.6}
+            color="#0b0e11"
+            roughness={0.88}
             metalness={0}
-            envMapIntensity={0.02}
+            envMapIntensity={0.12}
           />
         </mesh>
         <ContactShadows

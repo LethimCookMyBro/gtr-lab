@@ -3,7 +3,7 @@ import { useLayoutEffect } from "react";
 import type { ReactNode } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { Group, PerspectiveCamera, Scene } from "three";
+import { Group, PerspectiveCamera, Scene, MeshStandardMaterial } from "three";
 import RearVehicleScene from "../src/components/home/RearVehicleScene";
 
 const runtime = vi.hoisted(() => ({
@@ -120,4 +120,22 @@ it("keeps the static studio resource boundaries stable across scroll progress up
   }
   expect(runtime.environmentBuilds).toBe(1);
   expect(runtime.shadowRenders).toBe(1);
+});
+
+it("keeps the actual taillight emission saturated red instead of passing it through the desaturating studio tone map", () => {
+  const lamp = new MeshStandardMaterial({ color: "#000000" });
+  runtime.asset.bindings = [{ material: lamp, role: "taillights" }];
+  render(
+    <RearVehicleScene
+      progress={0}
+      reducedMotion={false}
+      onReady={() => {}}
+      onError={() => {}}
+      onProgress={() => {}}
+    />,
+  );
+  expect(lamp.emissive.r).toBeGreaterThan(0.9);
+  expect(lamp.emissive.g).toBeLessThan(lamp.emissive.r * 0.02);
+  expect(lamp.emissive.b).toBeLessThan(lamp.emissive.r * 0.02);
+  expect(lamp.toneMapped).toBe(false);
 });

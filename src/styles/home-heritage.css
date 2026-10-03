@@ -214,7 +214,8 @@
     min-height: 88svh;
     padding: 0 18px;
   }
-  #home-heritage .home-archive-chapter .home-archive-image {
+  /* Match the desktop chapter variants so neither their width nor offset leaks. */
+  #home-heritage .home-archive-chapter:nth-child(n) .home-archive-image {
     width: 100%;
     margin: 0;
   }

@@ -70,3 +70,20 @@ it.each([
     }
   },
 );
+
+it("applies native scroll progress in one demand frame without trailing camera redraws", () => {
+  const invalidate = vi.fn();
+  runtime.state.invalidate = invalidate;
+  const { rerender } = render(
+    <RearVehicleScene {...props} progress={0} reducedMotion={false} />,
+  );
+  runtime.frames.forEach((frame) => frame({}, 1 / 60));
+  runtime.frames = [];
+  rerender(
+    <RearVehicleScene {...props} progress={0.5} reducedMotion={false} />,
+  );
+  invalidate.mockClear();
+  runtime.frames.forEach((frame) => frame({}, 1 / 60));
+  expect(runtime.state.gl.domElement.dataset.rearProgress).toBe("0.5000");
+  expect(invalidate).not.toHaveBeenCalled();
+});

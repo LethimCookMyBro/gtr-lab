@@ -78,6 +78,8 @@ test("four alternating images pass a stable centered narrative and keyboard time
 });
 
 for (const viewport of [
+  { width: 375, height: 600 },
+  { width: 375, height: 667 },
   { width: 390, height: 600 },
   { width: 390, height: 667 },
   { width: 390, height: 844 },
@@ -99,6 +101,8 @@ for (const viewport of [
       const timeline = (await page
         .locator(".home-archive-navigation")
         .boundingBox())!;
+      // A desktop nth-child rule must never shrink an individual mobile era.
+      expect(image.width).toBeGreaterThanOrEqual(viewport.width * 0.7);
       expect(copy.y + copy.height).toBeLessThan(image.y);
       expect(image.y + image.height).toBeLessThan(timeline.y);
       expect(

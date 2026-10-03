@@ -25,7 +25,7 @@ export function OpeningMark({
         <GtrWordmark sweep={pending} />
         <span className="home-opening-rule" aria-hidden="true" />
         <p role="status" aria-live="polite">
-          Opening the hosted film
+          Preparing the film
         </p>
       </div>
       <button
