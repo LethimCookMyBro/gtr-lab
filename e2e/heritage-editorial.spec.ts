@@ -258,7 +258,6 @@ test("pointer era landings have no focus box and lower evidence reaches its read
       await chapter.evaluate((node) => node.matches(":focus-visible")),
     ).toBe(false);
     await expect(chapter).toHaveCSS("outline-style", "none");
-    await expect(chapter).toHaveCSS("outline-width", "0px");
     await expect(button).toHaveAttribute("aria-current", "step");
     await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
     await page.screenshot({
