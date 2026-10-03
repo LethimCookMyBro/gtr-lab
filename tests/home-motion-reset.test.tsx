@@ -231,3 +231,38 @@ it("keeps the slim era rail synchronized with native scrolling under reduced mot
     expect(chapter.style.getPropertyValue("--chapter-progress")).toBe("");
   }
 });
+
+it.each([390, 600])(
+  "keeps the visible chapter selected after a small landing shift at %ipx height",
+  (height) => {
+    vi.stubGlobal("innerHeight", height);
+    document.documentElement.style.scrollPaddingTop = "100px";
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+      function (this: HTMLElement) {
+        return this.classList.contains("home-archive-stage") ? 66 : 800;
+      },
+    );
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      function (this: HTMLElement) {
+        const top =
+          this.dataset.eraImage === undefined
+            ? 0
+            : (Number(this.dataset.eraImage) - 3) * 800 + 200;
+        return {
+          top,
+          bottom: top + 800,
+          height: 800,
+          left: 0,
+          right: 1440,
+          width: 1440,
+          x: 0,
+          y: top,
+          toJSON() {},
+        };
+      },
+    );
+    const changed = vi.fn();
+    render(<Harness reduced onEraChange={changed} />);
+    expect(changed).toHaveBeenLastCalledWith(3);
+  },
+);

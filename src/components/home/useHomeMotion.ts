@@ -147,12 +147,16 @@ export function useHomeMotion(
       const archiveRail = root.current?.querySelector<HTMLElement>(
         ".home-archive-stage",
       );
-      const readingLine =
+      // Read inside the visible chapter rather than on the navigation landing
+      // boundary. Small late layout shifts must not resurrect the previous era.
+      const readingLine = Math.max(
+        viewport * 0.45,
         (Number.parseFloat(
           getComputedStyle(document.documentElement).scrollPaddingTop,
         ) || 88) +
-        (archiveRail?.offsetHeight || 0) +
-        32;
+          (archiveRail?.offsetHeight || 0) +
+          64,
+      );
       // All geometry above is read before the first style mutation below.
       if (!reduced)
         for (const { element, rect, stickyHeight } of measurements) {
