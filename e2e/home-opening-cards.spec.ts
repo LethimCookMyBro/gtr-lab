@@ -158,3 +158,117 @@ test("reduced motion bypasses the opening and pointer effects without losing act
     scale: "css",
   });
 });
+
+test("model card borders stay inside their grid tracks without overlapping", async ({
+  page,
+}, info) => {
+  await page.route("https://media.flixel.com/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<html><body>Document only</body></html>",
+    }),
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const lineup = page.getByRole("navigation", {
+    name: "Explore all six models",
+  });
+  await lineup.locator("a").first().scrollIntoViewIfNeeded();
+  await page.evaluate(() => document.fonts.ready);
+  await lineup.locator("img").evaluateAll(async (images) => {
+    await Promise.all(
+      images.map((image) => (image as HTMLImageElement).decode()),
+    );
+  });
+  // Freeze only reveal translation so this measures the layout box, not scroll progress.
+  await page.addStyleTag({
+    content: ".home-model-invitation { --item-reveal: 1 !important; }",
+  });
+  const geometry = await lineup.evaluate((nav) => {
+    const style = getComputedStyle(nav);
+    const box = nav.getBoundingClientRect();
+    const left = box.left + parseFloat(style.paddingLeft);
+    const right = box.right - parseFloat(style.paddingRight);
+    const tracks = style.gridTemplateColumns.split(" ").map(parseFloat);
+    const cards = [
+      ...nav.querySelectorAll<HTMLElement>(".home-model-invitation"),
+    ].map((card) => {
+      const rect = card.getBoundingClientRect();
+      const text = [
+        ...card.querySelectorAll<HTMLElement>(
+          ".home-invitation-copy, .home-invitation-cta, .home-invitation-meta",
+        ),
+      ].map((element) => {
+        const bounds = element.getBoundingClientRect();
+        return {
+          text: element.textContent,
+          left: bounds.left,
+          right: bounds.right,
+          top: bounds.top,
+          bottom: bounds.bottom,
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+        };
+      });
+      return {
+        label: card.getAttribute("aria-label"),
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        text,
+      };
+    });
+    return {
+      left,
+      right,
+      tracks,
+      cards,
+      documentWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+  await info.attach("card-grid-geometry", {
+    body: JSON.stringify(geometry, null, 2),
+    contentType: "application/json",
+  });
+  await page.screenshot({
+    path: info.outputPath("cards-grid-bounds.png"),
+    scale: "css",
+  });
+  for (const [index, card] of geometry.cards.entries()) {
+    expect
+      .soft(card.width, `${card.label} fits its grid track`)
+      .toBeLessThanOrEqual(geometry.tracks[index % geometry.tracks.length] + 1);
+    expect
+      .soft(card.left, `${card.label} left border`)
+      .toBeGreaterThanOrEqual(geometry.left - 1);
+    expect
+      .soft(card.right, `${card.label} right border`)
+      .toBeLessThanOrEqual(geometry.right + 1);
+    for (const text of card.text) {
+      expect
+        .soft(text.left, `${card.label}: ${text.text} left`)
+        .toBeGreaterThanOrEqual(card.left);
+      expect
+        .soft(text.right, `${card.label}: ${text.text} right`)
+        .toBeLessThanOrEqual(card.right);
+      expect
+        .soft(text.scrollWidth, `${card.label}: ${text.text} text overflow`)
+        .toBeLessThanOrEqual(text.clientWidth + 1);
+    }
+    for (const other of geometry.cards.slice(index + 1)) {
+      const overlapX =
+        Math.min(card.right, other.right) - Math.max(card.left, other.left);
+      const overlapY =
+        Math.min(card.bottom, other.bottom) - Math.max(card.top, other.top);
+      expect
+        .soft(
+          overlapX > 1 && overlapY > 1,
+          `${card.label} overlaps ${other.label}`,
+        )
+        .toBe(false);
+    }
+  }
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.documentWidth + 1);
+});
