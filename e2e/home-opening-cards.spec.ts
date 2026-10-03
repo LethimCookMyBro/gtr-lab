@@ -86,11 +86,15 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
     await premium.hover({
       position: { x: bounds.width * 0.3, y: bounds.height * 0.33 },
     });
+    // Same-page WebGL/trace capture can delay a locator read in CI even
+    // after the pointer style has updated. Keep checking actual pointer movement.
     await expect
-      .poll(() =>
-        premium.evaluate((el) =>
-          (el as HTMLElement).style.getPropertyValue("--card-pointer-x"),
-        ),
+      .poll(
+        () =>
+          premium.evaluate((el) =>
+            (el as HTMLElement).style.getPropertyValue("--card-pointer-x"),
+          ),
+        { timeout: 15_000 },
       )
       .not.toBe(firstX);
     await page.screenshot({

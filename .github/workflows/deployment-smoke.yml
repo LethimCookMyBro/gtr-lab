@@ -20,6 +20,7 @@ on:
       - "release-configurator-controls-approved.txt"
       - "release-cinematic-story-approved.txt"
       - "release-heritage-exhibition-approved.txt"
+      - "release-card-overflow-approved.txt"
 permissions:
   contents: read
 jobs:
@@ -63,6 +64,11 @@ jobs:
           HOME_QA_URL: https://gtr-lab-production.up.railway.app
           REQUIRE_HOME_FILMS: "0"
         timeout-minutes: 5
+      - name: Verify live model card bounds and interactions
+        run: npx playwright test -c playwright.opening-cards.config.ts --grep "model card borders|six model cards"
+        env:
+          HOME_QA_URL: https://gtr-lab-production.up.railway.app
+        timeout-minutes: 5
       - name: Record live 390px gradual mobile scrolling
         run: node scripts/diagnose-mobile-home-motion.mjs
         env:
@@ -96,5 +102,7 @@ jobs:
             vehicle-preview-results/
             media-live-results/
             test-results/home-motion/
+            test-results/opening-cards/
+            playwright-opening-cards-report/
             playwright-home-report/
           retention-days: 14
