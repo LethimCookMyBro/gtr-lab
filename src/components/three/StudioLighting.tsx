@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { environmentAsset } from "./sceneHelpers";
 import { StageGeometry } from "./StageGeometry";
 import { Environment } from "@react-three/drei/core/Environment";
 import { Lightformer } from "@react-three/drei/core/Lightformer";
 import { ContactShadows } from "@react-three/drei/core/ContactShadows";
+import { useEnvironment } from "@react-three/drei/core/useEnvironment";
+import { GroundedSkybox } from "three/addons/objects/GroundedSkybox.js";
 import type { StudioEnvironment } from "./types";
 
 const MOODS = {
@@ -77,7 +79,7 @@ export function StudioLighting({
           color="#e7ebed"
         />
         <Environment
-          key={environment}
+          key={`lighting-${environment}`}
           resolution={256}
           frames={1}
           environmentIntensity={mood.intensity}
@@ -120,7 +122,7 @@ export function StudioLighting({
         </Environment>
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, 0, 0]}
+          position={[0, -0.002, 0]}
           receiveShadow
         >
           <planeGeometry args={[150, 150]} />
@@ -131,8 +133,8 @@ export function StudioLighting({
           />
         </mesh>
         <ContactShadows
-          key={environment}
-          position={[0, 0.001, 0]}
+          key={`contact-${environment}`}
+          position={[0, -0.001, 0]}
           opacity={environment === "gallery" ? 0.55 : 0.68}
           scale={12}
           blur={2.5}
@@ -175,17 +177,35 @@ function OutdoorEnvironment({
 }) {
   const width = useThree((state) => state.size.width);
   const file = environmentAsset(environment, width < 768)!;
+  const texture = useEnvironment({ files: file });
+  const ground = useMemo(() => {
+    // These panoramas contain nearby verges, not reconstructed terrain. Scenic
+    // scale keeps those photographed objects beyond the car's orbit. Unlike the
+    // legacy shader's finite sphere, this mesh projects through the real camera
+    // ray, has a smooth floor/horizon transition and shares world Y=0 with tyres.
+    const height = 8;
+    const skybox = new GroundedSkybox(texture, height, 60, 128);
+    skybox.position.y = height - 0.003;
+    return skybox;
+  }, [texture]);
+  useEffect(
+    () => () => {
+      ground.geometry.dispose();
+      ground.material.dispose();
+    },
+    [ground],
+  );
   return (
     <StageGeometry>
       <Environment
-        key={file}
-        files={file}
+        key={`lighting-${file}`}
+        map={texture}
         background
         environmentIntensity={1}
         backgroundIntensity={1}
-        ground={{ height: 1.6, radius: 45, scale: 80 }}
       />
-      <EnvironmentFade key={file} reducedMotion={reducedMotion} />
+      <primitive object={ground} dispose={null} />
+      <EnvironmentFade key={`fade-${file}`} reducedMotion={reducedMotion} />
       <directionalLight
         position={environment === "forest" ? [4, 8, -3] : [-5, 4, 3]}
         intensity={environment === "forest" ? 1.1 : 1.7}
@@ -203,15 +223,15 @@ function OutdoorEnvironment({
       />
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.0005, 0]}
+        position={[0, -0.002, 0]}
         receiveShadow
       >
         <planeGeometry args={[30, 30]} />
         <shadowMaterial transparent opacity={0.28} />
       </mesh>
       <ContactShadows
-        key={file}
-        position={[0, 0.001, 0]}
+        key={`contact-${file}`}
+        position={[0, -0.001, 0]}
         opacity={0.65}
         scale={12}
         blur={2.3}
