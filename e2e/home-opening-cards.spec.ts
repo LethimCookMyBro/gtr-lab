@@ -254,6 +254,12 @@ test("model card borders stay inside their grid tracks without overlapping", asy
         .soft(text.right, `${card.label}: ${text.text} right`)
         .toBeLessThanOrEqual(card.right);
       expect
+        .soft(text.top, `${card.label}: ${text.text} top`)
+        .toBeGreaterThanOrEqual(card.top);
+      expect
+        .soft(text.bottom, `${card.label}: ${text.text} bottom`)
+        .toBeLessThanOrEqual(card.bottom);
+      expect
         .soft(text.scrollWidth, `${card.label}: ${text.text} text overflow`)
         .toBeLessThanOrEqual(text.clientWidth + 1);
     }

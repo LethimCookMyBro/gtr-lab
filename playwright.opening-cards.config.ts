@@ -5,7 +5,7 @@ export default defineConfig({
   ...home,
   testMatch: "home-opening-cards.spec.ts",
   projects: [
-    ...[1024, 1180, 1366, 1440, 1920].map((width) => ({
+    ...[1024, 1051, 1180, 1366, 1440, 1920].map((width) => ({
       name: `cards-desktop-${width}`,
       use: {
         ...devices["Desktop Chrome"],

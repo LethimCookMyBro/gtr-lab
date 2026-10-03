@@ -2877,6 +2877,7 @@
     min-width: 44px;
   }
   .home-model-invitation {
+    width: 100%;
     height: auto;
     aspect-ratio: 1.55;
   }
