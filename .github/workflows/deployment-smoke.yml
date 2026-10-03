@@ -22,6 +22,7 @@ on:
       - "release-heritage-exhibition-approved.txt"
       - "release-card-overflow-approved.txt"
       - "release-loading-identity-approved.txt"
+      - "release-environment-fix-approved.txt"
 permissions:
   contents: read
 jobs:

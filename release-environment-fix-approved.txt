@@ -1,0 +1,36 @@
+Publish the reviewed photographic-environment grounding correction.
+
+Tested application source: e9014f8eb80ce295a793ad3c50d1fabe3f992fea
+Exact Quality run: 37122418131 SUCCESS
+QA-only candidate: 489e7fd2764a9c8874a3ae1da04a01e9ab228433
+Application source is byte-identical; only capture timeout and workflow matrix differ.
+Expanded comparison run: 37123503181 SUCCESS (all four baseline/candidate desktop/mobile jobs)
+Vehicle checkpoint: 37121930237 SUCCESS
+
+Verification: 352 unit tests; TypeScript and production build; 43 general browser
+passes plus one rapid 430px homepage-navigation case that passed retry after an
+isReady error; 6 renderer and 14 vehicle cases passed. The final environment
+comparison covers both photographs at front/rear angles, a full azimuth sweep,
+minimum/far zoom, top/low camera limits, wheel detail, every environment switch,
+and exact canonical pixel equality after Home and Forest/Studio return.
+
+Visual review accepted the corrected floor and tyre contact in matched
+forest/coast desktop/mobile captures. Existing HDR panoramas and their lighting
+are retained. The obsolete finite shader shell is replaced with Three's installed
+GroundedSkybox; its effective scenic scale keeps nearby photographic verges away
+from the car. Contact-shadow blur cameras now remain below world Y=0, receivers
+sit above their floors, sibling keys are unique, and owned HDR GPU resources are
+disposed when switching away.
+
+Only the already-published Ciasny custom-aero R35 is present. Its GLB SHA-256 is
+fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d.
+No vehicle geometry, material, camera preset, cabin, or additional-model change.
+The exposed rear aero/tyre proportions belong to the source geometry.
+
+Evidence uses actual WebGL with SwiftShader, including Chromium mobile emulation;
+it is not hardware-GPU or mobile-Safari certification. The photographs retain
+softness, baked objects and imperfect scenic scale; they are not rebuilt terrain.
+
+After the existing Railway service reports exact-release SUCCESS and public-origin
+smoke is verified, restore the saved 14 watch patterns and compare the complete
+service configuration with its pre-gate snapshot.
