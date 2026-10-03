@@ -1,0 +1,11 @@
+Publish the visually reviewed model-card sizing correction.
+Application change: a12bee60e8fd8e6870ea229a34c15242e37401c4
+Final QA candidate: e2d16ff7b7f841e8f8f21c2d876016cf3ac4b239
+Exact aggregate Quality: 37103193941 SUCCESS
+Homepage and component QA: 37102643477 SUCCESS; 32 opening/card cases passed first time on application-equivalent 6826f1661f9d551af4852d31a82c2b8dad64c264.
+Verified widths: 1024, 1051, 1180, 1366, 1440, 1920, 390 and 430.
+Only production source change: width:100% on desktop model cards, preventing min-height/aspect-ratio transfer from exceeding allocated grid tracks. Photographs, text, height bounds, pointer motion, keyboard actions and destinations are preserved.
+The regression-only candidate a740cb98db77184d33f10914595089121b1f98cc reproduced 604.5px cards overlapping at 1180px. The final browser checks require all six card borders inside grid tracks, no pair overlap, text containment, readable actions, native pointer and keyboard behavior, and reduced-motion support.
+Root visual review accepted the 1180px and 1051px screenshots. No loader, vehicle asset, film or heritage design changes.
+Two pre-existing DOM unit focus assertions failed on separate attempts because dialog removal preceded passive cleanup. Strict focus identity assertions now wait for actual cleanup; final 306 unit tests, typecheck, build, general browser, renderer and vehicle suites passed.
+Verify this exact release on Railway and with public-origin smoke, then restore all 14 saved normal watch patterns and read back the full unchanged service configuration.
