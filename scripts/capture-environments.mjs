@@ -16,15 +16,15 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { join } from "node:path";
 import { chromium, expect } from "@playwright/test";
 
-// Use the PNG decoder already shipped by our lockfile-pinned Playwright. Decode
-// the captured screenshot in Node rather than requesting a second GPU readback.
-const { PNG } = createRequire(import.meta.url)(
-  "playwright-core/lib/utilsBundle",
-);
+import {
+  canvasPixelHash,
+  assertDistinctScenePixels,
+  assertMobileViewerLayout,
+  observeOverlayRectangles,
+} from "./environment-pixel-comparison.mjs";
 
 const viewports = {
   "desktop-1440": { width: 1440, height: 900 },
@@ -112,14 +112,14 @@ const baseUrl = (
   process.env.PREVIEW_BASE_URL || "http://127.0.0.1:4183"
 ).replace(/\/$/, "");
 const report = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   commit: process.env.GITHUB_SHA || null,
   baseUrl,
   startedAt: new Date().toISOString(),
   status: "running",
   plan,
   pixelComparison:
-    "Exact RGBA SHA-256 of the canvas rectangle inset by 2 CSS pixels, excluding the browser focus outline. Full viewport PNGs and their independent file SHA-256 hashes are preserved.",
+    "visible-scene-rgba-v2: SHA-256 of the exact observed overlay layout followed by unoccluded row-major RGBA bytes. Exclude the 2 CSS-pixel focus perimeter plus measured title/pseudo-element, header, toolbar and individual scene-bottom UI rectangles. More than half of the original canvas must remain compared. Full untouched PNGs and file SHA-256 hashes remain the UI/visual evidence.",
   limitations: [
     "SwiftShader checks rendering and interactions; this is not physical-GPU/mobile performance evidence.",
     "Screenshot differences and reset equality do not establish visual realism, composition or absence of clipping. Inspect the PNGs.",
@@ -133,32 +133,6 @@ await mkdir(outputRoot, { recursive: true });
 const save = () =>
   writeFile(join(outputRoot, "report.json"), JSON.stringify(report, null, 2));
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function canvasPixelHash(bytes, bounds) {
-  const png = PNG.sync.read(bytes);
-  // deviceScaleFactor and screenshot scale are both 1. Exclude only the proven
-  // focus-outline false positive; do not blur, rescale, tolerate or mask changes
-  // within the scene. Hash raw decoded pixels, not PNG compression bytes.
-  const inset = 2;
-  const x = Math.ceil(bounds.x + inset);
-  const y = Math.ceil(bounds.y + inset);
-  const right = Math.floor(bounds.x + bounds.width - inset);
-  const bottom = Math.floor(bounds.y + bounds.height - inset);
-  assert(
-    x >= 0 && y >= 0 && right <= png.width && bottom <= png.height,
-    "Canvas comparison region extends outside the captured viewport",
-  );
-  assert(right > x && bottom > y, "Canvas comparison region is empty");
-  const hash = createHash("sha256");
-  for (let row = y; row < bottom; row++) {
-    const start = (row * png.width + x) * 4;
-    hash.update(png.data.subarray(start, start + (right - x) * 4));
-  }
-  return {
-    sha256: hash.digest("hex"),
-    bounds: { x, y, width: right - x, height: bottom - y, insetPixels: inset },
-  };
-}
 
 async function captureScreenshot(page, options, recovery) {
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -243,6 +217,12 @@ async function runViewport(name, viewport) {
   page.setDefaultTimeout(15000);
   const canvas = page.locator(".scene-stage canvas");
   let initialCanvas;
+  const comparisonsByHash = new Map();
+  const assertPixelChanges = (hashes, message) =>
+    assertDistinctScenePixels(
+      hashes.map((hash) => comparisonsByHash.get(hash)),
+      message,
+    );
   const dialog = page.getByRole("dialog");
   let currentStep = "initial-load";
   // At most one extra screenshot across the entire viewport job, not one per
@@ -410,7 +390,7 @@ async function runViewport(name, viewport) {
     );
     // Preserve the real focus state for visual/accessibility review. Keyboard
     // and mouse modality can draw different :focus-visible outlines despite
-    // identical focus; canvasPixelHash excludes only that 2px perimeter.
+    // identical focus; comparison excludes its 2px perimeter and measured DOM UI.
     await canvas.focus();
     // Keep hover styling identical too, regardless of the last drawer option.
     await page.mouse.move(viewport.width - 2, viewport.height - 2);
@@ -433,6 +413,36 @@ async function runViewport(name, viewport) {
         ? item.switchEvidence
         : item.images;
     const file = `${paintOnly ? "paint-" : evidenceOnly ? "evidence-" : ""}${String(collection.length).padStart(2, "0")}-${shot}.png`;
+    const mobileLayout = name.startsWith("mobile")
+      ? assertMobileViewerLayout(
+          await page.evaluate(() => {
+            const rect = (element) => {
+              if (!element) return null;
+              const { x, y, width, height } = element.getBoundingClientRect();
+              return { x, y, width, height };
+            };
+            return {
+              viewport: { width: innerWidth, height: innerHeight },
+              header: rect(
+                document.querySelector(".config-information-header"),
+              ),
+              nav: rect(document.querySelector(".config-header")),
+              title: rect(document.querySelector(".config-title")),
+              provenance: rect(document.querySelector(".study-disclosure")),
+              canvas: rect(document.querySelector(".scene-stage canvas")),
+              touchControls: [
+                ...document.querySelectorAll(".config-toolbar > button"),
+              ].map(rect),
+            };
+          }),
+        )
+      : undefined;
+    if (mobileLayout) {
+      const check =
+        "Mobile 210px information header contains nav/title/provenance, adjoins a >=390px viewer and retains >=44px touch controls";
+      if (!view.checks.includes(check)) view.checks.push(check);
+    }
+    const overlays = await page.evaluate(observeOverlayRectangles);
     const screenshotStarted = performance.now();
     const bytes = await captureScreenshot(
       page,
@@ -463,6 +473,11 @@ async function runViewport(name, viewport) {
             bounds,
             "Cannot retry screenshot after the viewer layout changed",
           );
+          assert.deepEqual(
+            await page.evaluate(observeOverlayRectangles),
+            overlays,
+            "Cannot retry screenshot after the overlay layout changed",
+          );
           assert(
             !view.diagnostics.some((d) =>
               ["pageerror", "error", "crash"].includes(d.kind),
@@ -473,7 +488,12 @@ async function runViewport(name, viewport) {
       },
     );
     const screenshotFinished = performance.now();
-    const comparison = canvasPixelHash(bytes, bounds);
+    assert.deepEqual(
+      await page.evaluate(observeOverlayRectangles),
+      overlays,
+      "Overlay layout changed during the screenshot",
+    );
+    const comparison = canvasPixelHash(bytes, bounds, overlays);
     const image = {
       name: shot,
       file: `${item.id}/${file}`,
@@ -483,6 +503,12 @@ async function runViewport(name, viewport) {
       sha256: createHash("sha256").update(bytes).digest("hex"),
       canvasSha256: comparison.sha256,
       comparisonBounds: comparison.bounds,
+      comparisonContract: comparison.contract,
+      comparisonExclusions: comparison.exclusions,
+      comparisonLayout: comparison.layout,
+      comparedPixels: comparison.comparedPixels,
+      canvasPixels: comparison.canvasPixels,
+      ...(mobileLayout ? { mobileLayout } : {}),
       timingMs: {
         settle: Math.round(settledAt - captureStarted),
         screenshot: Math.round(screenshotFinished - screenshotStarted),
@@ -490,6 +516,7 @@ async function runViewport(name, viewport) {
       },
       ...details,
     };
+    comparisonsByHash.set(image.canvasSha256, image);
     collection.push(image);
     item.webgl = await graphicsHealth();
     await writeFile(
@@ -588,9 +615,8 @@ async function runViewport(name, viewport) {
         const low = await capture(item, "low", {
           input: "12 × Shift+ArrowDown",
         });
-        assert.notEqual(
-          low,
-          item.canonical,
+        assertPixelChanges(
+          [low, item.canonical],
           "Low orbit did not change rendered pixels",
         );
         await press("Home", 1);
@@ -618,9 +644,8 @@ async function runViewport(name, viewport) {
             input: `${checkpoint * 5} cumulative × ${plan.orbit.key}`,
             expectedSweepDegrees: (checkpoint * 5 * 0.16 * 180) / Math.PI,
           });
-          assert.notEqual(
-            hash,
-            previous,
+          assertPixelChanges(
+            [hash, previous],
             "Orbit input did not change rendered pixels",
           );
           previous = hash;
@@ -647,9 +672,8 @@ async function runViewport(name, viewport) {
           far,
           "Maximum zoom did not clamp",
         );
-        assert.notEqual(
-          near,
-          far,
+        assertPixelChanges(
+          [near, far],
           "Zoom inputs did not change rendered pixels",
         );
         await press("Home", 1);
@@ -707,9 +731,8 @@ async function runViewport(name, viewport) {
               },
               { evidenceOnly: true },
             );
-            assert.notEqual(
-              awayHash,
-              item.canonical,
+            assertPixelChanges(
+              [awayHash, item.canonical],
               `Switching from ${item.id} to ${away.id} did not change the rendered scene`,
             );
           }
@@ -756,21 +779,19 @@ async function runViewport(name, viewport) {
         2,
         "Missing switch-away evidence",
       );
-      assert.equal(
-        new Set([
+      assertPixelChanges(
+        [
           item.canonical,
           ...item.switchEvidence.map((image) => image.canvasSha256),
-        ]).size,
-        3,
+        ],
         "Target and switch-away environments did not produce three distinct rendered scenes",
       );
       view.checks.push(
         "Target and both switch-away environments render distinct pixels on the original canvas",
       );
     } else {
-      assert.equal(
-        new Set(canonical).size,
-        environments.length,
+      assertPixelChanges(
+        canonical,
         "Two environments produced identical canonical images",
       );
       view.checks.push(
@@ -850,9 +871,8 @@ async function runViewport(name, viewport) {
           },
           { paintOnly: true },
         );
-        assert.notEqual(
-          frontOn,
-          frontOff,
+        assertPixelChanges(
+          [frontOn, frontOff],
           "Vehicle lamps did not change Jet Black front-view pixels",
         );
         night.checks.push(

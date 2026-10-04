@@ -78,9 +78,15 @@ export const CAMERA_VIEWS: Record<string, CameraView> = {
 
 /** Keep portrait framing inside the modelled venue's clear camera envelope. */
 export const VENUE_CAMERA_RADIUS = 11;
-export function exteriorDistanceScale(requested: number, baseDistance: number) {
+export function exteriorDistanceScale(
+  requested: number,
+  baseDistance: number,
+  viewportWidth = Infinity,
+) {
+  // The separate mobile header makes the canvas nearly square. Keep enough
+  // distance for the complete car; 1.22 retains a 16px edge margin at 390×392.
   return Math.min(
-    requested,
+    Math.max(requested, viewportWidth <= 760 ? 1.22 : 1),
     VENUE_CAMERA_RADIUS / Math.max(0.01, baseDistance),
   );
 }

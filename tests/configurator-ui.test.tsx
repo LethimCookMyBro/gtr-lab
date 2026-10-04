@@ -43,6 +43,23 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("configurator honest functional flow", () => {
+  it("groups navigation, title and provenance outside the scene viewport", () => {
+    const { container } = setup();
+    const header = container.querySelector("header.config-information-header")!;
+    expect(header).not.toBeNull();
+    expect(
+      header.contains(screen.getByRole("link", { name: "Back to models" })),
+    ).toBe(true);
+    expect(
+      header.contains(screen.getByRole("heading", { name: "GT-R R35" })),
+    ).toBe(true);
+    expect(
+      header.contains(screen.getByRole("button", { name: /Model provenance/ })),
+    ).toBe(true);
+    expect(header.contains(container.querySelector(".scene-stage"))).toBe(
+      false,
+    );
+  });
   it("applies gallery ink only after the bright scene is ready", () => {
     useConfigurator.setState({ selectedEnvironment: "gallery" });
     setup();

@@ -101,33 +101,38 @@ export function ConfiguratorPage() {
         (interactive ? " is-scene-ready" : "")
       }
     >
-      <header className="config-header">
-        <Link to="/models" className="back-link" aria-label="Back to models">
-          <ArrowLeft size={19} />
-          <span>Back to models</span>
-        </Link>
-        <Brand />
-        <button onClick={() => open("details")} className="model-detail-button">
-          Model detail
-          <ArrowRight size={18} />
-        </button>
+      <header className="config-information-header">
+        <div className="config-header">
+          <Link to="/models" className="back-link" aria-label="Back to models">
+            <ArrowLeft size={19} />
+            <span>Back to models</span>
+          </Link>
+          <Brand />
+          <button
+            onClick={() => open("details")}
+            className="model-detail-button"
+          >
+            Model detail
+            <ArrowRight size={18} />
+          </button>
+        </div>
+        <div className="config-title">
+          <h1>{sceneName}</h1>
+          <p>{model.tagline}</p>
+          {model.asset.kind === "original-study" && (
+            <button className="study-disclosure" onClick={() => open("assets")}>
+              <Info size={14} />
+              Original R35 study · View limitations
+            </button>
+          )}
+          {hasAsset && model.asset.kind === "licensed-model" && (
+            <button className="study-disclosure" onClick={() => open("assets")}>
+              <Info size={14} />
+              Model provenance & limitations
+            </button>
+          )}
+        </div>
       </header>
-      <div className="config-title">
-        <h1>{sceneName}</h1>
-        <p>{model.tagline}</p>
-        {model.asset.kind === "original-study" && (
-          <button className="study-disclosure" onClick={() => open("assets")}>
-            <Info size={14} />
-            Original R35 study · View limitations
-          </button>
-        )}
-        {hasAsset && model.asset.kind === "licensed-model" && (
-          <button className="study-disclosure" onClick={() => open("assets")}>
-            <Info size={14} />
-            Model provenance & limitations
-          </button>
-        )}
-      </div>
       <div
         className="scene-stage"
         aria-label={

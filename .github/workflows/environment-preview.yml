@@ -16,6 +16,8 @@ on:
     branches: [main]
     paths:
       - "scripts/capture-environments.mjs"
+      - "scripts/environment-pixel-comparison.mjs"
+      - "tests/environment-pixel-comparison.test.mjs"
       - "scripts/verify-release-assets.mjs"
       - "tests/verify-release-assets.test.mjs"
       - "scripts/wait-railway.mjs"
@@ -51,8 +53,8 @@ jobs:
       - name: Classify this exact commit as staging or explicit release
         id: mode
         run: node scripts/verify-release-assets.mjs --mode
-      - name: Test the bounded read-only release gate
-        run: npx vitest run tests/verify-release-assets.test.mjs --pool=threads --maxWorkers=1 --minWorkers=1
+      - name: Test the exact pixel comparator and bounded read-only release gate
+        run: npx vitest run tests/verify-release-assets.test.mjs tests/environment-pixel-comparison.test.mjs --pool=threads --maxWorkers=1 --minWorkers=1
       - run: npm run build
       - name: Wait for Railway to report this exact release SHA healthy
         if: steps.mode.outputs.release_mode == 'true'
@@ -81,7 +83,7 @@ jobs:
   capture:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -101,7 +103,10 @@ jobs:
           path: dist/
       - name: Capture real environments and exercise controls
         run: node scripts/capture-environments.mjs
-        timeout-minutes: 11
+        # The high-resolution night shard includes four additional paint/lamp
+        # frames. Keep its software-renderer evidence budget bounded; no retry
+        # or pixel/interaction assertion is relaxed.
+        timeout-minutes: ${{ matrix.viewport == 'desktop-1920' && matrix.environment == 'night' && 15 || 11 }}
         env:
           PREVIEW_BASE_URL: ${{ needs.build.outputs.preview_base_url }}
           ENVIRONMENT_QA_VIEWPORT: ${{ matrix.viewport }}

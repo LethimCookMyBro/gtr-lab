@@ -688,6 +688,9 @@ p {
   background: #111416;
   isolation: isolate;
 }
+.config-information-header {
+  display: contents;
+}
 .config-header {
   position: absolute;
   top: 0;
@@ -1801,8 +1804,21 @@ p {
   .configurator {
     min-height: 680px;
     height: 100svh;
+    display: grid;
+    grid-template-rows: 210px minmax(0, 1fr) 242px;
+  }
+  .config-information-header {
+    grid-row: 1;
+    position: relative;
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    background: #111416;
   }
   .config-header {
+    position: static;
+    flex-shrink: 0;
+    background: none;
     padding: 0 20px;
     height: 77px;
     gap: 16px;
@@ -1836,25 +1852,10 @@ p {
     width: 15px;
   }
   .config-title {
-    top: 102px;
-    left: 24px;
-    right: auto;
-    width: max-content;
-    max-width: 260px;
-  }
-  .config-title::before {
-    content: "";
-    position: absolute;
-    inset: -44px -64px -44px;
-    z-index: -1;
-    pointer-events: none;
-    /* Feather every edge into the header and scene; never expose a hard card. */
-    background: radial-gradient(
-      ellipse closest-side,
-      #111416e8 66%,
-      #111416d6 76%,
-      #11141600 100%
-    );
+    position: static;
+    padding: 12px 24px 0;
+    width: auto;
+    max-width: none;
   }
   .config-title h1 {
     font-size: 35px;
@@ -1864,8 +1865,11 @@ p {
     margin-top: 8px;
   }
   .scene-stage {
-    top: 120px;
-    bottom: 242px;
+    position: relative;
+    grid-row: 2;
+    inset: auto;
+    min-height: 0;
+    width: 100%;
   }
   .reference-view img {
     object-fit: cover;
@@ -2257,6 +2261,7 @@ p {
 }
 @media (max-width: 760px) {
   .environment-transition {
+    top: 210px;
     bottom: 242px;
   }
   .scene-notice {

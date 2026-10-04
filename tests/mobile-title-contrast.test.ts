@@ -31,65 +31,46 @@ const luminance = (channels: number[]) =>
       0,
     );
 
-describe("mobile configurator title backing", () => {
-  it("keeps every title label readable over a white HDRI sky", () => {
-    const scrim = rules(".config-title::before")[0];
-    const gradient = property(scrim, "background");
-    const colors = gradient.match(/#[0-9a-f]{6}(?:[0-9a-f]{2})?\b/gi) ?? [];
-    // The last nontransparent gradient stop backs the bottom of the title.
-    const weakestBacking =
-      (colors.length === 1 ? colors[0] : colors.at(-2)) ?? "#ffffff00";
-    const alpha =
-      weakestBacking.length === 9
-        ? parseInt(weakestBacking.slice(7), 16) / 255
-        : 1;
-    const overWhite = rgb(weakestBacking).map(
-      (channel) => channel * alpha + 1 - alpha,
+describe("mobile configurator information header", () => {
+  const header = () =>
+    rules(".config-information-header").find(
+      (rule) => rule.parent?.type === "atrule",
     );
-    const backgrounds = luminance(overWhite);
-    const labelColors = [
+  it("puts readable labels on one opaque header, without a scene scrim", () => {
+    expect(rules(".config-title::before")).toHaveLength(0);
+    const backing = property(header(), "background");
+    expect(backing).toMatch(/^#[0-9a-f]{6}$/i);
+    const background = luminance(rgb(backing));
+    for (const foreground of [
       property(rules(":root")[0], "color"),
       property(rules(".config-title p")[0], "color"),
       property(rules(".study-disclosure")[0], "color"),
-    ];
-    for (const text of labelColors) {
-      const foreground = luminance(rgb(text));
-      const contrast =
-        (Math.max(foreground, backgrounds) + 0.05) /
-        (Math.min(foreground, backgrounds) + 0.05);
+    ]) {
       expect(
-        contrast,
-        `${text} over the brightest scene`,
+        (luminance(rgb(foreground)) + 0.05) / (background + 0.05),
       ).toBeGreaterThanOrEqual(4.5);
     }
   });
-
-  it("backs only the title rather than erasing the full-width room", () => {
-    const scrims = rules(".config-title::before");
-    expect(scrims).toHaveLength(1);
-    const scrim = scrims[0];
-    expect(scrim.parent).toMatchObject({
+  it("uses normal header flow and reserves a separate mobile canvas row", () => {
+    const h = header();
+    expect(h?.parent).toMatchObject({
       name: "media",
       params: "(max-width: 760px)",
     });
-    expect(property(scrim, "pointer-events")).toBe("none");
-    expect(Number(property(scrim, "z-index"))).toBeLessThan(0);
-    const [top, horizontal, bottom] = property(scrim, "inset")
-      .split(/\s+/)
-      .map(parseFloat);
-    expect([top, horizontal, bottom]).toEqual([-44, -64, -44]);
-    expect(property(scrim, "background")).toMatch(
-      /radial-gradient\(\s*ellipse closest-side,/,
+    expect(property(h, "display")).toBe("flex");
+    expect(property(h, "position")).toBe("relative");
+    expect(property(h, "grid-row")).toBe("1");
+    const inMedia = (selector: string) =>
+      rules(selector).find((rule) => rule.parent === h?.parent);
+    expect(property(inMedia(".configurator"), "grid-template-rows")).toBe(
+      "210px minmax(0, 1fr) 242px",
     );
-    expect(property(scrim, "background")).toMatch(/#[0-9a-f]{6}00\s+100%/i);
-    expect(property(scrim, "border-radius")).toBe("");
-    const title = rules(".config-title").find(
-      (rule) => rule.parent === scrim.parent,
-    );
-    expect(property(title, "width")).toBe("max-content");
-    expect(property(title, "right")).toBe("auto");
-    // The backing tracks text width rather than spanning the viewport.
-    expect(parseFloat(property(title, "max-width"))).toBeLessThanOrEqual(260);
+    expect(property(inMedia(".config-header"), "position")).toBe("static");
+    expect(property(inMedia(".config-title"), "position")).toBe("static");
+    expect(property(inMedia(".scene-stage"), "grid-row")).toBe("2");
+    expect(property(inMedia(".scene-stage"), "position")).toBe("relative");
+    expect(property(inMedia(".scene-stage"), "inset")).toBe("auto");
+    expect(844 - 210 - 242).toBeGreaterThanOrEqual(390);
   });
 });
 

@@ -59,13 +59,14 @@ export function CameraRig({
   const destination = useMemo(() => {
     const target = new Vector3(...view.target);
     const position = new Vector3(...view.position);
-    // Preserve whole-car framing on portrait screens; detail views remain close.
+    // Preserve whole-car framing in the mobile viewport; detail views remain close.
     const distanceScale =
       preset === "wheel" || preset === "interior"
         ? 1
         : exteriorDistanceScale(
             Math.min(1.25, Math.max(1, 1 / aspect)),
             position.distanceTo(target),
+            size.width,
           );
     position.sub(target).multiplyScalar(distanceScale).add(target);
     return {
@@ -76,7 +77,7 @@ export function CameraRig({
         view.maxDistance * distanceScale,
       ),
     };
-  }, [aspect, preset, view]);
+  }, [aspect, preset, view, size.width]);
 
   useLayoutEffect(() => {
     moving.current = true;
