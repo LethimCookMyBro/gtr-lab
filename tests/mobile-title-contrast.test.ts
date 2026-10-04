@@ -78,7 +78,9 @@ describe("mobile configurator title backing", () => {
       .split(/\s+/)
       .map(parseFloat);
     expect([top, horizontal, bottom]).toEqual([-44, -64, -44]);
-    expect(property(scrim, "background")).toContain("radial-gradient");
+    expect(property(scrim, "background")).toMatch(
+      /radial-gradient\(\s*ellipse closest-side,/,
+    );
     expect(property(scrim, "background")).toMatch(/#[0-9a-f]{6}00\s+100%/i);
     expect(property(scrim, "border-radius")).toBe("");
     const title = rules(".config-title").find(

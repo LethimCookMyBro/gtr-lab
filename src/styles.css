@@ -1850,7 +1850,7 @@ p {
     pointer-events: none;
     /* Feather every edge into the header and scene; never expose a hard card. */
     background: radial-gradient(
-      ellipse,
+      ellipse closest-side,
       #111416e8 66%,
       #111416d6 76%,
       #11141600 100%

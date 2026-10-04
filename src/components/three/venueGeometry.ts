@@ -33,6 +33,15 @@ export type SurfaceTextures = Record<
 };
 type Point = [number, number, number];
 
+/** Shared physical/photometric layout keeps night highlights on real bay fixtures. */
+export const NIGHT_BAY_PANELS = [-7, 7].map((z) => ({
+  position: [0, 4.89, z] as Point,
+  width: 5.8,
+  height: 2.8,
+  intensity: 6,
+  color: "#f3f6ff",
+}));
+
 /** Bilinear, repeat-wrapped sampling matches TextureLoader's linear, flipY=true height UVs. */
 function scannedHeightSampler(texture?: Texture) {
   if (!texture) return undefined; // Geometry-only callers may deliberately omit the optional map.
@@ -686,6 +695,41 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
         box([0.3, 0.03, 10.1], [x, 4.92, 0], lamp, "luminaire-diffuser");
         for (const z of [-3.7, 0, 3.7])
           box([0.43, 0.18, 0.06], [x, 5.02, z], aluminum, "luminaire-end-cap");
+      }
+      if (night) {
+        const diffuser = material(NIGHT_BAY_PANELS[0].color, 0.25);
+        diffuser.emissive.set(NIGHT_BAY_PANELS[0].color);
+        diffuser.emissiveIntensity = NIGHT_BAY_PANELS[0].intensity;
+        for (const panel of NIGHT_BAY_PANELS) {
+          const [x, y, z] = panel.position;
+          box(
+            [panel.width + 0.16, 0.16, panel.height + 0.16],
+            [x, y + 0.13, z],
+            dark,
+            "luminaire-night-broad-housing",
+          );
+          box(
+            [panel.width, 0.03, panel.height],
+            [x, y + 0.035, z],
+            diffuser,
+            "luminaire-night-broad-diffuser",
+          );
+          for (const dx of [-2.4, 2.4]) {
+            // Short carriers tie back to the existing cross-members at z=±5.
+            box(
+              [0.07, 0.1, 2.1],
+              [dx, 5.85, z - Math.sign(z)],
+              dark,
+              "luminaire-night-broad-carrier",
+            );
+            box(
+              [0.025, 0.72, 0.025],
+              [dx, 5.46, z],
+              aluminum,
+              "luminaire-night-broad-suspension",
+            );
+          }
+        }
       }
       for (const x of [-3.6, 3.6])
         ground(0.035, 8, -0.0015, white, "bay-line", x, 0);

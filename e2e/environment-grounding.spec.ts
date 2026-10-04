@@ -49,13 +49,17 @@ async function ready(page: Page, allowFallbackNotice = false) {
   ).toHaveCount(0);
   await expect(page.locator(".scene-stage canvas")).toHaveCount(1);
   await expect
-    .poll(() =>
-      page.locator(".scene-stage canvas").evaluate((element) => {
-        const c = element as HTMLCanvasElement;
-        return Math.abs(
-          c.width / c.clientWidth - Math.min(devicePixelRatio, 1.75),
-        );
-      }),
+    .poll(
+      () =>
+        page.locator(".scene-stage canvas").evaluate((element) => {
+          const c = element as HTMLCanvasElement;
+          return Math.abs(
+            c.width / c.clientWidth - Math.min(devicePixelRatio, 1.75),
+          );
+        }),
+      // Match the physical matrix: desktop SwiftShader can take 13–14s to
+      // present AdaptiveDpr's restored full-resolution frame after input.
+      { timeout: 15000 },
     )
     .toBeLessThan(0.02);
   await frames(page);

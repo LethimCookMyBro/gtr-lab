@@ -12,7 +12,11 @@ import { StageGeometry } from "./StageGeometry";
 import { RoadsideRocks } from "./RoadsideRocks";
 import { CoastalWater } from "./CoastalWater";
 import type { RoadsideRockInstance } from "./RoadsideRocks";
-import { createVenue, setVenueInspectionCutaway } from "./venueGeometry";
+import {
+  createVenue,
+  NIGHT_BAY_PANELS,
+  setVenueInspectionCutaway,
+} from "./venueGeometry";
 import type { SurfaceTextures } from "./venueGeometry";
 import type { StudioEnvironment } from "./types";
 
@@ -98,11 +102,11 @@ export function StudioLighting({
         <>
           <color attach="background" args={[night ? "#0e1520" : "#a6b8c5"]} />
           <fog attach="fog" args={[night ? "#0e1520" : "#a6b8c5", 35, 115]} />
-          <ambientLight intensity={night ? 0.12 : 0.26} />
+          <ambientLight intensity={night ? 0.16 : 0.26} />
           <hemisphereLight
             color="#dbe4ec"
             groundColor="#515052"
-            intensity={night ? 0.2 : 0.5}
+            intensity={night ? 0.28 : 0.5}
           />
           <directionalLight
             position={[-9, 9, -4]}
@@ -136,6 +140,14 @@ export function StudioLighting({
               color={night ? "#f7f3e8" : "#f4f7ff"}
             />
           ))}
+          {night &&
+            NIGHT_BAY_PANELS.map((panel) => (
+              <rectAreaLight
+                key={`night-bay-${panel.position[2]}`}
+                {...panel}
+                rotation={[-Math.PI / 2, 0, 0]}
+              />
+            ))}
           <Environment
             key={`interior-${environment}`}
             resolution={256}
@@ -143,7 +155,7 @@ export function StudioLighting({
             environmentIntensity={night ? 0.82 : 1.0}
           >
             <color attach="background" args={[night ? "#14191e" : "#75828b"]} />
-            <ambientLight intensity={night ? 0.14 : 0.45} />
+            <ambientLight intensity={night ? 0.2 : 0.45} />
             <directionalLight
               position={[-9, 9, -4]}
               intensity={night ? 0.38 : 2.2}
@@ -169,6 +181,32 @@ export function StudioLighting({
                 />
               </group>
             ))}
+            {night &&
+              NIGHT_BAY_PANELS.map((panel) => (
+                <group key={`reflected-night-bay-${panel.position[2]}`}>
+                  <rectAreaLight
+                    {...panel}
+                    position={[
+                      panel.position[0],
+                      panel.position[1] - 0.8,
+                      panel.position[2],
+                    ]}
+                    rotation={[-Math.PI / 2, 0, 0]}
+                  />
+                  <Lightformer
+                    form="rect"
+                    intensity={panel.intensity}
+                    color={panel.color}
+                    position={[
+                      panel.position[0],
+                      panel.position[1] - 0.8,
+                      panel.position[2],
+                    ]}
+                    rotation={[Math.PI / 2, 0, 0]}
+                    scale={[panel.width, panel.height, 1]}
+                  />
+                </group>
+              ))}
             {!night && (
               <Lightformer
                 form="rect"
