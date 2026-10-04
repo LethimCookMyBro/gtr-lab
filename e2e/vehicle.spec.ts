@@ -197,8 +197,38 @@ test("licensed production asset loads and all nine paints change rendered pixels
   const canvas = page.locator(".scene-stage canvas");
   if (info.project.name === "mobile-390") {
     const bounds = (await canvas.boundingBox())!;
-    expect(bounds.y).toBe(120);
+    const header = page.locator(".config-information-header");
+    const headerBounds = (await header.boundingBox())!;
+    expect(headerBounds.y).toBe(0);
+    expect(headerBounds.height).toBe(210);
+    expect(bounds.y).toBe(210);
+    expect(headerBounds.y + headerBounds.height).toBe(bounds.y);
     expect(bounds.y + bounds.height).toBe(602);
+    for (const selector of [".config-header", ".config-title"])
+      await expect(header.locator(selector)).toHaveCSS("position", "static");
+    for (const selector of [
+      ".config-header",
+      ".config-title",
+      ".study-disclosure",
+    ]) {
+      const content = (await header.locator(selector).boundingBox())!;
+      expect(
+        content.x,
+        selector + " stays inside the header",
+      ).toBeGreaterThanOrEqual(headerBounds.x);
+      expect(
+        content.y,
+        selector + " stays inside the header",
+      ).toBeGreaterThanOrEqual(headerBounds.y);
+      expect(
+        content.x + content.width,
+        selector + " stays inside the header",
+      ).toBeLessThanOrEqual(headerBounds.x + headerBounds.width);
+      expect(
+        content.y + content.height,
+        selector + " stays above the canvas",
+      ).toBeLessThanOrEqual(bounds.y);
+    }
   }
   const hintContrast = await page
     .locator(".interaction-hint")
