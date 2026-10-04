@@ -1,0 +1,5 @@
+Release the reviewed detail-player recovery.
+Application candidate: 65ae7e67a852e4f69860f12b06f674daaf2c5a53
+Quality checks: 37223101059 SUCCESS
+Cinematic homepage QA: 37223101088 SUCCESS
+Intact provider URLs unchanged. Browser recovery and keyboard retry verified; external playback is not guaranteed.
