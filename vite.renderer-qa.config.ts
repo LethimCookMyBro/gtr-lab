@@ -8,8 +8,8 @@ import react from "@vitejs/plugin-react";
 import { validateManifest, validateAsset } from "./scripts/fetch-surfaces.mjs";
 
 const root = fileURLToPath(new URL("./", import.meta.url));
-const surfacePaths = new Set(
-  [
+const surfacePaths = new Set([
+  ...[
     "garage_floor",
     "concrete_wall_008",
     "asphalt_pit_lane",
@@ -19,7 +19,8 @@ const surfacePaths = new Set(
       (map) => `/environments/${id}_${map}_1k.jpg`,
     ),
   ),
-);
+  "/environments/aerial_rocks_02_disp_1k.jpg",
+]);
 
 /** Keep the fixture independent of catalog assets and deliberately missing the sky HDR. */
 export async function copyRendererQaSurfaces(
@@ -35,7 +36,7 @@ export async function copyRendererQaSurfaces(
     manifest.some((entry) => !surfacePaths.has(entry.path))
   )
     throw new Error(
-      "Invalid renderer QA surface manifest: expected the 12 venue JPG maps only",
+      "Invalid renderer QA surface manifest: expected the 13 venue JPG maps only",
     );
   // Validate every input before publishing any. Never glob/copy the public directory:
   // that would accidentally include real catalog models or defeat missing-HDR tests.

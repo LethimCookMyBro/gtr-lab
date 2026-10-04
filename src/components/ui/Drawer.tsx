@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
@@ -32,7 +32,7 @@ export function Drawer({
     const timeout = setTimeout(() => setPresent(false), 280);
     return () => clearTimeout(timeout);
   }, [open, reduced]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!present) return;
     const before = document.activeElement as HTMLElement | null;
     const element = ref.current;

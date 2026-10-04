@@ -160,9 +160,7 @@ async function environment(page: Page, id: string, name: string) {
     .toBeGreaterThan(0);
 }
 
-test("geometry venues render through every exterior camera angle, zoom and environment switch", async ({
-  page,
-}, info) => {
+async function observeScene(page: Page) {
   const errors: string[] = [];
   const warnings: string[] = [];
   const assets = new Map<string, number>();
@@ -220,6 +218,10 @@ test("geometry venues render through every exterior camera angle, zoom and envir
       }
     }
   });
+  return { errors, warnings, assets, assetFailures };
+}
+
+async function openScene(page: Page, assets: Map<string, number>) {
   await page.goto("/configurator/premium");
   await expect(page).toHaveTitle(/GT-R LAB/);
   await expect(
@@ -234,84 +236,137 @@ test("geometry venues render through every exterior camera angle, zoom and envir
       timeout: 90000,
     })
     .toBe(true);
-  const canonical = new Map<string, string>();
-  for (const [id, label] of venues) {
-    if (id !== "studio") await environment(page, id, label);
-    await camera(page, "Front ¾");
-    if (id === "forest" || id === "coast")
-      await expect
-        .poll(() => assets.get(skyPath), { timeout: 90000 })
-        .toBe(200);
-    await capture(page, info, `${id}-hero`);
-    canonical.set(id, await canvasHash(page));
-    for (let quarter = 1; quarter <= 4; quarter++) {
-      await pressCameraKey(page, "Shift+ArrowRight", 10);
-      await capture(page, info, `${id}-azimuth-${quarter}`);
-    }
-    await pressCameraKey(page, "+", 25);
-    await capture(page, info, `${id}-minimum-zoom`);
-    await pressCameraKey(page, "Home");
-    await capture(page, info, `${id}-manual-reset`);
+}
+
+async function withObservedScene(
+  page: Page,
+  info: TestInfo,
+  exercise: (assets: Map<string, number>) => Promise<void>,
+) {
+  const diagnostics = await observeScene(page);
+  try {
+    await openScene(page, diagnostics.assets);
+    await exercise(diagnostics.assets);
+    expect(diagnostics.assetFailures).toEqual([]);
+    expect(diagnostics.errors).toEqual([]);
     expect(
-      await canvasHash(page),
-      `${id} Home restores canonical framing`,
-    ).toBe(canonical.get(id));
-    for (const [name, suffix] of [
-      ["Front", "front"],
-      ["Rear ¾", "rear-three-quarter"],
-      ["Rear", "rear"],
-      ["Side", "side"],
-      ["Top detail", "top"],
-      ["Wheel detail", "wheel"],
-    ]) {
-      await camera(page, name);
-      await capture(page, info, `${id}-${suffix}`);
-    }
-    await camera(page, "Front ¾");
-    await pressCameraKey(page, "-", 25);
-    await capture(page, info, `${id}-maximum-zoom`);
-    await pressCameraKey(page, "Home");
-    await pressCameraKey(page, "ArrowDown", 15);
-    await capture(page, info, `${id}-low-orbit`);
+      diagnostics.warnings.filter((message) =>
+        /shader error|INVALID_|GL_OUT_OF_MEMORY|VALIDATE_STATUS/i.test(message),
+      ),
+    ).toEqual([]);
+  } finally {
+    // Preserve all observed resource/runtime errors even if a scene assertion or
+    // transport step fails. Shards remain independently diagnosable.
+    await info.attach("browser-diagnostics", {
+      body: JSON.stringify(
+        {
+          variant,
+          ...diagnostics,
+          assets: Object.fromEntries(diagnostics.assets),
+        },
+        null,
+        2,
+      ),
+      contentType: "application/json",
+    });
   }
-  expect(
-    new Set(canonical.values()).size,
-    "All five venues produce distinct rendered scenes",
-  ).toBe(venues.length);
-  // Revisit every venue after other venue materials, lighting and geometry have mounted.
-  for (const [id, label] of venues) {
-    await environment(page, id, label);
-    await camera(page, "Front ¾");
-    await capture(page, info, `${id}-return`);
-    expect(
-      await canvasHash(page),
-      `Returning to ${label} restores framing and lighting`,
-    ).toBe(canonical.get(id));
-  }
-  await info.attach("browser-diagnostics", {
-    body: JSON.stringify(
-      {
-        variant,
-        assets: Object.fromEntries(assets),
-        assetFailures,
-        errors,
-        warnings,
-      },
-      null,
-      2,
-    ),
-    contentType: "application/json",
+}
+
+// Each venue has its own context and bounded test budget. CI runs these as
+// separate jobs, so one software-rendered venue cannot starve the other four.
+for (const [id, label] of venues) {
+  test(`[${id}] ${label} renders every exterior camera angle, full orbit and zoom`, async ({
+    page,
+  }, info) => {
+    await withObservedScene(page, info, async (assets) => {
+      if (id !== "studio") await environment(page, id, label);
+      await camera(page, "Front ¾");
+      if (id === "forest" || id === "coast")
+        await expect
+          .poll(() => assets.get(skyPath), { timeout: 90000 })
+          .toBe(200);
+      await capture(page, info, `${id}-hero`);
+      const canonical = await canvasHash(page);
+      for (let quarter = 1; quarter <= 4; quarter++) {
+        await pressCameraKey(page, "Shift+ArrowRight", 10);
+        await capture(page, info, `${id}-azimuth-${quarter}`);
+      }
+      await pressCameraKey(page, "+", 25);
+      await capture(page, info, `${id}-minimum-zoom`);
+      await pressCameraKey(page, "Home");
+      await capture(page, info, `${id}-manual-reset`);
+      expect(
+        await canvasHash(page),
+        `${id} Home restores canonical framing`,
+      ).toBe(canonical);
+      for (const [name, suffix] of [
+        ["Front", "front"],
+        ["Rear ¾", "rear-three-quarter"],
+        ["Rear", "rear"],
+        ["Side", "side"],
+        ["Top detail", "top"],
+        ["Wheel detail", "wheel"],
+      ]) {
+        await camera(page, name);
+        await capture(page, info, `${id}-${suffix}`);
+      }
+      await camera(page, "Front ¾");
+      await pressCameraKey(page, "-", 25);
+      await capture(page, info, `${id}-maximum-zoom`);
+      await pressCameraKey(page, "Home");
+      await pressCameraKey(page, "ArrowDown", 15);
+      await capture(page, info, `${id}-low-orbit`);
+    });
   });
-  expect(assetFailures).toEqual([]);
-  expect(errors).toEqual([]);
-  expect(
-    warnings.filter((m) =>
-      /shader error|INVALID_|GL_OUT_OF_MEMORY|VALIDATE_STATUS/i.test(m),
-    ),
-  ).toEqual([]);
+}
+
+test("[switching] all five venues return to exact canonical scenes on the same canvas", async ({
+  page,
+}, info) => {
+  await withObservedScene(page, info, async (assets) => {
+    const canvas = page.locator(".scene-stage canvas");
+    await canvas.evaluate((element) => {
+      (element as HTMLCanvasElement).dataset.switchIdentity = "original-canvas";
+    });
+    const canonical = new Map<string, string>();
+    for (const [id, label] of venues) {
+      if (id !== "studio") await environment(page, id, label);
+      await camera(page, "Front ¾");
+      if (id === "forest" || id === "coast")
+        await expect
+          .poll(() => assets.get(skyPath), { timeout: 90000 })
+          .toBe(200);
+      await capture(page, info, `${id}-canonical`);
+      canonical.set(id, await canvasHash(page));
+      await expect(canvas).toHaveAttribute(
+        "data-switch-identity",
+        "original-canvas",
+      );
+    }
+    expect(
+      new Set(canonical.values()).size,
+      "All five venues produce distinct rendered scenes",
+    ).toBe(venues.length);
+    // Revisit every venue after all other materials, lighting and geometry have
+    // mounted, in the same browser context and on the exact same live canvas.
+    for (const [id, label] of venues) {
+      await environment(page, id, label);
+      await camera(page, "Front ¾");
+      await capture(page, info, `${id}-return`);
+      expect(
+        await canvasHash(page),
+        `Returning to ${label} restores framing and lighting`,
+      ).toBe(canonical.get(id));
+      await expect(canvas).toHaveAttribute(
+        "data-switch-identity",
+        "original-canvas",
+      );
+    }
+    await expect(canvas).toHaveCount(1);
+  });
 });
 
-test("a missing studio surface keeps the vehicle interactive and retries the same venue", async ({
+test("[recovery] a missing studio surface keeps the vehicle interactive and retries the same venue", async ({
   page,
 }, info) => {
   const failedPath = "/environments/garage_floor_diff_1k.jpg";

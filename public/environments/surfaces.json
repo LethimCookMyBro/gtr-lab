@@ -229,5 +229,27 @@
     "sha256": "6df5263ba6c30e9343ee324d87078b926024d710b0b349025083600369df8d25",
     "md5": "66fcad0f6a7c2ac99bc978685195420b",
     "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "aerial_rocks_02",
+    "name": "Aerial Rocks 02",
+    "sourceUrl": "https://polyhaven.com/a/aerial_rocks_02",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMm": [50000, 50000],
+    "map": "disp",
+    "resolution": "1k",
+    "path": "/environments/aerial_rocks_02_disp_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_disp_1k.jpg",
+    "bytes": 111007,
+    "sha256": "f8df3ed278b28255935d90ef0927cae075445a3a761890df79d3c70b468210ef",
+    "md5": "15879b7681e87fbab663b28ae6a1a934",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "displacementScaleMetres": 5,
+    "displacementMidlevel": 0.57,
+    "calibrationSource": "https://dl.polyhaven.org/file/ph-assets/Textures/blend/1k/aerial_rocks_02/aerial_rocks_02_1k.blend"
   }
 ]

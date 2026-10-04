@@ -1,10 +1,25 @@
 name: Physical environment visual checkpoint
 on:
   workflow_dispatch:
+    inputs:
+      viewport:
+        description: "Capture viewport (all keeps full acceptance coverage)"
+        type: choice
+        default: all
+        options: [all, desktop-1440, desktop-1920, mobile-390]
+      environment:
+        description: "Capture environment (all keeps full acceptance coverage)"
+        type: choice
+        default: all
+        options: [all, studio, gallery, night, forest, coast]
   push:
     branches: [main]
     paths:
       - "scripts/capture-environments.mjs"
+      - "scripts/verify-release-assets.mjs"
+      - "tests/verify-release-assets.test.mjs"
+      - "scripts/wait-railway.mjs"
+      - "release-real-environments-approved-20261004.txt"
       - ".github/workflows/environment-preview.yml"
       - "src/**"
       - "public/environments/**"
@@ -22,7 +37,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    outputs:
+      release_mode: ${{ steps.mode.outputs.release_mode }}
+      preview_base_url: ${{ steps.live.outputs.preview_base_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,7 +48,30 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Classify this exact commit as staging or explicit release
+        id: mode
+        run: node scripts/verify-release-assets.mjs --mode
+      - name: Test the bounded read-only release gate
+        run: npx vitest run tests/verify-release-assets.test.mjs --pool=threads --maxWorkers=1 --minWorkers=1
       - run: npm run build
+      - name: Wait for Railway to report this exact release SHA healthy
+        if: steps.mode.outputs.release_mode == 'true'
+        run: node scripts/wait-railway.mjs
+        timeout-minutes: 6
+      - name: Verify public HTML and every built JS/CSS asset before live captures
+        id: live
+        if: steps.mode.outputs.release_mode == 'true'
+        run: |
+          node scripts/verify-release-assets.mjs
+          printf 'preview_base_url=%s\n' 'https://gtr-lab-production.up.railway.app' >> "$GITHUB_OUTPUT"
+        timeout-minutes: 4
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.mode.outputs.release_mode == 'true'
+        with:
+          name: environment-exact-release-verification
+          path: environment-release-verification/
+          retention-days: 14
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: environment-preview-build
@@ -44,8 +85,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        viewport: [desktop-1440, desktop-1920, mobile-390]
-        environment: [studio, gallery, night, forest, coast]
+        viewport: ${{ fromJSON(needs.build.outputs.release_mode != 'true' && github.event_name == 'workflow_dispatch' && inputs.viewport != 'all' && format('["{0}"]', inputs.viewport) || '["desktop-1440","desktop-1920","mobile-390"]') }}
+        environment: ${{ fromJSON(needs.build.outputs.release_mode != 'true' && github.event_name == 'workflow_dispatch' && inputs.environment != 'all' && format('["{0}"]', inputs.environment) || '["studio","gallery","night","forest","coast"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,6 +103,7 @@ jobs:
         run: node scripts/capture-environments.mjs
         timeout-minutes: 11
         env:
+          PREVIEW_BASE_URL: ${{ needs.build.outputs.preview_base_url }}
           ENVIRONMENT_QA_VIEWPORT: ${{ matrix.viewport }}
           ENVIRONMENT_QA_ENVIRONMENT: ${{ matrix.environment }}
       - uses: actions/upload-artifact@v4
@@ -79,9 +121,11 @@ jobs:
           let summary;
           try {
             const r = JSON.parse(readFileSync('environment-preview-results/report.json', 'utf8'));
-            summary = [`### Environment capture: ${process.env.VIEWPORT} / ${process.env.ENVIRONMENT}`, `Commit: ${r.commit}`, `Status: ${r.status}`];
+            summary = [`### Environment capture: ${process.env.VIEWPORT} / ${process.env.ENVIRONMENT}`, `Commit: ${r.commit}`, `Origin: ${r.baseUrl}`, `Status: ${r.status}`];
             for (const v of r.viewports) {
               summary.push(`- ${v.name}: ${v.status}; ${v.durationSeconds ?? 'pending'} seconds`);
+              const retries = (v.captureAttempts ?? []).filter(a => a.status === 'timeout');
+              if (retries.length) summary.push(`  - Screenshot timeouts: ${retries.length}; same-state screenshot recovery is limited to one extra attempt per viewport job. See captureAttempts for durations and outcomes.`);
               for (const e of v.environments) summary.push(`  - ${e.label}: ${e.status}; ${e.images.length} target images + ${e.switchEvidence.length} switch-away evidence images; ${e.errors.length} failures`);
             }
             summary.push('', 'Download the environment-visual artifact for full-size, sortable PNGs and per-environment JSON. Inspect composition, scale, reflections, floor contact and clipping before visual approval.', '', 'SwiftShader output is not physical-device performance evidence. A running/partial report or timed-out job is not a pass.');

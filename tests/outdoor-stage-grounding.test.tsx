@@ -5,6 +5,8 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   Box3,
+  DataTexture,
+  RedFormat,
   Group,
   Mesh,
   OrthographicCamera,
@@ -94,7 +96,10 @@ vi.mock("../src/components/three/RoadsideRocks", () => ({
   clearRoadsideRocks: () => {},
 }));
 vi.mock("@react-three/drei/core/Texture", () => ({
-  useTexture: () => Array.from({ length: 12 }, () => runtime.texture),
+  useTexture: () => [
+    ...Array.from({ length: 12 }, () => runtime.texture),
+    new DataTexture(new Uint8Array([145]), 1, 1, RedFormat),
+  ],
 }));
 vi.mock("@react-three/drei/core/Lightformer", () => ({
   Lightformer: () => null,
@@ -376,4 +381,29 @@ it("varies asphalt albedo and roughness in metre-scale world space", () => {
   expect(shader.vertexShader).toContain("vVenuePosition");
   expect(shader.fragmentShader).toContain("venueNoise");
   expect(shader.fragmentShader).toContain("roughnessFactor = clamp");
+});
+
+it("uses a formed coastal guardrail profile rather than repeating flat safety plates", () => {
+  render(<StudioLighting environment="coast" reducedMotion />);
+  const rail = runtime.venue.getObjectByName("sea-wall") as Mesh;
+  expect(rail.geometry.attributes.position.count).toBeGreaterThan(30);
+  rail.geometry.computeBoundingBox();
+  const size = rail.geometry.boundingBox!.getSize(new Vector3());
+  expect(size.x).toBeGreaterThan(0.07);
+  expect(size.y).toBeLessThan(0.45);
+});
+
+it("keeps the vehicle reflection ocean on the sea side of the retaining wall", () => {
+  render(<StudioLighting environment="coast" reducedMotion />);
+  const ocean = runtime.venue.getObjectByName("ocean") as Mesh;
+  const p = ocean.geometry.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const world = new Vector3()
+      .fromBufferAttribute(p, i)
+      .applyMatrix4(ocean.matrixWorld);
+    const bend =
+      Math.sign(world.z) *
+      Math.min(80, Math.max(0, Math.abs(world.z) - 12) ** 2 * 0.003);
+    expect(world.x).toBeLessThanOrEqual(-12.65 + bend + 0.001);
+  }
 });

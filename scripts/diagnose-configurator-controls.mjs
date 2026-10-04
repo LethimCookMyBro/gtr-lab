@@ -4,7 +4,20 @@ import { createHash } from 'node:crypto';
 import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 const sharedHdrPath = '/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr';
+// Retry only screenshot readback timeouts, once, without rerunning any controls.
+// Exported independently of the CLI so recovery is tested without starting a browser.
+export async function captureWithTimeoutRetry(capture, onRetry) {
+  try {
+    return await capture();
+  } catch (error) {
+    if (error?.name !== 'TimeoutError' || !/^page\.screenshot: Timeout \d+ms exceeded\./.test(error.message)) throw error;
+    await onRetry(error);
+    return await capture();
+  }
+}
+async function runControlAudit() {
 const directory = process.env.CONTROLS_OUTPUT || 'configurator-controls-results';
 const baseURL = process.env.CONTROLS_URL || 'http://127.0.0.1:4178';
 await mkdir(directory, { recursive: true });
@@ -23,7 +36,7 @@ try {
       OscillatorNode.prototype.start = function (...args) { window.__audioStarts++; return start.apply(this, args); };
     });
     const page = await context.newPage(); page.setDefaultTimeout(45000);
-    const result = { name, viewport, controls: [], errors: [], warnings: [] }; report.browsers.push(result);
+    const result = { name, viewport, controls: [], screenshotRetries: [], errors: [], warnings: [] }; report.browsers.push(result);
     page.on('pageerror', error => result.errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error') result.errors.push(message.text()); if (message.type() === 'warning') result.warnings.push(message.text()); });
     const hdrRequests = [];
@@ -43,9 +56,21 @@ try {
       const bounds = await canvas.boundingBox();
       assert(bounds && bounds.width > 200 && bounds.height > 200, 'Viewer is missing or collapsed');
       assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= viewport.width && bounds.y + bounds.height <= viewport.height, 'Viewer canvas must be fully visible for pixel comparison');
+      const rotate = page.getByRole('button', { name: 'Rotate', exact: true });
+      assert.equal(await rotate.getAttribute('aria-pressed'), 'false', 'Stop Rotate through its control before capturing the resulting angle');
       // Read the verified canvas rectangle without locator scrolling/stability waits.
-      // This preserves actual rotation pixels instead of freezing the renderer to capture them.
-      const bytes = await page.screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000, clip: bounds });
+      // A single timeout retry keeps the same stopped camera, viewport, clip and path.
+      const options = { path: `${directory}/${name}-${label}.png`, timeout: 45000, clip: bounds };
+      const bytes = await captureWithTimeoutRetry(async () => {
+        assert.deepEqual(await canvas.boundingBox(), bounds, 'Canvas bounds changed during screenshot capture');
+        assert.equal(await rotate.getAttribute('aria-pressed'), 'false', 'Rotation resumed during screenshot capture');
+        return await page.screenshot(options);
+      }, async error => {
+        const retry = { label, attempt: 2, maxAttempts: 2, timeoutMs: options.timeout, reason: error.message, sameState: true, clip: bounds };
+        result.screenshotRetries.push(retry);
+        console.log(JSON.stringify({ captureRetry: { viewport: name, ...retry } }));
+        await save();
+      });
       return createHash('sha256').update(bytes).digest('hex');
     };
     const pause = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -147,3 +172,5 @@ try {
 } finally { await save(); await browser?.close(); server?.kill('SIGTERM'); }
 console.log(JSON.stringify(report, null, 2));
 if (report.failures.length) process.exitCode = 1;
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await runControlAudit();

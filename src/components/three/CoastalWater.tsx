@@ -6,7 +6,6 @@ import {
   Group,
   LinearFilter,
   LinearMipmapLinearFilter,
-  PlaneGeometry,
   RepeatWrapping,
   RGBAFormat,
   ShaderMaterial,
@@ -16,34 +15,76 @@ import {
   Vector3,
 } from "three";
 import type { Camera, Vector4 } from "three";
+import { createCoastalOceanGeometry } from "./coastalGeometry";
 import { Reflector } from "three/addons/objects/Reflector.js";
 
-/** Original periodic wave field; no image download or canvas/browser dependency. */
+/** Original seeded height-field derivatives; no image or browser dependency. */
 export function createCoastalWaterNormals(): DataTexture {
   const size = 128;
   const data = new Uint8Array(size * size * 4);
-  // Integer frequencies tile seamlessly. Slopes, rather than random RGB noise,
-  // make a coherent normal field with broad swell and finer wind-driven ripples.
-  const waves = [
-    [1, 2, 0.18, 0.2],
-    [3, 1, 0.09, 1.7],
-    [-2, 5, 0.06, 2.8],
-    [7, 3, 0.03, 0.7],
-    [-5, 9, 0.02, 4.1],
-    [11, -4, 0.012, 2.3],
+  // Periodic, smoothly interpolated height noise produces irregular short
+  // crests. A few strong sine waves instead make ruler-like Fresnel bands.
+  const octaves = [
+    [8, 0.04, 317],
+    [16, 0.018, 923],
+    [32, 0.008, 1777],
   ];
+  const fields = octaves.map(([cells, amplitude, seed]) => {
+    const gradients = new Float32Array(cells * cells * 2);
+    for (let y = 0; y < cells; y++) {
+      for (let x = 0; x < cells; x++) {
+        let value = Math.imul(x, 374761393) + Math.imul(y, 668265263) + seed;
+        value = Math.imul(value ^ (value >>> 13), 1274126177);
+        const angle =
+          (((value ^ (value >>> 16)) >>> 0) / 0xffffffff) * Math.PI * 2;
+        const index = (y * cells + x) * 2;
+        gradients[index] = Math.cos(angle);
+        gradients[index + 1] = Math.sin(angle);
+      }
+    }
+    return { cells, amplitude, gradients };
+  });
+  const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+  const fade = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+  const derivative = (t: number) => 30 * t * t * (t - 1) * (t - 1);
   const normal = new Vector3();
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       let dx = 0;
       let dy = 0;
-      for (const [kx, ky, amplitude, phase] of waves) {
-        const slope =
-          (Math.cos(((x * kx + y * ky) / size) * Math.PI * 2 + phase) *
-            amplitude) /
-          Math.hypot(kx, ky);
-        dx += kx * slope;
-        dy += ky * slope;
+      for (const { cells, amplitude, gradients } of fields) {
+        const u = (x / size) * cells,
+          v = (y / size) * cells;
+        const ix = Math.floor(u),
+          iy = Math.floor(v);
+        const fx = u - ix,
+          fy = v - iy;
+        const a = (iy * cells + ix) * 2;
+        const b = (iy * cells + ((ix + 1) % cells)) * 2;
+        const c = (((iy + 1) % cells) * cells + ix) * 2;
+        const d = (((iy + 1) % cells) * cells + ((ix + 1) % cells)) * 2;
+        const ha = gradients[a] * fx + gradients[a + 1] * fy;
+        const hb = gradients[b] * (fx - 1) + gradients[b + 1] * fy;
+        const hc = gradients[c] * fx + gradients[c + 1] * (fy - 1);
+        const hd = gradients[d] * (fx - 1) + gradients[d + 1] * (fy - 1);
+        const sx = fade(fx),
+          sy = fade(fy);
+        // Differentiate gradient noise analytically. Unlike value-noise
+        // derivatives, these slopes do not collapse to zero on lattice lines.
+        dx +=
+          mix(
+            mix(gradients[a], gradients[b], sx) + (hb - ha) * derivative(fx),
+            mix(gradients[c], gradients[d], sx) + (hd - hc) * derivative(fx),
+            sy,
+          ) * amplitude;
+        dy +=
+          (mix(
+            mix(gradients[a + 1], gradients[b + 1], sx),
+            mix(gradients[c + 1], gradients[d + 1], sx),
+            sy,
+          ) +
+            (mix(hc, hd, sx) - mix(ha, hb, sx)) * derivative(fy)) *
+          amplitude;
       }
       normal.set(-dx, -dy, 1).normalize();
       const i = (y * size + x) * 4;
@@ -121,13 +162,14 @@ const waterShader = {
       float distanceToEye = length(toEye);
       vec3 viewDirection = normalize(toEye);
       vec2 uv = worldPosition.xz;
-      vec2 swell = texture2D(normalSampler, uv / 53.0).rg * 2.0 - 1.0;
-      vec2 crossSwell = texture2D(normalSampler,
-        mat2(0.8, -0.6, 0.6, 0.8) * uv / 31.0 + vec2(0.37, 0.13)).rg * 2.0 - 1.0;
-      vec2 ripples = texture2D(normalSampler, uv / 9.0 + vec2(0.17, 0.63)).rg * 2.0 - 1.0;
+      // Each tile contains many unrelated small crests, rather than one swell.
+      vec2 broadRipples = texture2D(normalSampler, uv / 17.0).rg * 2.0 - 1.0;
+      vec2 crossRipples = texture2D(normalSampler,
+        mat2(0.8, -0.6, 0.6, 0.8) * uv / 7.3 + vec2(0.37, 0.13)).rg * 2.0 - 1.0;
+      vec2 ripples = texture2D(normalSampler, uv / 2.9 + vec2(0.17, 0.63)).rg * 2.0 - 1.0;
       // Mipmaps plus distance damping keep the low-angle horizon from sparkling.
-      float rippleWeight = mix(0.32, 0.06, smoothstep(25.0, 180.0, distanceToEye));
-      vec2 slope = swell * 0.85 + crossSwell * 0.55 + ripples * rippleWeight;
+      float rippleWeight = mix(0.12, 0.02, smoothstep(25.0, 180.0, distanceToEye));
+      vec2 slope = broadRipples * 0.72 + crossRipples * 0.4 + ripples * rippleWeight;
       vec3 normal = normalize(vec3(slope.x, 1.0, slope.y));
 
       vec2 projectedUv = reflectionCoord.xy / reflectionCoord.w;
@@ -155,7 +197,7 @@ const waterShader = {
  * shader above supplying Fresnel, metre-scaled waves and aligned sun highlights.
  */
 export function createCoastalWater(reflectionResolution: 256 | 512 = 512) {
-  const geometry = new PlaneGeometry(2000, 1400);
+  const geometry = createCoastalOceanGeometry();
   const normalTexture = createCoastalWaterNormals();
   const water = new Reflector(geometry, {
     textureWidth: reflectionResolution,
@@ -169,7 +211,9 @@ export function createCoastalWater(reflectionResolution: 256 | 512 = 512) {
   water.rotation.x = -Math.PI / 2;
   water.layers.set(2);
   const material = water.material as ShaderMaterial;
-  material.fog = true;
+  // Grazing-angle Fresnel already converges to this direction's real HDR horizon.
+  // A constant scene-fog colour would overwrite that with a visible blue band.
+  material.fog = false;
   material.uniforms.normalSampler.value = normalTexture;
   const renderReflection = water.onBeforeRender;
   let reflecting = false;

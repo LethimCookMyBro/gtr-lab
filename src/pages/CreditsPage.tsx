@@ -51,7 +51,7 @@ export function CreditsPage() {
             <a href="https://polyhaven.com/a/aerial_rocks_02">
               Aerial Rocks 02
             </a>{" "}
-            · Rob Tuytel
+            · Rob Tuytel · diffuse, roughness, normal and displacement maps
           </li>
           <li>
             <a href="https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky">
@@ -71,10 +71,11 @@ export function CreditsPage() {
           Poly Haven · CC0 asset license
         </a>
         <p>
-          Original 1K files; material tiling and lighting are adjusted in the
-          renderer. Photographic road panoramas are no longer used as scenery or
-          ground. The vehicle remains the separately credited licensed Ciasny
-          exterior.
+          Original 1K material maps and 2K sky; material tiling and lighting are
+          adjusted in the renderer. Terrain displacement uses the source's 50m
+          tile, 5m displacement scale and 0.57 midlevel. Photographic road
+          panoramas are no longer used as scenery or ground. The vehicle remains
+          the separately credited licensed Ciasny exterior.
         </p>
       </section>
       <section id="brand-marks">

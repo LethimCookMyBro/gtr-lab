@@ -152,6 +152,46 @@ function canvasPixelHash(bytes, bounds) {
   };
 }
 
+async function captureScreenshot(page, options, recovery) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const startedAt = new Date().toISOString();
+    const started = performance.now();
+    try {
+      const bytes = await page.screenshot(options);
+      await recovery.record({
+        attempt,
+        startedAt,
+        durationMs: Math.round(performance.now() - started),
+        status: "passed",
+      });
+      return bytes;
+    } catch (error) {
+      // Only retry the screenshot operation's timeout. No assertion, selector,
+      // input, navigation, page crash or graphics failure receives a retry.
+      const screenshotTimeout =
+        error.name === "TimeoutError" &&
+        /^page\.screenshot: Timeout \d+ms exceeded\./.test(error.message) &&
+        /fonts loaded/.test(error.message);
+      const retry =
+        screenshotTimeout && attempt === 1 && recovery.budget.remaining > 0;
+      await recovery.record({
+        attempt,
+        startedAt,
+        durationMs: Math.round(performance.now() - started),
+        status: screenshotTimeout ? "timeout" : "failed",
+        retryPlanned: retry,
+        message: String(error),
+      });
+      if (!retry) throw error;
+      recovery.budget.remaining--;
+      // Revalidate the untouched scene before retrying once. No reload, camera
+      // reset, delay, animation change or lower screenshot quality is allowed.
+      await recovery.validate();
+    }
+  }
+  throw new Error("Screenshot attempts exhausted");
+}
+
 async function waitForServer() {
   for (let attempt = 0; attempt < 100; attempt++) {
     if (server && server.exitCode !== null)
@@ -179,6 +219,7 @@ async function runViewport(name, viewport) {
     startedAt: new Date().toISOString(),
     checks: [],
     diagnostics: [],
+    captureAttempts: [],
     environments: [],
     errors: [],
   };
@@ -195,6 +236,9 @@ async function runViewport(name, viewport) {
   let initialCanvas;
   const dialog = page.getByRole("dialog");
   let currentStep = "initial-load";
+  // At most one extra screenshot across the entire viewport job, not one per
+  // image. A second timeout stays a failure and cannot consume an open retry loop.
+  const screenshotRecoveryBudget = { remaining: 1 };
   const diagnostic = (kind, message, details = {}) =>
     view.diagnostics.push({
       kind,
@@ -345,7 +389,9 @@ async function runViewport(name, viewport) {
     { evidenceOnly = false } = {},
   ) {
     currentStep = `${item.id}/${shot}`;
+    const captureStarted = performance.now();
     await settled();
+    const settledAt = performance.now();
     assert(
       await canvas.evaluate(
         (element, initial) => element === initial,
@@ -374,12 +420,46 @@ async function runViewport(name, viewport) {
     assert(overflow <= 1, `Horizontal page overflow: ${overflow}px`);
     const collection = evidenceOnly ? item.switchEvidence : item.images;
     const file = `${evidenceOnly ? "evidence-" : ""}${String(collection.length).padStart(2, "0")}-${shot}.png`;
-    const bytes = await page.screenshot({
-      path: join(directory, item.id, file),
-      animations: "disabled",
-      scale: "css",
-      timeout: 45000,
-    });
+    const screenshotStarted = performance.now();
+    const bytes = await captureScreenshot(
+      page,
+      {
+        path: join(directory, item.id, file),
+        animations: "disabled",
+        scale: "css",
+        timeout: 45000,
+      },
+      {
+        budget: screenshotRecoveryBudget,
+        record: async (attempt) => {
+          view.captureAttempts.push({ step: currentStep, ...attempt });
+          await persist();
+        },
+        validate: async () => {
+          await settled();
+          await graphicsHealth();
+          assert(
+            await canvas.evaluate(
+              (element, initial) => element === initial,
+              initialCanvas,
+            ),
+            "Cannot retry screenshot after the viewer canvas was replaced",
+          );
+          assert.deepEqual(
+            await canvas.boundingBox(),
+            bounds,
+            "Cannot retry screenshot after the viewer layout changed",
+          );
+          assert(
+            !view.diagnostics.some((d) =>
+              ["pageerror", "error", "crash"].includes(d.kind),
+            ),
+            "Cannot retry screenshot after a runtime failure",
+          );
+        },
+      },
+    );
+    const screenshotFinished = performance.now();
     const comparison = canvasPixelHash(bytes, bounds);
     const image = {
       name: shot,
@@ -390,6 +470,11 @@ async function runViewport(name, viewport) {
       sha256: createHash("sha256").update(bytes).digest("hex"),
       canvasSha256: comparison.sha256,
       comparisonBounds: comparison.bounds,
+      timingMs: {
+        settle: Math.round(settledAt - captureStarted),
+        screenshot: Math.round(screenshotFinished - screenshotStarted),
+        total: Math.round(performance.now() - captureStarted),
+      },
       ...details,
     };
     collection.push(image);
@@ -699,6 +784,9 @@ async function runViewport(name, viewport) {
     const fatal = view.diagnostics.filter(isFatal);
     view.errors.push(...fatal);
     for (const item of view.environments) {
+      item.captureAttempts = view.captureAttempts.filter((attempt) =>
+        attempt.step.startsWith(`${item.id}/`),
+      );
       item.diagnostics = view.diagnostics.filter((d) =>
         d.step.startsWith(`${item.id}/`),
       );

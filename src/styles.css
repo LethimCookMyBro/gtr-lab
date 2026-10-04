@@ -1168,10 +1168,20 @@ p {
   background-position: center;
 }
 .environment-preview.forest {
-  background-image: linear-gradient(180deg, #a7bdc8 0 42%, #e1dfd2 42% 52%, #555958 52% 100%);
+  background-image: linear-gradient(
+    180deg,
+    #a7bdc8 0 42%,
+    #e1dfd2 42% 52%,
+    #555958 52% 100%
+  );
 }
 .environment-preview.coast {
-  background-image: linear-gradient(165deg, #a9c8d7 0 45%, #5b8a97 45% 66%, #777b78 66% 100%);
+  background-image: linear-gradient(
+    165deg,
+    #a9c8d7 0 45%,
+    #5b8a97 45% 66%,
+    #777b78 66% 100%
+  );
 }
 .variant-choices {
   display: flex;
@@ -1828,16 +1838,19 @@ p {
   .config-title {
     top: 102px;
     left: 24px;
-    right: 24px;
+    right: auto;
+    width: max-content;
+    max-width: 260px;
   }
   .config-title::before {
     content: "";
     position: absolute;
-    inset: -102px -24px -24px;
+    inset: -10px -12px -12px;
     z-index: -1;
     pointer-events: none;
-    /* A compact translucent scrim protects text without erasing the room. */
-    background: linear-gradient(#111416e8 70px, #111416d6 calc(100% - 24px), #11141600);
+    /* Local backing leaves the surrounding architecture and sky visible. */
+    background: #111416d6;
+    border-radius: 3px;
   }
   .config-title h1 {
     font-size: 35px;
@@ -2398,5 +2411,21 @@ p {
   .paint-swatches .swatch {
     transition: none;
     transform: none !important;
+  }
+}
+
+/* Pale gallery architecture needs ink-colored labels instead of a scene-wide veil. */
+@media (min-width: 761px) {
+  .environment-gallery .config-title {
+    color: #20282e;
+  }
+  .environment-gallery .config-title p {
+    color: #30383e;
+  }
+  .environment-gallery .study-disclosure {
+    color: #30383e;
+  }
+  .environment-gallery .scene-count {
+    color: #30383e;
   }
 }

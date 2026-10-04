@@ -94,7 +94,12 @@ export function ConfiguratorPage() {
     audio.play();
   };
   return (
-    <main className={"configurator environment-" + state.selectedEnvironment}>
+    <main
+      className={
+        "configurator environment-" +
+        (interactive ? state.selectedEnvironment : "reference")
+      }
+    >
       <header className="config-header">
         <Link to="/models" className="back-link" aria-label="Back to models">
           <ArrowLeft size={19} />

@@ -60,7 +60,7 @@ const noNetwork = () => {
 };
 
 describe("hash-pinned PBR surface preparation", () => {
-  it("accepts all twelve credited official surface map records", async () => {
+  it("accepts all thirteen credited official surface map records", async () => {
     const { validateManifest } = await implementation();
     const manifest = JSON.parse(
       await readFile(
@@ -68,7 +68,7 @@ describe("hash-pinned PBR surface preparation", () => {
         "utf8",
       ),
     );
-    expect(validateManifest(manifest)).toHaveLength(12);
+    expect(validateManifest(manifest)).toHaveLength(13);
     expect([...new Set(manifest.map(({ id }) => id))]).toEqual([
       "garage_floor",
       "concrete_wall_008",
@@ -80,6 +80,49 @@ describe("hash-pinned PBR surface preparation", () => {
       expect(asset.license).toBe("CC0-1.0");
       expect(Object.keys(asset.authors).length).toBeGreaterThan(0);
     }
+  });
+  it("pins the matching aerial-rock displacement map and source calibration", async () => {
+    const manifest = JSON.parse(
+      await readFile(
+        new URL("../public/environments/surfaces.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    expect(
+      manifest.find(
+        ({ id, map }) => id === "aerial_rocks_02" && map === "disp",
+      ),
+    ).toMatchObject({
+      path: "/environments/aerial_rocks_02_disp_1k.jpg",
+      sourceDownloadUrl:
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_disp_1k.jpg",
+      bytes: 111007,
+      sha256:
+        "f8df3ed278b28255935d90ef0927cae075445a3a761890df79d3c70b468210ef",
+      authors: { "Rob Tuytel": "All" },
+      dimensionsMm: [50000, 50000],
+      displacementScaleMetres: 5,
+      displacementMidlevel: 0.57,
+      calibrationSource:
+        "https://dl.polyhaven.org/file/ph-assets/Textures/blend/1k/aerial_rocks_02/aerial_rocks_02_1k.blend",
+    });
+  });
+  it("prepares displacement JPEGs with the same pinned-byte verification", async () => {
+    const { ensureSurface } = await implementation();
+    const dir = await directory();
+    const displacement = {
+      ...entry,
+      map: "disp",
+      path: "/environments/sample_disp_1k.jpg",
+      sourceDownloadUrl:
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sample/sample_disp_1k.jpg",
+    };
+    const result = await ensureSurface(
+      displacement,
+      options(dir, async () => new Response(payload)),
+    );
+    expect(result.status).toBe("downloaded");
+    expect(await readFile(join(dir, "sample_disp_1k.jpg"))).toEqual(payload);
   });
   it.each([
     { id: "../sample" },

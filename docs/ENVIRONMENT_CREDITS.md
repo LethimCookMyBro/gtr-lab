@@ -110,7 +110,7 @@ All near/mid-distance scenery is geometry with positional parallax. Geometry
 and bay/fence/road details are original project code. The only environment
 photograph is a distant sky; it is never used as ground or nearby terrain.
 
-New exact original 1K CC0 assets, verified 4 October 2026:
+New exact original CC0 assets, verified 4 October 2026:
 
 - Garage Floor: Jenelle van Heerden, https://polyhaven.com/a/garage_floor
   (diffuse/roughness/OpenGL normal; photographed tile about 1.886m)
@@ -119,16 +119,17 @@ New exact original 1K CC0 assets, verified 4 October 2026:
 - Asphalt Pit Lane: Dimitrios Savva,
   https://polyhaven.com/a/asphalt_pit_lane (three maps; tile 2m)
 - Aerial Rocks 02: Rob Tuytel,
-  https://polyhaven.com/a/aerial_rocks_02 (three maps; tile 50m, distant terrain)
-- Kloofendal 43d Clear (Pure Sky): Greg Zaal,
-  https://polyhaven.com/a/kloofendal_43d_clear_puresky (1K HDR sky-only edit)
+  https://polyhaven.com/a/aerial_rocks_02 (four 1K maps including displacement;
+  tile 50m, source-calibrated terrain)
+- Kloofendal 48d Partly Cloudy (Pure Sky): Greg Zaal and Jarod Guest,
+  https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky (2K HDR sky-only edit)
 
 License: https://polyhaven.com/license and CC0 1.0 Universal. Downloaded originals
 were not modified. Color/normal intensity and metre-based UV tiling are adjusted
 in the renderer. The maps are self-hosted with no runtime API dependency.
 `public/environments/surfaces.json` and `downloads.json` preserve each exact
-source URL, byte count and SHA-256. The twelve JPG maps and one HDR total
-9,210,471 bytes. No paid assets, vehicle replacements or generated car images
+source URL, byte count and SHA-256. The thirteen JPG maps and one 2K HDR total
+13,588,440 bytes. No paid assets, vehicle replacements or generated car images
 were used. Legacy preview images remain documented above but are no longer
 shown as selector thumbnails or scenery.
 
@@ -137,6 +138,27 @@ redirects, and atomically publishes only complete checked files. A failed asset
 load retains an asset-free interactive vehicle stage and exposes a recovery
 notice. Browser screenshots must be reviewed separately from geometric tests;
 SwiftShader is not physical-device performance or OEM-photoreal acceptance.
+
+### Source-calibrated aerial-rock displacement
+
+The matching original height map is
+`/environments/aerial_rocks_02_disp_1k.jpg`, downloaded from
+https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_disp_1k.jpg.
+It is 111,007 bytes, SHA-256
+`f8df3ed278b28255935d90ef0927cae075445a3a761890df79d3c70b468210ef`,
+official MD5 `15879b7681e87fbab663b28ae6a1a934`, by Rob Tuytel under CC0.
+The exact downloaded JPEG is unmodified and uses the same pinned-byte, checksum,
+JPEG-marker and canonical-URL build checks as the other twelve maps.
+
+Calibration was inspected from the official Blender source:
+https://dl.polyhaven.org/file/ph-assets/Textures/blend/1k/aerial_rocks_02/aerial_rocks_02_1k.blend
+(SHA-256 `f7825db61b1c2d4a244c321cff1f5f94bd130129c36d30204246f745c9b49de0`).
+Its metric scene contains a 50×50m plane with applied unit scale; its object-space
+Displacement node uses scale 5m and midlevel 0.57, with the height image treated
+as non-color data. Those authored parameters calibrate the terrain height map.
+The 1K 8-bit JPEG is a lossy height representation, so it is not a
+survey-accurate reconstruction. The designed road layout remains original.
+The Blender source is provenance evidence and is not shipped as a new model.
 
 
 ### Visible partly-cloudy sky refinement

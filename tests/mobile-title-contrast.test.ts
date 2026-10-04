@@ -37,7 +37,8 @@ describe("mobile configurator title backing", () => {
     const gradient = property(scrim, "background");
     const colors = gradient.match(/#[0-9a-f]{6}(?:[0-9a-f]{2})?\b/gi) ?? [];
     // The last nontransparent gradient stop backs the bottom of the title.
-    const weakestBacking = colors.at(-2) ?? "#ffffff00";
+    const weakestBacking =
+      (colors.length === 1 ? colors[0] : colors.at(-2)) ?? "#ffffff00";
     const alpha =
       weakestBacking.length === 9
         ? parseInt(weakestBacking.slice(7), 16) / 255
@@ -63,11 +64,10 @@ describe("mobile configurator title backing", () => {
     }
   });
 
-  it("covers the canvas seam, fades above the car, and is mobile-only", () => {
+  it("backs only the title rather than erasing the full-width room", () => {
     const scrims = rules(".config-title::before");
     expect(scrims).toHaveLength(1);
     const scrim = scrims[0];
-    expect(scrim.parent?.type).toBe("atrule");
     expect(scrim.parent).toMatchObject({
       name: "media",
       params: "(max-width: 760px)",
@@ -77,18 +77,37 @@ describe("mobile configurator title backing", () => {
     const [top, horizontal, bottom] = property(scrim, "inset")
       .split(/\s+/)
       .map(parseFloat);
-    const titleRule = rules(".config-title").find(
+    expect(top).toBeGreaterThanOrEqual(-16);
+    expect(horizontal).toBeGreaterThanOrEqual(-18);
+    expect(bottom).toBeGreaterThanOrEqual(-16);
+    const title = rules(".config-title").find(
       (rule) => rule.parent === scrim.parent,
     );
-    expect(top + parseFloat(property(titleRule, "top"))).toBe(0);
-    expect(horizontal + parseFloat(property(titleRule, "left"))).toBe(0);
-    // Actual mobile labels finish at y≈219 and the roof starts at y≈305.
-    expect(bottom).toBeLessThanOrEqual(-20);
-    expect(bottom).toBeGreaterThanOrEqual(-28);
-    expect(219 - bottom).toBeLessThan(250);
-    const gradient = property(scrim, "background");
-    expect(gradient).toMatch(/#[0-9a-f]{8}\s+70px/i);
-    expect(gradient).toContain(`calc(100% - ${-bottom}px)`);
-    expect(gradient).toMatch(/#[0-9a-f]{6}00\s*\)$/i);
+    expect(property(title, "width")).toBe("max-content");
+    expect(property(title, "right")).toBe("auto");
+    // At least the rightmost quarter of a 390px scene remains free of the title backing.
+    expect(parseFloat(property(title, "max-width"))).toBeLessThanOrEqual(260);
+  });
+});
+
+describe("bright gallery interface", () => {
+  it("uses a dark desktop label palette with contrast against pale architecture", () => {
+    for (const selector of [
+      ".environment-gallery .config-title",
+      ".environment-gallery .config-title p",
+      ".environment-gallery .study-disclosure",
+      ".environment-gallery .scene-count",
+    ]) {
+      const rule = rules(selector)[0];
+      expect(rule?.parent).toMatchObject({
+        name: "media",
+        params: "(min-width: 761px)",
+      });
+      const text = property(rule, "color");
+      expect(text).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(
+        (luminance(rgb("#b2b9bc")) + 0.05) / (luminance(rgb(text)) + 0.05),
+      ).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

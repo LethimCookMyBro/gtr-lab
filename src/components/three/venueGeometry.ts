@@ -22,10 +22,144 @@ import {
 } from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { StudioEnvironment } from "./types";
+import { coastBend, createCoastalOceanGeometry } from "./coastalGeometry";
 
 type SurfaceName = "floor" | "wall" | "asphalt" | "rock";
-export type SurfaceTextures = Record<SurfaceName, [Texture, Texture, Texture]>;
+export type SurfaceTextures = Record<
+  Exclude<SurfaceName, "rock">,
+  [Texture, Texture, Texture]
+> & {
+  rock: [Texture, Texture, Texture, Texture?];
+};
 type Point = [number, number, number];
+
+/** Bilinear, repeat-wrapped sampling matches TextureLoader's linear, flipY=true height UVs. */
+function coastalHeightSampler(texture?: Texture) {
+  if (!texture) return undefined; // Geometry-only callers may deliberately omit the optional map.
+  const image = texture.image as
+    { width?: number; height?: number; data?: ArrayLike<number> } | undefined;
+  const width = image?.width,
+    height = image?.height;
+  if (!width || !height)
+    throw new Error("Coastal displacement image is missing readable pixels");
+  let pixels: ArrayLike<number>;
+  let channels: number;
+  let divisor = 255;
+  if (image.data) {
+    pixels = image.data;
+    channels = pixels.length / (width * height);
+    if (image.data instanceof Float32Array) divisor = 1;
+    if (image.data instanceof Uint16Array) divisor = 65535;
+    if (![1, 3, 4].includes(channels))
+      throw new Error("Unsupported coastal displacement pixel format");
+  } else {
+    if (typeof document === "undefined")
+      throw new Error("Coastal displacement pixels need an image canvas");
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Unable to read coastal displacement pixels");
+    try {
+      context.drawImage(texture.image as CanvasImageSource, 0, 0);
+      pixels = context.getImageData(0, 0, width, height).data;
+      channels = 4;
+    } catch (cause) {
+      throw new Error(
+        "Unable to read same-origin coastal displacement pixels",
+        { cause },
+      );
+    } finally {
+      canvas.width = canvas.height = 0;
+    }
+  }
+  const wrap = (value: number, size: number) => ((value % size) + size) % size;
+  const red = (x: number, y: number) =>
+    pixels[(wrap(y, height) * width + wrap(x, width)) * channels] / divisor;
+  return (u: number, v: number) => {
+    const x = wrap(u, 1) * width - 0.5;
+    const y = (texture.flipY ? 1 - wrap(v, 1) : wrap(v, 1)) * height - 0.5;
+    const ix = Math.floor(x),
+      iy = Math.floor(y),
+      fx = x - ix,
+      fy = y - iy;
+    const top = red(ix, iy) * (1 - fx) + red(ix + 1, iy) * fx;
+    const bottom = red(ix, iy + 1) * (1 - fx) + red(ix + 1, iy + 1) * fx;
+    return top * (1 - fy) + bottom * fy;
+  };
+}
+
+/** Source-calibrated relief on a graded grid, with an undisturbed engineered road seam. */
+function coastalTerrainGeometry(
+  sample: ReturnType<typeof coastalHeightSampler>,
+  bend: (z: number) => number,
+) {
+  const samples = (sections: [number, number, number][]) => {
+    const values: number[] = [];
+    for (const [start, end, step] of sections)
+      for (let value = start; value < end; value += step) values.push(value);
+    values.push(sections[sections.length - 1][1]);
+    return values;
+  };
+  const inland = samples([
+    [0, 50, 0.5],
+    [50, 100, 1],
+    [100, 180, 4],
+  ]);
+  const halfDepth = samples([
+    [0, 70, 0.5],
+    [70, 170, 2],
+    [170, 600, 10],
+  ]);
+  const depth = [
+    ...new Set([
+      ...halfDepth
+        .slice(1)
+        .reverse()
+        .map((z) => -z),
+      ...halfDepth,
+      // Match the road's 5 m knots where its horizontal bend meets the straight reach.
+      -165,
+      185,
+    ]),
+  ].sort((a, b) => a - b);
+  const vertices: number[] = [],
+    uv: number[] = [],
+    indices: number[] = [];
+  for (const z of depth)
+    for (const distance of inland) {
+      const edgeT = Math.min(1, distance);
+      const seamOverlap = 0.025 * (1 - edgeT * edgeT * (3 - 2 * edgeT));
+      const x = distance - 90 + bend(z - 10) - seamOverlap;
+      const u = x / 50,
+        v = z / 50;
+      const t = Math.min(1, Math.max(0, (distance - 1) / 8));
+      const taper = t * t * (3 - 2 * t);
+      // Official 50x50 m .blend: non-colour height, Scale=5 m, Midlevel=0.57.
+      const relief = sample ? (sample(u, v) - 0.57) * 5 * taper : 0;
+      // A restrained 2% land grade, rather than unrelated sinusoidal mountain silhouettes.
+      vertices.push(x, 2 + distance * 0.02 + relief, z);
+      // Lock this continuous source chart BEFORE recomputing normals. Dominant-axis UVs
+      // would switch projection across steep scanned cracks, shearing matching PBR maps.
+      uv.push(u, v);
+    }
+  for (let row = 0; row < depth.length - 1; row++)
+    for (let column = 0; column < inland.length - 1; column++) {
+      const a = row * inland.length + column,
+        b = a + 1,
+        c = a + inland.length,
+        d = c + 1;
+      indices.push(a, c, b, b, c, d);
+    }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute("uv", new Float32BufferAttribute(uv, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
 
 const inspectionOverheads = new WeakMap<
   Group,
@@ -61,6 +195,9 @@ export function createVenue(
   environment: StudioEnvironment,
   sources: SurfaceTextures,
 ) {
+  // Fail before allocating owned GPU resources if a supplied image cannot be read.
+  const coastalSample =
+    environment === "coast" ? coastalHeightSampler(sources.rock[3]) : undefined;
   const group = new Group();
   group.name = `venue-${environment}`;
   const geometries = new Set<BufferGeometry>();
@@ -75,8 +212,8 @@ export function createVenue(
     return m;
   }
   function surface(name: SurfaceName, color = "#ffffff", roughness = 1) {
-    const maps = sources[name].map((source, i) => {
-      const map = source.clone();
+    const maps = sources[name].slice(0, 3).map((source, i) => {
+      const map = source!.clone();
       map.wrapS = map.wrapT = RepeatWrapping;
       map.anisotropy = 8;
       map.colorSpace = i === 0 ? SRGBColorSpace : "";
@@ -213,9 +350,6 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
     MeshStandardMaterial,
     MeshStandardMaterial
   >();
-  const coastBend = (z: number) =>
-    Math.sign(z) *
-    Math.min(80, Math.pow(Math.max(0, Math.abs(z) - 12), 2) * 0.003);
   function ground(
     width: number,
     depth: number,
@@ -226,12 +360,15 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
     z = 0,
     tile = 1.88644,
   ) {
-    const geometry = new PlaneGeometry(
-      width,
-      depth,
-      1,
-      name === "driving-surface" && environment === "coast" ? 240 : 1,
-    );
+    const geometry =
+      name === "ocean"
+        ? createCoastalOceanGeometry()
+        : new PlaneGeometry(
+            width,
+            depth,
+            1,
+            name === "driving-surface" && environment === "coast" ? 240 : 1,
+          );
     if (name === "driving-surface" && environment === "coast") {
       const p = geometry.attributes.position;
       for (let i = 0; i < p.count; i++)
@@ -263,6 +400,52 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
     object.rotation.x = -Math.PI / 2;
     object.castShadow = false;
     return object;
+  }
+  function guardrail(length: number, position: Point, yaw: number) {
+    // Formed W-section galvanized rail, with alternating faces that catch the actual sky.
+    const profile = [
+      [-0.03, -0.2],
+      [0.035, -0.15],
+      [-0.06, -0.07],
+      [0.035, 0],
+      [-0.06, 0.07],
+      [0.035, 0.15],
+      [-0.03, 0.2],
+    ];
+    const vertices: number[] = [];
+    for (let i = 0; i < profile.length - 1; i++) {
+      const [ax, ay] = profile[i],
+        [bx, by] = profile[i + 1];
+      vertices.push(
+        ax,
+        ay,
+        -length / 2,
+        bx,
+        by,
+        -length / 2,
+        bx,
+        by,
+        length / 2,
+        ax,
+        ay,
+        -length / 2,
+        bx,
+        by,
+        length / 2,
+        ax,
+        ay,
+        length / 2,
+      );
+    }
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+    const railMaterial = aluminum.clone();
+    railMaterial.side = DoubleSide;
+    materials.add(railMaterial);
+    const rail = mesh(geometry, railMaterial, position, "sea-wall");
+    rail.rotation.y = yaw;
+    return rail;
   }
   function pole(x: number, z: number, height = 7) {
     mesh(new CylinderGeometry(0.07, 0.12, height, 10), aluminum, [
@@ -579,12 +762,7 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
           concrete,
           "retaining-sea-wall",
         ).rotation.y = yaw;
-        box(
-          [0.11, 0.48, 2.51],
-          [-12.63 + bend, 0.67, z],
-          aluminum,
-          "sea-wall",
-        ).rotation.y = yaw;
+        guardrail(2.51, [-12.63 + bend, 0.7, z], yaw);
         box(
           [0.12, 1.03, 0.12],
           [-12.63 + bend, 0.52, z],
@@ -631,6 +809,15 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
       environment === "forest" ? "#69715b" : "#a5a394",
     );
     function hills(side: number) {
+      if (environment === "coast") {
+        mesh(
+          coastalTerrainGeometry(coastalSample, coastBend),
+          rock,
+          [104, -2, -10],
+          "landscape-terrain",
+        );
+        return;
+      }
       const geometry = new PlaneGeometry(180, 1200, 72, 160);
       geometry.rotateX(-Math.PI / 2);
       const p = geometry.attributes.position;
@@ -638,26 +825,14 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
         const x = p.getX(i),
           z = p.getZ(i);
         const edge = Math.max(0, (x + 90) / 180);
-        const height =
-          2 +
-          edge * edge * 6 +
-          Math.sin(z * 0.018 + side) * 2.5 * edge +
-          Math.sin(x * 0.06 + z * 0.015) * 1.6 * edge +
-          Math.sin(z * 0.13) * Math.cos(x * 0.08) * 1.1 * edge;
-        p.setY(
-          i,
-          environment === "forest"
-            ? 2 + edge * 0.45 + Math.sin(z * 0.017) * 0.22 * edge
-            : height,
-        );
-        if (environment === "coast") p.setX(i, x + coastBend(z - 10));
+        p.setY(i, 2 + edge * 0.45 + Math.sin(z * 0.017) * 0.22 * edge);
       }
       geometry.computeVertexNormals();
       metricUV(geometry, 50);
       const hill = mesh(
         geometry,
         rock,
-        [side * (environment === "coast" ? 104 : 126), -2, -10],
+        [side * 126, -2, -10],
         "landscape-terrain",
       );
       if (side < 0) hill.rotation.y = Math.PI;

@@ -23,6 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         viewport: [desktop, mobile]
+        scenario: [studio, gallery, night, forest, coast, switching, recovery]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,9 +36,10 @@ jobs:
         run: npx playwright test -c playwright.environment.config.ts --project=${{ matrix.viewport }}
         env:
           ENVIRONMENT_QA_VARIANT: candidate
+          ENVIRONMENT_QA_SCENARIO: ${{ matrix.scenario }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: environment-grounding-candidate-${{ matrix.viewport }}
+          name: environment-grounding-candidate-${{ matrix.viewport }}-${{ matrix.scenario }}
           path: environment-grounding-results/candidate/
           retention-days: 14

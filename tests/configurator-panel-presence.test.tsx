@@ -7,6 +7,8 @@ import {
   render,
   screen,
 } from "@testing-library/react";
+import { useLayoutEffect } from "react";
+import { Drawer } from "../src/components/ui/Drawer";
 import { MemoryRouter } from "react-router-dom";
 import { ConfiguratorPanels } from "../src/components/configurator/ConfiguratorPanels";
 import { models } from "../src/data/models";
@@ -69,4 +71,24 @@ it("dismisses immediately for reduced motion", () => {
   fireEvent.keyDown(document, { key: "Escape" });
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(document.activeElement).toBe(trigger);
+});
+
+it("handles Escape as soon as a drawer is committed and exposed", () => {
+  const onClose = vi.fn();
+  function CommitProbe() {
+    useLayoutEffect(() => {
+      // The dialog already exists before passive effects can run.
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    }, []);
+    return (
+      <Drawer title="Immediate Escape" onClose={onClose}>
+        Options
+      </Drawer>
+    );
+  }
+  render(<CommitProbe />);
+  expect(onClose).toHaveBeenCalledTimes(1);
 });

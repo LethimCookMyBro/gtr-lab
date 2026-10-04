@@ -33,7 +33,7 @@ export function validateManifest(manifest) {
     if (!entry || typeof entry !== "object") fail("entry must be an object");
     if (typeof entry.id !== "string" || !/^[a-z0-9_]{1,100}$/.test(entry.id))
       fail("invalid asset id");
-    if (!["diff", "rough", "nor_gl"].includes(entry.map))
+    if (!["diff", "rough", "nor_gl", "disp"].includes(entry.map))
       fail("unsupported PBR map");
     if (entry.resolution !== "1k") fail("unsupported resolution");
     const filename = `${entry.id}_${entry.map}_${entry.resolution}.jpg`;

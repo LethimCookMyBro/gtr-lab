@@ -44,9 +44,66 @@ describe("reflective coastal water", () => {
       expect(data[i + 3]).toBe(255);
       slopes.push(normal.x);
     }
-    expect(Math.max(...slopes) - Math.min(...slopes)).toBeGreaterThan(0.3);
+    expect(Math.max(...slopes) - Math.min(...slopes)).toBeGreaterThan(0.08);
     texture.dispose();
     repeated.dispose();
+  });
+
+  it("spreads calm ripple energy across irregular features instead of one long wave", () => {
+    const texture = createCoastalWaterNormals();
+    const { data, width, height } = texture.image;
+    const count = width * height;
+    let energy = 0;
+    const slopes = Array.from({ length: count }, (_, index) => {
+      const x = (data[index * 4] / 255) * 2 - 1;
+      const y = (data[index * 4 + 1] / 255) * 2 - 1;
+      energy += x * x + y * y;
+      return [x, y];
+    });
+    energy /= count;
+    let strongestWave = 0;
+    // Detect directional crests even when their phases or orientations change.
+    // A single dominating wave becomes regular Fresnel bands at grazing angles.
+    for (let ky = 0; ky <= 8; ky++) {
+      for (let kx = -8; kx <= 8; kx++) {
+        if (ky === 0 && kx <= 0) continue;
+        let cx = 0,
+          sx = 0,
+          cy = 0,
+          sy = 0;
+        slopes.forEach(([x, y], index) => {
+          const phase =
+            2 *
+            Math.PI *
+            (((index % width) * kx) / width +
+              (Math.floor(index / width) * ky) / height);
+          const cosine = Math.cos(phase),
+            sine = Math.sin(phase);
+          cx += x * cosine;
+          sx += x * sine;
+          cy += y * cosine;
+          sy += y * sine;
+        });
+        strongestWave = Math.max(
+          strongestWave,
+          (2 * (cx * cx + sx * sx + cy * cy + sy * sy)) / (count * count),
+        );
+      }
+    }
+    expect(strongestWave / energy).toBeLessThan(0.15);
+    expect(Math.sqrt(energy)).toBeGreaterThan(0.02);
+    expect(Math.sqrt(energy)).toBeLessThan(0.06);
+    // A height interpolation with zero lattice derivatives would still produce
+    // regularly spaced flat lines. Ripple slopes must survive across tile axes.
+    for (let axis = 0; axis < 2; axis++) {
+      let axisEnergy = 0;
+      for (let index = 0; index < width; index++) {
+        const normal = slopes[axis === 0 ? index * width : index];
+        axisEnergy += normal[axis] * normal[axis];
+      }
+      expect(axisEnergy / width).toBeGreaterThan(energy * 0.15);
+    }
+    texture.dispose();
   });
 
   it("owns a correctly placed real reflection surface and bounded render target", () => {
@@ -57,9 +114,9 @@ describe("reflective coastal water", () => {
     expect(water.position.toArray()).toEqual([-650, -1.8, 0]);
     expect(water.rotation.x).toBe(-Math.PI / 2);
     water.geometry.computeBoundingBox();
-    expect(
-      water.geometry.boundingBox?.getSize(new Vector3()).toArray(),
-    ).toEqual([2000, 1400, 0]);
+    const size = water.geometry.boundingBox!.getSize(new Vector3());
+    expect(size.x).toBeCloseTo(1717.35, 3);
+    expect([size.y, size.z]).toEqual([1400, 0]);
     expect([target.width, target.height, target.samples]).toEqual([
       256, 256, 0,
     ]);
@@ -69,7 +126,7 @@ describe("reflective coastal water", () => {
       new Vector3(41.56, 55.73, 28.14).normalize().toArray(),
     );
     expect(material.uniforms.waterColor.value).toBeInstanceOf(Color);
-    expect(material.fog).toBe(true);
+    expect(material.fog).toBe(false);
     expect(water.layers.mask).toBe(1 << 2);
     dispose();
   });

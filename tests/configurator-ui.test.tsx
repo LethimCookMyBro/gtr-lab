@@ -43,6 +43,23 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("configurator honest functional flow", () => {
+  it("applies gallery ink only after the bright scene is ready", () => {
+    useConfigurator.setState({ selectedEnvironment: "gallery" });
+    setup();
+    expect(screen.getByRole("main").className).not.toContain(
+      "environment-gallery",
+    );
+    act(() => useConfigurator.setState({ ready: true }));
+    expect(screen.getByRole("main").className).toContain("environment-gallery");
+  });
+  it("does not apply bright-gallery ink labels to photo-only variants", () => {
+    useConfigurator.setState({ selectedEnvironment: "gallery" });
+    setup("/configurator/gt500");
+    expect(screen.getByRole("main").className).not.toContain(
+      "environment-gallery",
+    );
+    expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
+  });
   it("labels photograph honestly and disables materials without geometry", () => {
     setup("/configurator/gt500");
     expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();

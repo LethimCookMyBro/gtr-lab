@@ -22,9 +22,14 @@ const SURFACES = [
   "asphalt_pit_lane",
   "aerial_rocks_02",
 ];
-const FILES = SURFACES.flatMap((id) =>
-  ["diff", "rough", "nor_gl"].map((map) => `/environments/${id}_${map}_1k.jpg`),
-);
+const FILES = [
+  ...SURFACES.flatMap((id) =>
+    ["diff", "rough", "nor_gl"].map(
+      (map) => `/environments/${id}_${map}_1k.jpg`,
+    ),
+  ),
+  "/environments/aerial_rocks_02_disp_1k.jpg",
+];
 export function clearVenueTextures() {
   useTexture.clear(FILES);
 }
@@ -33,7 +38,7 @@ const COAST_ROCKS: RoadsideRockInstance[] = [
   { position: [14.8, -0.2, -7], rotation: 0.3, variant: 0 },
   { position: [16.4, -0.16, -2], rotation: 1.4, variant: 3, scale: 1.2 },
   { position: [14.9, -0.2, 6], rotation: 2.1, variant: 1 },
-  { position: [19, -0.1, 12], rotation: 0.8, variant: 4, scale: 1.3 },
+  { position: [19, -0.5, 12], rotation: 0.8, variant: 4, scale: 1.3 },
   { position: [18, -0.25, -18], rotation: 2.8, variant: 2, scale: 1.5 },
   { position: [-16, -1.5, -8], rotation: 1.2, variant: 3, scale: 1.3 },
   { position: [-19, -1.6, 5], rotation: 0.4, variant: 5, scale: 1.5 },
@@ -50,16 +55,18 @@ export function StudioLighting({
   reducedMotion: boolean;
 }) {
   const loaded = useTexture(FILES);
-  const surfaces = useMemo(
-    () =>
-      Object.fromEntries(
-        ["floor", "wall", "asphalt", "rock"].map((name, i) => [
-          name,
-          loaded.slice(i * 3, i * 3 + 3),
-        ]),
-      ) as SurfaceTextures,
-    [loaded],
-  );
+  const surfaces = useMemo(() => {
+    if (!loaded[12])
+      throw new Error("Required coastal displacement texture was not loaded");
+    const maps = Object.fromEntries(
+      ["floor", "wall", "asphalt", "rock"].map((name, i) => [
+        name,
+        loaded.slice(i * 3, i * 3 + 3),
+      ]),
+    ) as SurfaceTextures;
+    maps.rock[3] = loaded[12];
+    return maps;
+  }, [loaded]);
   const venue = useMemo(
     () => createVenue(environment, surfaces),
     [environment, surfaces],

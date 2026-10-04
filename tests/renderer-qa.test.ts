@@ -51,13 +51,16 @@ describe("isolated renderer QA build", () => {
 });
 
 const surfaceNames = [
-  "garage_floor",
-  "concrete_wall_008",
-  "asphalt_pit_lane",
-  "aerial_rocks_02",
-].flatMap((id) =>
-  ["diff", "rough", "nor_gl"].map((map) => `${id}_${map}_1k.jpg`),
-);
+  ...[
+    "garage_floor",
+    "concrete_wall_008",
+    "asphalt_pit_lane",
+    "aerial_rocks_02",
+  ].flatMap((id) =>
+    ["diff", "rough", "nor_gl"].map((map) => `${id}_${map}_1k.jpg`),
+  ),
+  "aerial_rocks_02_disp_1k.jpg",
+];
 const temporaryDirectories: string[] = [];
 afterEach(async () => {
   await Promise.all(
@@ -84,6 +87,17 @@ async function surfaceFixture() {
 }
 
 describe("isolated renderer surface assets", () => {
+  it("requires the terrain displacement map in the exact QA allowlist", async () => {
+    const { source, destination, manifest } = await surfaceFixture();
+    await writeFile(
+      join(source, "surfaces.json"),
+      JSON.stringify(manifest.filter(({ map }) => map !== "disp")),
+    );
+    await expect(copyRendererQaSurfaces(source, destination)).rejects.toThrow(
+      /13 venue JPG maps/,
+    );
+    await expect(readdir(destination)).rejects.toThrow(/ENOENT/);
+  });
   it("copies only hash-verified surface JPGs, leaving HDR and catalog assets unavailable", async () => {
     const { source, destination } = await surfaceFixture();
     await writeFile(
