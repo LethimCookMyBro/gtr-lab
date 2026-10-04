@@ -146,6 +146,7 @@ export function ConfiguratorPage() {
               url={model.asset.url!}
               paint={paint.color}
               environment={state.selectedEnvironment}
+              environmentRequest={state.environmentRequest}
               preset={state.cameraPreset}
               cameraRequest={state.cameraRequest}
               autoRotate={state.autoRotate}

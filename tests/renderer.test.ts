@@ -153,10 +153,10 @@ describe("interior and outdoor contracts", () => {
     const { environmentAsset } =
       await import("../src/components/three/sceneHelpers");
     expect(environmentAsset("forest", false)).toBe(
-      "/environments/tief_etz.hdr",
+      "/environments/kloofendal_43d_clear_puresky_1k.hdr",
     );
     expect(environmentAsset("coast", true)).toBe(
-      "/environments/victoria_curve_01_1k.hdr",
+      "/environments/kloofendal_43d_clear_puresky_1k.hdr",
     );
     expect(environmentAsset("studio", false)).toBeNull();
   });

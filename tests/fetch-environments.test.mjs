@@ -56,7 +56,8 @@ describe("pinned environment downloads", () => {
         "utf8",
       ),
     );
-    expect(validateManifest(manifest)).toHaveLength(4);
+    expect(validateManifest(manifest)).toHaveLength(1);
+    expect(manifest[0].id).toBe("kloofendal_43d_clear_puresky");
     expect(() => validateAsset(payload, entry)).not.toThrow();
   });
   it.each([

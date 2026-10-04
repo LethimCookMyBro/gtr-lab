@@ -138,6 +138,6 @@ describe("configurator honest functional flow", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     await user.click(screen.getByRole("button", { name: "Environment" }));
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
-    expect(screen.getByRole("dialog").textContent).toContain("Forest road");
+    expect(screen.getByRole("dialog").textContent).toContain("Test paddock");
   });
 });

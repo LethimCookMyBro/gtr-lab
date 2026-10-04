@@ -6,6 +6,7 @@ export type VehicleSceneProps = {
   url: string;
   paint: string;
   environment: StudioEnvironment;
+  environmentRequest?: number;
   preset: string;
   cameraRequest?: number;
   autoRotate: boolean;

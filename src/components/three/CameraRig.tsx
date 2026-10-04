@@ -5,6 +5,8 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Matrix4, PerspectiveCamera, Quaternion, Vector3 } from "three";
 import {
   cameraView,
+  exteriorDistanceScale,
+  VENUE_CAMERA_RADIUS,
   interpolationAlpha,
   type CameraView,
 } from "./sceneHelpers";
@@ -57,9 +59,19 @@ export function CameraRig({
     const distanceScale =
       preset === "wheel" || preset === "interior"
         ? 1
-        : Math.min(2.2, Math.max(1, 1.2 / aspect));
+        : exteriorDistanceScale(
+            Math.min(2.2, Math.max(1, 1.2 / aspect)),
+            position.distanceTo(target),
+          );
     position.sub(target).multiplyScalar(distanceScale).add(target);
-    return { target, position, maxDistance: view.maxDistance * distanceScale };
+    return {
+      target,
+      position,
+      maxDistance: Math.min(
+        VENUE_CAMERA_RADIUS,
+        view.maxDistance * distanceScale,
+      ),
+    };
   }, [aspect, preset, view]);
 
   useLayoutEffect(() => {

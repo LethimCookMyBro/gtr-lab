@@ -24,6 +24,9 @@ renderer-test-results/
 # Large CC0 HDRIs are fetched and verified at build time.
 public/environments/*.hdr
 
+# CC0 PBR texture maps are fetched and verified at build time.
+public/environments/*.jpg
+
 # Reassembled from licensed, hash-pinned modeldata chunks before the build.
 public/models/*.glb
 vehicle-test-results/

@@ -19,6 +19,16 @@ describe("predictable configurator state", () => {
     expect(firstRequest).toBe(initialRequest + 1);
     expect(useConfigurator.getState().cameraRequest).toBe(firstRequest + 1);
   });
+  it("issues a new environment attempt when the failed current option is selected again", () => {
+    const before = useConfigurator.getState().environmentRequest;
+    useConfigurator.setState({
+      selectedEnvironment: "studio",
+      notice: "Texture failed",
+    });
+    useConfigurator.getState().setEnvironment("studio");
+    expect(useConfigurator.getState().environmentRequest).toBe(before + 1);
+    expect(useConfigurator.getState().notice).toBeNull();
+  });
   it("ignores an unknown paint", () => {
     const old = useConfigurator.getState().selectedPaint;
     useConfigurator.getState().setPaint("made-up");

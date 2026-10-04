@@ -61,7 +61,7 @@ try{
     view.interactions.push('Detail panel opens and closes');
    }catch(e){view.errors.push(`Interaction: ${e}`);}
    view.environments=[];
-   for(const [environment,label,asset]of[['forest','Forest road','tief_etz'],['coast','Coastal road','victoria_curve_01']]){
+   for(const [environment,label,asset]of[['forest','Test paddock','tief_etz'],['coast','Coastal road','victoria_curve_01']]){
     const state={environment,ready:false};view.environments.push(state);await save();
     try{
      const responsePending=page.waitForResponse(r=>new RegExp(`/environments/${asset}(?:_1k)?\\.hdr(?:\\?|$)`).test(r.url()),{timeout:30000});

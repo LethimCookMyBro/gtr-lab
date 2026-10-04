@@ -18,6 +18,58 @@ export function CreditsPage() {
           trademarks identify their respective subjects and owners.
         </p>
       </section>
+      <section id="environments">
+        <h2>3D environments</h2>
+        <p>
+          Original modelled spaces: pit garage, gallery, after-hours workshop,
+          test paddock and coastal road. Floors, buildings, barriers and terrain
+          have real geometry. These designed locations are not scans of a named
+          circuit.
+        </p>
+        <p>
+          Scanned PBR material maps and the distant sky are self-hosted CC0
+          assets from Poly Haven:
+        </p>
+        <ul>
+          <li>
+            <a href="https://polyhaven.com/a/garage_floor">Garage Floor</a> ·
+            Jenelle van Heerden
+          </li>
+          <li>
+            <a href="https://polyhaven.com/a/concrete_wall_008">
+              Concrete Wall 008
+            </a>{" "}
+            · Charlotte Baglioni and Dario Barresi
+          </li>
+          <li>
+            <a href="https://polyhaven.com/a/asphalt_pit_lane">
+              Asphalt Pit Lane
+            </a>{" "}
+            · Dimitrios Savva
+          </li>
+          <li>
+            <a href="https://polyhaven.com/a/aerial_rocks_02">
+              Aerial Rocks 02
+            </a>{" "}
+            · Rob Tuytel
+          </li>
+          <li>
+            <a href="https://polyhaven.com/a/kloofendal_43d_clear_puresky">
+              Kloofendal 43d Clear (Pure Sky)
+            </a>{" "}
+            · Greg Zaal
+          </li>
+        </ul>
+        <a href="https://polyhaven.com/license">
+          Poly Haven · CC0 asset license
+        </a>
+        <p>
+          Original 1K files; material tiling and lighting are adjusted in the
+          renderer. Photographic road panoramas are no longer used as scenery or
+          ground. The vehicle remains the separately credited licensed Ciasny
+          exterior.
+        </p>
+      </section>
       <section id="brand-marks">
         <h2>Brand marks & typography</h2>
         <p>

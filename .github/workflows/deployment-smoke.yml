@@ -23,11 +23,12 @@ on:
       - "release-card-overflow-approved.txt"
       - "release-loading-identity-approved.txt"
       - "release-environment-fix-approved.txt"
+      - "release-real-environments-approved-20261004.txt"
 permissions:
   contents: read
 jobs:
   deployed-preview:
-    if: ${{ !contains(github.event.head_commit.message, '[stage-driving-films]') && !contains(github.event.head_commit.message, '[stage-home-story]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[stage-driving-films]') && !contains(github.event.head_commit.message, '[stage-home-story]') && !contains(github.event.head_commit.message, '[stage-real-environments]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

@@ -5,7 +5,7 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 ## Current status
 **In progress. Not a completed production configurator.**
 
-One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The other five routes remain labeled photographic references, not renamed copies of the same mesh. Paint, lamps, cameras and outdoor environments work on the licensed exterior. Interior remains disabled until an accurate cabin preview is accepted. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
+One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The other five routes remain labeled photographic references, not renamed copies of the same mesh. Paint, lamps, cameras and five real-geometry environments work on the licensed exterior. Interior remains disabled until an accurate cabin preview is accepted. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
 
 The homepage combines two real NissanNews GT-R track films in intact Flixel players, a reversible hero-to-paper exit, white editorial photography, focused film viewing, four compact multi-photo heritage spreads with a slim era index, an animated layered menu, six larger model invitations and an expanded independent-project footer. Keyboard, reduced-motion and responsive checks cover the complete flow. Both exact hosted players were verified on the public Railway origin; GitHub runners have received provider playback restrictions, so deterministic app checks and public-origin media verification are reported separately. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
 
@@ -50,7 +50,7 @@ Two native720p MP4s total1,820,885bytes. `filmdata/` stores explicit64KiB chunks
 
 ### Environment assets
 
-HDR binaries are excluded from Git. `npm run build` fetches missing/corrupt files from the pinned official Poly Haven HTTPS URLs and verifies byte size, SHA-256 and Radiance headers before Vite bundles them. A cold build requires HTTPS access to `dl.polyhaven.org`; a valid local cache supports offline builds. Production serves the bundled files locally and has no external HDRI dependency. No credentials are needed. See `docs/ENVIRONMENT_CREDITS.md` for timeout and cache details.
+Environment HDR and PBR JPG binaries are excluded from Git. `npm run build` fetches missing/corrupt files from the pinned official Poly Haven HTTPS URLs and verifies byte size, SHA-256 and image headers before Vite bundles them. A cold build requires HTTPS access to `dl.polyhaven.org`; a valid local cache supports offline builds. Production serves the bundled files locally and has no external HDRI dependency. The active scenes use four CC0 scanned material sets and a sky-only HDR; floors, indoor architecture, pit facilities and coastal structures are actual original 3D geometry. No credentials are needed. See `docs/ENVIRONMENT_CREDITS.md` for timeout and cache details.
 
 ## Routes
 

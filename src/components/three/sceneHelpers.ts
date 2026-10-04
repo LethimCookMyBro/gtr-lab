@@ -76,6 +76,15 @@ export const CAMERA_VIEWS: Record<string, CameraView> = {
   },
 };
 
+/** Keep portrait framing inside the modelled venue's clear camera envelope. */
+export const VENUE_CAMERA_RADIUS = 18;
+export function exteriorDistanceScale(requested: number, baseDistance: number) {
+  return Math.min(
+    requested,
+    VENUE_CAMERA_RADIUS / Math.max(0.01, baseDistance),
+  );
+}
+
 export function cameraView(
   id: string,
   overrides?: Partial<Record<string, CameraView>>,
@@ -136,13 +145,10 @@ export function environmentAsset(
   environment: string,
   lowResolution: boolean,
 ): string | null {
-  const name =
-    environment === "forest"
-      ? "tief_etz"
-      : environment === "coast"
-        ? "victoria_curve_01"
-        : null;
-  return name ? `/environments/${name}${lowResolution ? "_1k" : ""}.hdr` : null;
+  void lowResolution;
+  return environment === "forest" || environment === "coast"
+    ? "/environments/kloofendal_43d_clear_puresky_1k.hdr"
+    : null;
 }
 
 export function interiorLookTarget(

@@ -36,7 +36,7 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      "npx vite build --config vite.renderer-qa.config.ts --mode renderer-qa && npx vite preview --config vite.renderer-qa.config.ts --mode renderer-qa",
+      "node scripts/fetch-surfaces.mjs && npx vite build --config vite.renderer-qa.config.ts --mode renderer-qa && npx vite preview --config vite.renderer-qa.config.ts --mode renderer-qa",
     url: "http://127.0.0.1:4174",
     reuseExistingServer: false,
     timeout: 120000,

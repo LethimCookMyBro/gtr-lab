@@ -1168,10 +1168,10 @@ p {
   background-position: center;
 }
 .environment-preview.forest {
-  background-image: url("/environments/tief_etz.preview.webp");
+  background-image: linear-gradient(180deg, #a7bdc8 0 42%, #e1dfd2 42% 52%, #555958 52% 100%);
 }
 .environment-preview.coast {
-  background-image: url("/environments/victoria_curve_01.preview.webp");
+  background-image: linear-gradient(165deg, #a9c8d7 0 45%, #5b8a97 45% 66%, #777b78 66% 100%);
 }
 .variant-choices {
   display: flex;

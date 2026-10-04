@@ -1,0 +1,92 @@
+name: Physical environment visual checkpoint
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/capture-environments.mjs"
+      - ".github/workflows/environment-preview.yml"
+      - "src/**"
+      - "public/environments/**"
+      - "modeldata/**"
+      - "scripts/prepare-models.mjs"
+      - "scripts/fetch-environments.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - "server.mjs"
+permissions:
+  contents: read
+concurrency:
+  group: environment-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: environment-preview-build
+          path: dist/
+          retention-days: 3
+          if-no-files-found: error
+  capture:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop-1440, desktop-1920, mobile-390]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: environment-preview-build
+          path: dist/
+      - name: Capture real environments and exercise controls
+        run: node scripts/capture-environments.mjs
+        timeout-minutes: 11
+        env:
+          ENVIRONMENT_QA_VIEWPORT: ${{ matrix.viewport }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: environment-visual-${{ matrix.viewport }}
+          path: environment-preview-results/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Summarize evidence and verification boundaries
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          let summary;
+          try {
+            const r = JSON.parse(readFileSync('environment-preview-results/report.json', 'utf8'));
+            summary = [`### Environment capture: ${process.env.VIEWPORT}`, `Commit: ${r.commit}`, `Status: ${r.status}`];
+            for (const v of r.viewports) {
+              summary.push(`- ${v.name}: ${v.status}; ${v.durationSeconds ?? 'pending'} seconds`);
+              for (const e of v.environments) summary.push(`  - ${e.label}: ${e.status}; ${e.images.length} images; ${e.errors.length} failures`);
+            }
+            summary.push('', 'Download the environment-visual artifact for full-size, sortable PNGs and per-environment JSON. Inspect composition, scale, reflections, floor contact and clipping before visual approval.', '', 'SwiftShader output is not physical-device performance evidence. A running/partial report or timed-out job is not a pass.');
+          } catch (error) {
+            summary = [`### Environment capture: ${process.env.VIEWPORT}`, `No complete capture report: ${error.message}`];
+          }
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
+          NODE
+        env:
+          VIEWPORT: ${{ matrix.viewport }}

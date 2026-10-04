@@ -1,0 +1,233 @@
+[
+  {
+    "id": "garage_floor",
+    "name": "Garage Floor",
+    "sourceUrl": "https://polyhaven.com/a/garage_floor",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Jenelle van Heerden": "All"
+    },
+    "dimensionsMm": [1886.4402770996094, 1886.4402770996094],
+    "map": "diff",
+    "resolution": "1k",
+    "path": "/environments/garage_floor_diff_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/garage_floor/garage_floor_diff_1k.jpg",
+    "bytes": 680146,
+    "sha256": "607215a049fc9d71db123008532de8fa4307fe8c3b4aa50a5151b66f4fcd1a9c",
+    "md5": "061fa707904236f347ecc01600a817d7",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "garage_floor",
+    "name": "Garage Floor",
+    "sourceUrl": "https://polyhaven.com/a/garage_floor",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Jenelle van Heerden": "All"
+    },
+    "dimensionsMm": [1886.4402770996094, 1886.4402770996094],
+    "map": "rough",
+    "resolution": "1k",
+    "path": "/environments/garage_floor_rough_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/garage_floor/garage_floor_rough_1k.jpg",
+    "bytes": 487150,
+    "sha256": "1978e8fc3106a1efb2ffa125e82f5f4d43548c8ff1dea89773e54be04e1c616c",
+    "md5": "c9b35d7450f75e1dd0f2ab3728544fea",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "garage_floor",
+    "name": "Garage Floor",
+    "sourceUrl": "https://polyhaven.com/a/garage_floor",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Jenelle van Heerden": "All"
+    },
+    "dimensionsMm": [1886.4402770996094, 1886.4402770996094],
+    "map": "nor_gl",
+    "resolution": "1k",
+    "path": "/environments/garage_floor_nor_gl_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/garage_floor/garage_floor_nor_gl_1k.jpg",
+    "bytes": 530592,
+    "sha256": "b70c201303d5e12ae2d4d73b1865484ea50a0543411bc95755fccbd03237482e",
+    "md5": "7bcecb9e669d3b95686c6e05892c4aa9",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "concrete_wall_008",
+    "name": "Concrete Wall 008",
+    "sourceUrl": "https://polyhaven.com/a/concrete_wall_008",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Dario Barresi": "Processing ",
+      "Charlotte Baglioni": "Photography"
+    },
+    "dimensionsMm": [2710.0000381469727, 2710.0000381469727],
+    "map": "diff",
+    "resolution": "1k",
+    "path": "/environments/concrete_wall_008_diff_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_diff_1k.jpg",
+    "bytes": 623051,
+    "sha256": "a203166d280d3cfc6a91bbc9ffdae406eb9555b4a4f658cd92619063eb17c147",
+    "md5": "6a0f87fbfea261d797661c47e05b25ad",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "concrete_wall_008",
+    "name": "Concrete Wall 008",
+    "sourceUrl": "https://polyhaven.com/a/concrete_wall_008",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Dario Barresi": "Processing ",
+      "Charlotte Baglioni": "Photography"
+    },
+    "dimensionsMm": [2710.0000381469727, 2710.0000381469727],
+    "map": "rough",
+    "resolution": "1k",
+    "path": "/environments/concrete_wall_008_rough_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_rough_1k.jpg",
+    "bytes": 322313,
+    "sha256": "2344fe72c4dc2fb9e4ce9b47079524ee8969f22c4af4bee85667511073fbf14a",
+    "md5": "1f6d5b02c58aff38a69f07a62a4cc231",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "concrete_wall_008",
+    "name": "Concrete Wall 008",
+    "sourceUrl": "https://polyhaven.com/a/concrete_wall_008",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Dario Barresi": "Processing ",
+      "Charlotte Baglioni": "Photography"
+    },
+    "dimensionsMm": [2710.0000381469727, 2710.0000381469727],
+    "map": "nor_gl",
+    "resolution": "1k",
+    "path": "/environments/concrete_wall_008_nor_gl_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_nor_gl_1k.jpg",
+    "bytes": 511519,
+    "sha256": "83cd3fa2c7cbf4c81402386065daf8fa6f72e1f1f77e02ccb1eedb28496909ae",
+    "md5": "ea22029834a78f549981196b3263aa78",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "asphalt_pit_lane",
+    "name": "Asphalt Pit Lane",
+    "sourceUrl": "https://polyhaven.com/a/asphalt_pit_lane",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensionsMm": [2000, 2000],
+    "map": "diff",
+    "resolution": "1k",
+    "path": "/environments/asphalt_pit_lane_diff_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_pit_lane/asphalt_pit_lane_diff_1k.jpg",
+    "bytes": 1015369,
+    "sha256": "8aad5097f6de913aebc33f2b9b9271834b55c6942359955722db3196a9ce9bca",
+    "md5": "4052f5d5ad91124fd3feb855acdb3f89",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "asphalt_pit_lane",
+    "name": "Asphalt Pit Lane",
+    "sourceUrl": "https://polyhaven.com/a/asphalt_pit_lane",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensionsMm": [2000, 2000],
+    "map": "rough",
+    "resolution": "1k",
+    "path": "/environments/asphalt_pit_lane_rough_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_pit_lane/asphalt_pit_lane_rough_1k.jpg",
+    "bytes": 443992,
+    "sha256": "c6341db99340082f93b5f5252e9b0d320379d48783984618812feb238b940b67",
+    "md5": "aac430d67b0dea3acb853060060afec5",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "asphalt_pit_lane",
+    "name": "Asphalt Pit Lane",
+    "sourceUrl": "https://polyhaven.com/a/asphalt_pit_lane",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensionsMm": [2000, 2000],
+    "map": "nor_gl",
+    "resolution": "1k",
+    "path": "/environments/asphalt_pit_lane_nor_gl_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_pit_lane/asphalt_pit_lane_nor_gl_1k.jpg",
+    "bytes": 1066208,
+    "sha256": "a215356a1180664fbbf94076f3720a4620a1121e137780ce98059621bf8b444e",
+    "md5": "714a48991ba60f76b5414e654797d935",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "aerial_rocks_02",
+    "name": "Aerial Rocks 02",
+    "sourceUrl": "https://polyhaven.com/a/aerial_rocks_02",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMm": [50000, 50000],
+    "map": "diff",
+    "resolution": "1k",
+    "path": "/environments/aerial_rocks_02_diff_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_diff_1k.jpg",
+    "bytes": 785923,
+    "sha256": "708373b2af7fd07ac8de1500556006aaf904c41a99985a849cacc78874f38eac",
+    "md5": "b5795e9b9e43d718ace73448c97d57ab",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "aerial_rocks_02",
+    "name": "Aerial Rocks 02",
+    "sourceUrl": "https://polyhaven.com/a/aerial_rocks_02",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMm": [50000, 50000],
+    "map": "rough",
+    "resolution": "1k",
+    "path": "/environments/aerial_rocks_02_rough_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_rough_1k.jpg",
+    "bytes": 381745,
+    "sha256": "07e842a9c9f128fb2afc2655cb09db914b5ec7c7657dcff4dcfce9c487ee0aae",
+    "md5": "327899ac752a79de880fc00510b6a304",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "aerial_rocks_02",
+    "name": "Aerial Rocks 02",
+    "sourceUrl": "https://polyhaven.com/a/aerial_rocks_02",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMm": [50000, 50000],
+    "map": "nor_gl",
+    "resolution": "1k",
+    "path": "/environments/aerial_rocks_02_nor_gl_1k.jpg",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_nor_gl_1k.jpg",
+    "bytes": 1177932,
+    "sha256": "6df5263ba6c30e9343ee324d87078b926024d710b0b349025083600369df8d25",
+    "md5": "66fcad0f6a7c2ac99bc978685195420b",
+    "licenseTextUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  }
+]

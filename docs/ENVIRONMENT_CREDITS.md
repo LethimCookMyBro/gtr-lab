@@ -95,3 +95,45 @@ The four HDR binaries are intentionally excluded from Git. Their official HTTPS 
 - `npm test` includes deterministic fetch/validation tests using temporary directories and simulated network responses; no remote service is required for the unit suite
 
 For local Vite development after a fresh checkout, run `npm run prepare:assets` once before `npm run dev`. To retain offline CI capability, a CI cache may preserve `public/environments/*.hdr`; cache entries are still validated on every build. Do not skip validation or commit unverified replacement files.
+
+## Real-geometry replacement, 4 October 2026
+
+The active configurator no longer projects either historical road panorama as a
+floor or nearby scenery. The retained `forest` state ID now selects **Test
+paddock**, an original fully modeled outdoor pit facility. `coast` selects an
+original coastal road/turnout with real asphalt, curbs, sea wall, ocean surface
+and modeled hills. The three indoor choices have original metre-scaled garage
+or gallery architecture. These are original designed places, not scans of a
+specific real circuit or building. The accepted vehicle geometry is unchanged.
+
+All near/mid-distance scenery is geometry with positional parallax. Geometry
+and bay/fence/road details are original project code. The only environment
+photograph is a distant sky; it is never used as ground or nearby terrain.
+
+New exact original 1K CC0 assets, verified 4 October 2026:
+
+- Garage Floor: Jenelle van Heerden, https://polyhaven.com/a/garage_floor
+  (diffuse/roughness/OpenGL normal; photographed tile about 1.886m)
+- Concrete Wall 008: Charlotte Baglioni and Dario Barresi,
+  https://polyhaven.com/a/concrete_wall_008 (three maps; tile about 2.71m)
+- Asphalt Pit Lane: Dimitrios Savva,
+  https://polyhaven.com/a/asphalt_pit_lane (three maps; tile 2m)
+- Aerial Rocks 02: Rob Tuytel,
+  https://polyhaven.com/a/aerial_rocks_02 (three maps; tile 50m, distant terrain)
+- Kloofendal 43d Clear (Pure Sky): Greg Zaal,
+  https://polyhaven.com/a/kloofendal_43d_clear_puresky (1K HDR sky-only edit)
+
+License: https://polyhaven.com/license and CC0 1.0 Universal. Downloaded originals
+were not modified. Color/normal intensity and metre-based UV tiling are adjusted
+in the renderer. The maps are self-hosted with no runtime API dependency.
+`public/environments/surfaces.json` and `downloads.json` preserve each exact
+source URL, byte count and SHA-256. The twelve JPG maps and one HDR total
+9,210,471 bytes. No paid assets, vehicle replacements or generated car images
+were used. Legacy preview images remain documented above but are no longer
+shown as selector thumbnails or scenery.
+
+Build preparation verifies every asset, rejects noncanonical destinations and
+redirects, and atomically publishes only complete checked files. A failed asset
+load retains an asset-free interactive vehicle stage and exposes a recovery
+notice. Browser screenshots must be reviewed separately from geometric tests;
+SwiftShader is not physical-device performance or OEM-photoreal acceptance.

@@ -1,9 +1,14 @@
-name: Photographic environment grounding QA
+name: Geometry environment regression QA
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - "src/components/three/**"
+      - "src/data/configuration.ts"
+      - "public/environments/*.json"
+      - "scripts/fetch-environments.mjs"
+      - "scripts/fetch-surfaces.mjs"
       - "tests/outdoor-stage-grounding.test.tsx"
       - "e2e/environment-grounding.spec.ts"
       - "playwright.environment.config.ts"
@@ -11,34 +16,28 @@ on:
 permissions:
   contents: read
 jobs:
-  compare:
+  candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        variant: [baseline, candidate]
         viewport: [desktop, mobile]
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Reproduce reviewed live projection for matched before captures
-        if: matrix.variant == 'baseline'
-        run: git show 34f72cdd8dbbbc4093de477aeb98998c26bc3d36:src/components/three/StudioLighting.tsx > src/components/three/StudioLighting.tsx
-      - name: Capture real WebGL views
+      - name: Check current geometry and camera contracts
         run: npx playwright test -c playwright.environment.config.ts --project=${{ matrix.viewport }}
         env:
-          ENVIRONMENT_QA_VARIANT: ${{ matrix.variant }}
+          ENVIRONMENT_QA_VARIANT: candidate
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: environment-grounding-${{ matrix.variant }}-${{ matrix.viewport }}
-          path: environment-grounding-results/${{ matrix.variant }}/
+          name: environment-grounding-candidate-${{ matrix.viewport }}
+          path: environment-grounding-results/candidate/
           retention-days: 14

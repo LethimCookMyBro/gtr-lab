@@ -10,6 +10,7 @@ interface ConfigState {
   selectedEnvironment: EnvironmentId;
   cameraPreset: string;
   cameraRequest: number;
+  environmentRequest: number;
   autoRotate: boolean;
   lightsEnabled: boolean;
   audioEnabled: boolean;
@@ -38,6 +39,7 @@ const initial = {
   selectedEnvironment: "studio" as EnvironmentId,
   cameraPreset: "hero",
   cameraRequest: 0,
+  environmentRequest: 0,
   autoRotate: false,
   lightsEnabled: false,
   audioEnabled: false,
@@ -69,7 +71,11 @@ export const useConfigurator = create<ConfigState>((set) => ({
   },
   setEnvironment: (id) => {
     if (environments.some((e) => e.id === id))
-      set({ selectedEnvironment: id, notice: null });
+      set((state) => ({
+        selectedEnvironment: id,
+        notice: null,
+        environmentRequest: state.environmentRequest + 1,
+      }));
   },
   setCamera: (id) => {
     if (cameraPresets.some((c) => c.id === id))

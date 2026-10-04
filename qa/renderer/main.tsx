@@ -104,7 +104,7 @@ function Harness() {
           <button onClick={() => setPreset("side")}>Side view</button>
           <button onClick={() => setPreset("top")}>Top view</button>
           <button onClick={() => setEnvironment("forest")}>
-            Forest environment
+            Test paddock environment
           </button>
           <button onClick={() => retry(false)}>Retry viewer</button>
           <button onClick={() => retry(true)}>Load valid fixture</button>

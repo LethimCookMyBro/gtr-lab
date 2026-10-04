@@ -1,143 +1,141 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { environmentAsset } from "./sceneHelpers";
-import { StageGeometry } from "./StageGeometry";
+import { useEffect, useMemo } from "react";
+import type { Group } from "three";
 import { Environment } from "@react-three/drei/core/Environment";
 import { Lightformer } from "@react-three/drei/core/Lightformer";
 import { ContactShadows } from "@react-three/drei/core/ContactShadows";
 import { useEnvironment } from "@react-three/drei/core/useEnvironment";
-import { GroundedSkybox } from "three/addons/objects/GroundedSkybox.js";
+import { useTexture } from "@react-three/drei/core/Texture";
+import { StageGeometry } from "./StageGeometry";
+import { createVenue } from "./venueGeometry";
+import type { SurfaceTextures } from "./venueGeometry";
 import type { StudioEnvironment } from "./types";
 
-const MOODS = {
-  studio: {
-    background: "#111316",
-    floor: "#171a1d",
-    ambient: 0.18,
-    key: 1.8,
-    fill: 0.65,
-    intensity: 0.9,
-  },
-  gallery: {
-    background: "#b2b0aa",
-    floor: "#aaa8a2",
-    ambient: 0.75,
-    key: 3.2,
-    fill: 2.4,
-    intensity: 1.1,
-  },
-  night: {
-    background: "#050608",
-    floor: "#0a0b0e",
-    ambient: 0.12,
-    key: 2.3,
-    fill: 1.5,
-    intensity: 0.6,
-  },
-};
+const SURFACES = [
+  "garage_floor",
+  "concrete_wall_008",
+  "asphalt_pit_lane",
+  "aerial_rocks_02",
+];
+const FILES = SURFACES.flatMap((id) =>
+  ["diff", "rough", "nor_gl"].map((map) => `/environments/${id}_${map}_1k.jpg`),
+);
+export function clearVenueTextures() {
+  useTexture.clear(FILES);
+}
 
-/** Original procedural studio panels. No third-party HDRI or network dependency. */
+const SKY = "/environments/kloofendal_43d_clear_puresky_1k.hdr";
+
+/** The selectable scenes are actual metre-scaled geometry, not a panorama projection. */
 export function StudioLighting({
   environment,
-  reducedMotion,
 }: {
   environment: StudioEnvironment;
   reducedMotion: boolean;
 }) {
-  if (environment === "forest" || environment === "coast")
-    return (
-      <OutdoorEnvironment
-        environment={environment}
-        reducedMotion={reducedMotion}
-      />
-    );
-  const mood = MOODS[environment];
+  const loaded = useTexture(FILES);
+  const surfaces = useMemo(
+    () =>
+      Object.fromEntries(
+        ["floor", "wall", "asphalt", "rock"].map((name, i) => [
+          name,
+          loaded.slice(i * 3, i * 3 + 3),
+        ]),
+      ) as SurfaceTextures,
+    [loaded],
+  );
+  const venue = useMemo(
+    () => createVenue(environment, surfaces),
+    [environment, surfaces],
+  );
+  const reflection = useMemo(() => {
+    const copy = venue.group.clone(true);
+    copy.position.y = -0.8;
+    return copy;
+  }, [venue]);
+  useEffect(() => () => venue.dispose(), [venue]);
+  const outdoors = environment === "forest" || environment === "coast";
+  const night = environment === "night";
+  const gallery = environment === "gallery";
   return (
     <>
-      <color attach="background" args={[mood.background]} />
-      <fog attach="fog" args={[mood.background, 18, 45]} />
+      {outdoors ? (
+        <OutdoorLight reflection={reflection} />
+      ) : (
+        <>
+          <color attach="background" args={[night ? "#11171b" : "#434b4e"]} />
+          <fog attach="fog" args={[night ? "#11171b" : "#525b5e", 35, 115]} />
+          <ambientLight intensity={night ? 0.18 : 0.38} />
+          <hemisphereLight
+            color="#dbe4ec"
+            groundColor="#515052"
+            intensity={night ? 0.35 : 0.65}
+          />
+          <directionalLight
+            position={[-5, 8, 6]}
+            intensity={night ? 1.65 : gallery ? 3.2 : 2.7}
+            color="#fff7e9"
+            castShadow
+            shadow-mapSize={[2048, 2048]}
+            shadow-camera-left={-16}
+            shadow-camera-right={16}
+            shadow-camera-top={16}
+            shadow-camera-bottom={-16}
+            shadow-camera-far={65}
+            shadow-bias={-0.00005}
+            shadow-normalBias={0.008}
+            onUpdate={(light) => light.shadow.camera.layers.enable(2)}
+          />
+          <directionalLight
+            position={[4, 5, -6]}
+            intensity={night ? 0.4 : 1.0}
+            color="#d8e5f3"
+          />
+          <Environment
+            key={`interior-${environment}`}
+            resolution={256}
+            frames={1}
+            environmentIntensity={night ? 0.75 : 0.9}
+          >
+            <color attach="background" args={[night ? "#14191e" : "#75828b"]} />
+            <ambientLight intensity={night ? 0.25 : 0.7} />
+            <directionalLight
+              position={[-5, 8, 6]}
+              intensity={2}
+              color="#fff7eb"
+            />
+            <primitive object={reflection} dispose={null} />
+            <Lightformer
+              form="rect"
+              intensity={6}
+              position={[0, 7, 0]}
+              rotation={[Math.PI / 2, 0, 0]}
+              scale={[7, 11, 1]}
+            />
+            <Lightformer
+              form="rect"
+              intensity={4}
+              position={[-8, 3, 0]}
+              rotation={[0, Math.PI / 2, 0]}
+              scale={[2, 9, 1]}
+            />
+            <Lightformer
+              form="rect"
+              intensity={3}
+              position={[8, 4, -5]}
+              rotation={[0, -Math.PI / 2, 0]}
+              scale={[3, 8, 1]}
+            />
+          </Environment>
+        </>
+      )}
       <StageGeometry>
-        <ambientLight intensity={mood.ambient} />
-        <directionalLight
-          position={[3, 7, 5]}
-          intensity={mood.key}
-          color="#fff7ed"
-          castShadow
-          shadow-mapSize={[1024, 1024]}
-          shadow-camera-left={-5}
-          shadow-camera-right={5}
-          shadow-camera-top={5}
-          shadow-camera-bottom={-5}
-          shadow-camera-near={0.1}
-          shadow-camera-far={20}
-          shadow-bias={-0.0001}
-          shadow-normalBias={0.003}
-        />
-        <directionalLight
-          position={[-5, 3, -4]}
-          intensity={mood.fill}
-          color="#e7ebed"
-        />
-        <Environment
-          key={`lighting-${environment}`}
-          resolution={256}
-          frames={1}
-          environmentIntensity={mood.intensity}
-        >
-          <color
-            attach="background"
-            args={[environment === "gallery" ? "#6f7071" : "#111316"]}
-          />
-          <Lightformer
-            form="rect"
-            intensity={5}
-            color="#ffffff"
-            position={[0, 6, 0]}
-            rotation={[Math.PI / 2, 0, 0]}
-            scale={[4, 8, 1]}
-          />
-          <Lightformer
-            form="rect"
-            intensity={7}
-            color="#f3f2ef"
-            position={[-4, 2, 0]}
-            rotation={[0, Math.PI / 2, 0]}
-            scale={[1.5, 6, 1]}
-          />
-          <Lightformer
-            form="rect"
-            intensity={4}
-            color="#e9ecee"
-            position={[4, 2, -3]}
-            rotation={[0, -Math.PI / 2, 0]}
-            scale={[2, 5, 1]}
-          />
-          <Lightformer
-            form="rect"
-            intensity={environment === "night" ? 2 : 4}
-            color="#ffffff"
-            position={[0, 3, -6]}
-            scale={[5, 1, 1]}
-          />
-        </Environment>
-        <mesh
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, -0.002, 0]}
-          receiveShadow
-        >
-          <planeGeometry args={[150, 150]} />
-          <meshStandardMaterial
-            color={mood.floor}
-            roughness={0.8}
-            metalness={0}
-          />
-        </mesh>
+        <primitive object={venue.group} dispose={null} />
         <ContactShadows
           key={`contact-${environment}`}
           position={[0, -0.001, 0]}
-          opacity={environment === "gallery" ? 0.55 : 0.68}
+          opacity={outdoors ? 0.5 : 0.62}
           scale={12}
-          blur={2.5}
+          blur={2.1}
           far={4.5}
           resolution={512}
           frames={1}
@@ -148,101 +146,74 @@ export function StudioLighting({
   );
 }
 
-function EnvironmentFade({ reducedMotion }: { reducedMotion: boolean }) {
-  const scene = useThree((state) => state.scene);
-  const invalidate = useThree((state) => state.invalidate);
-  const elapsed = useRef(0);
-  useEffect(() => {
-    elapsed.current = reducedMotion ? 0.4 : 0;
-    invalidate();
-  }, [reducedMotion, invalidate]);
-  useFrame((_, delta) => {
-    if (elapsed.current >= 0.4) return;
-    elapsed.current = Math.min(0.4, elapsed.current + delta);
-    const strength =
-      0.3 + 0.7 * Math.sin(((elapsed.current / 0.4) * Math.PI) / 2);
-    scene.backgroundIntensity = strength;
-    scene.environmentIntensity = strength;
-    invalidate();
-  });
-  return null;
+function OutdoorLight({ reflection }: { reflection: Group }) {
+  const texture = useEnvironment({ files: SKY });
+  return (
+    <>
+      <Environment map={texture} background="only" backgroundIntensity={0.8} />
+      <Environment
+        resolution={256}
+        frames={1}
+        environmentIntensity={0.85}
+        far={700}
+      >
+        <Environment
+          map={texture}
+          background
+          environmentIntensity={0.65}
+          backgroundIntensity={0.8}
+        />
+        <hemisphereLight
+          intensity={0.5}
+          color="#dbeaf3"
+          groundColor="#646357"
+        />
+        <directionalLight
+          position={[43, 49.2, 31]}
+          intensity={2.7}
+          color="#fff7e8"
+        />
+        <primitive object={reflection} dispose={null} />
+      </Environment>
+      <fog attach="fog" args={["#b3c4cc", 75, 260]} />
+      <hemisphereLight intensity={0.5} color="#dbeaf3" groundColor="#646357" />
+      {/* Aligned to the actual sun in the CC0 sky map (u≈0.60, v≈0.74). */}
+      <directionalLight
+        position={[43, 50, 31]}
+        intensity={2.7}
+        color="#fff7e8"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-24}
+        shadow-camera-right={24}
+        shadow-camera-top={24}
+        shadow-camera-bottom={-24}
+        shadow-camera-far={140}
+        shadow-bias={-0.00003}
+        shadow-normalBias={0.01}
+        onUpdate={(light) => light.shadow.camera.layers.enable(2)}
+      />
+    </>
+  );
 }
 
-function OutdoorEnvironment({
-  environment,
-  reducedMotion,
-}: {
-  environment: "forest" | "coast";
-  reducedMotion: boolean;
-}) {
-  const width = useThree((state) => state.size.width);
-  const file = environmentAsset(environment, width < 768)!;
-  const texture = useEnvironment({ files: file });
-  const ground = useMemo(() => {
-    // These panoramas contain nearby verges, not reconstructed terrain. Scenic
-    // scale keeps those photographed objects beyond the car's orbit. Unlike the
-    // legacy shader's finite sphere, this mesh projects through the real camera
-    // ray, has a smooth floor/horizon transition and shares world Y=0 with tyres.
-    const height = 8;
-    const skybox = new GroundedSkybox(texture, height, 60, 128);
-    skybox.position.y = height - 0.003;
-    return skybox;
-  }, [texture]);
-  useEffect(
-    () => () => {
-      ground.geometry.dispose();
-      ground.material.dispose();
-      // Preserve EnvironmentGround's ownership: disposing the HDR also releases
-      // Three's derived background cube and PMREM when leaving this panorama.
-      texture.dispose();
-    },
-    [ground, texture],
-  );
+/** Asset-free fallback cannot suspend on the same missing texture as the selected scene. */
+export function FallbackStudio() {
   return (
-    <StageGeometry>
-      <Environment
-        key={`lighting-${file}`}
-        map={texture}
-        background
-        environmentIntensity={1}
-        backgroundIntensity={1}
-      />
-      <primitive object={ground} dispose={null} />
-      <EnvironmentFade key={`fade-${file}`} reducedMotion={reducedMotion} />
-      <directionalLight
-        position={environment === "forest" ? [4, 8, -3] : [-5, 4, 3]}
-        intensity={environment === "forest" ? 1.1 : 1.7}
-        color={environment === "forest" ? "#f4f7ef" : "#fff0d9"}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-5}
-        shadow-camera-right={5}
-        shadow-camera-top={5}
-        shadow-camera-bottom={-5}
-        shadow-camera-near={0.1}
-        shadow-camera-far={20}
-        shadow-bias={-0.0001}
-        shadow-normalBias={0.003}
-      />
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.002, 0]}
-        receiveShadow
-      >
-        <planeGeometry args={[30, 30]} />
-        <shadowMaterial transparent opacity={0.28} />
-      </mesh>
-      <ContactShadows
-        key={`contact-${file}`}
-        position={[0, -0.001, 0]}
-        opacity={0.65}
-        scale={12}
-        blur={2.3}
-        far={4.5}
-        resolution={512}
-        frames={1}
-        color="#000000"
-      />
-    </StageGeometry>
+    <>
+      <color attach="background" args={["#282d31"]} />
+      <ambientLight intensity={0.65} />
+      <directionalLight position={[3, 7, 5]} intensity={3} />
+      <StageGeometry>
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -0.002, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[150, 150]} />
+          <meshStandardMaterial color="#50565a" roughness={0.85} />
+        </mesh>
+      </StageGeometry>
+    </>
   );
 }

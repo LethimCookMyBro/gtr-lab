@@ -12,14 +12,14 @@ export const paints = [
 export const environments = [
   {
     id: "studio",
-    name: "Studio",
-    description: "Soft light. Pure form.",
+    name: "Pit garage",
+    description: "Concrete, steel and a working pit bay.",
     color: "#484b4d",
   },
   {
     id: "gallery",
     name: "Gallery",
-    description: "Architectural light. Clear detail.",
+    description: "Open atrium. Architectural daylight.",
     color: "#bbb9b1",
   },
   {
@@ -30,14 +30,14 @@ export const environments = [
   },
   {
     id: "forest",
-    name: "Forest road",
-    description: "Filtered daylight. Open road.",
+    name: "Test paddock",
+    description: "Pit lane asphalt. Open-air circuit paddock.",
     color: "#354038",
   },
   {
     id: "coast",
     name: "Coastal road",
-    description: "Ocean light. A wider horizon.",
+    description: "Real road, sea wall and open water.",
     color: "#7791a0",
   },
 ] as const;

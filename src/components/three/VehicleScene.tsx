@@ -117,7 +117,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
           position: CAMERA_VIEWS.hero.position,
           fov: CAMERA_VIEWS.hero.fov,
           near: 0.02,
-          far: 150,
+          far: 700,
         }}
         gl={{
           antialias: true,
@@ -150,6 +150,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
         {asset ? (
           <>
             <RecoverableEnvironment
+              key={`${props.environment}-${props.environmentRequest ?? 0}`}
               environment={props.environment}
               reducedMotion={props.reducedMotion}
               onFallback={props.onEnvironmentFallback}

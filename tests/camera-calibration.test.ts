@@ -61,3 +61,11 @@ it.each([
     }
   },
 );
+
+it("keeps portrait cameras and zoom inside the clear 18m venue envelope", async () => {
+  const { exteriorDistanceScale } =
+    await import("../src/components/three/sceneHelpers");
+  expect(exteriorDistanceScale(2.2, 10)).toBeCloseTo(1.8);
+  expect(exteriorDistanceScale(2.2, 6)).toBeCloseTo(2.2);
+  expect(exteriorDistanceScale(1, 8)).toBe(1);
+});

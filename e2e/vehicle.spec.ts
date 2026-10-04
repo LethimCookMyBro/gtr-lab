@@ -302,7 +302,7 @@ test("separate lamps and real environments affect the licensed vehicle", async (
   const forestResponse = page.waitForResponse((response) =>
     /\/environments\/tief_etz(?:_1k)?\.hdr/.test(response.url()),
   );
-  await chooseEnvironment(page, "Forest road", "forest");
+  await chooseEnvironment(page, "Test paddock", "forest");
   const forest = await forestResponse;
   expect(forest.ok()).toBe(true);
   expect(await forest.finished()).toBeNull();
@@ -321,7 +321,7 @@ test("separate lamps and real environments affect the licensed vehicle", async (
   await capture(page, info, "vehicle-environment-coast");
   await chooseEnvironment(page, "After hours", "night");
   await capture(page, info, "vehicle-environment-night");
-  await chooseEnvironment(page, "Studio", "studio");
+  await chooseEnvironment(page, "Pit garage", "studio");
   await capture(page, info, "vehicle-environment-studio");
 });
 

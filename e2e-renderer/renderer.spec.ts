@@ -147,17 +147,17 @@ test("context loss reports the graphics failure and retry creates a working new 
   await expectReady(page);
 });
 
-test("failed HDRI falls back to studio without losing the working model", async ({
+test("failed sky HDR falls back to a basic studio without losing the working model", async ({
   page,
 }) => {
   await page.route("**/environments/*.hdr", (route) => route.abort("failed"));
   await page.goto("/");
   await expectReady(page);
   await page
-    .getByRole("button", { name: "Forest environment", exact: true })
+    .getByRole("button", { name: "Test paddock environment", exact: true })
     .click();
   await expect(page.getByTestId("environment-notice")).toContainText(
-    "Switched to Studio",
+    "Switched to a basic studio",
   );
   await expect(page.getByTestId("environment")).toHaveText("studio");
   await expectReady(page);

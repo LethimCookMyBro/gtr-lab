@@ -2,7 +2,11 @@ import { Suspense, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEnvironment } from "@react-three/drei/core/useEnvironment";
 import { EnvironmentBoundary } from "./EnvironmentBoundary";
-import { StudioLighting } from "./StudioLighting";
+import {
+  StudioLighting,
+  FallbackStudio,
+  clearVenueTextures,
+} from "./StudioLighting";
 import { environmentAsset } from "./sceneHelpers";
 import type { StudioEnvironment } from "./types";
 
@@ -20,23 +24,23 @@ export function RecoverableEnvironment({
   onReady,
 }: Props) {
   const width = useThree((state) => state.size.width);
-  const fallback = (
-    <StudioLighting environment="studio" reducedMotion={reducedMotion} />
-  );
-  function failed(_detail: string) {
-    // Remove rejected cache entries before the user retries the normal environment control.
-    for (const lowResolution of [false, true]) {
-      const files = environmentAsset(environment, lowResolution);
+  const fallback = <FallbackStudio />;
+  function failed(detail: string) {
+    // Keep successful source caches when only another asset category failed.
+    // The twelve JPGs are one loader cache entry; an HDR error must not evict it.
+    if (/\.jpg(?:\b|\?)/i.test(detail)) clearVenueTextures();
+    if (/\.hdr(?:\b|\?)/i.test(detail)) {
+      const files = environmentAsset(environment, false);
       if (files) useEnvironment.clear({ files });
     }
     const name =
       environment === "forest"
-        ? "Forest"
+        ? "Paddock"
         : environment === "coast"
           ? "Coast"
           : "Selected";
     onFallback?.(
-      `${name} lighting couldn’t load. Switched to Studio; the vehicle is still interactive. Select the environment again to retry.`,
+      `${name} lighting couldn’t load. Switched to a basic studio; the vehicle is still interactive. Select the environment again to retry.`,
     );
   }
   return (
