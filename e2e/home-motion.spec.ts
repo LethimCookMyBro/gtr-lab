@@ -1544,7 +1544,9 @@ test("stalled enlarged driving film shows recovery and permits an explicit retry
   await retry.focus();
   await retry.press("Enter");
   await expect(dialog.locator("iframe")).toHaveCount(1);
-  await expect(dialog.locator("iframe")).toBeFocused();
+  await expect(
+    dialog.getByRole("button", { name: "Close driving film", exact: true }),
+  ).toBeFocused();
   await expect(dialog.getByRole("status")).toHaveText(
     "Loading the publisher’s player…",
   );

@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { homeFilms } from "../../data/films";
 
-function DialogPlayer() {
+function DialogPlayer({ onRetry }: { onRetry: () => void }) {
   const frame = useRef<HTMLIFrameElement>(null);
-  const retryRequested = useRef(false);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -12,12 +11,6 @@ function DialogPlayer() {
     const timeout = window.setTimeout(() => setFailed(true), 20000);
     return () => window.clearTimeout(timeout);
   }, [loaded, failed]);
-  useEffect(() => {
-    if (!failed && retryRequested.current) {
-      frame.current?.focus({ preventScroll: true });
-      retryRequested.current = false;
-    }
-  }, [failed]);
   return (
     <>
       <div
@@ -34,8 +27,8 @@ function DialogPlayer() {
               <button
                 type="button"
                 onClick={() => {
-                  retryRequested.current = true;
                   setFailed(false);
+                  onRetry();
                 }}
                 aria-label="Retry driving film"
               >
@@ -80,6 +73,7 @@ export function FilmDialog({
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
   const [visible, setVisible] = useState(
     () =>
       typeof document === "undefined" || document.visibilityState !== "hidden",
@@ -139,6 +133,7 @@ export function FilmDialog({
             <h2>A closer look.</h2>
           </div>
           <button
+            ref={closeButton}
             type="button"
             onClick={onClose}
             aria-label="Close driving film"
@@ -148,7 +143,11 @@ export function FilmDialog({
             <X size={22} aria-hidden="true" />
           </button>
         </header>
-        {open && visible && <DialogPlayer />}
+        {open && visible && (
+          <DialogPlayer
+            onRetry={() => closeButton.current?.focus({ preventScroll: true })}
+          />
+        )}
         <footer>
           <span>A short track loop from NissanNews.</span>
           <a href={homeFilms.detail.page} target="_blank" rel="noreferrer">

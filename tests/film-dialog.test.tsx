@@ -95,7 +95,9 @@ it("retries only on request and ignores a timed-out frame's late load", () => {
   const second = dialog.querySelector("iframe")!;
   expect(second).not.toBe(first);
   expect(second.getAttribute("src")).toBe(homeFilms.detail.embed);
-  expect(document.activeElement).toBe(second);
+  expect(document.activeElement).toBe(
+    within(dialog).getByRole("button", { name: "Close driving film" }),
+  );
   expect(within(dialog).getByRole("status").textContent).toContain("Loading");
   act(() => vi.advanceTimersByTime(20000));
   expect(dialog.querySelector("iframe")).toBeNull();
