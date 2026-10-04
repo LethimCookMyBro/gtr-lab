@@ -1806,8 +1806,39 @@
 .home-film-dialog-player {
   width: 100%;
   aspect-ratio: 16/9;
-  max-height: 72svh;
+  max-height: min(72svh, calc(100svh - 230px));
   background: #000;
+}
+.home-film-dialog-status {
+  min-height: 16px;
+  margin: 12px 0 0;
+  color: #b1b6ba;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.home-film-dialog-recovery {
+  height: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  font-size: 14px;
+}
+.home-film-dialog-recovery > div {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.home-film-dialog-recovery a {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 .home-film-dialog iframe {
   display: block;

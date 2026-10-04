@@ -26,6 +26,7 @@ on:
       - "release-real-environments-approved-20261004.txt"
       - "release-loading-disposal-approved-20261004.txt"
       - "release-r32-motion-approved-20261004.txt"
+      - "release-detail-player-20261004.txt"
 permissions:
   contents: read
 jobs:

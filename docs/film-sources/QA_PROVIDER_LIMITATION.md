@@ -12,6 +12,12 @@ These workflows explicitly exclude the three external-player acceptance cases an
 - A real browser on the public Railway origin at [the film embed probe](https://gtr-lab-production.up.railway.app/film-embed-check.html) verified advancing playback for both exact NissanNews/Flixel clips: opening `7x5domma49p8pb7z8k1l` and detail `t53p8d1vu4miy763a938`. Both decoded at 1920 × 1080; Stop, restart and offscreen unloading were verified. This probe evidence is separate from final homepage acceptance for a release commit.
 - The app uses the intact publisher players documented in [DRIVING_EMBEDS.md](DRIVING_EMBEDS.md). No headers are stripped, no provider response is proxied and no video is extracted or rehosted to make tests pass.
 
+## Enlarged-player recovery, 4 October 2026
+
+Public release `37e0a6d991596621e9e03a2f66b24abeb327f2c1` was inspected in the cloud browser. The opening embed played; the exact detail embed stayed on an empty `about:blank` document both in the enlarged dialog and in its ambient panel. The ambient panel reached its existing timeout. The same detail provider URL played as a top-level page at 1921 × 1080, with readyState 4 and advancing time. No CAPTCHA or site-served blocking message was shown. This does not establish a provider outage or an application cause for the embedded navigation failure.
+
+The enlarged dialog now has a 20-second document-loading deadline, explicit retry and a direct original-provider link. The iframe is removed on timeout, close or hidden-tab transition. An iframe load event ends document loading only; the neutral status still points users to the original if the media stays blank. Unit and controlled stalled-request browser tests establish application recovery, not third-party playback.
+
 ## Explicit external acceptance
 
 The external tests remain unchanged in `e2e/home-motion.spec.ts` and require `REQUIRE_HOME_FILMS=1`. Run them deliberately in a browser environment where the provider accepts playback, targeting the public deployment:

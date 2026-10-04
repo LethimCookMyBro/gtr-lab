@@ -53,8 +53,95 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   document.body.style.overflow = "";
   vi.unstubAllGlobals();
+});
+
+it("replaces a stalled enlarged player with an honest fallback after 20 seconds", () => {
+  vi.useFakeTimers();
+  scene(true);
+  fireEvent.click(screen.getByRole("button", { name: "Enlarge driving film" }));
+  const dialog = screen.getByRole("dialog", { name: "GT-R driving film" });
+  expect(within(dialog).getByRole("status").textContent).toContain("Loading");
+  act(() => vi.advanceTimersByTime(19999));
+  expect(dialog.querySelector("iframe")).not.toBeNull();
+  act(() => vi.advanceTimersByTime(1));
+  expect(dialog.querySelector("iframe")).toBeNull();
+  expect(within(dialog).getByRole("status").textContent).toContain(
+    "could not load",
+  );
+  expect(
+    within(dialog)
+      .getByRole("link", { name: "Watch original on Flixel" })
+      .getAttribute("href"),
+  ).toBe(homeFilms.detail.page);
+});
+
+it("retries only on request and ignores a timed-out frame's late load", () => {
+  vi.useFakeTimers();
+  scene(true);
+  fireEvent.click(screen.getByRole("button", { name: "Enlarge driving film" }));
+  const dialog = screen.getByRole("dialog", { name: "GT-R driving film" });
+  const first = dialog.querySelector("iframe")!;
+  act(() => vi.advanceTimersByTime(20000));
+  fireEvent.load(first);
+  expect(dialog.querySelector("iframe")).toBeNull();
+  const retry = within(dialog).getByRole("button", {
+    name: "Retry driving film",
+  });
+  retry.focus();
+  fireEvent.click(retry);
+  const second = dialog.querySelector("iframe")!;
+  expect(second).not.toBe(first);
+  expect(second.getAttribute("src")).toBe(homeFilms.detail.embed);
+  expect(document.activeElement).toBe(second);
+  expect(within(dialog).getByRole("status").textContent).toContain("Loading");
+  act(() => vi.advanceTimersByTime(20000));
+  expect(dialog.querySelector("iframe")).toBeNull();
+});
+
+it("ends document loading without claiming playback when the provider iframe loads", () => {
+  vi.useFakeTimers();
+  scene(true);
+  fireEvent.click(screen.getByRole("button", { name: "Enlarge driving film" }));
+  const dialog = screen.getByRole("dialog", { name: "GT-R driving film" });
+  const frame = dialog.querySelector("iframe")!;
+  fireEvent.load(frame);
+  act(() => vi.advanceTimersByTime(30000));
+  expect(dialog.querySelector("iframe")).toBe(frame);
+  expect(within(dialog).getByRole("status").textContent).toContain(
+    "If the film stays blank",
+  );
+  expect(within(dialog).getByRole("status").textContent).not.toMatch(
+    /playing|ready|playback verified/i,
+  );
+});
+
+it("starts a fresh loading deadline after hiding or reopening the enlarged player", () => {
+  vi.useFakeTimers();
+  scene(true);
+  const open = () =>
+    fireEvent.click(
+      screen.getByRole("button", { name: "Enlarge driving film" }),
+    );
+  open();
+  act(() => vi.advanceTimersByTime(19000));
+  visibility("hidden");
+  act(() => vi.advanceTimersByTime(20000));
+  visibility("visible");
+  let dialog = screen.getByRole("dialog", { name: "GT-R driving film" });
+  act(() => vi.advanceTimersByTime(1000));
+  expect(dialog.querySelector("iframe")).not.toBeNull();
+  act(() => vi.advanceTimersByTime(19000));
+  expect(dialog.querySelector("iframe")).toBeNull();
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "Close driving film" }),
+  );
+  open();
+  dialog = screen.getByRole("dialog", { name: "GT-R driving film" });
+  expect(dialog.querySelector("iframe")).not.toBeNull();
+  expect(within(dialog).getByRole("status").textContent).toContain("Loading");
 });
 afterAll(() => {
   for (const [name, descriptor] of [

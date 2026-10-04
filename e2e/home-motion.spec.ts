@@ -1462,6 +1462,97 @@ test("enlarged driving film preserves focus, scroll and one-player lifecycle", a
   }
 });
 
+test("stalled enlarged driving film shows recovery and permits an explicit retry", async ({
+  page,
+}, info) => {
+  // Hold only the external document request. This establishes app recovery,
+  // not provider availability or playback.
+  await page.route(
+    "https://media.flixel.com/cinemagraph/t53p8d1vu4miy763a938?hd=true",
+    () => {},
+  );
+  await page.goto("/");
+  await continueHomeWithout3D(page);
+  await scrollProgress(page, ".home-expanding-runway", 0.5);
+  await page.clock.install();
+  await page
+    .getByRole("button", { name: "Enlarge driving film", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "GT-R driving film",
+    exact: true,
+  });
+  await expect(dialog.getByRole("status")).toHaveText(
+    "Loading the publisher’s player…",
+  );
+  await page.clock.fastForward(20001);
+  await expect(dialog.locator("iframe")).toHaveCount(0);
+  await expect(dialog.getByRole("status")).toHaveText(
+    "The embedded film could not load.",
+  );
+  const retry = dialog.getByRole("button", {
+    name: "Retry driving film",
+    exact: true,
+  });
+  const original = dialog.getByRole("link", {
+    name: "Watch original on Flixel",
+    exact: true,
+  });
+  await expect(retry).toBeVisible();
+  await expect(original).toHaveAttribute(
+    "href",
+    "https://flixel.com/cinemagraph/t53p8d1vu4miy763a938",
+  );
+  for (const element of [retry, original, dialog.getByRole("status")]) {
+    const bounds = (await element.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width,
+    );
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+      page.viewportSize()!.height,
+    );
+  }
+  await page.screenshot({
+    path: info.outputPath("enlarged-film-recovery.png"),
+    scale: "css",
+  });
+  if (info.project.name === "home-desktop") {
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 844, height: 390 },
+    ]) {
+      await page.setViewportSize(viewport);
+      for (const element of [retry, original, dialog.getByRole("status")]) {
+        await expect(element).toBeVisible();
+        const bounds = (await element.boundingBox())!;
+        expect(bounds.x).toBeGreaterThanOrEqual(0);
+        expect(bounds.y).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+        expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+      }
+      const controls = (await original.boundingBox())!;
+      const status = (await dialog.getByRole("status").boundingBox())!;
+      expect(controls.y + controls.height).toBeLessThanOrEqual(status.y);
+      await page.screenshot({
+        path: info.outputPath(`enlarged-film-recovery-${viewport.width}.png`),
+        scale: "css",
+      });
+    }
+  }
+  await retry.focus();
+  await retry.press("Enter");
+  await expect(dialog.locator("iframe")).toHaveCount(1);
+  await expect(dialog.locator("iframe")).toBeFocused();
+  await expect(dialog.getByRole("status")).toHaveText(
+    "Loading the publisher’s player…",
+  );
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(dialog.locator("iframe")).toHaveCount(0);
+});
+
 test("model invitations keep all six cards separated and keyboard reachable", async ({
   page,
 }, info) => {
