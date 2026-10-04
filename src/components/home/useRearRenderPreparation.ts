@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { compileRearScene } from "./compileRearScene";
 
 /** Compilation alone is insufficient: observe a completed real renderer frame too. */
 export function useRearRenderPreparation(
@@ -12,6 +13,7 @@ export function useRearRenderPreparation(
   const invalidate = useThree((state) => state.invalidate);
   const status = useRef({
     live: true,
+    abort: new AbortController(),
     compiled: false,
     renderedAfter: -1,
     ready: false,
@@ -22,6 +24,7 @@ export function useRearRenderPreparation(
   useLayoutEffect(() => {
     const current = {
       live: true,
+      abort: new AbortController(),
       compiled: false,
       renderedAfter: -1,
       ready: false,
@@ -32,6 +35,7 @@ export function useRearRenderPreparation(
     const failedShader: NonNullable<typeof previousShaderError> = (...args) => {
       if (current.live && !current.failed) {
         current.failed = true;
+        current.abort.abort();
         callbacks.current.onError(
           "The 3D shaders could not be compiled. Please retry.",
         );
@@ -46,6 +50,7 @@ export function useRearRenderPreparation(
     if (gl.debug) gl.debug.onShaderError = failedShader;
     return () => {
       current.live = false;
+      current.abort.abort();
       if (gl.debug?.onShaderError === failedShader)
         gl.debug.onShaderError = previousShaderError ?? null;
     };
@@ -58,7 +63,7 @@ export function useRearRenderPreparation(
     void Promise.resolve()
       .then(() => {
         if (!current.live || current.failed) return;
-        return gl.compileAsync(scene, camera);
+        return compileRearScene(gl, scene, camera, current.abort.signal);
       })
       .then(() => {
         if (!current.live || current.failed) return;
@@ -66,12 +71,14 @@ export function useRearRenderPreparation(
         invalidate();
       })
       .catch((error) => {
-        if (current.live && !current.failed)
+        if (current.live && !current.failed) {
+          current.failed = true;
           callbacks.current.onError(
             error instanceof Error
               ? error.message
               : "The 3D shaders could not be prepared.",
           );
+        }
       });
   }, [gl, scene, camera, invalidate]);
   useFrame(() => {

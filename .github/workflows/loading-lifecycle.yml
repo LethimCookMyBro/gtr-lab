@@ -1,0 +1,72 @@
+name: Rear preparation lifecycle
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/components/home/compileRearScene.ts"
+      - "src/components/home/useRearRenderPreparation.ts"
+      - "tests/rear-compile-cancellation.test.ts"
+      - "tests/rear-render-readiness.test.tsx"
+      - "e2e/rear-preparation-lifecycle.spec.ts"
+      - "playwright.loading-lifecycle.config.ts"
+      - ".github/workflows/loading-lifecycle.yml"
+      - "release-loading-disposal-approved-20261004.txt"
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test -c playwright.loading-lifecycle.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rear-lifecycle-candidate
+          path: |
+            test-results/loading-lifecycle/
+            playwright-loading-report/
+            playwright-loading-lifecycle-report/
+          retention-days: 14
+  live:
+    if: ${{ contains(github.event.head_commit.message, '[release-loading-disposal]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/wait-railway.mjs
+        timeout-minutes: 6
+      - run: npm run build
+      - name: Verify exact public HTML and JavaScript/CSS bytes
+        run: node scripts/verify-release-assets.mjs
+      - name: Verify public compilation cancellation with no retries
+        run: npx playwright test -c playwright.loading-lifecycle.config.ts
+        env:
+          HOME_QA_URL: https://gtr-lab-production.up.railway.app
+      - name: Verify public loading, persistence and fallback regressions
+        run: npx playwright test -c playwright.loading.config.ts --retries=0
+        env:
+          HOME_QA_URL: https://gtr-lab-production.up.railway.app
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rear-lifecycle-live
+          path: |
+            test-results/
+            playwright-loading-report/
+            playwright-loading-lifecycle-report/
+            environment-release-verification/
+          retention-days: 14

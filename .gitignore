@@ -49,3 +49,5 @@ playwright-loading-report/
 
 # Original CC0 rock scans fetched and verified at build time.
 /public/environments/roadside/
+
+playwright-loading-lifecycle-report/

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { useLayoutEffect } from "react";
+import { StrictMode, useLayoutEffect } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, cleanup, render, renderHook } from "@testing-library/react";
 import { useRearRenderPreparation } from "../src/components/home/useRearRenderPreparation";
@@ -13,22 +13,30 @@ vi.mock("@react-three/fiber", () => ({
 }));
 let compiled: () => void;
 beforeEach(() => {
+  vi.useFakeTimers();
+  let complete = false;
+  compiled = () => {
+    complete = true;
+  };
   runtime.state = {
     camera: new PerspectiveCamera(),
     scene: new Scene(),
     invalidate: vi.fn(),
     gl: {
-      compileAsync: () =>
-        new Promise<void>((resolve) => {
-          compiled = resolve;
-        }),
-      info: { render: { frame: 0 } },
+      compile: () => new Set(),
+      getContext: () => ({
+        isContextLost: () => false,
+        getExtension: () => ({ COMPLETION_STATUS_KHR: 0x91b1 }),
+        getProgramParameter: () => complete,
+      }),
+      info: { render: { frame: 0 }, programs: [{ program: {} }] },
     },
   };
 });
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 it("waits for shader compilation and an actual completed render instead of counting React frames", async () => {
   let ready = 0;
@@ -45,6 +53,7 @@ it("waits for shader compilation and an actual completed render instead of count
   await act(async () => {
     await Promise.resolve();
     compiled();
+    vi.advanceTimersByTime(10);
   });
   act(() => {
     for (let i = 0; i < 10; i++) runtime.frame();
@@ -69,10 +78,14 @@ it("does not complete a disposed attempt when compilation finishes late", async 
       () => {},
     ),
   );
+  await act(async () => {
+    await Promise.resolve();
+  });
   unmount();
   await act(async () => {
     await Promise.resolve();
     compiled();
+    vi.advanceTimersByTime(10);
   });
   act(() => {
     runtime.state.gl.info.render.frame++;
@@ -81,8 +94,9 @@ it("does not complete a disposed attempt when compilation finishes late", async 
   expect(ready).toBe(0);
 });
 it("reports compilation failure without a false ready event", async () => {
-  runtime.state.gl.compileAsync = () =>
-    Promise.reject(new Error("GPU compile failed"));
+  runtime.state.gl.compile = () => {
+    throw new Error("GPU compile failed");
+  };
   const errors: string[] = [];
   let ready = 0;
   await act(async () => {
@@ -96,11 +110,11 @@ it("reports compilation failure without a false ready event", async () => {
   expect(ready).toBe(0);
   expect(errors[0]).toContain("GPU compile failed");
 });
-it("rejects shader link failures even when compileAsync resolves successfully", async () => {
+it("rejects shader link failures even when shader completion is reported", async () => {
   runtime.state.gl.debug = { onShaderError: null };
   const errors: string[] = [];
   let ready = 0;
-  runtime.state.gl.compileAsync = async () => {
+  runtime.state.gl.compile = () => {
     runtime.state.gl.debug.onShaderError?.({}, {}, {}, {});
   };
   await act(async () => {
@@ -118,11 +132,12 @@ it("rejects shader link failures even when compileAsync resolves successfully", 
   });
   expect(ready).toBe(0);
   expect(errors[0]).toMatch(/shader/i);
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 it("captures first-use environment shader failure during the studio layout effect", async () => {
   runtime.state.gl.debug = { onShaderError: null };
-  runtime.state.gl.compileAsync = async () => {};
+  runtime.state.gl.compile = () => {};
   const errors: string[] = [];
   let ready = 0;
   function Preparation() {
@@ -153,4 +168,114 @@ it("captures first-use environment shader failure during the studio layout effec
   });
   expect(ready).toBe(0);
   expect(errors[0]).toMatch(/shader/i);
+});
+
+it("stops its pending compilation poll before unmount disposes renderer programs", async () => {
+  vi.useFakeTimers();
+  let disposed = false;
+  let polls = 0;
+  const program = { program: {} };
+  runtime.state.gl.info.programs = [program];
+  runtime.state.gl.compile = () => new Set();
+  runtime.state.gl.getContext = () => ({
+    isContextLost: () => false,
+    getExtension: () => ({ COMPLETION_STATUS_KHR: 0x91b1 }),
+    getProgramParameter: () => {
+      polls++;
+      if (disposed)
+        throw new Error("Compiling resources were already disposed");
+      return false;
+    },
+  });
+  // Three r180's compileAsync closure polls again without a cancellation API.
+  runtime.state.gl.compileAsync = () =>
+    new Promise<void>(() => {
+      const check = () => {
+        runtime.state.gl.getContext().getProgramParameter();
+        setTimeout(check, 10);
+      };
+      check();
+    });
+  const { unmount } = renderHook(() =>
+    useRearRenderPreparation(
+      () => {},
+      () => {},
+    ),
+  );
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(polls).toBeGreaterThan(0);
+  unmount();
+  disposed = true;
+  runtime.state.gl.info.programs = [];
+  expect(() => vi.advanceTimersByTime(100)).not.toThrow();
+  expect(vi.getTimerCount()).toBe(0);
+  vi.useRealTimers();
+});
+
+it("cancels StrictMode's abandoned preparation and starts only the surviving lifetime", async () => {
+  let ready = 0;
+  const errors: string[] = [];
+  const { unmount } = renderHook(
+    () =>
+      useRearRenderPreparation(
+        () => ready++,
+        (message) => errors.push(message),
+      ),
+    { wrapper: StrictMode },
+  );
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(vi.getTimerCount()).toBe(1);
+  await act(async () => {
+    compiled();
+    vi.advanceTimersByTime(10);
+  });
+  act(() => {
+    runtime.frame();
+    runtime.state.gl.info.render.frame++;
+    runtime.frame();
+  });
+  expect(ready).toBe(1);
+  expect(errors).toEqual([]);
+  unmount();
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it("ignores the cancelled attempt and prepares a fresh retry", async () => {
+  let oldReady = 0;
+  let newReady = 0;
+  const errors: string[] = [];
+  const first = renderHook(() =>
+    useRearRenderPreparation(
+      () => oldReady++,
+      (message) => errors.push(message),
+    ),
+  );
+  await act(async () => {
+    await Promise.resolve();
+  });
+  first.unmount();
+  renderHook(() =>
+    useRearRenderPreparation(
+      () => newReady++,
+      (message) => errors.push(message),
+    ),
+  );
+  await act(async () => {
+    await Promise.resolve();
+    compiled();
+    vi.advanceTimersByTime(10);
+  });
+  act(() => {
+    runtime.frame();
+    runtime.state.gl.info.render.frame++;
+    runtime.frame();
+  });
+  expect(oldReady).toBe(0);
+  expect(newReady).toBe(1);
+  expect(errors).toEqual([]);
+  expect(vi.getTimerCount()).toBe(0);
 });
