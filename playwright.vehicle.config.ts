@@ -6,7 +6,9 @@ export default defineConfig({
   outputDir: "vehicle-test-results",
   fullyParallel: false,
   workers: 1,
-  timeout: 120000,
+  // Shared CI software rendering can take over two minutes for the complete
+  // rotation or touch sequence. This is a correctness suite, not a GPU benchmark.
+  timeout: process.env.CI ? 300000 : 120000,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [

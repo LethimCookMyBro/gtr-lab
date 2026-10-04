@@ -11,8 +11,11 @@ type Diagnostic = {
 };
 const diagnostics = new WeakMap<Page, Diagnostic[]>();
 const sharedHdrPath = "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr";
+// SwiftShader readback and DPR recovery can each exceed the normal assertion
+// window on shared CI CPUs. Keep the predicates strict and their waits bounded.
+const pixelReadbackTimeout = process.env.CI ? 30000 : 5000;
+const resolutionRecoveryTimeout = process.env.CI ? 30000 : 10000;
 
-test.setTimeout(120000);
 test.beforeEach(async ({ page }) => {
   const messages: Diagnostic[] = [];
   diagnostics.set(page, messages);
@@ -119,7 +122,7 @@ async function stableResolution(page: Page) {
               Math.min(devicePixelRatio, 1.75),
           );
         }),
-      { timeout: 10000 },
+      { timeout: resolutionRecoveryTimeout },
     )
     .toBeLessThan(0.02);
   await renderedFrames(page);
@@ -274,7 +277,9 @@ test("licensed production asset loads and all nine paints change rendered pixels
     await renderedFrames(page);
     if (index > 0)
       await expect
-        .poll(async () => (await canvas.screenshot()).toString("base64"))
+        .poll(async () => (await canvas.screenshot()).toString("base64"), {
+          timeout: pixelReadbackTimeout,
+        })
         .not.toBe(previous);
     previous = (await canvas.screenshot()).toString("base64");
     if (index >= paints.length - 2 || paint.id === "red")
@@ -331,7 +336,9 @@ test("separate lamps and real environments affect the licensed vehicle", async (
   await lights.click();
   await expect(lights).toHaveAttribute("aria-pressed", "true");
   await expect
-    .poll(async () => (await canvas.screenshot()).toString("base64"))
+    .poll(async () => (await canvas.screenshot()).toString("base64"), {
+      timeout: pixelReadbackTimeout,
+    })
     .not.toBe(offPixels);
   await capture(page, info, "vehicle-lights-on");
   await chooseCamera(page, "Front ¾");
