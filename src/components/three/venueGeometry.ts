@@ -34,14 +34,14 @@ export type SurfaceTextures = Record<
 type Point = [number, number, number];
 
 /** Bilinear, repeat-wrapped sampling matches TextureLoader's linear, flipY=true height UVs. */
-function coastalHeightSampler(texture?: Texture) {
+function scannedHeightSampler(texture?: Texture) {
   if (!texture) return undefined; // Geometry-only callers may deliberately omit the optional map.
   const image = texture.image as
     { width?: number; height?: number; data?: ArrayLike<number> } | undefined;
   const width = image?.width,
     height = image?.height;
   if (!width || !height)
-    throw new Error("Coastal displacement image is missing readable pixels");
+    throw new Error("Terrain displacement image is missing readable pixels");
   let pixels: ArrayLike<number>;
   let channels: number;
   let divisor = 255;
@@ -51,22 +51,22 @@ function coastalHeightSampler(texture?: Texture) {
     if (image.data instanceof Float32Array) divisor = 1;
     if (image.data instanceof Uint16Array) divisor = 65535;
     if (![1, 3, 4].includes(channels))
-      throw new Error("Unsupported coastal displacement pixel format");
+      throw new Error("Unsupported terrain displacement pixel format");
   } else {
     if (typeof document === "undefined")
-      throw new Error("Coastal displacement pixels need an image canvas");
+      throw new Error("Terrain displacement pixels need an image canvas");
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context) throw new Error("Unable to read coastal displacement pixels");
+    if (!context) throw new Error("Unable to read terrain displacement pixels");
     try {
       context.drawImage(texture.image as CanvasImageSource, 0, 0);
       pixels = context.getImageData(0, 0, width, height).data;
       channels = 4;
     } catch (cause) {
       throw new Error(
-        "Unable to read same-origin coastal displacement pixels",
+        "Unable to read same-origin terrain displacement pixels",
         { cause },
       );
     } finally {
@@ -90,8 +90,8 @@ function coastalHeightSampler(texture?: Texture) {
 }
 
 /** Source-calibrated relief on a graded grid, with an undisturbed engineered road seam. */
-function coastalTerrainGeometry(
-  sample: ReturnType<typeof coastalHeightSampler>,
+function scannedTerrainGeometry(
+  sample: ReturnType<typeof scannedHeightSampler>,
   bend: (z: number) => number,
 ) {
   const samples = (sections: [number, number, number][]) => {
@@ -196,8 +196,10 @@ export function createVenue(
   sources: SurfaceTextures,
 ) {
   // Fail before allocating owned GPU resources if a supplied image cannot be read.
-  const coastalSample =
-    environment === "coast" ? coastalHeightSampler(sources.rock[3]) : undefined;
+  const terrainSample =
+    environment === "coast" || environment === "forest"
+      ? scannedHeightSampler(sources.rock[3])
+      : undefined;
   const group = new Group();
   group.name = `venue-${environment}`;
   const geometries = new Set<BufferGeometry>();
@@ -808,39 +810,26 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
       "rock",
       environment === "forest" ? "#69715b" : "#a5a394",
     );
-    function hills(side: number) {
-      if (environment === "coast") {
-        mesh(
-          coastalTerrainGeometry(coastalSample, coastBend),
+    // Both outdoor venues use the same calibrated rock scan. The paddock's
+    // mirrored land shares one immutable geometry allocation and meets its
+    // actual 80 m paved width, clear of the outer pit building and camera orbit.
+    const terrainGeometry = scannedTerrainGeometry(
+      terrainSample,
+      environment === "coast" ? coastBend : () => 0,
+    );
+    if (environment === "forest") {
+      for (const side of [-1, 1]) {
+        const land = mesh(
+          terrainGeometry,
           rock,
-          [104, -2, -10],
+          [side * 130, -2, 0],
           "landscape-terrain",
         );
-        return;
+        if (side < 0) land.rotation.y = Math.PI;
       }
-      const geometry = new PlaneGeometry(180, 1200, 72, 160);
-      geometry.rotateX(-Math.PI / 2);
-      const p = geometry.attributes.position;
-      for (let i = 0; i < p.count; i++) {
-        const x = p.getX(i),
-          z = p.getZ(i);
-        const edge = Math.max(0, (x + 90) / 180);
-        p.setY(i, 2 + edge * 0.45 + Math.sin(z * 0.017) * 0.22 * edge);
-      }
-      geometry.computeVertexNormals();
-      metricUV(geometry, 50);
-      const hill = mesh(
-        geometry,
-        rock,
-        [side * 126, -2, -10],
-        "landscape-terrain",
-      );
-      if (side < 0) hill.rotation.y = Math.PI;
+    } else {
+      mesh(terrainGeometry, rock, [104, -2, -10], "landscape-terrain");
     }
-    if (environment === "forest") {
-      hills(-1);
-      hills(1);
-    } else hills(1);
   }
   group.updateMatrixWorld(true);
   return {

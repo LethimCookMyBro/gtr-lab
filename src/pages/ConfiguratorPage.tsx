@@ -97,7 +97,8 @@ export function ConfiguratorPage() {
     <main
       className={
         "configurator environment-" +
-        (interactive ? state.selectedEnvironment : "reference")
+        state.selectedEnvironment +
+        (interactive ? " is-scene-ready" : "")
       }
     >
       <header className="config-header">

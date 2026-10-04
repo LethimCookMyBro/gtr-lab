@@ -77,15 +77,16 @@ describe("mobile configurator title backing", () => {
     const [top, horizontal, bottom] = property(scrim, "inset")
       .split(/\s+/)
       .map(parseFloat);
-    expect(top).toBeGreaterThanOrEqual(-16);
-    expect(horizontal).toBeGreaterThanOrEqual(-18);
-    expect(bottom).toBeGreaterThanOrEqual(-16);
+    expect([top, horizontal, bottom]).toEqual([-44, -64, -44]);
+    expect(property(scrim, "background")).toContain("radial-gradient");
+    expect(property(scrim, "background")).toMatch(/#[0-9a-f]{6}00\s+100%/i);
+    expect(property(scrim, "border-radius")).toBe("");
     const title = rules(".config-title").find(
       (rule) => rule.parent === scrim.parent,
     );
     expect(property(title, "width")).toBe("max-content");
     expect(property(title, "right")).toBe("auto");
-    // At least the rightmost quarter of a 390px scene remains free of the title backing.
+    // The backing tracks text width rather than spanning the viewport.
     expect(parseFloat(property(title, "max-width"))).toBeLessThanOrEqual(260);
   });
 });
@@ -93,10 +94,10 @@ describe("mobile configurator title backing", () => {
 describe("bright gallery interface", () => {
   it("uses a dark desktop label palette with contrast against pale architecture", () => {
     for (const selector of [
-      ".environment-gallery .config-title",
-      ".environment-gallery .config-title p",
-      ".environment-gallery .study-disclosure",
-      ".environment-gallery .scene-count",
+      ".environment-gallery.is-scene-ready .config-title",
+      ".environment-gallery.is-scene-ready .config-title p",
+      ".environment-gallery.is-scene-ready .study-disclosure",
+      ".environment-gallery.is-scene-ready .scene-count",
     ]) {
       const rule = rules(selector)[0];
       expect(rule?.parent).toMatchObject({

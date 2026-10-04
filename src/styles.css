@@ -1845,12 +1845,16 @@ p {
   .config-title::before {
     content: "";
     position: absolute;
-    inset: -10px -12px -12px;
+    inset: -44px -64px -44px;
     z-index: -1;
     pointer-events: none;
-    /* Local backing leaves the surrounding architecture and sky visible. */
-    background: #111416d6;
-    border-radius: 3px;
+    /* Feather every edge into the header and scene; never expose a hard card. */
+    background: radial-gradient(
+      ellipse,
+      #111416e8 66%,
+      #111416d6 76%,
+      #11141600 100%
+    );
   }
   .config-title h1 {
     font-size: 35px;
@@ -2416,16 +2420,16 @@ p {
 
 /* Pale gallery architecture needs ink-colored labels instead of a scene-wide veil. */
 @media (min-width: 761px) {
-  .environment-gallery .config-title {
+  .environment-gallery.is-scene-ready .config-title {
     color: #20282e;
   }
-  .environment-gallery .config-title p {
+  .environment-gallery.is-scene-ready .config-title p {
     color: #30383e;
   }
-  .environment-gallery .study-disclosure {
+  .environment-gallery.is-scene-ready .study-disclosure {
     color: #30383e;
   }
-  .environment-gallery .scene-count {
+  .environment-gallery.is-scene-ready .scene-count {
     color: #30383e;
   }
 }

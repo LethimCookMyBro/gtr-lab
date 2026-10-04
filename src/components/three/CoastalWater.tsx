@@ -25,9 +25,9 @@ export function createCoastalWaterNormals(): DataTexture {
   // Periodic, smoothly interpolated height noise produces irregular short
   // crests. A few strong sine waves instead make ruler-like Fresnel bands.
   const octaves = [
-    [8, 0.04, 317],
-    [16, 0.018, 923],
-    [32, 0.008, 1777],
+    [8, 0.09, 317],
+    [16, 0.038, 923],
+    [32, 0.016, 1777],
   ];
   const fields = octaves.map(([cells, amplitude, seed]) => {
     const gradients = new Float32Array(cells * cells * 2);
@@ -106,6 +106,9 @@ export function createCoastalWaterNormals(): DataTexture {
   texture.magFilter = LinearFilter;
   texture.minFilter = LinearMipmapLinearFilter;
   texture.generateMipmaps = true;
+  // The ocean's screen footprint is much longer along depth than across it.
+  // Isotropic minification erased almost all readable chop at 70–110 metres.
+  texture.anisotropy = 8;
   texture.needsUpdate = true;
   return texture;
 }
@@ -123,7 +126,7 @@ const waterShader = {
       eye: { value: new Vector3() },
       sunDirection: { value: new Vector3(41.56, 55.73, 28.14).normalize() },
       sunColor: { value: new Color("#fff7e8") },
-      waterColor: { value: new Color("#164b57") },
+      waterColor: { value: new Color("#235b78") },
     },
   ]),
   vertexShader: /* glsl */ `
@@ -162,18 +165,21 @@ const waterShader = {
       float distanceToEye = length(toEye);
       vec3 viewDirection = normalize(toEye);
       vec2 uv = worldPosition.xz;
-      // Each tile contains many unrelated small crests, rather than one swell.
-      vec2 broadRipples = texture2D(normalSampler, uv / 17.0).rg * 2.0 - 1.0;
+      // Each tile contains many unrelated ~1–4m crests, rather than one swell.
+      // These remain readable after the long grazing-angle pixel footprint.
+      vec2 broadRipples = texture2D(normalSampler, uv / 31.0).rg * 2.0 - 1.0;
       vec2 crossRipples = texture2D(normalSampler,
-        mat2(0.8, -0.6, 0.6, 0.8) * uv / 7.3 + vec2(0.37, 0.13)).rg * 2.0 - 1.0;
-      vec2 ripples = texture2D(normalSampler, uv / 2.9 + vec2(0.17, 0.63)).rg * 2.0 - 1.0;
-      // Mipmaps plus distance damping keep the low-angle horizon from sparkling.
-      float rippleWeight = mix(0.12, 0.02, smoothstep(25.0, 180.0, distanceToEye));
-      vec2 slope = broadRipples * 0.72 + crossRipples * 0.4 + ripples * rippleWeight;
+        mat2(0.8, -0.6, 0.6, 0.8) * uv / 13.7 + vec2(0.37, 0.13)).rg * 2.0 - 1.0;
+      vec2 ripples = texture2D(normalSampler, uv / 4.9 + vec2(0.17, 0.63)).rg * 2.0 - 1.0;
+      float rippleWeight = mix(0.18, 0.04, smoothstep(25.0, 180.0, distanceToEye));
+      // Unresolved far-field slopes return continuously to the mean plane.
+      // Its physical Fresnel therefore still meets the actual HDR horizon.
+      float resolvedDetail = 1.0 - smoothstep(160.0, 550.0, distanceToEye);
+      vec2 slope = (broadRipples * 0.95 + crossRipples * 0.5 + ripples * rippleWeight) * resolvedDetail;
       vec3 normal = normalize(vec3(slope.x, 1.0, slope.y));
 
       vec2 projectedUv = reflectionCoord.xy / reflectionCoord.w;
-      vec2 distortion = normal.xz * (0.012 + 0.12 / (1.0 + distanceToEye));
+      vec2 distortion = normal.xz * (0.04 + 0.25 / (1.0 + distanceToEye));
       vec3 reflected = texture2D(tDiffuse,
         clamp(projectedUv + distortion, vec2(0.002), vec2(0.998))).rgb;
       float facing = clamp(dot(viewDirection, normal), 0.0, 1.0);
@@ -196,7 +202,7 @@ const waterShader = {
  * API. Reflector provides those public lifecycle hooks, with the original water
  * shader above supplying Fresnel, metre-scaled waves and aligned sun highlights.
  */
-export function createCoastalWater(reflectionResolution: 256 | 512 = 512) {
+export function createCoastalWater(reflectionResolution: 256 | 512 = 256) {
   const geometry = createCoastalOceanGeometry();
   const normalTexture = createCoastalWaterNormals();
   const water = new Reflector(geometry, {
@@ -265,7 +271,7 @@ export function createCoastalWater(reflectionResolution: 256 | 512 = 512) {
  * into that cube capture. There is no animation loop or per-frame invalidation.
  */
 export function CoastalWater({
-  reflectionResolution = 512,
+  reflectionResolution = 256,
 }: {
   reflectionResolution?: 256 | 512;
 }) {

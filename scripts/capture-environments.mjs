@@ -85,6 +85,14 @@ const plan = {
     "switch-return-1",
     "switch-return-2",
   ],
+  paintEvidence: {
+    night: [
+      "jet-black-front-lamps-off",
+      "jet-black-side-lamps-off",
+      "jet-black-rear-lamps-off",
+      "jet-black-front-lamps-on",
+    ],
+  },
   orbit: {
     key: "Shift+ArrowRight",
     presses: 40,
@@ -215,6 +223,7 @@ async function runViewport(name, viewport) {
     viewport,
     deviceScaleFactor: 1,
     reducedMotion: "reduce",
+    screenshotTimeoutMs: name === "desktop-1920" ? 90000 : 45000,
     status: "running",
     startedAt: new Date().toISOString(),
     checks: [],
@@ -386,7 +395,7 @@ async function runViewport(name, viewport) {
     item,
     shot,
     details = {},
-    { evidenceOnly = false } = {},
+    { evidenceOnly = false, paintOnly = false } = {},
   ) {
     currentStep = `${item.id}/${shot}`;
     const captureStarted = performance.now();
@@ -418,8 +427,12 @@ async function runViewport(name, viewport) {
         ) - innerWidth,
     );
     assert(overflow <= 1, `Horizontal page overflow: ${overflow}px`);
-    const collection = evidenceOnly ? item.switchEvidence : item.images;
-    const file = `${evidenceOnly ? "evidence-" : ""}${String(collection.length).padStart(2, "0")}-${shot}.png`;
+    const collection = paintOnly
+      ? item.paintEvidence
+      : evidenceOnly
+        ? item.switchEvidence
+        : item.images;
+    const file = `${paintOnly ? "paint-" : evidenceOnly ? "evidence-" : ""}${String(collection.length).padStart(2, "0")}-${shot}.png`;
     const screenshotStarted = performance.now();
     const bytes = await captureScreenshot(
       page,
@@ -427,7 +440,7 @@ async function runViewport(name, viewport) {
         path: join(directory, item.id, file),
         animations: "disabled",
         scale: "css",
-        timeout: 45000,
+        timeout: view.screenshotTimeoutMs,
       },
       {
         budget: screenshotRecoveryBudget,
@@ -548,6 +561,7 @@ async function runViewport(name, viewport) {
         checks: [],
         images: [],
         switchEvidence: [],
+        paintEvidence: [],
         errors: [],
       };
       view.environments.push(item);
@@ -763,6 +777,123 @@ async function runViewport(name, viewport) {
         "All five environments have distinct rendered canonical images",
       );
     }
+    // Separate legibility evidence after the complete 22-view/2-switch contract.
+    // Vehicle lamps do not illuminate the entire venue, so inspect black paint
+    // with them off from three sides, then demonstrate their actual on state.
+    const night = view.environments.find(
+      (item) => item.id === "night" && item.status === "passed",
+    );
+    if (night) {
+      currentStep = "night/paint-evidence";
+      await environment(night);
+      const paintGroup = page.getByRole("group", {
+        name: "Exterior paint",
+        exact: true,
+      });
+      const originalPaint = await paintGroup
+        .locator('button[aria-pressed="true"]')
+        .getAttribute("aria-label");
+      assert(originalPaint, "Original paint selection is missing");
+      const lamps = page.getByRole("button", { name: "Lights", exact: true });
+      const originalLamps = await lamps.getAttribute("aria-pressed");
+      assert(
+        ["true", "false"].includes(originalLamps),
+        "Original lamp state is missing",
+      );
+      night.paintRestoration = {
+        originalPaint,
+        originalLamps: originalLamps === "true",
+        restored: false,
+      };
+      const setLamps = async (enabled) => {
+        await expect(lamps).toBeEnabled();
+        if ((await lamps.getAttribute("aria-pressed")) !== String(enabled))
+          await lamps.click();
+        await expect(lamps).toHaveAttribute("aria-pressed", String(enabled));
+      };
+      try {
+        await paintGroup
+          .getByRole("button", { name: "Jet Black", exact: true })
+          .click();
+        await expect(
+          paintGroup.getByRole("button", { name: "Jet Black", exact: true }),
+        ).toHaveAttribute("aria-pressed", "true");
+        await setLamps(false);
+        let frontOff;
+        for (const [shot, preset] of [
+          ["front", "Front"],
+          ["side", "Side"],
+          ["rear", "Rear"],
+        ]) {
+          await camera(preset);
+          const hash = await capture(
+            night,
+            `jet-black-${shot}-lamps-off`,
+            {
+              paint: "Jet Black",
+              vehicleLamps: false,
+              cameraPreset: preset,
+            },
+            { paintOnly: true },
+          );
+          if (shot === "front") frontOff = hash;
+        }
+        await setLamps(true);
+        await camera("Front");
+        const frontOn = await capture(
+          night,
+          "jet-black-front-lamps-on",
+          {
+            paint: "Jet Black",
+            vehicleLamps: true,
+            cameraPreset: "Front",
+          },
+          { paintOnly: true },
+        );
+        assert.notEqual(
+          frontOn,
+          frontOff,
+          "Vehicle lamps did not change Jet Black front-view pixels",
+        );
+        night.checks.push(
+          "Jet Black front/side/rear legibility with lamps off; front lamp-on state changes rendered pixels",
+        );
+      } catch (error) {
+        night.status = "failed";
+        night.errors.push({
+          step: currentStep,
+          message: String(error),
+          stack: error.stack,
+        });
+      } finally {
+        try {
+          await paintGroup
+            .getByRole("button", { name: originalPaint, exact: true })
+            .click();
+          await setLamps(originalLamps === "true");
+          await camera("Front ¾");
+          await expect(
+            paintGroup.getByRole("button", {
+              name: originalPaint,
+              exact: true,
+            }),
+          ).toHaveAttribute("aria-pressed", "true");
+          night.paintRestoration.restored = true;
+        } catch (error) {
+          night.status = "failed";
+          night.errors.push({
+            step: "night/paint-restoration",
+            message: String(error),
+            stack: error.stack,
+          });
+        }
+        await writeFile(
+          join(directory, night.id, "report.json"),
+          JSON.stringify(night, null, 2),
+        );
+        await persist();
+      }
+    }
     await expect(canvas).toHaveCount(1);
     await graphicsHealth();
   } catch (error) {
@@ -794,6 +925,13 @@ async function runViewport(name, viewport) {
       if (item.images.length !== plan.views.length)
         item.errors.push({
           message: `Incomplete capture: ${item.images.length}/${plan.views.length} planned images`,
+        });
+      if (
+        item.id === "night" &&
+        item.paintEvidence.length !== plan.paintEvidence.night.length
+      )
+        item.errors.push({
+          message: `Incomplete night paint evidence: ${item.paintEvidence.length}/${plan.paintEvidence.night.length}`,
         });
       if (item.errors.length) item.status = "failed";
       await writeFile(

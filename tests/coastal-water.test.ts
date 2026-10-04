@@ -20,6 +20,21 @@ import {
 import { configureStageLayers } from "../src/components/three/stageLayers";
 
 describe("reflective coastal water", () => {
+  it("defaults to a bounded 256-pixel reflection while retaining an explicit 512 option", () => {
+    const defaultWater = createCoastalWater();
+    const highResolution = createCoastalWater(512);
+    expect([
+      defaultWater.water.getRenderTarget().width,
+      defaultWater.water.getRenderTarget().height,
+    ]).toEqual([256, 256]);
+    expect([
+      highResolution.water.getRenderTarget().width,
+      highResolution.water.getRenderTarget().height,
+    ]).toEqual([512, 512]);
+    defaultWater.dispose();
+    highResolution.dispose();
+  });
+
   it("creates repeatable, mipmapped original normal data with meaningful slopes", () => {
     const texture = createCoastalWaterNormals();
     const repeated = createCoastalWaterNormals();
@@ -31,6 +46,7 @@ describe("reflective coastal water", () => {
     expect(texture.minFilter).toBe(LinearMipmapLinearFilter);
     expect(texture.magFilter).toBe(LinearFilter);
     expect(texture.generateMipmaps).toBe(true);
+    expect(texture.anisotropy).toBe(8);
     expect(texture.colorSpace).toBe(NoColorSpace);
     const slopes = [];
     for (let i = 0; i < data.length; i += 4) {
@@ -49,7 +65,7 @@ describe("reflective coastal water", () => {
     repeated.dispose();
   });
 
-  it("spreads calm ripple energy across irregular features instead of one long wave", () => {
+  it("keeps readable small-chop energy irregular instead of concentrating it in one long wave", () => {
     const texture = createCoastalWaterNormals();
     const { data, width, height } = texture.image;
     const count = width * height;
@@ -91,8 +107,8 @@ describe("reflective coastal water", () => {
       }
     }
     expect(strongestWave / energy).toBeLessThan(0.15);
-    expect(Math.sqrt(energy)).toBeGreaterThan(0.02);
-    expect(Math.sqrt(energy)).toBeLessThan(0.06);
+    expect(Math.sqrt(energy)).toBeGreaterThan(0.075);
+    expect(Math.sqrt(energy)).toBeLessThan(0.13);
     // A height interpolation with zero lattice derivatives would still produce
     // regularly spaced flat lines. Ripple slopes must survive across tile axes.
     for (let axis = 0; axis < 2; axis++) {
