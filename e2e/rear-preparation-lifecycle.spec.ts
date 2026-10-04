@@ -97,6 +97,10 @@ test("skipping pending compilation cancels polling before disposal and reentry p
     .getByRole("link", { name: "Explore the models", exact: true })
     .click();
   await expect(page).toHaveURL(/\/models$/);
+  // React Router can update history before its transition commits. Reentry
+  // must follow an actual route unmount, not cancel a still-pending transition.
+  await expect(page.locator(".models-page")).toBeVisible();
+  await expect(rear(page)).toHaveCount(0);
   await page.goBack();
   await preparing(page);
   await releaseAndReady(page);
