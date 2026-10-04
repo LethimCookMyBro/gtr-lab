@@ -4,6 +4,7 @@ import {
   clamp01,
   expansionAt,
   heroExitAt,
+  r32MotionAt,
   sectionProgress,
   storyItemAt,
   viewportProgress,
@@ -89,6 +90,12 @@ export function useHomeMotion(
         "--year-opacity",
         "--chapter-progress",
         "--chapter-reveal",
+        "--r32-photo-clip",
+        "--r32-title-shift",
+        "--r32-road-reveal",
+        "--r32-engine-reveal",
+        "--r32-exit-shift",
+        "--r32-progress",
       ];
       [
         ...sections,
@@ -144,11 +151,20 @@ export function useHomeMotion(
           height: element.offsetHeight,
         };
       });
-      const chapterMeasurements = chapters.map((element, index) => ({
-        element,
-        index,
-        rect: element.getBoundingClientRect(),
-      }));
+      const chapterMeasurements = chapters.map((element, index) => {
+        const stage = element.querySelector<HTMLElement>(".home-r32-stage");
+        const style = stage ? getComputedStyle(stage) : undefined;
+        return {
+          element,
+          index,
+          rect: element.getBoundingClientRect(),
+          pinnedHeight: stage?.offsetHeight || 0,
+          pinnedTop:
+            style?.position === "sticky"
+              ? Number.parseFloat(style.top)
+              : undefined,
+        };
+      });
       const archiveRail = root.current?.querySelector<HTMLElement>(
         ".home-archive-stage",
       );
@@ -200,7 +216,13 @@ export function useHomeMotion(
         }
       let nextEra = 0;
       let nearest = Infinity;
-      for (const { element, index, rect } of chapterMeasurements) {
+      for (const {
+        element,
+        index,
+        rect,
+        pinnedHeight,
+        pinnedTop,
+      } of chapterMeasurements) {
         const distance =
           rect.top > readingLine
             ? rect.top - readingLine
@@ -212,6 +234,35 @@ export function useHomeMotion(
           nextEra = index;
         }
         if (!reduced) {
+          if (pinnedTop !== undefined) {
+            const progress = clamp01(
+              (pinnedTop - rect.top) /
+                Math.max(1, rect.height - pinnedHeight - 52),
+            );
+            const score = r32MotionAt(progress);
+            write(element, "--r32-progress", progress.toFixed(5));
+            write(
+              element,
+              "--r32-photo-clip",
+              `${score.photoClip.toFixed(3)}%`,
+            );
+            write(
+              element,
+              "--r32-title-shift",
+              `${score.titleShift.toFixed(3)}%`,
+            );
+            write(element, "--r32-road-reveal", score.roadReveal.toFixed(5));
+            write(
+              element,
+              "--r32-engine-reveal",
+              score.engineReveal.toFixed(5),
+            );
+            write(
+              element,
+              "--r32-exit-shift",
+              `${score.exitShift.toFixed(3)}px`,
+            );
+          }
           write(
             element,
             "--chapter-progress",

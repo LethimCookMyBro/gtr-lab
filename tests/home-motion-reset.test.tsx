@@ -30,7 +30,15 @@ function Harness({
       <section data-motion-section="heritage">
         <div className="home-archive-stage" />
         <article className="home-archive-chapter" data-era-image="0" />
-        <article className="home-archive-chapter" data-era-image="1" />
+        <article
+          className="home-archive-chapter home-archive-r32"
+          data-era-image="1"
+        >
+          <div
+            className="home-r32-stage"
+            style={{ position: "sticky", top: 150 }}
+          />
+        </article>
         <article className="home-archive-chapter" data-era-image="2" />
         <article className="home-archive-chapter" data-era-image="3" />
       </section>
@@ -113,7 +121,19 @@ it("reads untransformed editorial geometry before writing any scroll styles", ()
   expect(detail.style.getPropertyValue("--item-opacity")).not.toBe("");
   expect(detail.style.getPropertyValue("--item-shift")).not.toBe("");
   expect(Number(chapter.style.getPropertyValue("--chapter-reveal"))).toBe(1);
+  const r32 = container.querySelector<HTMLElement>(".home-archive-r32")!;
+  expect(r32.style.getPropertyValue("--r32-progress")).not.toBe("");
+  expect(r32.style.getPropertyValue("--r32-photo-clip")).not.toBe("");
   rerender(<Harness reduced />);
+  for (const property of [
+    "--r32-progress",
+    "--r32-photo-clip",
+    "--r32-title-shift",
+    "--r32-road-reveal",
+    "--r32-engine-reveal",
+    "--r32-exit-shift",
+  ])
+    expect(r32.style.getPropertyValue(property)).toBe("");
   expect(chapter.style.getPropertyValue("--chapter-progress")).toBe("");
   expect(chapter.style.getPropertyValue("--chapter-reveal")).toBe("");
   expect(detail.style.getPropertyValue("--item-progress")).toBe("");

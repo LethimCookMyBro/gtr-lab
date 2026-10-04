@@ -73,3 +73,18 @@ export function mayAutoplay(preferences: {
     preferences.documentVisible
   );
 }
+
+/** One bounded race → record → engineering score. Pure progress makes the
+ * choreography reversible; the real sticky runway supplies the timing. */
+export function r32MotionAt(progress: number) {
+  const p = clamp01(progress);
+  const photo = smoothstep(p / 0.28);
+  const title = smoothstep((p - 0.04) / 0.25);
+  return {
+    photoClip: 34 * (1 - photo),
+    titleShift: 110 * (1 - title),
+    roadReveal: smoothstep((p - 0.2) / 0.25),
+    engineReveal: smoothstep((p - 0.35) / 0.25),
+    exitShift: p <= 0.84 ? 0 : -48 * smoothstep((p - 0.84) / 0.16),
+  };
+}

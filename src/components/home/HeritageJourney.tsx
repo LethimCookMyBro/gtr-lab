@@ -53,6 +53,71 @@ function ArchiveFigure({
   );
 }
 
+function R32Chapter() {
+  const era = eras[1];
+  return (
+    <article
+      id="home-era-1989"
+      className="home-archive-chapter home-archive-r32"
+      tabIndex={-1}
+      data-era-image={1}
+      aria-label="1989 R32 GT-R"
+    >
+      <div className="home-r32-stage">
+        <div className="home-archive-heading-row">
+          <div
+            className="home-archive-inline-copy"
+            data-motion-anchor="era-1989-heading"
+            data-motion-stage="heading"
+          >
+            <h3>
+              <span className="home-r32-title-line">
+                <span>29 races.</span>
+              </span>{" "}
+              <span className="home-r32-title-line home-r32-title-answer">
+                <span>No defeats.</span>
+              </span>
+            </h3>
+          </div>
+          <div
+            className="home-archive-achievement"
+            data-motion-anchor="era-1989-record"
+            data-motion-stage="detail"
+            data-motion-enter-with="era-1989-lead"
+          >
+            <strong>{era.achievement}</strong>
+            <span>{era.achievementNote}</span>
+            <a
+              href={era.source}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="R32 milestone source"
+            >
+              Milestone source ↗
+            </a>
+          </div>
+        </div>
+        <div className="home-archive-spread">
+          <div className="home-archive-lead">
+            <ArchiveFigure photo={era.photos[1]} primary cue="era-1989-lead" />
+            <p
+              className="home-archive-description"
+              data-motion-anchor="era-1989-note"
+              data-motion-stage="detail"
+            >
+              {era.note}
+            </p>
+          </div>
+          <div className="home-archive-support">
+            <ArchiveFigure photo={era.photos[0]} cue="era-1989-lead" />
+            <ArchiveFigure photo={era.photos[2]} cue="era-1989-lead" />
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function HeritageJourney({
   activeEra,
   onEra,
@@ -75,16 +140,23 @@ export function HeritageJourney({
     const railHeight =
       section.current?.querySelector<HTMLElement>(".home-archive-stage")
         ?.offsetHeight || 0;
+    const r32Stage = target.querySelector<HTMLElement>(".home-r32-stage");
+    const pinned = r32Stage && getComputedStyle(r32Stage).position === "sticky";
+    // Direct era navigation arrives at the complete reading hold. Native scrolling
+    // still owns every entrance and exit, including when travelling backwards.
+    const destination = pinned
+      ? scrollY +
+        target.getBoundingClientRect().top -
+        Number.parseFloat(getComputedStyle(r32Stage).top) +
+        (target.offsetHeight - r32Stage.offsetHeight - 52) * 0.65
+      : scrollY +
+        target.getBoundingClientRect().top -
+        scrollPadding -
+        railHeight -
+        16;
     onEra(index);
     window.scrollTo({
-      top: Math.max(
-        0,
-        scrollY +
-          target.getBoundingClientRect().top -
-          scrollPadding -
-          railHeight -
-          16,
-      ),
+      top: Math.max(0, destination),
       behavior: sequentialMotion ? "instant" : "smooth",
     });
     target.focus({ preventScroll: true });
@@ -134,78 +206,82 @@ export function HeritageJourney({
         </Link>
       </div>
       <div className="home-archive-track">
-        {eras.map((era, index) => (
-          <article
-            key={era.year}
-            id={`home-era-${era.year}`}
-            className="home-archive-chapter"
-            tabIndex={-1}
-            data-era-image={index}
-            aria-label={`${era.year} ${era.name}`}
-          >
-            <div className="home-archive-heading-row">
-              <div
-                className="home-archive-inline-copy"
-                data-motion-anchor={`era-${era.year}-heading`}
-                data-motion-stage="heading"
-              >
-                <p className="home-archive-kicker">
-                  {String(index + 1).padStart(2, "0")} / {era.year}{" "}
-                  <span>
-                    {era.generation} · {era.theme}
-                  </span>
-                </p>
-                <h3>{era.title}</h3>
-              </div>
-              <div
-                className="home-archive-achievement"
-                data-motion-anchor={`era-${era.year}-record`}
-                data-motion-stage="detail"
-                data-motion-enter-with={`era-${era.year}-lead`}
-              >
-                <span className="home-archive-fact-label">
-                  Competition record
-                </span>
-                <strong>{era.achievement}</strong>
-                <span>{era.achievementNote}</span>
-                <a
-                  href={era.source}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`${era.generation} milestone source`}
+        {eras.map((era, index) =>
+          index === 1 ? (
+            <R32Chapter key={era.year} />
+          ) : (
+            <article
+              key={era.year}
+              id={`home-era-${era.year}`}
+              className="home-archive-chapter"
+              tabIndex={-1}
+              data-era-image={index}
+              aria-label={`${era.year} ${era.name}`}
+            >
+              <div className="home-archive-heading-row">
+                <div
+                  className="home-archive-inline-copy"
+                  data-motion-anchor={`era-${era.year}-heading`}
+                  data-motion-stage="heading"
                 >
-                  Milestone source ↗
-                </a>
-              </div>
-            </div>
-            <div className="home-archive-spread">
-              <div className="home-archive-lead">
-                <ArchiveFigure
-                  photo={era.photos[0]}
-                  primary
-                  cue={`era-${era.year}-lead`}
-                />
-                <p
-                  className="home-archive-description"
-                  data-motion-anchor={`era-${era.year}-note`}
+                  <p className="home-archive-kicker">
+                    {String(index + 1).padStart(2, "0")} / {era.year}{" "}
+                    <span>
+                      {era.generation} · {era.theme}
+                    </span>
+                  </p>
+                  <h3>{era.title}</h3>
+                </div>
+                <div
+                  className="home-archive-achievement"
+                  data-motion-anchor={`era-${era.year}-record`}
                   data-motion-stage="detail"
+                  data-motion-enter-with={`era-${era.year}-lead`}
                 >
-                  {era.note}
-                </p>
+                  <span className="home-archive-fact-label">
+                    Competition record
+                  </span>
+                  <strong>{era.achievement}</strong>
+                  <span>{era.achievementNote}</span>
+                  <a
+                    href={era.source}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`${era.generation} milestone source`}
+                  >
+                    Milestone source ↗
+                  </a>
+                </div>
               </div>
-              <div className="home-archive-support">
-                <ArchiveFigure
-                  photo={era.photos[1]}
-                  cue={`era-${era.year}-lead`}
-                />
-                <ArchiveFigure
-                  photo={era.photos[2]}
-                  cue={`era-${era.year}-lead`}
-                />
+              <div className="home-archive-spread">
+                <div className="home-archive-lead">
+                  <ArchiveFigure
+                    photo={era.photos[0]}
+                    primary
+                    cue={`era-${era.year}-lead`}
+                  />
+                  <p
+                    className="home-archive-description"
+                    data-motion-anchor={`era-${era.year}-note`}
+                    data-motion-stage="detail"
+                  >
+                    {era.note}
+                  </p>
+                </div>
+                <div className="home-archive-support">
+                  <ArchiveFigure
+                    photo={era.photos[1]}
+                    cue={`era-${era.year}-lead`}
+                  />
+                  <ArchiveFigure
+                    photo={era.photos[2]}
+                    cue={`era-${era.year}-lead`}
+                  />
+                </div>
               </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          ),
+        )}
       </div>
       <p className="home-archive-colophon">
         Historic machines, documented honestly. Capture dates and image credits

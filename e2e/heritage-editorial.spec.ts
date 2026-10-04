@@ -25,6 +25,7 @@ async function open(page: Page, settled = true) {
   await page.route("https://media.flixel.com/**", (route) => route.abort());
   await page.goto("/");
   await continueHomeWithout3D(page);
+  await expect(page.locator("#home-title")).toHaveCSS("outline-style", "none");
   // Layout composition is measured against settled document geometry. A separate
   // cold-load case below observes the real lazy/font path without this setup.
   if (settled) await settleArchiveMedia(page);
@@ -120,7 +121,16 @@ test("four compact editorial spreads have a dominant photo, supporting evidence 
         photos,
       };
     });
-    expect(geometry.height).toBeLessThan(1200);
+    if (index === 1) {
+      expect(geometry.height).toBeLessThan(900 * 2);
+      const stage = (await chapter.locator(".home-r32-stage").boundingBox())!;
+      expect(stage.y).toBeGreaterThan(130);
+      expect(stage.y + stage.height).toBeLessThanOrEqual(900);
+      await expect(chapter.locator(".home-archive-image img")).toHaveAttribute(
+        "src",
+        /archive-r32-oran-park/,
+      );
+    } else expect(geometry.height).toBeLessThan(1200);
     expect(geometry.primary.width).toBeGreaterThan(
       geometry.supports[0].width * 1.7,
     );
@@ -267,20 +277,32 @@ test("pointer era landings have no focus box and lower evidence reaches its read
     const lowerEvidence = chapter.locator(
       ".home-archive-support-image:last-child, .home-archive-description",
     );
-    const target = await lowerEvidence.evaluateAll((nodes) => {
-      const tops = nodes.map((node) => {
-        let top = 0;
-        let current: HTMLElement | null = node as HTMLElement;
-        while (current) {
-          top += current.offsetTop;
-          current = current.offsetParent as HTMLElement | null;
-        }
-        return top;
-      });
-      // Supporting details complete their entrance at43% viewport height.
-      // Put the later item just inside that reading hold using native scrolling.
-      return Math.max(...tops) - innerHeight * 0.42;
-    });
+    const target =
+      index === 1
+        ? await chapter.evaluate((node) => {
+            const stage = node.querySelector<HTMLElement>(".home-r32-stage")!;
+            return (
+              scrollY +
+              node.getBoundingClientRect().top -
+              150 +
+              (node.getBoundingClientRect().height - stage.offsetHeight - 52) *
+                0.65
+            );
+          })
+        : await lowerEvidence.evaluateAll((nodes) => {
+            const tops = nodes.map((node) => {
+              let top = 0;
+              let current: HTMLElement | null = node as HTMLElement;
+              while (current) {
+                top += current.offsetTop;
+                current = current.offsetParent as HTMLElement | null;
+              }
+              return top;
+            });
+            // Supporting details complete their entrance at43% viewport height.
+            // Put the later item just inside that reading hold using native scrolling.
+            return Math.max(...tops) - innerHeight * 0.42;
+          });
     const viewport = page.viewportSize()!;
     await page.mouse.move(viewport.width / 2, viewport.height * 0.8);
     await page.mouse.wheel(0, target - (await page.evaluate(() => scrollY)));
@@ -495,3 +517,124 @@ test("section motion has one ordered reversible phase and a fully readable reduc
   }
   await capture(page, info, "reduced-motion-all-content-readable");
 });
+
+test("R32 race, record and engineering compose through native forward and reverse scroll", async ({
+  page,
+}, info) => {
+  test.setTimeout(60000);
+  await open(page);
+  await select(page, 0);
+  const r32 = page.locator(".home-archive-r32");
+  const snapshots = [];
+  for (const [name, progress] of [
+    ["enter", 0],
+    ["race", 0.3],
+    ["hold", 0.68],
+    ["exit", 0.98],
+    ["reverse-hold", 0.68],
+    ["reverse-enter", 0],
+  ] as const) {
+    const target = await r32.evaluate((node, p) => {
+      const stage = node.querySelector<HTMLElement>(".home-r32-stage")!;
+      const bounds = node.getBoundingClientRect();
+      return (
+        scrollY +
+        bounds.top -
+        150 +
+        (bounds.height - stage.offsetHeight - 52) * p
+      );
+    }, progress);
+    const delta = target - (await page.evaluate(() => scrollY));
+    for (let step = 0; step < 12; step++) {
+      await page.mouse.wheel(0, delta / 12);
+      await page.waitForTimeout(70);
+    }
+    await waitForScrollRest(page);
+    await expect(page.locator("#home-heritage")).toHaveAttribute(
+      "data-active-era",
+      "1",
+    );
+    const state = await r32.evaluate((node) => {
+      const read = (name: string) =>
+        Number.parseFloat((node as HTMLElement).style.getPropertyValue(name));
+      const stage = node.querySelector<HTMLElement>(".home-r32-stage")!;
+      return {
+        progress: read("--r32-progress"),
+        clip: read("--r32-photo-clip"),
+        title: read("--r32-title-shift"),
+        road: read("--r32-road-reveal"),
+        engine: read("--r32-engine-reveal"),
+        exit: read("--r32-exit-shift"),
+        top: stage.getBoundingClientRect().top,
+        bottom: stage.getBoundingClientRect().bottom,
+        overflow: document.documentElement.scrollWidth > innerWidth,
+      };
+    });
+    expect(state.overflow).toBe(false);
+    expect(state.progress).toBeCloseTo(progress, 1);
+    if (name.includes("hold")) {
+      expect(state.clip).toBe(0);
+      expect(state.title).toBe(0);
+      expect(state.road).toBe(1);
+      expect(state.engine).toBe(1);
+      expect(state.top).toBeGreaterThan(130);
+      expect(state.bottom).toBeLessThanOrEqual(900);
+      await expect(
+        r32.locator(".home-archive-support-image:last-child"),
+      ).toBeInViewport({ ratio: 1 });
+    }
+    snapshots.push({ name, ...state });
+    await capture(page, info, `r32-${name}`);
+    await page.waitForTimeout(500);
+  }
+  expect(snapshots[0].clip).toBeGreaterThan(20);
+  expect(snapshots[1].clip).toBe(0);
+  expect(snapshots[3].exit).toBeLessThan(-30);
+  expect(snapshots[5].clip).toBeCloseTo(snapshots[0].clip, 1);
+  await info.attach("r32-native-score", {
+    body: JSON.stringify(snapshots, null, 2),
+    contentType: "application/json",
+  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(r32.locator(".home-r32-stage")).toHaveCSS("position", "static");
+  await expect(r32.locator(".home-archive-image img")).toHaveCSS(
+    "clip-path",
+    "none",
+  );
+  await expect(r32.locator(".home-r32-title-answer > span")).toHaveCSS(
+    "transform",
+    "none",
+  );
+});
+
+for (const viewport of [
+  { width: 1051, height: 800 },
+  { width: 1920, height: 1080 },
+]) {
+  test(`R32 reading hold fits the sticky viewport at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize(viewport);
+    await open(page);
+    const r32 = await select(page, 1);
+    const stage = r32.locator(".home-r32-stage");
+    await expect(stage).toHaveCSS("position", "sticky");
+    const bounds = (await stage.boundingBox())!;
+    expect(bounds.y).toBeGreaterThan(130);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+    await expect(
+      r32.locator(".home-archive-support-image:last-child"),
+    ).toBeInViewport({ ratio: 1 });
+    expect(
+      await r32
+        .locator(".home-archive-image img")
+        .evaluate((node) => node.getBoundingClientRect().width),
+    ).toBeLessThanOrEqual(1032);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+    ).toBe(false);
+    await capture(page, info, `r32-hold-${viewport.width}x${viewport.height}`);
+  });
+}

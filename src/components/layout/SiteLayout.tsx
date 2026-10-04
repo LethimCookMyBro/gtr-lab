@@ -270,8 +270,9 @@ export function HomeFooter() {
             An independent digital exhibition of the GT-R. Explore its history,
             its different expressions and the details that make it unmistakable.
           </p>
-          <Link to="/models" className="home-footer-enter">
-            Find your expression <ArrowUpRight size={22} />
+          <Link to="/models" className="home-footer-link home-footer-enter">
+            <span>Find your expression</span>
+            <ArrowUpRight size={22} strokeWidth={1.5} aria-hidden="true" />
           </Link>
         </div>
         <div className="home-footer-columns">
@@ -280,8 +281,17 @@ export function HomeFooter() {
             {models
               .filter((m) => m.category === "Road")
               .map((m) => (
-                <Link key={m.id} to={`/configurator/${m.id}`}>
-                  {m.shortName}
+                <Link
+                  key={m.id}
+                  to={`/configurator/${m.id}`}
+                  className="home-footer-link"
+                >
+                  <span>{m.shortName}</span>
+                  <ArrowUpRight
+                    size={18}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
                 </Link>
               ))}
           </nav>
@@ -290,16 +300,34 @@ export function HomeFooter() {
             {models
               .filter((m) => m.category !== "Road")
               .map((m) => (
-                <Link key={m.id} to={`/configurator/${m.id}`}>
-                  {m.shortName}
+                <Link
+                  key={m.id}
+                  to={`/configurator/${m.id}`}
+                  className="home-footer-link"
+                >
+                  <span>{m.shortName}</span>
+                  <ArrowUpRight
+                    size={18}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
                 </Link>
               ))}
           </nav>
           <nav aria-label="Footer navigation">
             <h2>Explore</h2>
-            <Link to="/models">All models</Link>
-            <Link to="/heritage">Heritage</Link>
-            <Link to="/credits">Credits & sources</Link>
+            <Link to="/models" className="home-footer-link">
+              <span>All models</span>
+              <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
+            </Link>
+            <Link to="/heritage" className="home-footer-link">
+              <span>Heritage</span>
+              <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
+            </Link>
+            <Link to="/credits" className="home-footer-link">
+              <span>Credits & sources</span>
+              <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
+            </Link>
           </nav>
         </div>
       </div>

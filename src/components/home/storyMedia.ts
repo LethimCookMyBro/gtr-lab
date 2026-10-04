@@ -133,7 +133,7 @@ export const eras = [
     achievementNote: "Japanese Touring Car Championship · 1990–1993",
     note: "Twin-turbo RB26DETT power met electronically controlled ATTESA E-TS four-wheel drive. The R32 won every JTCC race across four seasons. Its competition story reached far beyond Japan.",
     source:
-      "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/skyline_gt-r_1989.html",
+      "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/249_skyline_gt-r.html",
     photos: [
       {
         image: storyMedia.r32,

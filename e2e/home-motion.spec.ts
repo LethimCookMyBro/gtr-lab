@@ -126,6 +126,16 @@ async function archiveChapterDestination(page: Page, index: number) {
     const padding = Number.parseFloat(
       getComputedStyle(document.documentElement).scrollPaddingTop,
     );
+    const stage = chapter.querySelector<HTMLElement>(".home-r32-stage");
+    if (stage && getComputedStyle(stage).position === "sticky") {
+      return (
+        scrollY +
+        chapter.getBoundingClientRect().top -
+        150 +
+        (chapter.getBoundingClientRect().height - stage.offsetHeight - 52) *
+          0.65
+      );
+    }
     return Math.max(
       0,
       scrollY +
@@ -299,6 +309,11 @@ async function expectArchiveSpreadLayout(page: Page, index: number) {
       top: bounds.top,
       bottom: bounds.bottom,
       width: innerWidth,
+      viewport: innerHeight,
+      pinned: element.querySelector(".home-r32-stage")
+        ? getComputedStyle(element.querySelector(".home-r32-stage")!)
+            .position === "sticky"
+        : false,
       content,
       captions,
     };
@@ -334,12 +349,24 @@ async function expectArchiveSpreadLayout(page: Page, index: number) {
     expect(band.top - occupiedBottom).toBeLessThanOrEqual(160);
     occupiedBottom = Math.max(occupiedBottom, band.bottom);
   }
-  expect(
-    Math.min(...geometry.content.map((box) => box.top)) - geometry.top,
-  ).toBeLessThanOrEqual(160);
-  expect(
-    geometry.bottom - Math.max(...geometry.content.map((box) => box.bottom)),
-  ).toBeLessThanOrEqual(160);
+  if (geometry.pinned) {
+    // The R32 alone has an authored, bounded sticky score. Its complete reading
+    // composition must fit the viewport; all other chapters stay compact flow.
+    expect(geometry.bottom - geometry.top).toBeLessThan(geometry.viewport * 2);
+    expect(Math.min(...geometry.content.map((box) => box.top))).toBeGreaterThan(
+      130,
+    );
+    expect(
+      Math.max(...geometry.content.map((box) => box.bottom)),
+    ).toBeLessThanOrEqual(geometry.viewport);
+  } else {
+    expect(
+      Math.min(...geometry.content.map((box) => box.top)) - geometry.top,
+    ).toBeLessThanOrEqual(160);
+    expect(
+      geometry.bottom - Math.max(...geometry.content.map((box) => box.bottom)),
+    ).toBeLessThanOrEqual(160);
+  }
   for (const caption of geometry.captions) {
     expect(caption.text).toMatch(/\S/);
     expect(caption.alt).toMatch(/\S/);

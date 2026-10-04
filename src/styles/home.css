@@ -2663,12 +2663,8 @@
   color: #b7bfc5;
 }
 .home-footer-enter {
-  display: inline-flex;
-  align-items: center;
-  gap: 34px;
-  min-height: 48px;
+  max-width: 400px;
   margin-top: 26px;
-  border-bottom: 1px solid #8c969d;
   font-size: 14px;
 }
 .home-footer-columns {
@@ -2693,16 +2689,78 @@
   color: #8f99a1;
   margin-bottom: 20px;
 }
-.home-footer nav a {
+.home-footer-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
   min-height: 44px;
-  transition:
-    color 180ms,
-    transform 180ms;
+  padding: 10px 3px 10px 0;
+  border-bottom: 1px solid #ffffff1f;
+  transition: color 180ms ease-out;
 }
-.home-footer nav a:hover,
-.home-footer nav a:focus-visible {
+.home-footer-link > span {
+  min-width: 0;
+}
+.home-footer-link::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 1px;
+  background: #e1282b;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.home-footer-link > svg {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition:
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease-out;
+}
+.home-footer-link:hover,
+.home-footer-link:focus-visible {
   color: #fff;
-  transform: translateX(3px);
+}
+.home-footer-link:hover::after,
+.home-footer-link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+.home-footer-link:hover > svg,
+.home-footer-link:focus-visible > svg {
+  transform: translate(3px, -3px);
+  opacity: 1;
+}
+.home-footer-link.home-footer-enter {
+  min-height: 48px;
+  border-bottom-color: #8c969d;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-footer-link,
+  .home-footer-link::after,
+  .home-footer-link > svg {
+    transition: none;
+  }
+  .home-footer-link > svg,
+  .home-footer-link:hover > svg,
+  .home-footer-link:focus-visible > svg {
+    transform: none;
+  }
+  .home-footer-link::after,
+  .home-footer-link:hover::after,
+  .home-footer-link:focus-visible::after {
+    transform: none;
+    opacity: 0;
+  }
+  .home-footer-link:hover::after,
+  .home-footer-link:focus-visible::after {
+    opacity: 1;
+  }
 }
 .home-footer :focus-visible {
   outline-color: #fff;

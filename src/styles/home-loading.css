@@ -106,3 +106,8 @@ dialog.home-loading-gate::backdrop {
     transition: none !important;
   }
 }
+/* Programmatic reading destination after the gate, not an interactive control.
+   Screen-reader focus and the next Tab stop are preserved. */
+#home-title:focus {
+  outline-style: none;
+}

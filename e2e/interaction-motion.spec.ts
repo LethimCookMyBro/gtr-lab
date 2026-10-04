@@ -139,3 +139,113 @@ test("reduced motion removes hover transforms and dismisses immediately", async 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`footer rows share a traveling underline and arrow cue for hover and keyboard at ${viewport.width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await continueHomeWithout3D(page);
+    const footer = page.locator(".home-footer");
+    const road = footer.getByRole("navigation", { name: "Road models" });
+    const link = road.getByRole("link", { name: "Premium", exact: true });
+    await link.scrollIntoViewIfNeeded();
+    const initial = await link.boundingBox();
+    const column = await road.boundingBox();
+    expect(initial!.width).toBeCloseTo(column!.width, 0);
+    expect(initial!.height).toBeGreaterThanOrEqual(44);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBe(viewport.width);
+
+    const feedback = () =>
+      link.evaluate((el) => {
+        const underline = getComputedStyle(el, "::after");
+        const arrow = el.querySelector("svg")!;
+        const motion = new DOMMatrixReadOnly(getComputedStyle(arrow).transform);
+        return {
+          underlineScale: new DOMMatrixReadOnly(underline.transform).m11,
+          underlineColor: underline.backgroundColor,
+          arrowX: motion.m41,
+          arrowY: motion.m42,
+        };
+      });
+
+    await link.hover();
+    await expect
+      .poll(async () => (await feedback()).underlineScale)
+      .toBeGreaterThan(0.99);
+    await expect
+      .poll(async () => (await feedback()).arrowX)
+      .toBeGreaterThan(2.9);
+    const hovered = await feedback();
+    expect(hovered.arrowY).toBeLessThan(-2.9);
+    expect(hovered.underlineColor).toBe("rgb(225, 40, 43)");
+    const hoveredBounds = await link.boundingBox();
+    expect(hoveredBounds!.x).toBeCloseTo(initial!.x, 2);
+    expect(hoveredBounds!.width).toBeCloseTo(initial!.width, 2);
+    await footer.screenshot({ path: info.outputPath("footer-hover.png") });
+
+    await page.mouse.move(1, 1);
+    await footer.getByRole("link", { name: "Find your expression" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(link).toBeFocused();
+    expect(await link.evaluate((el) => el.matches(":focus-visible"))).toBe(
+      true,
+    );
+    await expect
+      .poll(async () => (await feedback()).underlineScale)
+      .toBeGreaterThan(0.99);
+    await expect
+      .poll(async () => (await feedback()).arrowX)
+      .toBeGreaterThan(2.9);
+    expect((await feedback()).underlineColor).toBe(hovered.underlineColor);
+    await footer.screenshot({ path: info.outputPath("footer-keyboard.png") });
+  });
+}
+
+test("footer reduced motion preserves an immediate static underline and keyboard feedback", async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await continueHomeWithout3D(page);
+  const footer = page.locator(".home-footer");
+  const link = footer.getByRole("link", { name: "Premium", exact: true });
+  await link.scrollIntoViewIfNeeded();
+  await link.hover();
+  const readFeedback = () =>
+    link.evaluate((el) => {
+      const underline = getComputedStyle(el, "::after");
+      const arrow = getComputedStyle(el.querySelector("svg")!);
+      return {
+        transform: arrow.transform,
+        arrowTransition: arrow.transitionDuration,
+        underlineTransform: underline.transform,
+        underlineOpacity: underline.opacity,
+        underlineTransition: underline.transitionDuration,
+        underlineColor: underline.backgroundColor,
+      };
+    });
+  const expected = {
+    transform: "none",
+    arrowTransition: "0s",
+    underlineTransform: "none",
+    underlineOpacity: "1",
+    underlineTransition: "0s",
+    underlineColor: "rgb(225, 40, 43)",
+  };
+  expect(await readFeedback()).toEqual(expected);
+  await page.mouse.move(1, 1);
+  await footer.getByRole("link", { name: "Find your expression" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(link).toBeFocused();
+  expect(await readFeedback()).toEqual(expected);
+  await footer.screenshot({
+    path: info.outputPath("footer-reduced-motion.png"),
+  });
+});
