@@ -129,6 +129,7 @@ it("reads untransformed editorial geometry before writing any scroll styles", ()
     "--r32-progress",
     "--r32-photo-clip",
     "--r32-title-shift",
+    "--r32-title-opacity",
     "--r32-road-reveal",
     "--r32-engine-reveal",
     "--r32-exit-shift",

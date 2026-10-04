@@ -85,6 +85,7 @@ export function r32MotionAt(progress: number) {
     titleShift: 110 * (1 - title),
     roadReveal: smoothstep((p - 0.2) / 0.25),
     engineReveal: smoothstep((p - 0.35) / 0.25),
+    titleOpacity: 1 - smoothstep((p - 0.84) / 0.16),
     exitShift: p <= 0.84 ? 0 : -48 * smoothstep((p - 0.84) / 0.16),
   };
 }

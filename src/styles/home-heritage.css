@@ -276,7 +276,7 @@
   outline: 2px solid #e86b76;
   outline-offset: 5px;
 }
-#home-heritage .home-archive-chapter:focus:not(:focus-visible) {
+#home-heritage .home-archive-chapter:focus {
   outline: none;
 }
 /* One cue language: heading, lead photograph, then its supporting evidence.
@@ -511,5 +511,13 @@
     .home-archive-image
     img {
     clip-path: inset(0 calc((1 - var(--item-reveal, 1)) * 32%) 0 0);
+  }
+}
+
+@media (min-width: 1051px) and (min-height: 800px) and (prefers-reduced-motion: no-preference) {
+  #home-heritage[data-heritage-sequential="false"]
+    .home-archive-r32
+    .home-archive-inline-copy {
+    opacity: var(--r32-title-opacity, 1);
   }
 }

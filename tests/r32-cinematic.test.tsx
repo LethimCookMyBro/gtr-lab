@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { MemoryRouter } from "react-router-dom";
 import { HeritageJourney } from "../src/components/home/HeritageJourney";
 import * as motion from "../src/components/home/motion";
@@ -43,6 +44,39 @@ describe("R32 competition composition", () => {
   });
 });
 
+it("moves reading focus to chapters without a giant destination frame while preserving control focus rings", () => {
+  const style = document.createElement("style");
+  // Supply keyboard focus modality to jsdom; Chromium parity is covered in E2E.
+  style.textContent = readFileSync(
+    "src/styles/home-heritage.css",
+    "utf8",
+  ).replaceAll(":focus-visible", ":focus");
+  document.head.append(style);
+  const { container } = render(
+    <MemoryRouter>
+      <HeritageJourney
+        activeEra={1}
+        onEra={() => {}}
+        sequentialMotion={false}
+      />
+    </MemoryRouter>,
+  );
+  const chapter = container.querySelector<HTMLElement>(".home-archive-r32")!;
+  chapter.focus();
+  try {
+    expect(document.activeElement).toBe(chapter);
+    expect(getComputedStyle(chapter).outline).toBe("none");
+    const button = container.querySelector<HTMLButtonElement>(
+      ".home-archive-navigation button",
+    )!;
+    button.focus();
+    style.textContent = style.textContent;
+    expect(getComputedStyle(button).outline).toContain("2px solid");
+  } finally {
+    style.remove();
+  }
+});
+
 describe("R32 authored scroll score", () => {
   it("opens the racing photograph before revealing supporting road and engine evidence", () => {
     const early = motion.r32MotionAt(0);
@@ -63,6 +97,8 @@ describe("R32 authored scroll score", () => {
   it("has a reversible exit and clamps overscroll without losing the whole-frame photo", () => {
     const held = motion.r32MotionAt(0.7);
     expect(motion.r32MotionAt(1).exitShift).toBeLessThan(-30);
+    expect(motion.r32MotionAt(1).titleOpacity).toBe(0);
+    expect(held.titleOpacity).toBe(1);
     expect(motion.r32MotionAt(0.7)).toEqual(held);
     expect(motion.r32MotionAt(-1)).toEqual(motion.r32MotionAt(0));
     expect(motion.r32MotionAt(2)).toEqual(motion.r32MotionAt(1));

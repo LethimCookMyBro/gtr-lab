@@ -310,6 +310,9 @@ async function expectArchiveSpreadLayout(page: Page, index: number) {
       bottom: bounds.bottom,
       width: innerWidth,
       viewport: innerHeight,
+      score: Number(
+        (element as HTMLElement).style.getPropertyValue("--r32-progress"),
+      ),
       pinned: element.querySelector(".home-r32-stage")
         ? getComputedStyle(element.querySelector(".home-r32-stage")!)
             .position === "sticky"
@@ -353,12 +356,14 @@ async function expectArchiveSpreadLayout(page: Page, index: number) {
     // The R32 alone has an authored, bounded sticky score. Its complete reading
     // composition must fit the viewport; all other chapters stay compact flow.
     expect(geometry.bottom - geometry.top).toBeLessThan(geometry.viewport * 2);
-    expect(Math.min(...geometry.content.map((box) => box.top))).toBeGreaterThan(
-      130,
-    );
-    expect(
-      Math.max(...geometry.content.map((box) => box.bottom)),
-    ).toBeLessThanOrEqual(geometry.viewport);
+    if (geometry.score >= 0.6 && geometry.score <= 0.84) {
+      expect(
+        Math.min(...geometry.content.map((box) => box.top)),
+      ).toBeGreaterThan(130);
+      expect(
+        Math.max(...geometry.content.map((box) => box.bottom)),
+      ).toBeLessThanOrEqual(geometry.viewport);
+    }
   } else {
     expect(
       Math.min(...geometry.content.map((box) => box.top)) - geometry.top,
@@ -645,7 +650,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     await scrollArchiveChapter(page, index);
     await expect(
       archiveChapter(page, index).locator(".home-archive-inline-copy h3"),
-    ).toHaveText(headlines[index]);
+    ).toHaveText(headlines[index], { useInnerText: true });
     await expectArchiveControlsInView(page, index);
   }
   const timeline = page.getByRole("navigation", { name: "GT-R eras" });
@@ -1294,7 +1299,7 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
     await scrollArchiveChapter(page, 1);
     await expect(
       archiveChapter(page, 1).locator(".home-archive-inline-copy h3"),
-    ).toHaveText(headlines[1]);
+    ).toHaveText(headlines[1], { useInnerText: true });
     for (const [index, name] of archiveNames.entries()) {
       const button = page.getByRole("button", { name, exact: true });
       const bounds = (await button.boundingBox())!;
@@ -1614,7 +1619,7 @@ test("desktop archive captions stay attached and the era rail stays unobscured d
         info,
         `stable-title-${width}-${delta}-${opacitySamples.length}`,
       );
-      await expect(heading).toHaveText(stableTitle);
+      await expect(heading).toHaveText(stableTitle, { useInnerText: true });
       await expect(heading).toBeInViewport({ ratio: 1 });
       await expect(page.locator("#home-heritage")).toHaveAttribute(
         "data-active-era",

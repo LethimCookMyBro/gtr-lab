@@ -92,6 +92,7 @@ export function useHomeMotion(
         "--chapter-reveal",
         "--r32-photo-clip",
         "--r32-title-shift",
+        "--r32-title-opacity",
         "--r32-road-reveal",
         "--r32-engine-reveal",
         "--r32-exit-shift",
@@ -241,6 +242,11 @@ export function useHomeMotion(
             );
             const score = r32MotionAt(progress);
             write(element, "--r32-progress", progress.toFixed(5));
+            write(
+              element,
+              "--r32-title-opacity",
+              score.titleOpacity.toFixed(5),
+            );
             write(
               element,
               "--r32-photo-clip",

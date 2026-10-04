@@ -208,6 +208,36 @@ for (const viewport of [
         ),
         animations: "disabled",
       });
+      if (index === 1) {
+        for (const [label, figureIndex] of [
+          ["road", 1],
+          ["engine", 2],
+          ["reverse-road", 1],
+        ] as const) {
+          const figure = chapter.locator("figure").nth(figureIndex);
+          const target = await figure.evaluate((node) => {
+            let top = 0;
+            let current: HTMLElement | null = node as HTMLElement;
+            while (current) {
+              top += current.offsetTop;
+              current = current.offsetParent as HTMLElement | null;
+            }
+            return top - innerHeight * 0.28;
+          });
+          await page.mouse.wheel(
+            0,
+            target - (await page.evaluate(() => scrollY)),
+          );
+          await waitForScrollRest(page);
+          await expect(figure).toHaveCSS("opacity", "1");
+          await expect(figure).toBeInViewport({ ratio: 1 });
+          await capture(
+            page,
+            info,
+            `mobile-r32-${label}-${viewport.width}x${viewport.height}`,
+          );
+        }
+      }
     }
   });
 }
@@ -236,18 +266,17 @@ test("pointer era landings have no focus box and lower evidence reaches its read
 }, info) => {
   test.setTimeout(60000);
   await open(page);
-  // Keyboard navigation still has an intentional, visible destination outline.
+  // The era button retains keyboard feedback; the reading landmark does not
+  // draw a frame around a whole multi-viewport chapter after focus transfer.
+  const keyboardButton = page.getByRole("button", {
+    name: names[0],
+    exact: true,
+  });
+  await keyboardButton.focus();
+  await expect(keyboardButton).toHaveCSS("outline-width", "2px");
   const keyboardChapter = await select(page, 0);
   await expect(keyboardChapter).toBeFocused();
-  expect(
-    await keyboardChapter.evaluate((node) => node.matches(":focus-visible")),
-  ).toBe(true);
-  await expect(keyboardChapter).toHaveCSS("outline-style", "solid");
-  await expect(keyboardChapter).toHaveCSS("outline-width", "2px");
-  await expect(keyboardChapter).toHaveCSS(
-    "outline-color",
-    "rgb(232, 107, 118)",
-  );
+  await expect(keyboardChapter).toHaveCSS("outline-style", "none");
   await page.screenshot({
     path: info.outputPath("keyboard-destination-outline.png"),
   });
@@ -309,15 +338,28 @@ test("pointer era landings have no focus box and lower evidence reaches its read
     await waitForScrollRest(page);
     await expect(lowerEvidence).toHaveCount(2);
     for (const item of await lowerEvidence.all()) {
-      await expect
-        .poll(() =>
-          item.evaluate((node) =>
-            Number(
-              (node as HTMLElement).style.getPropertyValue("--item-reveal"),
+      if (index === 1) {
+        await expect
+          .poll(() =>
+            chapter.evaluate((node) =>
+              Number(
+                (node as HTMLElement).style.getPropertyValue(
+                  "--r32-engine-reveal",
+                ),
+              ),
             ),
-          ),
-        )
-        .toBe(1);
+          )
+          .toBe(1);
+      } else
+        await expect
+          .poll(() =>
+            item.evaluate((node) =>
+              Number(
+                (node as HTMLElement).style.getPropertyValue("--item-reveal"),
+              ),
+            ),
+          )
+          .toBe(1);
       await expect(item).toHaveCSS("opacity", "1");
       expect(
         await item.evaluate(
@@ -572,6 +614,11 @@ test("R32 race, record and engineering compose through native forward and revers
     });
     expect(state.overflow).toBe(false);
     expect(state.progress).toBeCloseTo(progress, 1);
+    if (name === "exit")
+      await expect(r32.locator(".home-archive-inline-copy")).toHaveCSS(
+        "opacity",
+        /0\.0[0-9]+/,
+      );
     if (name.includes("hold")) {
       expect(state.clip).toBe(0);
       expect(state.title).toBe(0);
