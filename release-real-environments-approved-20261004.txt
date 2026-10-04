@@ -1,0 +1,9 @@
+Real 3D environment incremental release — 2026-10-04
+
+Approved application source: 1610f0f370aacadf2ea159c554a8a1b822d6877d
+Verified source and tests: 83da52a612c492f47318732373ad5935d2e8cdd4
+Quality checks: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37182284144
+Physical environment matrix: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37180973648
+Geometry regression: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37180973644
+
+This marker changes no application source or assets. See docs/ENVIRONMENT_QUALITY_LIMITS.md for the incremental scope and software-renderer verification limits.
