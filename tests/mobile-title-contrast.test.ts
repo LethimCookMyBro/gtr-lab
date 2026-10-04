@@ -83,10 +83,11 @@ describe("mobile configurator title backing", () => {
     expect(top + parseFloat(property(titleRule, "top"))).toBe(0);
     expect(horizontal + parseFloat(property(titleRule, "left"))).toBe(0);
     // Actual mobile labels finish at y≈219 and the roof starts at y≈305.
-    expect(bottom).toBeLessThanOrEqual(-48);
-    expect(219 - bottom).toBeLessThan(305);
+    expect(bottom).toBeLessThanOrEqual(-20);
+    expect(bottom).toBeGreaterThanOrEqual(-28);
+    expect(219 - bottom).toBeLessThan(250);
     const gradient = property(scrim, "background");
-    expect(gradient).toMatch(/#[0-9a-f]{6}\s+120px/i);
+    expect(gradient).toMatch(/#[0-9a-f]{8}\s+70px/i);
     expect(gradient).toContain(`calc(100% - ${-bottom}px)`);
     expect(gradient).toMatch(/#[0-9a-f]{6}00\s*\)$/i);
   });

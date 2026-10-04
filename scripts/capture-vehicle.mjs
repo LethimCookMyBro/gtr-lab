@@ -3,6 +3,7 @@ import { chromium } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+const sharedHdrPath = '/environments/kloofendal_43d_clear_puresky_1k.hdr';
 const directory='vehicle-preview-results';await mkdir(directory,{recursive:true});
 const baseUrl=process.env.PREVIEW_BASE_URL||'http://127.0.0.1:4175';
 const server=process.env.PREVIEW_BASE_URL?null:spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4175'},stdio:'inherit'});
@@ -15,6 +16,11 @@ try{
   const context=await browser.newContext({viewport,deviceScaleFactor:1,reducedMotion:'reduce',...(name==='mobile'?{isMobile:true,hasTouch:true}:{})});const page=await context.newPage();page.setDefaultTimeout(15000);
   const view={name,viewport,ready:false,errors:[],console:[]};report.views.push(view);await save();
   page.on('pageerror',e=>view.errors.push(e.message));page.on('console',m=>{if(['error','warning'].includes(m.type()))view.console.push({type:m.type(),text:m.text()});});
+  const hdrRequests = [];
+  page.on('request', request => {
+   const path = new URL(request.url()).pathname;
+   if (/^\/environments\/.*\.hdr$/.test(path)) hdrRequests.push(path);
+  });
   try{
    console.log(`[preview] opening ${name}`);await page.goto(baseUrl+'/configurator/premium',{waitUntil:'domcontentloaded',timeout:30000});
    await page.getByRole('button',{name:'Ultimate Silver',exact:true}).waitFor({state:'visible',timeout:15000});
@@ -25,6 +31,12 @@ try{
   try{await page.screenshot({path:`${directory}/${name}-licensed-r35.png`,animations:'disabled',scale:'css',timeout:15000});}catch(e){view.errors.push(`Screenshot: ${e}`);}
   if(view.ready){
    view.interactions=[];
+   const frameHash = async label => {
+    await page.waitForFunction(() => { const canvas = document.querySelector('.scene-stage canvas'); return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.75)) < .02; }, {}, { timeout: 15000 });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const bytes = await page.locator('.scene-stage canvas').screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000 });
+    return createHash('sha256').update(bytes).digest('hex');
+   };
    try{
     await page.getByRole('button',{name:'Vibrant Red',exact:true}).scrollIntoViewIfNeeded();
     await page.getByRole('button',{name:'Vibrant Red',exact:true}).click();
@@ -36,12 +48,6 @@ try{
     if(await page.getByRole('button',{name:'Lights',exact:true}).getAttribute('aria-pressed')!=='true')throw new Error('Lamp control did not update');
     await page.getByRole('button',{name:'Lights',exact:true}).click();
     view.interactions.push('Lamp control updates');
-    const frameHash = async label => {
-     await page.waitForFunction(() => { const canvas = document.querySelector('.scene-stage canvas'); return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.75)) < .02; }, {}, { timeout: 15000 });
-     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-     const bytes = await page.locator('.scene-stage canvas').screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000 });
-     return createHash('sha256').update(bytes).digest('hex');
-    };
     const resetCamera = async () => {
      await page.getByRole('button', { name: 'Camera', exact: true }).click();
      await page.getByRole('dialog').getByRole('button', { name: 'Front ¾', exact: true }).click();
@@ -61,21 +67,43 @@ try{
     view.interactions.push('Detail panel opens and closes');
    }catch(e){view.errors.push(`Interaction: ${e}`);}
    view.environments=[];
-   for(const [environment,label,asset]of[['forest','Test paddock','tief_etz'],['coast','Coastal road','victoria_curve_01']]){
+   let sharedHdr;
+   for(const [environment,label]of[['forest','Test paddock'],['coast','Coastal road']]){
     const state={environment,ready:false};view.environments.push(state);await save();
     try{
-     const responsePending=page.waitForResponse(r=>new RegExp(`/environments/${asset}(?:_1k)?\\.hdr(?:\\?|$)`).test(r.url()),{timeout:30000});
-     await page.getByRole('button',{name:'Environment',exact:true}).click();
-     await page.getByRole('dialog').getByRole('button',{name:new RegExp('^'+label)}).click();
-     const response=await responsePending;state.assetUrl=response.url();state.httpStatus=response.status();
-     if(!response.ok())throw new Error(`HDR request failed ${response.status()}`);
-     const failure=await response.finished();if(failure)throw failure;
-     // Wait for decode, PMREM creation and the demand-rendered scene after the real HDR response.
+     const before = await frameHash(`before-environment-${environment}`);
+     const select = async () => {
+      await page.getByRole('button',{name:'Environment',exact:true}).click();
+      await page.getByRole('dialog').getByRole('button',{name:new RegExp('^'+label)}).click();
+      await page.getByRole('dialog').waitFor({state:'hidden'});
+     };
+     if (environment === 'forest') {
+      const [response] = await Promise.all([
+       page.waitForResponse(r => new URL(r.url()).pathname === sharedHdrPath, { timeout: 30000 }),
+       select(),
+      ]);
+      state.assetUrl=response.url();state.httpStatus=response.status();state.assetSource='network';
+      if(!response.ok())throw new Error(`HDR request failed ${response.status()}`);
+      const failure=await response.finished();if(failure)throw failure;
+      const bytes = await response.body();
+      if (!/^#\?(?:RADIANCE|RGBE)\s/.test(bytes.subarray(0, 16).toString())) throw new Error('HDR response is not Radiance data');
+      state.assetBytes=bytes.byteLength;
+      sharedHdr={url:response.url(),bytes:bytes.byteLength};
+     } else {
+      if (!sharedHdr) throw new Error('Coast cache verification requires a successfully loaded shared sky');
+      await select();
+      state.assetUrl=sharedHdr.url;state.assetBytes=sharedHdr.bytes;state.assetSource='cache';
+     }
+     // The first selection must decode the HDR; both selections must render their distinct venue.
      await page.evaluate(()=>new Promise(resolve=>{let remaining=24;function frame(){if(--remaining<=0)resolve();else requestAnimationFrame(frame);}requestAnimationFrame(frame);}));
-     await page.getByRole('dialog').waitFor({state:'hidden'});
-     if(await page.locator('.scene-notice').count())throw new Error(await page.locator('.scene-notice').innerText());
-     state.ready=true;
+     if (!(await page.locator('main.configurator').getAttribute('class')).split(/\s+/).includes(`environment-${environment}`)) throw new Error('Environment selection did not update');
+     if(await page.locator('.scene-loading, .scene-notice, .render-error').count())throw new Error('Environment did not finish rendering cleanly');
+     const after = await frameHash(`environment-${environment}-canvas`);
+     if (after === before) throw new Error('Environment selection did not change rendered canvas pixels');
+     Object.assign(state,{before,after,pixelsChanged:true,hdrRequests:[...hdrRequests]});
+     if (hdrRequests.length !== 1 || hdrRequests[0] !== sharedHdrPath) throw new Error('Outdoor environments must fetch one shared sky and reuse its cached texture');
      await page.screenshot({path:`${directory}/${name}-${environment}-licensed-r35.png`,animations:'disabled',scale:'css',timeout:40000});
+     state.ready=true;
     }catch(e){state.error=String(e);view.errors.push(`${environment}: ${e}`);}
     await save();console.log(`[preview] ${name} ${environment} ready=${state.ready}`);
    }

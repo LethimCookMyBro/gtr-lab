@@ -94,7 +94,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
   );
   const readiness = useSceneReadiness(
     props.url,
-    props.environment,
+    `${props.environment}:${props.environmentRequest ?? 0}`,
     props.onReady,
   );
   const capabilitiesCallback = useRef(props.onCapabilities);

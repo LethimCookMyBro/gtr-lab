@@ -1,12 +1,17 @@
 import { useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
+import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
+RectAreaLightUniformsLib.init();
 import { Environment } from "@react-three/drei/core/Environment";
 import { Lightformer } from "@react-three/drei/core/Lightformer";
 import { ContactShadows } from "@react-three/drei/core/ContactShadows";
 import { useEnvironment } from "@react-three/drei/core/useEnvironment";
 import { useTexture } from "@react-three/drei/core/Texture";
 import { StageGeometry } from "./StageGeometry";
-import { createVenue } from "./venueGeometry";
+import { RoadsideRocks } from "./RoadsideRocks";
+import type { RoadsideRockInstance } from "./RoadsideRocks";
+import { createVenue, setVenueInspectionCutaway } from "./venueGeometry";
 import type { SurfaceTextures } from "./venueGeometry";
 import type { StudioEnvironment } from "./types";
 
@@ -22,6 +27,17 @@ const FILES = SURFACES.flatMap((id) =>
 export function clearVenueTextures() {
   useTexture.clear(FILES);
 }
+
+const COAST_ROCKS: RoadsideRockInstance[] = [
+  { position: [14.8, -0.2, -7], rotation: 0.3, variant: 0 },
+  { position: [16.4, -0.16, -2], rotation: 1.4, variant: 3, scale: 1.2 },
+  { position: [14.9, -0.2, 6], rotation: 2.1, variant: 1 },
+  { position: [19, -0.1, 12], rotation: 0.8, variant: 4, scale: 1.3 },
+  { position: [18, -0.25, -18], rotation: 2.8, variant: 2, scale: 1.5 },
+  { position: [-16, -1.5, -8], rotation: 1.2, variant: 3, scale: 1.3 },
+  { position: [-19, -1.6, 5], rotation: 0.4, variant: 5, scale: 1.5 },
+];
+const PADDOCK_ROCKS: RoadsideRockInstance[] = [];
 
 const SKY = "/environments/kloofendal_43d_clear_puresky_1k.hdr";
 
@@ -53,83 +69,112 @@ export function StudioLighting({
     return copy;
   }, [venue]);
   useEffect(() => () => venue.dispose(), [venue]);
+  useFrame(({ camera }) =>
+    setVenueInspectionCutaway(venue.group, camera.position.y),
+  );
   const outdoors = environment === "forest" || environment === "coast";
   const night = environment === "night";
   const gallery = environment === "gallery";
   return (
     <>
       {outdoors ? (
-        <OutdoorLight reflection={reflection} />
+        <OutdoorLight
+          reflection={reflection}
+          rocks={environment === "coast" ? COAST_ROCKS : PADDOCK_ROCKS}
+        />
       ) : (
         <>
-          <color attach="background" args={[night ? "#11171b" : "#434b4e"]} />
-          <fog attach="fog" args={[night ? "#11171b" : "#525b5e", 35, 115]} />
-          <ambientLight intensity={night ? 0.18 : 0.38} />
+          <color attach="background" args={[night ? "#0e1520" : "#a6b8c5"]} />
+          <fog attach="fog" args={[night ? "#0e1520" : "#a6b8c5", 35, 115]} />
+          <ambientLight intensity={night ? 0.075 : 0.16} />
           <hemisphereLight
             color="#dbe4ec"
             groundColor="#515052"
-            intensity={night ? 0.35 : 0.65}
+            intensity={night ? 0.12 : 0.32}
           />
           <directionalLight
-            position={[-5, 8, 6]}
-            intensity={night ? 1.65 : gallery ? 3.2 : 2.7}
-            color="#fff7e9"
+            position={[-9, 9, -4]}
+            intensity={night ? 0.38 : gallery ? 2.8 : 2.2}
+            color="#f0f5ff"
             castShadow
             shadow-mapSize={[2048, 2048]}
-            shadow-camera-left={-16}
-            shadow-camera-right={16}
-            shadow-camera-top={16}
-            shadow-camera-bottom={-16}
+            shadow-camera-left={-20}
+            shadow-camera-right={20}
+            shadow-camera-top={20}
+            shadow-camera-bottom={-20}
             shadow-camera-far={65}
-            shadow-bias={-0.00005}
-            shadow-normalBias={0.008}
+            shadow-bias={-0.00018}
+            shadow-normalBias={0.025}
             onUpdate={(light) => light.shadow.camera.layers.enable(2)}
           />
           <directionalLight
             position={[4, 5, -6]}
-            intensity={night ? 0.4 : 1.0}
+            intensity={night ? 0.16 : 0.42}
             color="#d8e5f3"
           />
+          {[-1, 1].map((side) => (
+            <rectAreaLight
+              key={`area-${side}`}
+              position={[side * (gallery ? 5 : 4.5), 4.9, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              width={gallery ? 0.24 : 0.3}
+              height={gallery ? 5.2 : 10.1}
+              intensity={night ? 9 : 5}
+              color={night ? "#f7f3e8" : "#f4f7ff"}
+            />
+          ))}
           <Environment
             key={`interior-${environment}`}
             resolution={256}
             frames={1}
-            environmentIntensity={night ? 0.75 : 0.9}
+            environmentIntensity={night ? 0.7 : 0.85}
           >
             <color attach="background" args={[night ? "#14191e" : "#75828b"]} />
-            <ambientLight intensity={night ? 0.25 : 0.7} />
+            <ambientLight intensity={night ? 0.1 : 0.35} />
             <directionalLight
-              position={[-5, 8, 6]}
-              intensity={2}
-              color="#fff7eb"
+              position={[-9, 9, -4]}
+              intensity={night ? 0.38 : 2.2}
+              color="#f0f5ff"
             />
             <primitive object={reflection} dispose={null} />
-            <Lightformer
-              form="rect"
-              intensity={6}
-              position={[0, 7, 0]}
-              rotation={[Math.PI / 2, 0, 0]}
-              scale={[7, 11, 1]}
-            />
-            <Lightformer
-              form="rect"
-              intensity={4}
-              position={[-8, 3, 0]}
-              rotation={[0, Math.PI / 2, 0]}
-              scale={[2, 9, 1]}
-            />
-            <Lightformer
-              form="rect"
-              intensity={3}
-              position={[8, 4, -5]}
-              rotation={[0, -Math.PI / 2, 0]}
-              scale={[3, 8, 1]}
-            />
+            {[-1, 1].map((side) => (
+              <group key={`reflected-light-${side}`}>
+                <rectAreaLight
+                  position={[side * (gallery ? 5 : 4.5), 4.1, 0]}
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  width={gallery ? 0.24 : 0.3}
+                  height={gallery ? 5.2 : 10.1}
+                  intensity={night ? 9 : 5}
+                  color={night ? "#f7f3e8" : "#f4f7ff"}
+                />
+                <Lightformer
+                  form="rect"
+                  intensity={night ? 9 : 5}
+                  position={[side * (gallery ? 5 : 4.5), 4.12, 0]}
+                  rotation={[Math.PI / 2, 0, 0]}
+                  scale={[0.3, gallery ? 5.2 : 10.1, 1]}
+                />
+              </group>
+            ))}
+            {!night && (
+              <Lightformer
+                form="rect"
+                intensity={3}
+                position={[12, 3.8, 0]}
+                rotation={[0, -Math.PI / 2, 0]}
+                scale={[1.2, 18, 1]}
+              />
+            )}
           </Environment>
         </>
       )}
       <StageGeometry>
         <primitive object={venue.group} dispose={null} />
+        {environment === "coast" && (
+          <RoadsideRocks
+            instances={environment === "coast" ? COAST_ROCKS : PADDOCK_ROCKS}
+          />
+        )}
         <ContactShadows
           key={`contact-${environment}`}
           position={[0, -0.001, 0]}
@@ -146,7 +191,13 @@ export function StudioLighting({
   );
 }
 
-function OutdoorLight({ reflection }: { reflection: Group }) {
+function OutdoorLight({
+  reflection,
+  rocks,
+}: {
+  reflection: Group;
+  rocks: RoadsideRockInstance[];
+}) {
   const texture = useEnvironment({ files: SKY });
   return (
     <>
@@ -154,7 +205,7 @@ function OutdoorLight({ reflection }: { reflection: Group }) {
       <Environment
         resolution={256}
         frames={1}
-        environmentIntensity={0.85}
+        environmentIntensity={0.72}
         far={700}
       >
         <Environment
@@ -170,17 +221,22 @@ function OutdoorLight({ reflection }: { reflection: Group }) {
         />
         <directionalLight
           position={[43, 49.2, 31]}
-          intensity={2.7}
+          intensity={3.4}
           color="#fff7e8"
         />
         <primitive object={reflection} dispose={null} />
+        {rocks.length > 0 && (
+          <group position={[0, -0.8, 0]}>
+            <RoadsideRocks instances={rocks} />
+          </group>
+        )}
       </Environment>
-      <fog attach="fog" args={["#b3c4cc", 75, 260]} />
+      <fog attach="fog" args={["#bbd0de", 180, 620]} />
       <hemisphereLight intensity={0.5} color="#dbeaf3" groundColor="#646357" />
       {/* Aligned to the actual sun in the CC0 sky map (u≈0.60, v≈0.74). */}
       <directionalLight
         position={[43, 50, 31]}
-        intensity={2.7}
+        intensity={3.4}
         color="#fff7e8"
         castShadow
         shadow-mapSize={[2048, 2048]}

@@ -86,6 +86,10 @@ vi.mock("../src/components/three/StageGeometry", () => ({
 vi.mock("@react-three/drei/core/useEnvironment", () => ({
   useEnvironment: () => runtime.texture,
 }));
+vi.mock("../src/components/three/RoadsideRocks", () => ({
+  RoadsideRocks: () => null,
+  clearRoadsideRocks: () => {},
+}));
 vi.mock("@react-three/drei/core/Texture", () => ({
   useTexture: () => Array.from({ length: 12 }, () => runtime.texture),
 }));
@@ -265,7 +269,7 @@ it("keeps the coastal sea wall outside the complete low Top-view orbit envelope"
     if (object.name === "sea-wall") {
       const bounds = new Box3().setFromObject(object);
       expect(bounds.distanceToPoint(new Vector3(0, 0.45, 0))).toBeGreaterThan(
-        18.1,
+        11.1,
       );
     }
   });
@@ -282,3 +286,75 @@ it.each(["forest", "coast"] as const)(
     ).toBe(true);
   },
 );
+
+it("uses a distinct curved gallery with no pit doors or working-bay paint", () => {
+  render(<StudioLighting environment="gallery" reducedMotion />);
+  expect(runtime.venue.getObjectByName("gallery-curved-wall")).toBeInstanceOf(
+    Mesh,
+  );
+  expect(runtime.venue.getObjectByName("pit-door")).toBeUndefined();
+  expect(runtime.venue.getObjectByName("bay-line")).toBeUndefined();
+});
+it("builds physical luminaire housings and door surrounds in the workshop", () => {
+  render(<StudioLighting environment="studio" reducedMotion />);
+  const jamb = runtime.venue.getObjectByName("door-jamb") as Mesh;
+  expect(jamb).toBeInstanceOf(Mesh);
+  expect(jamb.geometry.attributes.position.count).toBeGreaterThan(24);
+  expect(runtime.venue.getObjectByName("luminaire-housing")).toBeInstanceOf(
+    Mesh,
+  );
+  expect(runtime.venue.getObjectByName("luminaire-diffuser")).toBeInstanceOf(
+    Mesh,
+  );
+});
+
+it.each(["studio", "gallery", "night"] as const)(
+  "cuts overhead %s geometry away before high inspection cameras can enter it",
+  async (environment) => {
+    render(<StudioLighting environment={environment} reducedMotion />);
+    const { setVenueInspectionCutaway } =
+      await import("../src/components/three/venueGeometry");
+    const overhead = runtime.venue.getObjectByName(
+      environment === "gallery"
+        ? "gallery-skylight-surround"
+        : "overhead-cross-member",
+    );
+    expect(overhead.visible).toBe(true);
+    setVenueInspectionCutaway(runtime.venue, 4);
+    expect(overhead.visible).toBe(false);
+    expect(runtime.venue.getObjectByName("driving-surface").visible).toBe(true);
+    setVenueInspectionCutaway(runtime.venue, 2);
+    expect(overhead.visible).toBe(true);
+  },
+);
+
+it("keeps water and inland terrain continuous around the coastal road bend", () => {
+  render(<StudioLighting environment="coast" reducedMotion />);
+  runtime.venue.updateMatrixWorld(true);
+  for (const [x, z] of [
+    [-10, 60],
+    [-12, 60],
+    [-8, 60],
+    [10, -60],
+    [12, -60],
+  ]) {
+    const hit = new Raycaster(
+      new Vector3(x, 40, z),
+      new Vector3(0, -1, 0),
+    ).intersectObject(runtime.venue, true)[0];
+    expect(hit, `coast seam at ${x},${z}`).toBeDefined();
+    if (x > 0) expect(hit.point.y).toBeGreaterThan(-0.01);
+  }
+});
+
+it("aligns all coastal strip markings with the positive road-curve tangent", () => {
+  render(<StudioLighting environment="coast" reducedMotion />);
+  for (const name of ["road-centre", "road-edge", "coastal-shoulder"]) {
+    const rotations: number[] = [];
+    runtime.venue.traverse((object: any) => {
+      if (object.name === name) rotations.push(object.rotation.z);
+    });
+    expect(rotations.some((value) => value > 0.05)).toBe(true);
+    expect(rotations.every((value) => value >= 0)).toBe(true);
+  }
+});

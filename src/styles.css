@@ -1833,15 +1833,11 @@ p {
   .config-title::before {
     content: "";
     position: absolute;
-    inset: -102px -24px -64px;
+    inset: -102px -24px -24px;
     z-index: -1;
     pointer-events: none;
-    /* Cover the sky behind every label, then fade before the vehicle roof. */
-    background: linear-gradient(
-      #111416 120px,
-      #111416f5 calc(100% - 64px),
-      #11141600
-    );
+    /* A compact translucent scrim protects text without erasing the room. */
+    background: linear-gradient(#111416e8 70px, #111416d6 calc(100% - 24px), #11141600);
   }
   .config-title h1 {
     font-size: 35px;

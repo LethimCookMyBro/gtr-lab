@@ -7,6 +7,7 @@ import {
   FallbackStudio,
   clearVenueTextures,
 } from "./StudioLighting";
+import { clearRoadsideRocks } from "./RoadsideRocks";
 import { environmentAsset } from "./sceneHelpers";
 import type { StudioEnvironment } from "./types";
 
@@ -28,7 +29,8 @@ export function RecoverableEnvironment({
   function failed(detail: string) {
     // Keep successful source caches when only another asset category failed.
     // The twelve JPGs are one loader cache entry; an HDR error must not evict it.
-    if (/\.jpg(?:\b|\?)/i.test(detail)) clearVenueTextures();
+    if (detail.includes("/roadside/")) clearRoadsideRocks();
+    else if (/\.jpg(?:\b|\?)/i.test(detail)) clearVenueTextures();
     if (/\.hdr(?:\b|\?)/i.test(detail)) {
       const files = environmentAsset(environment, false);
       if (files) useEnvironment.clear({ files });

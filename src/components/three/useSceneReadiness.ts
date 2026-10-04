@@ -24,7 +24,12 @@ export function useSceneReadiness(
       reported: false,
     };
   else if (state.current.environment !== environment)
-    state.current = { ...state.current, environment, lighting: false };
+    state.current = {
+      ...state.current,
+      environment,
+      lighting: false,
+      reported: false,
+    };
   const publish = useCallback(() => {
     const current = state.current;
     if (current.vehicle && current.lighting && !current.reported) {

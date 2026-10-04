@@ -221,6 +221,25 @@ describe("rendered scene readiness", () => {
   });
 });
 
+it("reopens the render-ready barrier for each environment attempt without reloading the vehicle", async () => {
+  const { useSceneReadiness } =
+    await import("../src/components/three/useSceneReadiness");
+  let reports = 0;
+  const { result, rerender } = renderHook(
+    ({ attempt }) => useSceneReadiness("/car.glb", attempt, () => reports++),
+    { initialProps: { attempt: "studio:0" } },
+  );
+  result.current.onVehicleRendered();
+  result.current.onEnvironmentRendered();
+  expect(reports).toBe(1);
+  const stale = result.current.onEnvironmentRendered;
+  rerender({ attempt: "coast:1" });
+  stale();
+  expect(reports).toBe(1);
+  result.current.onEnvironmentRendered();
+  expect(reports).toBe(2);
+});
+
 describe("canvas fallback mounting", () => {
   it("does not report a graphics failure merely because fallback content mounted", async () => {
     const { CanvasFallback, SceneBoundary } =

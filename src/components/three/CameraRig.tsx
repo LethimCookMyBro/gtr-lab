@@ -52,6 +52,10 @@ export function CameraRig({
   );
   const view = cameraView(preset, cameraViews);
   const aspect = size.width / Math.max(1, size.height);
+  const targetFov =
+    preset === "wheel" || preset === "interior"
+      ? view.fov
+      : view.fov * Math.min(1.25, Math.max(1, 1 / aspect));
   const destination = useMemo(() => {
     const target = new Vector3(...view.target);
     const position = new Vector3(...view.position);
@@ -60,7 +64,7 @@ export function CameraRig({
       preset === "wheel" || preset === "interior"
         ? 1
         : exteriorDistanceScale(
-            Math.min(2.2, Math.max(1, 1.2 / aspect)),
+            Math.min(1.25, Math.max(1, 1 / aspect)),
             position.distanceTo(target),
           );
     position.sub(target).multiplyScalar(distanceScale).add(target);
@@ -102,7 +106,7 @@ export function CameraRig({
     }
     wasInterior.current = preset === "interior";
     invalidate();
-  }, [destination, view.fov, invalidate, camera, preset, requestId]);
+  }, [destination, targetFov, invalidate, camera, preset, requestId]);
 
   useEffect(() => {
     // User can deliberately enable rotation again after a drag cancelled it.
@@ -139,17 +143,17 @@ export function CameraRig({
       } else {
         orbit.target.lerp(destination.target, alpha);
       }
-      camera.fov += (view.fov - camera.fov) * alpha;
+      camera.fov += (targetFov - camera.fov) * alpha;
       camera.updateProjectionMatrix();
       orbit.update();
       if (
         camera.position.distanceToSquared(destination.position) < 0.00001 &&
         orbit.target.distanceToSquared(destination.target) < 0.00001 &&
-        Math.abs(camera.fov - view.fov) < 0.01
+        Math.abs(camera.fov - targetFov) < 0.01
       ) {
         camera.position.copy(destination.position);
         orbit.target.copy(destination.target);
-        camera.fov = view.fov;
+        camera.fov = targetFov;
         camera.updateProjectionMatrix();
         moving.current = false;
         orbit.minDistance = view.minDistance;

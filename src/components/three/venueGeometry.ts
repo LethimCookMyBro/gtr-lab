@@ -3,6 +3,13 @@ import {
   BufferGeometry,
   Color,
   CylinderGeometry,
+  DoubleSide,
+  RingGeometry,
+  DataTexture,
+  RGBAFormat,
+  UnsignedByteType,
+  LinearFilter,
+  LinearMipmapLinearFilter,
   Float32BufferAttribute,
   Group,
   Mesh,
@@ -13,11 +20,41 @@ import {
   Texture,
   Vector2,
 } from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { StudioEnvironment } from "./types";
 
 type SurfaceName = "floor" | "wall" | "asphalt" | "rock";
 export type SurfaceTextures = Record<SurfaceName, [Texture, Texture, Texture]>;
 type Point = [number, number, number];
+
+const inspectionOverheads = new WeakMap<
+  Group,
+  { meshes: Mesh[]; cut: boolean }
+>();
+/** High inspection views deliberately cut the roof/services away before entering them. */
+export function setVenueInspectionCutaway(group: Group, cameraHeight: number) {
+  let entry = inspectionOverheads.get(group);
+  if (!entry) {
+    const meshes: Mesh[] = [];
+    group.traverse((object) => {
+      if (
+        object instanceof Mesh &&
+        /^(overhead-|luminaire-|perimeter-roof|gallery-skylight)/.test(
+          object.name,
+        )
+      )
+        meshes.push(object);
+    });
+    entry = { meshes, cut: false };
+    inspectionOverheads.set(group, entry);
+  }
+  const cut = cameraHeight > 3.8;
+  if (entry.cut === cut) return;
+  entry.cut = cut;
+  entry.meshes.forEach((mesh) => {
+    mesh.visible = !cut;
+  });
+}
 
 /** Original metre-scaled architecture; asset maps remain cached and are never mutated. */
 export function createVenue(
@@ -53,18 +90,30 @@ export function createVenue(
       name === "asphalt" ? 0.4 : 0.55,
       name === "asphalt" ? 0.4 : 0.55,
     );
+    if (name === "floor" || name === "wall") {
+      // Preserve photographed variation while removing the warm cast of the scan.
+      m.onBeforeCompile = (shader) => {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <map_fragment>",
+          `#include <map_fragment>
+float surfaceGrey = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+diffuseColor.rgb = mix(vec3(surfaceGrey), diffuseColor.rgb, 0.12);`,
+        );
+      };
+      m.customProgramCacheKey = () => "neutral-scanned-concrete-v1";
+    }
     return m;
   }
   const floor = surface(
     indoors ? "floor" : "asphalt",
-    indoors ? (gallery ? "#d8d7d3" : "#b5b8b9") : "#929594",
-    indoors ? 0.72 : 1,
+    indoors ? (gallery ? "#e7ecf0" : "#b9c5cf") : "#bac1c7",
+    indoors ? (gallery ? 0.42 : 0.58) : 0.93,
   );
-  const wall = surface("wall", gallery ? "#e2dfd7" : "#b7b7b3");
-  const concrete = surface("wall", "#b4b4ae");
-  const dark = material("#303739", 0.58, 0.65);
+  const wall = surface("wall", gallery ? "#f4f5f5" : "#d2d8de");
+  const concrete = surface("wall", "#c6ccd0");
+  const dark = material("#505b63", 0.42, 0.6);
   const aluminum = material("#899293", 0.38, 0.78);
-  const shutter = material("#707879", 0.54, 0.45);
+  const shutter = material("#a4adb4", 0.46, 0.42);
   const red = material("#771820", 0.5, 0.2);
   const white = material("#d8d8ce", 0.78);
   const rubber = material("#171a1a", 0.96);
@@ -106,12 +155,28 @@ export function createVenue(
     return object;
   }
   function box(size: Point, position: Point, mat = dark, name = "") {
-    return mesh(metricUV(new BoxGeometry(...size)), mat, position, name);
+    const geometry =
+      Math.min(...size) > 0.075
+        ? new RoundedBoxGeometry(
+            ...size,
+            1,
+            Math.min(0.028, Math.min(...size) * 0.18),
+          )
+        : new BoxGeometry(...size);
+    return mesh(
+      metricUV(geometry, mat === wall || mat === concrete ? 2.71 : 2),
+      mat,
+      position,
+      name,
+    );
   }
   const markingMaterials = new Map<
     MeshStandardMaterial,
     MeshStandardMaterial
   >();
+  const coastBend = (z: number) =>
+    Math.sign(z) *
+    Math.min(80, Math.pow(Math.max(0, Math.abs(z) - 12), 2) * 0.003);
   function ground(
     width: number,
     depth: number,
@@ -122,7 +187,18 @@ export function createVenue(
     z = 0,
     tile = 1.88644,
   ) {
-    const g = metricUV(new PlaneGeometry(width, depth), tile);
+    const geometry = new PlaneGeometry(
+      width,
+      depth,
+      1,
+      name === "driving-surface" && environment === "coast" ? 240 : 1,
+    );
+    if (name === "driving-surface" && environment === "coast") {
+      const p = geometry.attributes.position;
+      for (let i = 0; i < p.count; i++)
+        p.setX(i, p.getX(i) + coastBend(-p.getY(i)));
+    }
+    const g = metricUV(geometry, tile);
     let renderedMaterial = mat;
     if (
       [
@@ -194,8 +270,27 @@ export function createVenue(
     box([width + 0.5, 0.1, 1.9], [x, 4.5, z + depth / 2 + 0.7], dark);
     for (let i = 0; i < bays; i++) {
       const bx = x + (i - (bays - 1) / 2) * 5.5;
+      for (const dx of [-2.25, 2.25])
+        box(
+          [0.22, 3.95, 0.3],
+          [bx + dx, 1.975, z + depth / 2 + 0.16],
+          aluminum,
+          "door-jamb",
+        );
       box(
-        [4.3, 3.6, 0.035],
+        [4.7, 0.25, 0.32],
+        [bx, 3.98, z + depth / 2 + 0.16],
+        aluminum,
+        "door-jamb",
+      );
+      box(
+        [4.28, 0.065, 0.5],
+        [bx, 0.03, z + depth / 2 + 0.18],
+        dark,
+        "door-threshold",
+      );
+      box(
+        [4.3, 3.6, 0.08],
         [bx, 1.85, z + depth / 2 + 0.025],
         shutter,
         "pit-door",
@@ -206,79 +301,177 @@ export function createVenue(
           [bx, 0.22 + n * 0.24, z + depth / 2 + 0.065],
           dark,
         );
-      box([0.8, 0.22, 0.04], [bx, 4.13, z + depth / 2 + 0.03], white);
+      box(
+        [1.35, 0.17, 0.28],
+        [bx, 4.3, z + depth / 2 + 0.19],
+        dark,
+        "luminaire-housing",
+      );
+      box(
+        [1.17, 0.035, 0.21],
+        [bx, 4.205, z + depth / 2 + 0.19],
+        lamp,
+        "luminaire-diffuser",
+      );
       box([0.16, 4.5, 0.24], [bx + 2.6, 2.25, z + depth / 2 + 0.09], dark);
     }
   }
 
   if (indoors) {
-    ground(84, 84, -0.002, floor, "driving-surface");
-    for (let i = -7; i <= 7; i++) {
-      joint(i * 4, 0, 0.012, 84);
-      joint(0, i * 4, 84, 0.012);
-    }
-    // A clear 40m-wide central workshop/atrium keeps every allowed camera inside the venue.
-    // Perimeter roof canopies leave the central daylight well and top inspection view open.
-    for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-      const sector = new Group();
-      const first = group.children.length;
-      box([42, 7.2, 0.35], [0, 3.6, -21], wall, "architectural-wall");
-      box([42, 0.2, 4], [0, 7.3, -19.5], dark, "perimeter-roof");
-      box([42, 0.45, 0.13], [0, 0.35, -20.76], dark);
-      box([42, 0.06, 0.09], [0, 1.55, -20.75], red);
-      for (let x = -18; x <= 18; x += 6) {
-        box([0.24, 7.1, 0.45], [x, 3.55, -20.65], dark, "steel-column");
-        box([0.56, 0.22, 0.7], [x, 0.11, -20.65], aluminum);
-        box([4.8, 0.07, 0.27], [x + 3, 6.6, -19.9], lamp, "linear-luminaire");
-        box([5.5, 1.7, 0.07], [x + 3, 5.3, -20.73], glass, "clerestory-window");
-      }
-      for (const obj of group.children.slice(first)) {
-        group.remove(obj);
-        sector.add(obj);
-      }
-      sector.rotation.y = angle;
-      group.add(sector);
+    ground(32, 34, -0.002, floor, "driving-surface");
+    for (let i = -4; i <= 4; i++) {
+      joint(i * 4, 0, 0.006, 34);
+      joint(0, i * 4, 32, 0.006);
     }
     if (gallery) {
-      for (const x of [-20, 20]) {
-        box([0.3, 4.2, 8], [x, 2.1, -7], wall, "gallery-partition");
-        box([0.32, 0.045, 7], [x, 4.24, -7], lamp);
+      const plaster = material("#dce1e2", 0.83);
+      plaster.side = DoubleSide;
+      mesh(
+        new CylinderGeometry(
+          13.4,
+          13.4,
+          5.6,
+          96,
+          1,
+          true,
+          Math.PI / 2,
+          Math.PI,
+        ),
+        plaster,
+        [0, 2.8, 0],
+        "gallery-curved-wall",
+      );
+      const ring = mesh(
+        new RingGeometry(7.8, 14.2, 96),
+        white,
+        [0, 5.65, 0],
+        "gallery-skylight-surround",
+      );
+      ring.rotation.x = Math.PI / 2;
+      for (const x of [-11.8, 11.8])
+        for (const z of [-4, 5, 10]) {
+          mesh(
+            new CylinderGeometry(0.16, 0.16, 5.6, 24),
+            white,
+            [x, 2.8, z],
+            "gallery-column",
+          );
+          mesh(new CylinderGeometry(0.25, 0.25, 0.075, 24), aluminum, [
+            x,
+            0.04,
+            z,
+          ]);
+        }
+      for (let x = -12; x <= 12; x += 3) {
+        box([0.07, 5.4, 0.12], [x, 2.7, 12.8], aluminum, "gallery-mullion");
+        box(
+          [2.88, 5.2, 0.045],
+          [x + 1.5, 2.7, 12.84],
+          glass,
+          "gallery-glazing",
+        );
       }
-      for (const z of [-20, 20]) {
-        box([8, 0.12, 0.75], [0, 0.46, z], dark, "gallery-bench");
-        for (const x of [-3.1, 3.1])
-          box([0.12, 0.4, 0.6], [x, 0.2, z], aluminum);
+      box([26, 0.12, 0.18], [0, 5.4, 12.8], aluminum);
+      box([5, 0.16, 0.8], [0, 0.48, -11.5], dark, "gallery-bench");
+      for (const x of [-2, 2])
+        box([0.16, 0.42, 0.55], [x, 0.21, -11.5], aluminum);
+      for (const x of [-5, 5]) {
+        box([0.3, 0.13, 5.4], [x, 5, 0], white, "luminaire-housing");
+        box([0.24, 0.025, 5.2], [x, 4.92, 0], lamp, "luminaire-diffuser");
+      }
+      for (let i = 0; i < 12; i++) {
+        const angle = Math.PI / 2 + (i * Math.PI) / 11;
+        box(
+          [0.015, 5.45, 0.04],
+          [Math.sin(angle) * 13.3, 2.75, Math.cos(angle) * 13.3],
+          aluminum,
+          "gallery-panel-joint",
+        ).rotation.y = angle;
       }
     } else {
-      // Track-aligned working bay, walkways and authentic-sized equipment establish scale.
-      for (const x of [-3.8, 3.8])
-        ground(0.065, 9, -0.0015, yellow, "bay-line", x, 0);
-      for (const z of [-4.5, 4.5])
-        ground(7.65, 0.065, -0.0015, yellow, "bay-line", 0, z);
-      for (const x of [-20, 20]) {
-        cabinet(x, -7, x < 0 ? Math.PI / 2 : -Math.PI / 2);
+      // Vehicle development workshops inform the scale, framing and suspended services.
+      for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+        const sector = new Group();
+        const first = group.children.length;
+        box([27, 6, 0.26], [0, 3, -13.4], wall, "architectural-wall");
+        box([27, 0.16, 2.8], [0, 6.1, -12.2], dark, "perimeter-roof");
+        box([27, 0.24, 0.12], [0, 0.15, -13.21], aluminum, "wall-plinth");
+        for (let x = -12; x <= 12; x += 4) {
+          // I-section columns, base plates and the small connection plates cast real relief shadows.
+          box([0.095, 6, 0.34], [x, 3, -13.03], dark, "steel-column");
+          for (const dz of [-0.2, 0.2])
+            box([0.32, 6, 0.055], [x, 3, -13.03 + dz], dark, "column-flange");
+          box(
+            [0.55, 0.08, 0.64],
+            [x, 0.04, -13.02],
+            aluminum,
+            "column-base-plate",
+          );
+          box(
+            [0.45, 0.46, 0.04],
+            [x, 5.45, -12.77],
+            aluminum,
+            "column-connection",
+          );
+          if (x < 12) {
+            box(
+              [3.65, 1.2, 0.07],
+              [x + 2, 4.6, -13.2],
+              glass,
+              "clerestory-window",
+            );
+            box(
+              [3.8, 0.065, 0.16],
+              [x + 2, 3.98, -13.13],
+              aluminum,
+              "window-sill",
+            );
+            box(
+              [0.02, 3.9, 0.018],
+              [x + 2, 1.95, -13.255],
+              dark,
+              "wall-panel-joint",
+            );
+          }
+        }
+        for (const object of group.children.slice(first)) {
+          group.remove(object);
+          sector.add(object);
+        }
+        sector.rotation.y = angle;
+        group.add(sector);
+      }
+      building(0, -13.4, 25, 0.35, 4);
+      for (const x of [-12, 12]) {
+        cabinet(x, -5, x < 0 ? Math.PI / 2 : -Math.PI / 2);
         cabinet(x, 4, x < 0 ? Math.PI / 2 : -Math.PI / 2);
-        box([0.22, 5.7, 0.32], [x, 2.85, -3.5], dark, "service-gantry");
-        box([0.22, 5.7, 0.32], [x, 2.85, 3.5], dark, "service-gantry");
-        box([0.4, 0.18, 7.4], [x, 5.6, 0], aluminum);
-        box([0.5, 0.06, 6.4], [x, 5.48, 0], lamp);
       }
-      building(0, -21, 28, 0.35, 5);
-      for (const side of [-1, 1]) {
-        box(
-          [7, 2.7, 0.14],
-          [side * 23, 1.35, 23],
-          glass,
-          "workshop-office-glass",
-        );
-        for (let i = -1; i <= 1; i++)
-          box([0.09, 2.75, 0.2], [side * 23 + i * 2.2, 1.375, 23.05], aluminum);
+      for (const z of [-5, 5]) {
+        box([25, 0.25, 0.18], [0, 5.85, z], dark, "overhead-cross-member");
+        for (const x of [-4.5, 4.5]) {
+          box(
+            [0.025, 0.7, 0.025],
+            [x, 5.45, z],
+            aluminum,
+            "luminaire-suspension",
+          );
+        }
       }
+      for (const x of [-4.5, 4.5]) {
+        box([0.42, 0.16, 10.4], [x, 5.02, 0], dark, "luminaire-housing");
+        box([0.3, 0.03, 10.1], [x, 4.92, 0], lamp, "luminaire-diffuser");
+        for (const z of [-3.7, 0, 3.7])
+          box([0.43, 0.18, 0.06], [x, 5.02, z], aluminum, "luminaire-end-cap");
+      }
+      for (const x of [-3.6, 3.6])
+        ground(0.035, 8, -0.0015, white, "bay-line", x, 0);
+      for (const z of [-4, 4])
+        ground(7.25, 0.035, -0.0015, white, "bay-line", 0, z);
     }
   } else {
     ground(
-      environment === "coast" ? 44 : 180,
-      environment === "coast" ? 1200 : 500,
+      environment === "coast" ? 28 : 80,
+      1200,
       -0.002,
       floor,
       "driving-surface",
@@ -287,37 +480,111 @@ export function createVenue(
       2,
     );
     if (environment === "forest") {
-      building(0, -31, 55, 9, 9);
-      building(-47, 9, 24, 14, 4);
+      building(0, -19, 30, 7, 5);
+      building(-29, 13, 18, 10, 3);
       for (const x of [-10, 10])
         ground(0.12, 130, -0.0015, white, "paddock-lane", x, 20);
       for (let z = -22; z < 65; z += 9) {
         ground(7, 0.1, -0.0015, white, "parking-bay", -14, z);
         ground(7, 0.1, -0.0015, white, "parking-bay", 14, z);
       }
-      for (const x of [-24, 24]) for (const z of [-16, 12, 40]) pole(x, z, 8);
+      for (const x of [-16, 18]) for (const z of [-10, 18, 44]) pole(x, z, 8);
       for (let x = -28; x <= 28; x += 4) {
-        box([0.07, 2.2, 0.07], [x, 1.1, 54], aluminum, "fence-post");
+        box([0.07, 2.2, 0.07], [x, 1.1, 40], aluminum, "fence-post");
         for (const y of [0.4, 1.4, 2.15])
-          box([4, 0.035, 0.035], [x + 2, y, 54], aluminum);
+          box([4, 0.035, 0.035], [x + 2, y, 40], aluminum);
       }
       for (let x = -23; x <= 23; x += 4.2)
-        box([3.9, 0.7, 0.55], [x, 0.35, -19], concrete, "pit-wall");
+        box([3.9, 0.7, 0.55], [x, 0.35, -12.6], concrete, "pit-wall");
     } else {
-      // A broad coastal pull-off. The actual road, curb and sea wall provide near/mid parallax.
-      for (const x of [-7.5, 7.5])
-        ground(0.13, 160, -0.0015, white, "road-edge", x, 0);
-      for (let z = -76; z <= 76; z += 8)
-        ground(0.1, 3, -0.0015, yellow, "road-centre", 0, z);
-      for (let z = -78; z <= 78; z += 3.2) {
-        box([0.44, 0.2, 3.1], [19.5, 0.1, z], concrete, "coast-curb");
-        box([0.22, 0.85, 3.1], [20.5, 0.425, z], concrete, "sea-wall");
-        box([0.08, 0.28, 3.16], [20.36, 0.83, z], aluminum, "guardrail");
-        if (z % 2 < 1) box([0.12, 0.9, 0.14], [20.3, 0.45, z], dark);
+      // A coastal lay-by and engineered shoulder, informed by Japanese coastal-road references.
+      for (let z = -100; z <= 100; z += 2) {
+        const bend = coastBend(z);
+        const yaw = Math.atan((coastBend(z + 0.2) - coastBend(z - 0.2)) / 0.4);
+        for (const x of [-4.2, 4.2])
+          ground(
+            0.12,
+            2.04,
+            -0.0015,
+            white,
+            "road-edge",
+            x + bend,
+            z,
+          ).rotation.z = yaw;
+        if (Math.abs(z) % 8 < 3 && Math.abs(z) > 4)
+          ground(0.1, 2.01, -0.0015, white, "road-centre", bend, z).rotation.z =
+            yaw;
+        ground(
+          1.4,
+          2.04,
+          -0.0018,
+          concrete,
+          "coastal-shoulder",
+          -10.8 + bend,
+          z,
+          2.71,
+        ).rotation.z = yaw;
       }
-      for (const z of [-48, -16, 16, 48]) pole(-18, z, 7);
-      const sea = material("#487d8b", 0.28, 0.22);
-      ground(1400, 1400, -1.3, sea, "ocean", 720, 0, 40);
+      for (let z = -100; z <= 100; z += 2.5) {
+        const bend = coastBend(z),
+          yaw = Math.atan((coastBend(z + 0.2) - coastBend(z - 0.2)) / 0.4);
+        box(
+          [0.4, 0.16, 2.48],
+          [-11.8 + bend, 0.08, z],
+          concrete,
+          "coast-curb",
+        ).rotation.y = yaw;
+        box(
+          [0.35, 2.5, 2.5],
+          [-12.8 + bend, -0.93, z],
+          concrete,
+          "retaining-sea-wall",
+        ).rotation.y = yaw;
+        box(
+          [0.11, 0.48, 2.51],
+          [-12.63 + bend, 0.67, z],
+          aluminum,
+          "sea-wall",
+        ).rotation.y = yaw;
+        box(
+          [0.12, 1.03, 0.12],
+          [-12.63 + bend, 0.52, z],
+          aluminum,
+          "guardrail-support",
+        ).rotation.y = yaw;
+      }
+      for (const z of [-48, 24, 64]) pole(13 + coastBend(z), z, 6);
+      const sea = material("#377a92", 0.24, 0.32);
+      const waveData = new Uint8Array(64 * 64 * 4);
+      for (let y = 0; y < 64; y++)
+        for (let x = 0; x < 64; x++) {
+          const u = (x / 64) * Math.PI * 2,
+            v = (y / 64) * Math.PI * 2;
+          const i = (y * 64 + x) * 4;
+          waveData[i] =
+            128 + Math.round(18 * Math.cos(u * 3 + v) + 6 * Math.sin(v * 7));
+          waveData[i + 1] =
+            128 + Math.round(13 * Math.sin(v * 4 - u) + 5 * Math.cos(u * 8));
+          waveData[i + 2] = 251;
+          waveData[i + 3] = 255;
+        }
+      const waves = new DataTexture(
+        waveData,
+        64,
+        64,
+        RGBAFormat,
+        UnsignedByteType,
+      );
+      waves.wrapS = waves.wrapT = RepeatWrapping;
+      waves.magFilter = LinearFilter;
+      waves.minFilter = LinearMipmapLinearFilter;
+      waves.generateMipmaps = true;
+      waves.repeat.set(8, 8);
+      waves.needsUpdate = true;
+      textures.add(waves);
+      sea.normalMap = waves;
+      sea.normalScale.set(0.55, 0.55);
+      ground(2000, 1400, -1.8, sea, "ocean", -650, 0, 40);
     }
     // Fully modelled landscape mesh: no photographed road, verge, rocks or trees on a shell.
     const rock = surface(
@@ -325,7 +592,7 @@ export function createVenue(
       environment === "forest" ? "#69715b" : "#a5a394",
     );
     function hills(side: number) {
-      const geometry = new PlaneGeometry(180, 280, 45, 60);
+      const geometry = new PlaneGeometry(180, 1200, 72, 160);
       geometry.rotateX(-Math.PI / 2);
       const p = geometry.attributes.position;
       for (let i = 0; i < p.count; i++) {
@@ -334,24 +601,27 @@ export function createVenue(
         const edge = Math.max(0, (x + 90) / 180);
         const height =
           2 +
-          edge * edge * 22 +
-          Math.sin(z * 0.047 + side) * 5 * edge +
-          Math.sin(x * 0.1 + z * 0.033) * 3 * edge +
+          edge * edge * 6 +
+          Math.sin(z * 0.018 + side) * 2.5 * edge +
+          Math.sin(x * 0.06 + z * 0.015) * 1.6 * edge +
           Math.sin(z * 0.13) * Math.cos(x * 0.08) * 1.1 * edge;
         p.setY(i, height);
+        if (environment === "coast") p.setX(i, x + coastBend(z - 10));
       }
       geometry.computeVertexNormals();
       metricUV(geometry, 50);
       const hill = mesh(
         geometry,
         rock,
-        [side * (environment === "coast" ? 110 : 175), -2, -10],
+        [side * (environment === "coast" ? 104 : 126), -2, -10],
         "landscape-terrain",
       );
       if (side < 0) hill.rotation.y = Math.PI;
     }
-    hills(-1);
-    if (environment === "forest") hills(1);
+    if (environment === "forest") {
+      hills(-1);
+      hills(1);
+    } else hills(1);
   }
   group.updateMatrixWorld(true);
   return {

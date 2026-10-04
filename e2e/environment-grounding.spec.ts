@@ -56,6 +56,27 @@ async function ready(page: Page, allowFallbackNotice = false) {
     .toBeLessThan(0.02);
   await frames(page);
 }
+async function pressCameraKey(page: Page, key: string, count = 1) {
+  await page.locator(".scene-stage canvas").focus();
+  const shifted = key.startsWith("Shift+");
+  const physicalKey = shifted ? key.slice("Shift+".length) : key;
+  if (shifted) await page.keyboard.down("Shift");
+  try {
+    // Native held-key repetition preserves every real keydown, including repeat
+    // and Shift state, without per-key locator actionability/render round trips.
+    // Match capture-environments.mjs; captures settle once after the full batch.
+    await page.keyboard.down(physicalKey);
+    await Promise.all(
+      Array.from({ length: count - 1 }, () => page.keyboard.down(physicalKey)),
+    );
+  } finally {
+    try {
+      await page.keyboard.up(physicalKey);
+    } finally {
+      if (shifted) await page.keyboard.up("Shift");
+    }
+  }
+}
 async function canvasHash(page: Page, allowFallbackNotice = false) {
   // The keyboard focus ring is not part of the rendered scene.
   await page
@@ -205,7 +226,6 @@ test("geometry venues render through every exterior camera angle, zoom and envir
       timeout: 90000,
     })
     .toBe(true);
-  const canvas = page.locator(".scene-stage canvas");
   const canonical = new Map<string, string>();
   for (const [id, label] of venues) {
     if (id !== "studio") await environment(page, id, label);
@@ -216,15 +236,13 @@ test("geometry venues render through every exterior camera angle, zoom and envir
         .toBe(200);
     await capture(page, info, `${id}-hero`);
     canonical.set(id, await canvasHash(page));
-    await canvas.focus();
     for (let quarter = 1; quarter <= 4; quarter++) {
-      for (let step = 0; step < 10; step++)
-        await canvas.press("Shift+ArrowRight");
+      await pressCameraKey(page, "Shift+ArrowRight", 10);
       await capture(page, info, `${id}-azimuth-${quarter}`);
     }
-    for (let step = 0; step < 25; step++) await canvas.press("+");
+    await pressCameraKey(page, "+", 25);
     await capture(page, info, `${id}-minimum-zoom`);
-    await canvas.press("Home");
+    await pressCameraKey(page, "Home");
     await capture(page, info, `${id}-manual-reset`);
     expect(
       await canvasHash(page),
@@ -242,11 +260,10 @@ test("geometry venues render through every exterior camera angle, zoom and envir
       await capture(page, info, `${id}-${suffix}`);
     }
     await camera(page, "Front ¾");
-    await canvas.focus();
-    for (let i = 0; i < 25; i++) await canvas.press("-");
+    await pressCameraKey(page, "-", 25);
     await capture(page, info, `${id}-maximum-zoom`);
-    await canvas.press("Home");
-    for (let i = 0; i < 15; i++) await canvas.press("ArrowDown");
+    await pressCameraKey(page, "Home");
+    await pressCameraKey(page, "ArrowDown", 15);
     await capture(page, info, `${id}-low-orbit`);
   }
   expect(
@@ -347,10 +364,9 @@ test("a missing studio surface keeps the vehicle interactive and retries the sam
     (element as HTMLCanvasElement).dataset.recoveryIdentity = "original-canvas";
   });
   const fallbackHash = await canvasHash(page, true);
-  await canvas.focus();
-  await canvas.press("ArrowLeft");
+  await pressCameraKey(page, "ArrowLeft");
   await expect.poll(() => canvasHash(page, true)).not.toBe(fallbackHash);
-  await canvas.press("Home");
+  await pressCameraKey(page, "Home");
   await page.screenshot({
     path: info.outputPath("studio-surface-fallback.png"),
     animations: "disabled",

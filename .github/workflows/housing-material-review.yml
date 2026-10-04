@@ -20,7 +20,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: node scripts/prepare-models.mjs
+      - run: node scripts/prepare-models.mjs && node scripts/fetch-surfaces.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx tsc --noEmit -p tsconfig.renderer-qa.json
       - run: npx vite build --config vite.renderer-qa.config.ts --mode renderer-qa

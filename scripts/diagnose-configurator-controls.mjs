@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+const sharedHdrPath = '/environments/kloofendal_43d_clear_puresky_1k.hdr';
 const directory = process.env.CONTROLS_OUTPUT || 'configurator-controls-results';
 const baseURL = process.env.CONTROLS_URL || 'http://127.0.0.1:4178';
 await mkdir(directory, { recursive: true });
@@ -25,6 +26,11 @@ try {
     const result = { name, viewport, controls: [], errors: [], warnings: [] }; report.browsers.push(result);
     page.on('pageerror', error => result.errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error') result.errors.push(message.text()); if (message.type() === 'warning') result.warnings.push(message.text()); });
+    const hdrRequests = [];
+    page.on('request', request => {
+      const path = new URL(request.url()).pathname;
+      if (/^\/environments\/.*\.hdr$/.test(path)) hdrRequests.push(path);
+    });
     const canvas = page.locator('.scene-stage canvas');
     const shot = async label => {
       // Match the established vehicle suite: deterministic static pixel readback.
@@ -86,8 +92,43 @@ try {
       await check('Rear lamp rings on and off', async () => { const button = page.getByRole('button', { name: 'Lights', exact: true }); const off = await shot('rear-lights-off'); await button.click(); await pause(); const on = await shot('rear-lights-on'); assert.notEqual(on, off); await button.click(); return { off, on, pixelsChanged: true }; });
       await chooseCamera('Front ¾');
       let environmentPixels = await shot('environment-start');
+      let sharedHdr;
       for (const [label, id] of [['Gallery', 'gallery'], ['After hours', 'night'], ['Test paddock', 'forest'], ['Coastal road', 'coast'], ['Pit garage', 'studio']]) {
-        await check(`Environment ${label}`, async () => { const before = environmentPixels; const hdrName = id === 'forest' ? 'tief_etz' : id === 'coast' ? 'victoria_curve_01' : null; const loaded = hdrName ? page.waitForResponse(response => response.url().includes('/environments/' + hdrName) && response.url().includes('.hdr')) : null; await open('Environment'); await page.getByRole('dialog').getByRole('button', { name: new RegExp('^' + label) }).click(); await page.getByRole('dialog').waitFor({ state: 'hidden' }); if (loaded) { const response = await loaded; assert.equal(response.ok(), true); assert.equal(await response.finished(), null); await page.evaluate(() => new Promise(resolve => { let n=24; const frame=()=> --n <= 0 ? resolve() : requestAnimationFrame(frame); requestAnimationFrame(frame); })); } await pause(); assert.match(await page.locator('main.configurator').getAttribute('class'), new RegExp('environment-' + id)); assert.equal(await page.locator('.scene-notice').count(), 0); const after = await shot('environment-' + id); assert.notEqual(after, before); environmentPixels = after; return { environment: id, before, after, pixelsChanged: true }; });
+        await check(`Environment ${label}`, async () => {
+          const before = environmentPixels;
+          const select = async () => {
+            await open('Environment');
+            await page.getByRole('dialog').getByRole('button', { name: new RegExp('^' + label) }).click();
+            await page.getByRole('dialog').waitFor({ state: 'hidden' });
+          };
+          let asset;
+          if (id === 'forest') {
+            const [response] = await Promise.all([
+              page.waitForResponse(response => new URL(response.url()).pathname === sharedHdrPath),
+              select(),
+            ]);
+            assert.equal(response.ok(), true);
+            assert.equal(await response.finished(), null);
+            const bytes = await response.body();
+            assert.match(bytes.subarray(0, 16).toString(), /^#\?(?:RADIANCE|RGBE)\s/);
+            sharedHdr = { url: response.url(), bytes: bytes.byteLength };
+            asset = { ...sharedHdr, source: 'network', httpStatus: response.status() };
+          } else {
+            if (id === 'coast') assert.ok(sharedHdr, 'Coast cache verification requires a successfully loaded shared sky');
+            await select();
+            if (id === 'coast') asset = { ...sharedHdr, source: 'cache' };
+          }
+          // Let decode, PMREM generation and the selected venue finish before comparing pixels.
+          await page.evaluate(() => new Promise(resolve => { let n=24; const frame=()=> --n <= 0 ? resolve() : requestAnimationFrame(frame); requestAnimationFrame(frame); }));
+          await pause();
+          assert.match(await page.locator('main.configurator').getAttribute('class'), new RegExp('(?:^|\\s)environment-' + id + '(?:\\s|$)'));
+          assert.equal(await page.locator('.scene-loading, .scene-notice, .render-error').count(), 0);
+          const after = await shot('environment-' + id);
+          assert.notEqual(after, before);
+          assert.deepEqual(hdrRequests, sharedHdr ? [sharedHdrPath] : [], 'Outdoor environments must reuse one shared sky request');
+          environmentPixels = after;
+          return { environment: id, before, after, pixelsChanged: true, asset, hdrRequests: [...hdrRequests] };
+        });
       }
       await check('Rotate on, visible movement, and stop', async () => { const before = await shot('rotate-before'); await page.emulateMedia({ reducedMotion: 'no-preference' }); const button = page.getByRole('button', { name: 'Rotate', exact: true }); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); await page.evaluate(() => new Promise(resolve => { let n=24; const frame=()=> --n <= 0 ? resolve() : requestAnimationFrame(frame); requestAnimationFrame(frame); })); await button.click({ timeout: 60000 }); assert.equal(await button.getAttribute('aria-pressed'), 'false'); await pause(); const after = await shot('rotate-after'); assert.notEqual(after, before); return { before, after, pixelsChanged: true }; });
       await check('Sound is an opt-in interface cue', async () => { const button = page.locator('.config-toolbar .sound-button'); const count = await page.evaluate(() => window.__audioStarts); await button.click(); await page.waitForTimeout(300); const starts = await page.evaluate(() => window.__audioStarts); assert.ok(starts > count); const enabledText = await button.innerText(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); return { enabledText, actualOscillatorStarts: starts - count, soundType: 'interface cue, not engine audio' }; });

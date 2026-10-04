@@ -15,8 +15,15 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { chromium, expect } from "@playwright/test";
+
+// Use the PNG decoder already shipped by our lockfile-pinned Playwright. Decode
+// the captured screenshot in Node rather than requesting a second GPU readback.
+const { PNG } = createRequire(import.meta.url)(
+  "playwright-core/lib/utilsBundle",
+);
 
 const viewports = {
   "desktop-1440": { width: 1440, height: 900 },
@@ -74,12 +81,14 @@ const baseUrl = (
   process.env.PREVIEW_BASE_URL || "http://127.0.0.1:4183"
 ).replace(/\/$/, "");
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   commit: process.env.GITHUB_SHA || null,
   baseUrl,
   startedAt: new Date().toISOString(),
   status: "running",
   plan,
+  pixelComparison:
+    "Exact RGBA SHA-256 of the canvas rectangle inset by 2 CSS pixels, excluding the browser focus outline. Full viewport PNGs and their independent file SHA-256 hashes are preserved.",
   limitations: [
     "SwiftShader checks rendering and interactions; this is not physical-GPU/mobile performance evidence.",
     "Screenshot differences and reset equality do not establish visual realism, composition or absence of clipping. Inspect the PNGs.",
@@ -93,6 +102,32 @@ await mkdir(outputRoot, { recursive: true });
 const save = () =>
   writeFile(join(outputRoot, "report.json"), JSON.stringify(report, null, 2));
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function canvasPixelHash(bytes, bounds) {
+  const png = PNG.sync.read(bytes);
+  // deviceScaleFactor and screenshot scale are both 1. Exclude only the proven
+  // focus-outline false positive; do not blur, rescale, tolerate or mask changes
+  // within the scene. Hash raw decoded pixels, not PNG compression bytes.
+  const inset = 2;
+  const x = Math.ceil(bounds.x + inset);
+  const y = Math.ceil(bounds.y + inset);
+  const right = Math.floor(bounds.x + bounds.width - inset);
+  const bottom = Math.floor(bounds.y + bounds.height - inset);
+  assert(
+    x >= 0 && y >= 0 && right <= png.width && bottom <= png.height,
+    "Canvas comparison region extends outside the captured viewport",
+  );
+  assert(right > x && bottom > y, "Canvas comparison region is empty");
+  const hash = createHash("sha256");
+  for (let row = y; row < bottom; row++) {
+    const start = (row * png.width + x) * 4;
+    hash.update(png.data.subarray(start, start + (right - x) * 4));
+  }
+  return {
+    sha256: hash.digest("hex"),
+    bounds: { x, y, width: right - x, height: bottom - y, insetPixels: inset },
+  };
+}
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -261,13 +296,30 @@ async function runViewport(name, viewport) {
   }
   async function press(key, count) {
     await canvas.focus();
-    for (let step = 0; step < count; step++) await page.keyboard.press(key);
+    const shifted = key.startsWith("Shift+");
+    const physicalKey = shifted ? key.slice("Shift+".length) : key;
+    if (shifted) await page.keyboard.down("Shift");
+    try {
+      // Native held-key repetition: one initial keydown followed by queued
+      // repeated keydowns. No DOM dispatch, synthetic camera hook, per-key
+      // settling or interleaved modifier releases. Capture settles afterward.
+      await page.keyboard.down(physicalKey);
+      await Promise.all(
+        Array.from({ length: count - 1 }, () =>
+          page.keyboard.down(physicalKey),
+        ),
+      );
+    } finally {
+      await page.keyboard.up(physicalKey);
+      if (shifted) await page.keyboard.up("Shift");
+    }
   }
   async function capture(item, shot, details = {}) {
     currentStep = `${item.id}/${shot}`;
     await settled();
-    // All hashes have identical focus treatment. Otherwise a focus outline can
-    // falsely look like camera movement or a failed reset.
+    // Preserve the real focus state for visual/accessibility review. Keyboard
+    // and mouse modality can draw different :focus-visible outlines despite
+    // identical focus; canvasPixelHash excludes only that 2px perimeter.
     await canvas.focus();
     // Keep hover styling identical too, regardless of the last drawer option.
     await page.mouse.move(viewport.width - 2, viewport.height - 2);
@@ -291,12 +343,15 @@ async function runViewport(name, viewport) {
       scale: "css",
       timeout: 45000,
     });
+    const comparison = canvasPixelHash(bytes, bounds);
     const image = {
       name: shot,
       file: `${item.id}/${file}`,
       viewport,
       canvasBounds: bounds,
       sha256: createHash("sha256").update(bytes).digest("hex"),
+      canvasSha256: comparison.sha256,
+      comparisonBounds: comparison.bounds,
       ...details,
     };
     item.images.push(image);
@@ -307,7 +362,7 @@ async function runViewport(name, viewport) {
     );
     await persist();
     console.log(`[environment-preview] ${name} ${item.id} ${shot}`);
-    return image.sha256;
+    return image.canvasSha256;
   }
 
   try {

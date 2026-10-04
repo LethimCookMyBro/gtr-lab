@@ -75,6 +75,8 @@ export const useConfigurator = create<ConfigState>((set) => ({
         selectedEnvironment: id,
         notice: null,
         environmentRequest: state.environmentRequest + 1,
+        ready: false,
+        loadingProgress: 99,
       }));
   },
   setCamera: (id) => {

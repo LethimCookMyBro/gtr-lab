@@ -60,6 +60,13 @@ export function CreditsPage() {
             · Greg Zaal
           </li>
         </ul>
+        <p>
+          <a href="https://polyhaven.com/a/rock_moss_set_01">
+            Rock Moss Set 01
+          </a>{" "}
+          · Kless Gyzen. Six original metre-scaled rock scans, shared across
+          outdoor placements.
+        </p>
         <a href="https://polyhaven.com/license">
           Poly Haven · CC0 asset license
         </a>

@@ -10,6 +10,7 @@ type Diagnostic = {
   expected?: boolean;
 };
 const diagnostics = new WeakMap<Page, Diagnostic[]>();
+const sharedHdrPath = "/environments/kloofendal_43d_clear_puresky_1k.hdr";
 
 test.setTimeout(120000);
 test.beforeEach(async ({ page }) => {
@@ -284,6 +285,11 @@ test("actual exterior cameras render and unsupported cabin remains visibly disab
 test("separate lamps and real environments affect the licensed vehicle", async ({
   page,
 }, info) => {
+  const hdrRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (/^\/environments\/.*\.hdr$/.test(path)) hdrRequests.push(path);
+  });
   await openVehicle(page);
   await chooseCamera(page, "Front");
   const canvas = page.locator(".scene-stage canvas");
@@ -299,26 +305,76 @@ test("separate lamps and real environments affect the licensed vehicle", async (
     .not.toBe(offPixels);
   await capture(page, info, "vehicle-lights-on");
   await chooseCamera(page, "Front ¾");
-  const forestResponse = page.waitForResponse((response) =>
-    /\/environments\/tief_etz(?:_1k)?\.hdr/.test(response.url()),
-  );
-  await chooseEnvironment(page, "Test paddock", "forest");
-  const forest = await forestResponse;
+  await stableResolution(page);
+  const studioPixels = (await canvas.screenshot()).toString("base64");
+  const [forest] = await Promise.all([
+    page.waitForResponse(
+      (response) => new URL(response.url()).pathname === sharedHdrPath,
+    ),
+    chooseEnvironment(page, "Test paddock", "forest"),
+  ]);
   expect(forest.ok()).toBe(true);
   expect(await forest.finished()).toBeNull();
-  await renderedFrames(page);
-  await expect(page.locator(".scene-notice")).toHaveCount(0);
-  await capture(page, info, "vehicle-environment-forest");
-  const coastResponse = page.waitForResponse((response) =>
-    /\/environments\/victoria_curve_01(?:_1k)?\.hdr/.test(response.url()),
+  const hdrBytes = await forest.body();
+  expect(hdrBytes.subarray(0, 16).toString()).toMatch(
+    /^#\?(?:RADIANCE|RGBE)\s/,
   );
+  const settleEnvironment = async () => {
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          let frames = 24;
+          const frame = () =>
+            --frames <= 0 ? resolve() : requestAnimationFrame(frame);
+          requestAnimationFrame(frame);
+        }),
+    );
+    await ready(page);
+    await stableResolution(page);
+    await expect(page.locator(".scene-notice")).toHaveCount(0);
+  };
+  await settleEnvironment();
+  const forestPixels = (await canvas.screenshot()).toString("base64");
+  expect(forestPixels).not.toBe(studioPixels);
+  expect(hdrRequests).toEqual([sharedHdrPath]);
+  await capture(page, info, "vehicle-environment-forest");
+  // Coast uses the same cached sky. A second response wait would never resolve.
   await chooseEnvironment(page, "Coastal road", "coast");
-  const coast = await coastResponse;
-  expect(coast.ok()).toBe(true);
-  expect(await coast.finished()).toBeNull();
-  await renderedFrames(page);
-  await expect(page.locator(".scene-notice")).toHaveCount(0);
+  await settleEnvironment();
+  const coastPixels = (await canvas.screenshot()).toString("base64");
+  expect(coastPixels).not.toBe(forestPixels);
+  expect(coastPixels).not.toBe(studioPixels);
+  expect(
+    hdrRequests,
+    "Coast must reuse the already loaded sky texture",
+  ).toEqual([sharedHdrPath]);
   await capture(page, info, "vehicle-environment-coast");
+  await info.attach("shared-environment-hdr", {
+    body: JSON.stringify(
+      {
+        url: forest.url(),
+        httpStatus: forest.status(),
+        bytes: hdrBytes.byteLength,
+        hdrRequests,
+        coastUsesCachedSky: true,
+        pixelHashes: Object.fromEntries(
+          Object.entries({
+            studio: studioPixels,
+            forest: forestPixels,
+            coast: coastPixels,
+          }).map(([environment, pixels]) => [
+            environment,
+            createHash("sha256")
+              .update(Buffer.from(pixels, "base64"))
+              .digest("hex"),
+          ]),
+        ),
+      },
+      null,
+      2,
+    ),
+    contentType: "application/json",
+  });
   await chooseEnvironment(page, "After hours", "night");
   await capture(page, info, "vehicle-environment-night");
   await chooseEnvironment(page, "Pit garage", "studio");
