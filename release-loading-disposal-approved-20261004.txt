@@ -1,0 +1,7 @@
+Reviewed rear preparation lifecycle fix, 2026-10-04.
+Candidate: e12a0cb27b0f7c0ae401fe3629b0a283e69d6d35
+Quality: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37186002256
+Lifecycle: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37186002298
+598 unit, 44 end-to-end, 6 renderer, 14 vehicle and 9 controlled lifecycle cases passed without retries.
+Promotion contains only this marker and the verification record beyond the tested candidate.
+Verify exact public assets and live lifecycle/loading flows, then restore the saved complete service configuration.
