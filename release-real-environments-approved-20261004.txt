@@ -7,3 +7,5 @@ Physical environment matrix: https://github.com/LethimCookMyBro/gtr-lab/actions/
 Geometry regression: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37180973644
 
 This marker changes no application source or assets. See docs/ENVIRONMENT_QUALITY_LIMITS.md for the incremental scope and software-renderer verification limits.
+
+Public smoke follow-through: wait for rendered venue readiness after cached-sky selection, including separately fetched rock assets. Application and asset bytes remain identical to the approved source; refresh the exact-release verification for this tested QA-only correction.

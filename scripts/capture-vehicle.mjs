@@ -3,6 +3,7 @@ import { chromium } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { waitForEnvironmentReady } from './vehicle-preview-readiness.mjs';
 const sharedHdrPath = '/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr';
 const directory='vehicle-preview-results';await mkdir(directory,{recursive:true});
 const baseUrl=process.env.PREVIEW_BASE_URL||'http://127.0.0.1:4175';
@@ -94,7 +95,9 @@ try{
       await select();
       state.assetUrl=sharedHdr.url;state.assetBytes=sharedHdr.bytes;state.assetSource='cache';
      }
-     // The first selection must decode the HDR; both selections must render their distinct venue.
+     // A cached sky does not mean coast's separate rock assets are decoded/rendered yet.
+     await waitForEnvironmentReady(page, environment);
+     // Keep render settling and pixel evidence after the actual readiness condition.
      await page.evaluate(()=>new Promise(resolve=>{let remaining=24;function frame(){if(--remaining<=0)resolve();else requestAnimationFrame(frame);}requestAnimationFrame(frame);}));
      if (!(await page.locator('main.configurator').getAttribute('class')).split(/\s+/).includes(`environment-${environment}`)) throw new Error('Environment selection did not update');
      if(await page.locator('.scene-loading, .scene-notice, .render-error').count())throw new Error('Environment did not finish rendering cleanly');
