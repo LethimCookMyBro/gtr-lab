@@ -1,12 +1,13 @@
 {
-  "release": "photographic-environment-grounding",
-  "testedApplicationCommit": "e9014f8eb80ce295a793ad3c50d1fabe3f992fea",
-  "candidateCommit": "489e7fd2764a9c8874a3ae1da04a01e9ab228433",
-  "qualityQaRun": 37122418131,
-  "environmentQaRun": 37123503181,
-  "vehicleCheckpointRun": 37121930237,
-  "verifiedAt": "2026-10-03T12:49:41Z",
-  "scope": "World-space ground projection for the existing forest/coast panoramas, restored contact shadows in all configurator environments, stable environment keys, and owned HDR cleanup. Vehicle geometry, materials and camera calibration unchanged.",
-  "verificationLimits": "Real WebGL SwiftShader captures at desktop and emulated mobile viewports; no hardware-GPU or mobile-Safari benchmark. Panoramas retain photographic softness/scale limits and are not reconstructed 3D terrain.",
-  "knownQaFlake": "The 430px homepage-to-models navigation case reported an isReady error once and passed retry; 43 other general cases, all 6 renderer and all 14 vehicle cases passed."
+  "release": "r32-archive-motion-and-footer",
+  "testedApplicationCommit": "62a5abe6ef7cdc56fafe607d495affacbf732aaf",
+  "qualityQaRun": 37218833566,
+  "homepageQaRun": 37218833525,
+  "footerQaRun": 37218194483,
+  "mobileQaRun": 37218833530,
+  "environmentQaRun": 37218833547,
+  "vehicleCheckpointRun": 37218833416,
+  "verifiedAt": "2026-10-04T17:25:04Z",
+  "scope": "Bounded R32 race/photo/engineering choreography, reversible title exit, quiet noninteractive focus destinations, and full-width footer hover/keyboard rows. All four eras and twelve credited photos retained.",
+  "verificationLimits": "Genuine Chromium and SwiftShader tests plus desktop/emulated-mobile captures. No physical-phone or hardware-GPU benchmark. External film playback is separate from deterministic runner checks. Five variant models and an accurate cabin remain unavailable."
 }

@@ -1,0 +1,12 @@
+Reviewed R32 archive motion and footer interaction release.
+Tested application: 62a5abe6ef7cdc56fafe607d495affacbf732aaf
+Quality: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37218833566
+606 unit/DOM tests, 44 E2E cases, 6 renderer cases, 14 real-vehicle cases passed without retries.
+Homepage/component QA: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37218833525
+14 heritage cases, native forward/reverse recording, desktop/mobile/reduced-motion, loading/rear and model-card checks passed.
+Footer interaction evidence: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37218194483
+Unchanged footer bytes passed 7 real-browser interaction cases.
+Reviewed genuine screenshots and the 13.32-second unretimed scroll recording before promotion.
+Retains all 4 eras, 12 credited photos, original rear scene and loading gate. Vehicle/environment assets and service sizing are unchanged.
+Verify the exact released Railway commit, public asset bytes and live scrolling, then restore the saved full service configuration and all 14 normal watch patterns.
+This bounded refinement is not overall six-vehicle or interior completion.

@@ -145,3 +145,11 @@ tested application; no new model asset or cabin is included. After exact live
 verification, restore and compare the complete saved service configuration,
 including all 14 original watch patterns. The controlled readiness clip is a
 UI lifecycle test, not a claim about a visitor's download speed or film playback.
+
+## R32 motion and footer release, 4 October 2026
+
+Application candidate `62a5abe6ef7cdc56fafe607d495affacbf732aaf` passed [Quality 37218833566](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37218833566): 606 unit/DOM tests, 44 general E2E, 6 renderer and 14 actual-vehicle cases, without retries. [Homepage/component QA 37218833525](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37218833525) passed the 14-case archive suite plus the complete applicable home, loading, rear, hero-exit and model-card checks. Mobile and all 15 environment visual captures passed. Unchanged footer bytes passed all seven cases in [interaction QA 37218194483](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37218194483).
+
+Visual review accepted the dominant, source-size-bounded Australian R32 racing photograph, its distinct Japanese championship claim, staged road/engine evidence, reversible title exit and readable mobile fallback. The review corrected a large noninteractive chapter focus frame and a lingering title at the exit; genuine screenshots and a 13.32-second unretimed native-scroll recording were reviewed again. Earlier candidate tests exposed stale generic-fade and innerText/textContent assumptions; their failed runs are not reported as green. Source staging commit `1de9d10` also started a live-only smoke before promotion; the gate correctly withheld deployment, so that run is not release evidence.
+
+The promotion marker is `/release-r32-motion-approved-20261004.txt`. The release commit changes only documentation, release metadata and its live-smoke trigger beyond the tested application. Verify the new exact Railway SHA, byte-identical public HTML/JS/CSS and live scroll interactions, then restore and compare the saved complete service config, including all 14 normal watch patterns. Existing vehicle assets, configurator environments, rear preparation lifecycle and service resources are unchanged. This is a bounded homepage refinement, not completion of the five missing variant assets or accurate cabin.

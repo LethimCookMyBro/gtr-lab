@@ -7,7 +7,7 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 
 One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The other five routes remain labeled photographic references, not renamed copies of the same mesh. Paint, lamps, cameras and five real-geometry environments work on the licensed exterior. Interior remains disabled until an accurate cabin preview is accepted. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
 
-The homepage combines two real NissanNews GT-R track films in intact Flixel players, a reversible hero-to-paper exit, white editorial photography, focused film viewing, four compact multi-photo heritage spreads with a slim era index, an animated layered menu, six larger model invitations and an expanded independent-project footer. Keyboard, reduced-motion and responsive checks cover the complete flow. Both exact hosted players were verified on the public Railway origin; GitHub runners have received provider playback restrictions, so deterministic app checks and public-origin media verification are reported separately. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
+The homepage combines two real NissanNews GT-R track films in intact Flixel players, a reversible hero-to-paper exit, white editorial photography, focused film viewing, four multi-photo heritage chapters, including a bounded R32 race-to-engineering scroll sequence and a slim era index, an animated layered menu, six larger model invitations and an independent-project footer with full-width link rows and matching hover/keyboard feedback. Keyboard, reduced-motion and responsive checks cover the complete flow. Both exact hosted players were verified on the public Railway origin; GitHub runners have received provider playback restrictions, so deterministic app checks and public-origin media verification are reported separately. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
 
 ## Homepage preparation and identity
 
@@ -78,6 +78,7 @@ Railway. `railway.json` defines build, Node start and healthcheck. Connect the a
 
 ## Documentation
 
+- `docs/HOME_R32_MOTION.md`: R32 choreography, factual/photo distinctions, responsive and reduced-motion behavior
 - `docs/REFERENCE_AUDIT.md`: observed interaction audit and verification limitations
 - `docs/DEPLOYMENT.md`: reviewed release process, live checks and normal deployment triggers
 - `docs/ARCHITECTURE.md`: application/state/rendering boundaries and plan
