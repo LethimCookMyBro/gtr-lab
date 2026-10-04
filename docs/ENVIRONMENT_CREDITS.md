@@ -137,3 +137,23 @@ redirects, and atomically publishes only complete checked files. A failed asset
 load retains an asset-free interactive vehicle stage and exposes a recovery
 notice. Browser screenshots must be reviewed separately from geometric tests;
 SwiftShader is not physical-device performance or OEM-photoreal acceptance.
+
+
+### Visible partly-cloudy sky refinement
+
+The final active sky candidate is **Kloofendal 48d Partly Cloudy (Pure Sky)**,
+Greg Zaal (original) and Jarod Guest (sky edit), CC0:
+https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky
+
+The exact2K original is5,451,493 bytes; upstream MD5
+`2eba3a4d7eeb23cbfbeca364c97e7980`, SHA-256
+`5244534e9cf5b606f2ff513aa00ddb161b0a4826ffd88a0d3bd03ac29247d198`.
+Its visible clouds are the actual distant sky photograph, not a ground panorama.
+The directional sun and water highlight direction match the decoded HDR sun.
+The earlier clear-sky candidate is retained only in this change history.
+
+The visible sea now uses a demand-rendered planar reflection and original Fresnel/
+wave shader. Its128² normal field is original deterministic mathematical wave
+code; no external image was extracted or generated. A512² reflection target
+captures the real camera-visible scene. It has no animation loop or idle frame
+invalidation, and all owned GPU resources are explicitly disposed.

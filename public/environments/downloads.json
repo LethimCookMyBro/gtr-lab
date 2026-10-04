@@ -1,11 +1,11 @@
 [
   {
-    "id": "kloofendal_43d_clear_puresky",
-    "resolution": "1k",
-    "path": "/environments/kloofendal_43d_clear_puresky_1k.hdr",
-    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloofendal_43d_clear_puresky_1k.hdr",
-    "bytes": 1184531,
-    "sha256": "de7ba9d0b070470dbb70d0144294c8708068df353537b26ab59c394707e84377",
-    "dimensionsHeader": "-Y 512 +X 1024"
+    "id": "kloofendal_48d_partly_cloudy_puresky",
+    "resolution": "2k",
+    "path": "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr",
+    "sourceDownloadUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/kloofendal_48d_partly_cloudy_puresky_2k.hdr",
+    "bytes": 5451493,
+    "sha256": "5244534e9cf5b606f2ff513aa00ddb161b0a4826ffd88a0d3bd03ac29247d198",
+    "dimensionsHeader": "-Y 1024 +X 2048"
   }
 ]

@@ -100,7 +100,46 @@ float surfaceGrey = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
 diffuseColor.rgb = mix(vec3(surfaceGrey), diffuseColor.rgb, 0.12);`,
         );
       };
-      m.customProgramCacheKey = () => "neutral-scanned-concrete-v1";
+      if (gallery && name === "floor") {
+        const neutral = m.onBeforeCompile;
+        m.onBeforeCompile = (shader, renderer) => {
+          neutral.call(m, shader, renderer);
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "diffuseColor.rgb = mix(vec3(surfaceGrey), diffuseColor.rgb, 0.12);",
+            "diffuseColor.rgb = mix(vec3(0.72), vec3(surfaceGrey), 0.18);",
+          );
+        };
+        m.normalScale.set(0.12, 0.12);
+      }
+      m.customProgramCacheKey = () =>
+        gallery && name === "floor"
+          ? "gallery-pale-concrete-v1"
+          : "neutral-scanned-concrete-v1";
+    }
+    if (name === "asphalt") {
+      m.onBeforeCompile = (shader) => {
+        shader.vertexShader =
+          "varying vec3 vVenuePosition;\n" +
+          shader.vertexShader.replace(
+            "#include <worldpos_vertex>",
+            "#include <worldpos_vertex>\nvVenuePosition = (modelMatrix * vec4(transformed, 1.0)).xyz;",
+          );
+        shader.fragmentShader =
+          `varying vec3 vVenuePosition;
+float venueHash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(venueHash(i),venueHash(i+vec2(1,0)),f.x),mix(venueHash(i+vec2(0,1)),venueHash(i+vec2(1,1)),f.x),f.y); }
+` +
+          shader.fragmentShader
+            .replace(
+              "#include <map_fragment>",
+              "#include <map_fragment>\nfloat pavementVariation = venueNoise(vVenuePosition.xz * 0.11);\ndiffuseColor.rgb *= mix(0.82, 1.08, pavementVariation);",
+            )
+            .replace(
+              "#include <roughnessmap_fragment>",
+              "#include <roughnessmap_fragment>\nroughnessFactor = clamp(roughnessFactor + (pavementVariation - 0.5) * 0.12, 0.65, 1.0);",
+            );
+      };
+      m.customProgramCacheKey = () => "world-scale-asphalt-variation-v1";
     }
     return m;
   }
@@ -554,7 +593,7 @@ diffuseColor.rgb = mix(vec3(surfaceGrey), diffuseColor.rgb, 0.12);`,
         ).rotation.y = yaw;
       }
       for (const z of [-48, 24, 64]) pole(13 + coastBend(z), z, 6);
-      const sea = material("#377a92", 0.24, 0.32);
+      const sea = material("#294952", 0.32, 0.65);
       const waveData = new Uint8Array(64 * 64 * 4);
       for (let y = 0; y < 64; y++)
         for (let x = 0; x < 64; x++) {
@@ -605,7 +644,12 @@ diffuseColor.rgb = mix(vec3(surfaceGrey), diffuseColor.rgb, 0.12);`,
           Math.sin(z * 0.018 + side) * 2.5 * edge +
           Math.sin(x * 0.06 + z * 0.015) * 1.6 * edge +
           Math.sin(z * 0.13) * Math.cos(x * 0.08) * 1.1 * edge;
-        p.setY(i, height);
+        p.setY(
+          i,
+          environment === "forest"
+            ? 2 + edge * 0.45 + Math.sin(z * 0.017) * 0.22 * edge
+            : height,
+        );
         if (environment === "coast") p.setX(i, x + coastBend(z - 10));
       }
       geometry.computeVertexNormals();

@@ -4,6 +4,7 @@
  * buttons and keyboard controls; there are no application/test camera hooks.
  *
  * ENVIRONMENT_QA_VIEWPORT=desktop-1440 node scripts/capture-environments.mjs
+ * ENVIRONMENT_QA_ENVIRONMENT=studio ENVIRONMENT_QA_VIEWPORT=desktop-1920 node ...
  * PREVIEW_BASE_URL=https://... ENVIRONMENT_QA_VIEWPORT=mobile-390 node ...
  * node scripts/capture-environments.mjs --list  (no server/browser started)
  *
@@ -38,13 +39,35 @@ const environments = [
   { id: "coast", label: "Coastal road" },
 ];
 const selected = process.env.ENVIRONMENT_QA_VIEWPORT;
+const selectedEnvironment = process.env.ENVIRONMENT_QA_ENVIRONMENT;
 assert(
   !selected || Object.hasOwn(viewports, selected),
   `Unknown viewport: ${selected}`,
 );
+assert(
+  !selectedEnvironment ||
+    environments.some((e) => e.id === selectedEnvironment),
+  `Unknown environment: ${selectedEnvironment}`,
+);
+const captureTargets = selectedEnvironment
+  ? environments.filter((e) => e.id === selectedEnvironment)
+  : environments;
 const plan = {
   viewports: selected ? { [selected]: viewports[selected] } : viewports,
-  environments,
+  environments: captureTargets,
+  selectorEnvironments: environments,
+  // A single-target job still leaves and returns to the target twice. Use two
+  // other genuine scenes, and keep their evidence outside the 22 target views.
+  switchAwayEnvironments: selectedEnvironment
+    ? [1, 2].map(
+        (offset) =>
+          environments[
+            (environments.findIndex((e) => e.id === selectedEnvironment) +
+              offset) %
+              environments.length
+          ],
+      )
+    : [],
   views: [
     "hero",
     "front",
@@ -81,7 +104,7 @@ const baseUrl = (
   process.env.PREVIEW_BASE_URL || "http://127.0.0.1:4183"
 ).replace(/\/$/, "");
 const report = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   commit: process.env.GITHUB_SHA || null,
   baseUrl,
   startedAt: new Date().toISOString(),
@@ -169,6 +192,7 @@ async function runViewport(name, viewport) {
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
   const canvas = page.locator(".scene-stage canvas");
+  let initialCanvas;
   const dialog = page.getByRole("dialog");
   let currentStep = "initial-load";
   const diagnostic = (kind, message, details = {}) =>
@@ -314,9 +338,21 @@ async function runViewport(name, viewport) {
       if (shifted) await page.keyboard.up("Shift");
     }
   }
-  async function capture(item, shot, details = {}) {
+  async function capture(
+    item,
+    shot,
+    details = {},
+    { evidenceOnly = false } = {},
+  ) {
     currentStep = `${item.id}/${shot}`;
     await settled();
+    assert(
+      await canvas.evaluate(
+        (element, initial) => element === initial,
+        initialCanvas,
+      ),
+      "Environment or camera change replaced the original viewer canvas",
+    );
     // Preserve the real focus state for visual/accessibility review. Keyboard
     // and mouse modality can draw different :focus-visible outlines despite
     // identical focus; canvasPixelHash excludes only that 2px perimeter.
@@ -336,7 +372,8 @@ async function runViewport(name, viewport) {
         ) - innerWidth,
     );
     assert(overflow <= 1, `Horizontal page overflow: ${overflow}px`);
-    const file = `${String(item.images.length).padStart(2, "0")}-${shot}.png`;
+    const collection = evidenceOnly ? item.switchEvidence : item.images;
+    const file = `${evidenceOnly ? "evidence-" : ""}${String(collection.length).padStart(2, "0")}-${shot}.png`;
     const bytes = await page.screenshot({
       path: join(directory, item.id, file),
       animations: "disabled",
@@ -349,12 +386,13 @@ async function runViewport(name, viewport) {
       file: `${item.id}/${file}`,
       viewport,
       canvasBounds: bounds,
+      selectedEnvironment: item.id,
       sha256: createHash("sha256").update(bytes).digest("hex"),
       canvasSha256: comparison.sha256,
       comparisonBounds: comparison.bounds,
       ...details,
     };
-    item.images.push(image);
+    collection.push(image);
     item.webgl = await graphicsHealth();
     await writeFile(
       join(directory, item.id, "report.json"),
@@ -372,6 +410,8 @@ async function runViewport(name, viewport) {
     });
     await expect(page).toHaveTitle(/GT-R LAB/);
     await settled();
+    initialCanvas = await canvas.elementHandle();
+    assert(initialCanvas, "Initial viewer canvas is missing");
     await expect(canvas).toHaveAttribute("tabindex", "0");
     await expect(canvas).toHaveAttribute("role", "application");
     await expect(canvas).toHaveAccessibleName(/Interactive vehicle/);
@@ -392,6 +432,15 @@ async function runViewport(name, viewport) {
     await expect(dialog).toBeFocused();
     const choices = dialog.locator(".environment-choices button");
     await expect(choices).toHaveCount(environments.length);
+    for (const option of environments) {
+      const choice = choices.filter({
+        has: page.locator(`.environment-preview.${option.id}`),
+      });
+      await expect(choice).toHaveAccessibleName(
+        new RegExp(`^${option.label}(?:\\s|$)`),
+      );
+      await expect(choice).toBeEnabled();
+    }
     await page.keyboard.press("Shift+Tab");
     await expect(choices.last()).toBeFocused();
     await page.keyboard.press("Tab");
@@ -404,14 +453,16 @@ async function runViewport(name, viewport) {
     view.checks.push(
       "Viewer keyboard access and Tab exit",
       "Environment dialog keyboard open, focus trap, Escape and focus return",
+      "All five environment selector options are enabled and correctly labelled",
     );
 
-    for (const definition of environments) {
+    for (const definition of captureTargets) {
       const item = {
         ...definition,
         status: "running",
         checks: [],
         images: [],
+        switchEvidence: [],
         errors: [],
       };
       view.environments.push(item);
@@ -535,13 +586,34 @@ async function runViewport(name, viewport) {
       await persist();
     }
 
-    // Two complete round trips catch disposed/cached environment resources,
-    // lights/shadow accumulation and selection regressions without reloads.
+    // Aggregate mode cycles all targets twice. Single-target jobs explicitly
+    // visit another environment before each return, proving resources remain
+    // reversible on the original canvas rather than merely reselecting a label.
     for (let cycle = 1; cycle <= 2; cycle++) {
       for (const item of view.environments.filter(
         (e) => e.status === "passed",
       )) {
         try {
+          const away = plan.switchAwayEnvironments[cycle - 1];
+          if (away) {
+            currentStep = `${item.id}/switch-away-${cycle}`;
+            await environment(away);
+            await camera("Front ¾");
+            const awayHash = await capture(
+              item,
+              `switch-away-${cycle}`,
+              {
+                selectedEnvironment: away.id,
+                environmentLabel: away.label,
+              },
+              { evidenceOnly: true },
+            );
+            assert.notEqual(
+              awayHash,
+              item.canonical,
+              `Switching from ${item.id} to ${away.id} did not change the rendered scene`,
+            );
+          }
           currentStep = `${item.id}/switch-return-${cycle}`;
           await environment(item);
           await camera("Front ¾");
@@ -553,6 +625,10 @@ async function runViewport(name, viewport) {
           item.checks.push(
             `Repeated environment return ${cycle} restores exact canonical pixels`,
           );
+          if (away)
+            item.checks.push(
+              `Switch-away ${cycle} to ${away.id} renders distinct pixels on the same canvas`,
+            );
         } catch (error) {
           item.status = "failed";
           item.errors.push({
@@ -571,17 +647,37 @@ async function runViewport(name, viewport) {
     const canonical = view.environments.map((e) => e.canonical).filter(Boolean);
     assert.equal(
       canonical.length,
-      environments.length,
+      captureTargets.length,
       "Missing canonical environment images",
     );
-    assert.equal(
-      new Set(canonical).size,
-      environments.length,
-      "Two environments produced identical canonical images",
-    );
-    view.checks.push(
-      "All five environments have distinct rendered canonical images",
-    );
+    if (selectedEnvironment) {
+      const item = view.environments[0];
+      assert.equal(
+        item.switchEvidence.length,
+        2,
+        "Missing switch-away evidence",
+      );
+      assert.equal(
+        new Set([
+          item.canonical,
+          ...item.switchEvidence.map((image) => image.canvasSha256),
+        ]).size,
+        3,
+        "Target and switch-away environments did not produce three distinct rendered scenes",
+      );
+      view.checks.push(
+        "Target and both switch-away environments render distinct pixels on the original canvas",
+      );
+    } else {
+      assert.equal(
+        new Set(canonical).size,
+        environments.length,
+        "Two environments produced identical canonical images",
+      );
+      view.checks.push(
+        "All five environments have distinct rendered canonical images",
+      );
+    }
     await expect(canvas).toHaveCount(1);
     await graphicsHealth();
   } catch (error) {
@@ -619,7 +715,7 @@ async function runViewport(name, viewport) {
     }
     view.status =
       view.errors.length ||
-      view.environments.length !== environments.length ||
+      view.environments.length !== captureTargets.length ||
       view.environments.some((e) => e.status !== "passed")
         ? "failed"
         : "passed";

@@ -11,7 +11,7 @@ it("names the active environment's original geometry and five licensed asset sou
     "concrete_wall_008",
     "asphalt_pit_lane",
     "aerial_rocks_02",
-    "kloofendal_43d_clear_puresky",
+    "kloofendal_48d_partly_cloudy_puresky",
   ]) {
     expect(
       document.querySelector(`a[href="https://polyhaven.com/a/${id}"]`),

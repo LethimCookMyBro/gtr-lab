@@ -7,7 +7,11 @@ type ObservedCanvas = HTMLCanvasElement & {
 };
 
 const variant = "candidate";
-const skyPath = "/environments/kloofendal_43d_clear_puresky_1k.hdr";
+// The environment preview matrix owns the full PNG set. Keep this regression
+// focused on behavior/GPU evidence; opt in only when extra images are useful.
+// Canonical canvas hashes and Playwright's failure screenshots stay unconditional.
+const captureImages = process.env.ENVIRONMENT_QA_IMAGES === "1";
+const skyPath = "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr";
 const surfacePaths = [
   "garage_floor",
   "concrete_wall_008",
@@ -101,6 +105,14 @@ async function graphicsEvidence(page: Page) {
     };
   });
 }
+async function optionalImage(page: Page, info: TestInfo, name: string) {
+  if (!captureImages) return;
+  await page.screenshot({
+    path: info.outputPath(`${name}.png`),
+    animations: "disabled",
+    scale: "css",
+  });
+}
 async function capture(page: Page, info: TestInfo, name: string) {
   await ready(page);
   const evidence = await graphicsEvidence(page);
@@ -113,11 +125,7 @@ async function capture(page: Page, info: TestInfo, name: string) {
     body: JSON.stringify(evidence, null, 2),
     contentType: "application/json",
   });
-  await page.screenshot({
-    path: info.outputPath(`${name}.png`),
-    animations: "disabled",
-    scale: "css",
-  });
+  await optionalImage(page, info, name);
 }
 async function camera(page: Page, name: string) {
   await page.getByRole("button", { name: "Camera", exact: true }).click();
@@ -367,11 +375,7 @@ test("a missing studio surface keeps the vehicle interactive and retries the sam
   await pressCameraKey(page, "ArrowLeft");
   await expect.poll(() => canvasHash(page, true)).not.toBe(fallbackHash);
   await pressCameraKey(page, "Home");
-  await page.screenshot({
-    path: info.outputPath("studio-surface-fallback.png"),
-    animations: "disabled",
-    scale: "css",
-  });
+  await optionalImage(page, info, "studio-surface-fallback");
 
   blockSurface = false;
   recovering = true;
@@ -401,11 +405,7 @@ test("a missing studio surface keeps the vehicle interactive and retries the sam
     await canvasHash(page),
     "Verified texture retry restores the full venue rather than the fallback plane",
   ).not.toBe(fallbackHash);
-  await page.screenshot({
-    path: info.outputPath("studio-surface-recovered.png"),
-    animations: "disabled",
-    scale: "css",
-  });
+  await optionalImage(page, info, "studio-surface-recovered");
   await info.attach("surface-recovery-diagnostics", {
     body: JSON.stringify(
       {

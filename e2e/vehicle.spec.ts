@@ -10,7 +10,7 @@ type Diagnostic = {
   expected?: boolean;
 };
 const diagnostics = new WeakMap<Page, Diagnostic[]>();
-const sharedHdrPath = "/environments/kloofendal_43d_clear_puresky_1k.hdr";
+const sharedHdrPath = "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr";
 
 test.setTimeout(120000);
 test.beforeEach(async ({ page }) => {

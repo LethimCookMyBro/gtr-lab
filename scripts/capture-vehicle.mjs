@@ -3,7 +3,7 @@ import { chromium } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
-const sharedHdrPath = '/environments/kloofendal_43d_clear_puresky_1k.hdr';
+const sharedHdrPath = '/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr';
 const directory='vehicle-preview-results';await mkdir(directory,{recursive:true});
 const baseUrl=process.env.PREVIEW_BASE_URL||'http://127.0.0.1:4175';
 const server=process.env.PREVIEW_BASE_URL?null:spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4175'},stdio:'inherit'});

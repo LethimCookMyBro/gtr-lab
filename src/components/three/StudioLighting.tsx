@@ -10,6 +10,7 @@ import { useEnvironment } from "@react-three/drei/core/useEnvironment";
 import { useTexture } from "@react-three/drei/core/Texture";
 import { StageGeometry } from "./StageGeometry";
 import { RoadsideRocks } from "./RoadsideRocks";
+import { CoastalWater } from "./CoastalWater";
 import type { RoadsideRockInstance } from "./RoadsideRocks";
 import { createVenue, setVenueInspectionCutaway } from "./venueGeometry";
 import type { SurfaceTextures } from "./venueGeometry";
@@ -39,7 +40,7 @@ const COAST_ROCKS: RoadsideRockInstance[] = [
 ];
 const PADDOCK_ROCKS: RoadsideRockInstance[] = [];
 
-const SKY = "/environments/kloofendal_43d_clear_puresky_1k.hdr";
+const SKY = "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr";
 
 /** The selectable scenes are actual metre-scaled geometry, not a panorama projection. */
 export function StudioLighting({
@@ -66,8 +67,12 @@ export function StudioLighting({
   const reflection = useMemo(() => {
     const copy = venue.group.clone(true);
     copy.position.y = -0.8;
+    const proxy = copy.getObjectByName("ocean");
+    if (proxy) proxy.visible = true;
     return copy;
   }, [venue]);
+  const visibleOcean = venue.group.getObjectByName("ocean");
+  if (visibleOcean) visibleOcean.visible = false;
   useEffect(() => () => venue.dispose(), [venue]);
   useFrame(({ camera }) =>
     setVenueInspectionCutaway(venue.group, camera.position.y),
@@ -86,11 +91,11 @@ export function StudioLighting({
         <>
           <color attach="background" args={[night ? "#0e1520" : "#a6b8c5"]} />
           <fog attach="fog" args={[night ? "#0e1520" : "#a6b8c5", 35, 115]} />
-          <ambientLight intensity={night ? 0.075 : 0.16} />
+          <ambientLight intensity={night ? 0.12 : 0.26} />
           <hemisphereLight
             color="#dbe4ec"
             groundColor="#515052"
-            intensity={night ? 0.12 : 0.32}
+            intensity={night ? 0.2 : 0.5}
           />
           <directionalLight
             position={[-9, 9, -4]}
@@ -105,11 +110,12 @@ export function StudioLighting({
             shadow-camera-far={65}
             shadow-bias={-0.00018}
             shadow-normalBias={0.025}
+            shadow-radius={3}
             onUpdate={(light) => light.shadow.camera.layers.enable(2)}
           />
           <directionalLight
-            position={[4, 5, -6]}
-            intensity={night ? 0.16 : 0.42}
+            position={[5, 4, 7]}
+            intensity={night ? 0.28 : 0.9}
             color="#d8e5f3"
           />
           {[-1, 1].map((side) => (
@@ -127,10 +133,10 @@ export function StudioLighting({
             key={`interior-${environment}`}
             resolution={256}
             frames={1}
-            environmentIntensity={night ? 0.7 : 0.85}
+            environmentIntensity={night ? 0.82 : 1.0}
           >
             <color attach="background" args={[night ? "#14191e" : "#75828b"]} />
-            <ambientLight intensity={night ? 0.1 : 0.35} />
+            <ambientLight intensity={night ? 0.14 : 0.45} />
             <directionalLight
               position={[-9, 9, -4]}
               intensity={night ? 0.38 : 2.2}
@@ -170,6 +176,7 @@ export function StudioLighting({
       )}
       <StageGeometry>
         <primitive object={venue.group} dispose={null} />
+        {environment === "coast" && <CoastalWater />}
         {environment === "coast" && (
           <RoadsideRocks
             instances={environment === "coast" ? COAST_ROCKS : PADDOCK_ROCKS}
@@ -220,7 +227,7 @@ function OutdoorLight({
           groundColor="#646357"
         />
         <directionalLight
-          position={[43, 49.2, 31]}
+          position={[41.56, 54.93, 28.14]}
           intensity={3.4}
           color="#fff7e8"
         />
@@ -233,9 +240,9 @@ function OutdoorLight({
       </Environment>
       <fog attach="fog" args={["#bbd0de", 180, 620]} />
       <hemisphereLight intensity={0.5} color="#dbeaf3" groundColor="#646357" />
-      {/* Aligned to the actual sun in the CC0 sky map (u≈0.60, v≈0.74). */}
+      {/* Aligned to the actual sun in the CC0 sky map (u≈0.595, v≈0.767). */}
       <directionalLight
-        position={[43, 50, 31]}
+        position={[41.56, 55.73, 28.14]}
         intensity={3.4}
         color="#fff7e8"
         castShadow

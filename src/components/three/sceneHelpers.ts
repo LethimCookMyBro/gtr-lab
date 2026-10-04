@@ -147,7 +147,7 @@ export function environmentAsset(
 ): string | null {
   void lowResolution;
   return environment === "forest" || environment === "coast"
-    ? "/environments/kloofendal_43d_clear_puresky_1k.hdr"
+    ? "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr"
     : null;
 }
 

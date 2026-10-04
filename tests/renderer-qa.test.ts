@@ -87,7 +87,7 @@ describe("isolated renderer surface assets", () => {
   it("copies only hash-verified surface JPGs, leaving HDR and catalog assets unavailable", async () => {
     const { source, destination } = await surfaceFixture();
     await writeFile(
-      join(source, "kloofendal_43d_clear_puresky_1k.hdr"),
+      join(source, "kloofendal_48d_partly_cloudy_puresky_2k.hdr"),
       "must not be copied",
     );
     await writeFile(join(source, "vehicle.glb"), "must not be copied");

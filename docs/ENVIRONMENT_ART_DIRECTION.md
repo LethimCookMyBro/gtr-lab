@@ -30,9 +30,7 @@ The test paddock uses a five-bay pit building and real lane/parking/curb structu
 The coastal pull-off bends into the distance with a narrower marked road, an
 engineered shoulder and supporting sea wall. Sea lies behind the default hero
 view; low distant terrain replaces the first rejected faceted hill ramp. Actual
-CC0 rock scans supply nearby irregular silhouettes. The sky is an unprojected,
-real sky-only HDR. The water surface uses a static original small-wave normal
-field, not a photograph masquerading as geometry.
+CC0 rock scans supply nearby irregular silhouettes. The sky is an unprojected, partly-cloudy real sky-only HDR. The water surface uses a static original multi-scale wave normal field, Fresnel and a live planar reflection of the real scene, not a photograph masquerading as geometry.
 
 The camera now has an 11m clear envelope, with portrait field-of-view compensation
 so rooms can have credible scale. Far clip remains sufficient for the true sea

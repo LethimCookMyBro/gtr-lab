@@ -57,7 +57,7 @@ describe("pinned environment downloads", () => {
       ),
     );
     expect(validateManifest(manifest)).toHaveLength(1);
-    expect(manifest[0].id).toBe("kloofendal_43d_clear_puresky");
+    expect(manifest[0].id).toBe("kloofendal_48d_partly_cloudy_puresky");
     expect(() => validateAsset(payload, entry)).not.toThrow();
   });
   it.each([

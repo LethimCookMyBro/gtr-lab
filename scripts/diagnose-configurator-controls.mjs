@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
-const sharedHdrPath = '/environments/kloofendal_43d_clear_puresky_1k.hdr';
+const sharedHdrPath = '/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr';
 const directory = process.env.CONTROLS_OUTPUT || 'configurator-controls-results';
 const baseURL = process.env.CONTROLS_URL || 'http://127.0.0.1:4178';
 await mkdir(directory, { recursive: true });
@@ -40,7 +40,12 @@ try {
         return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.75)) < 0.02;
       }, {}, { timeout: 15000 });
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      const bytes = await canvas.screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000 });
+      const bounds = await canvas.boundingBox();
+      assert(bounds && bounds.width > 200 && bounds.height > 200, 'Viewer is missing or collapsed');
+      assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= viewport.width && bounds.y + bounds.height <= viewport.height, 'Viewer canvas must be fully visible for pixel comparison');
+      // Read the verified canvas rectangle without locator scrolling/stability waits.
+      // This preserves actual rotation pixels instead of freezing the renderer to capture them.
+      const bytes = await page.screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000, clip: bounds });
       return createHash('sha256').update(bytes).digest('hex');
     };
     const pause = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));

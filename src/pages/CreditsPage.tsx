@@ -54,10 +54,10 @@ export function CreditsPage() {
             · Rob Tuytel
           </li>
           <li>
-            <a href="https://polyhaven.com/a/kloofendal_43d_clear_puresky">
-              Kloofendal 43d Clear (Pure Sky)
+            <a href="https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky">
+              Kloofendal 48d Partly Cloudy (Pure Sky)
             </a>{" "}
-            · Greg Zaal
+            · Greg Zaal and Jarod Guest
           </li>
         </ul>
         <p>

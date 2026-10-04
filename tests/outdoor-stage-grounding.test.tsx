@@ -86,6 +86,9 @@ vi.mock("../src/components/three/StageGeometry", () => ({
 vi.mock("@react-three/drei/core/useEnvironment", () => ({
   useEnvironment: () => runtime.texture,
 }));
+vi.mock("../src/components/three/CoastalWater", () => ({
+  CoastalWater: () => null,
+}));
 vi.mock("../src/components/three/RoadsideRocks", () => ({
   RoadsideRocks: () => null,
   clearRoadsideRocks: () => {},
@@ -357,4 +360,20 @@ it("aligns all coastal strip markings with the positive road-curve tangent", () 
     expect(rotations.some((value) => value > 0.05)).toBe(true);
     expect(rotations.every((value) => value >= 0)).toBe(true);
   }
+});
+
+it("varies asphalt albedo and roughness in metre-scale world space", () => {
+  render(<StudioLighting environment="forest" reducedMotion />);
+  const floor = runtime.venue.getObjectByName("driving-surface") as Mesh;
+  const shader = {
+    vertexShader: "#include <worldpos_vertex>",
+    fragmentShader: "#include <map_fragment>\n#include <roughnessmap_fragment>",
+  };
+  (floor.material as MeshStandardMaterial).onBeforeCompile(
+    shader as any,
+    {} as any,
+  );
+  expect(shader.vertexShader).toContain("vVenuePosition");
+  expect(shader.fragmentShader).toContain("venueNoise");
+  expect(shader.fragmentShader).toContain("roughnessFactor = clamp");
 });
