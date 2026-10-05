@@ -151,3 +151,11 @@ it("places the shadow receiver above its floor and within millimetres of the nor
   expect(runtime.floorY).toBeGreaterThanOrEqual(-0.005);
   expect(runtime.contact.frames).toBe(1);
 });
+
+it("retains a high-resolution tight contact shadow instead of a broad floating blur", () => {
+  expect(runtime.contact.resolution).toBeGreaterThanOrEqual(512);
+  expect(runtime.contact.blur).toBeLessThanOrEqual(0.85);
+  expect(runtime.contact.opacity).toBeGreaterThanOrEqual(0.85);
+  expect(runtime.contact.far).toBeLessThanOrEqual(1.8);
+  expect(runtime.asset.position).toEqual([0, 0, 0]);
+});

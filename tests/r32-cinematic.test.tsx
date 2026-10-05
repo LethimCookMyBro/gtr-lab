@@ -8,7 +8,7 @@ import * as motion from "../src/components/home/motion";
 afterEach(cleanup);
 
 describe("R32 competition composition", () => {
-  it("leads with real racing evidence without implying the Australian photograph is a Japanese race", () => {
+  it("retains real racing evidence in details without implying the Australian photograph is a Japanese race", () => {
     const { container } = render(
       <MemoryRouter>
         <HeritageJourney
@@ -19,27 +19,27 @@ describe("R32 competition composition", () => {
       </MemoryRouter>,
     );
     const r32 = container.querySelector<HTMLElement>('[data-era-image="1"]')!;
-    const lead = r32.querySelector<HTMLElement>(".home-archive-image")!;
-    expect(within(lead).getByRole("img").getAttribute("alt")).toContain(
-      "Oran Park in Australia",
-    );
+    const lead = r32.querySelector<HTMLElement>("details figure:nth-child(2)")!;
+    expect(
+      within(lead).getByRole("img", { hidden: true }).getAttribute("alt"),
+    ).toContain("Oran Park in Australia");
     expect(lead.textContent).toContain("21 June 1992");
     expect(r32.textContent).toContain(
       "Japanese Touring Car Championship · 1990–1993",
     );
     expect(
       within(r32)
-        .getByRole("link", { name: "R32 milestone source" })
+        .getByRole("link", { name: "Historical source", hidden: true })
         .getAttribute("href"),
     ).toBe(
       "https://www.nissan-global.com/EN/HERITAGE_COLLECTION/249_skyline_gt-r.html",
     );
-    expect(r32.querySelectorAll("figure")).toHaveLength(3);
-    expect(container.querySelectorAll("#home-heritage figure")).toHaveLength(
-      12,
-    );
+    expect(r32.querySelectorAll("details figure")).toHaveLength(3);
+    expect(
+      container.querySelectorAll("#home-heritage details figure"),
+    ).toHaveLength(12);
     expect(within(r32).getByRole("heading").textContent).toMatch(
-      /29 races.*No defeats/s,
+      /The legend returns/,
     );
   });
 });
@@ -61,7 +61,7 @@ it("moves reading focus to chapters without a giant destination frame while pres
       />
     </MemoryRouter>,
   );
-  const chapter = container.querySelector<HTMLElement>(".home-archive-r32")!;
+  const chapter = container.querySelector<HTMLElement>('[data-era-image="1"]')!;
   chapter.focus();
   try {
     expect(document.activeElement).toBe(chapter);

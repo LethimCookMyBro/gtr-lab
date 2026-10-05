@@ -103,3 +103,14 @@ export function exhibitionMotionAt(progress: number) {
     exitShift: exit === 0 ? 0 : -28 * exit,
   };
 }
+
+/** Distance from the reading center in viewport units, symmetric on reverse scroll. */
+export function timelineMotionAt(distance: number) {
+  const t = clamp01((Math.abs(distance) - 0.18) / 0.72);
+  const recession = t * t * (3 - 2 * t);
+  return {
+    opacity: 1 - recession * 0.58,
+    blur: recession * 3,
+    scale: 1 - recession * 0.035,
+  };
+}

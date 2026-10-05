@@ -108,7 +108,7 @@ async function scrollProgress(
 }
 
 const archiveNames = [
-  "1969: Skyline GT-R",
+  "1969: PGC10 Skyline GT-R",
   "1989: R32 GT-R",
   "1999: R34 GT-R",
   "2007: R35 GT-R",
@@ -120,29 +120,13 @@ function archiveChapter(page: Page, index: number) {
 
 async function archiveChapterDestination(page: Page, index: number) {
   return archiveChapter(page, index).evaluate((chapter) => {
-    const rail = chapter
-      .closest("#home-heritage")!
-      .querySelector<HTMLElement>(".home-archive-stage")!;
-    const padding = Number.parseFloat(
-      getComputedStyle(document.documentElement).scrollPaddingTop,
-    );
-    const stage = chapter.querySelector<HTMLElement>(".home-r32-stage");
-    if (stage && getComputedStyle(stage).position === "sticky") {
-      return (
-        scrollY +
-        chapter.getBoundingClientRect().top -
-        150 +
-        (chapter.getBoundingClientRect().height - stage.offsetHeight - 52) *
-          0.65
-      );
-    }
+    const padding =
+      Number.parseFloat(
+        getComputedStyle(document.documentElement).scrollPaddingTop,
+      ) || 88;
     return Math.max(
       0,
-      scrollY +
-        chapter.getBoundingClientRect().top -
-        padding -
-        rail.offsetHeight -
-        16,
+      scrollY + chapter.getBoundingClientRect().top - padding - 24,
     );
   });
 }
@@ -162,69 +146,45 @@ async function scrollArchiveChapter(page: Page, index: number) {
   ).toHaveAttribute("aria-current", "step");
 }
 
-async function expectArchiveControlsInView(page: Page, index: number) {
-  // Read the requested chapter, independently of whichever era the rail claims.
+async function expectArchiveArrivalInView(page: Page, index: number) {
   const chapter = archiveChapter(page, index);
-  const heading = chapter.locator(".home-archive-inline-copy h3");
-  for (const element of [heading, page.locator(".home-archive-navigation")]) {
-    await expect(element).toBeInViewport({ ratio: 1 });
-    const rect = (await element.boundingBox())!;
-    expect(rect.y).toBeGreaterThanOrEqual(-1);
-    expect(rect.y + rect.height).toBeLessThanOrEqual(
-      page.viewportSize()!.height + 1,
-    );
-  }
-  const rail = await page
-    .locator(".home-archive-stage")
-    .evaluate((element) => ({
-      position: getComputedStyle(element).position,
-      top: Number.parseFloat(getComputedStyle(element).top),
-      y: element.getBoundingClientRect().top,
-      bottom: element.getBoundingClientRect().bottom,
-      height: element.getBoundingClientRect().height,
-      scrollPadding: Number.parseFloat(
-        getComputedStyle(document.documentElement).scrollPaddingTop,
-      ),
-    }));
-  expect(rail.position).toBe("sticky");
-  expect(rail.height).toBeGreaterThanOrEqual(44);
-  expect(rail.height).toBeLessThanOrEqual(100);
-  if (index === 0) {
-    // The first chapter can arrive before the index reaches its sticky edge.
-    expect(rail.y).toBeGreaterThanOrEqual(rail.top - 2);
-    expect(rail.y).toBeLessThanOrEqual(rail.scrollPadding + 18);
-  } else {
-    expect(Math.abs(rail.y - rail.top)).toBeLessThanOrEqual(2);
-  }
-  expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(
-    rail.bottom + 8,
+  const heading = chapter.locator(".home-timeline-caption h3");
+  // The selected year and lead image arrive first. The caption remains native
+  // document content and can be read below the photograph on short screens.
+  await expect(chapter.locator(".home-archive-year")).toBeInViewport({
+    ratio: 1,
+  });
+  await expect(chapter.locator(".home-timeline-image")).toBeInViewport();
+  await expect(page.locator(".home-archive-navigation")).toHaveCSS(
+    "position",
+    "static",
   );
-  // Native wheel input and deferred image sizing do not promise a two-pixel
-  // coordinate. Keep the actual acceptance contract: settled input (at caller),
-  // the right chapter, a wholly visible heading below the rail, and real photos.
+  await expect(page.locator(".home-archive-intro")).not.toHaveCSS(
+    "position",
+    "sticky",
+  );
+  await expect(chapter).toHaveCSS("position", "relative");
+  await expect(chapter.locator(".home-timeline-panel")).toHaveCSS(
+    "position",
+    "relative",
+  );
   await expect(page.locator("#home-heritage")).toHaveAttribute(
     "data-active-era",
     String(index),
   );
-  await expect
-    .poll(
-      () =>
-        chapter
-          .locator("img")
-          .evaluateAll((nodes) =>
-            (nodes as HTMLImageElement[]).every(
-              (image) => image.complete && image.naturalWidth > 0,
-            ),
-          ),
-      { timeout: 15000 },
-    )
-    .toBe(true);
-  await chapter.locator("img").evaluateAll(async (nodes) => {
-    await Promise.all(
-      (nodes as HTMLImageElement[]).map((image) => image.decode()),
-    );
-    await new Promise(requestAnimationFrame);
-  });
+  await expectArchiveImagesDecoded(page, index);
+  await heading.scrollIntoViewIfNeeded();
+  await settleNativeScroll(
+    page,
+    test.info(),
+    `archive-caption-settled-${index}`,
+  );
+  await expect(heading).toBeInViewport({ ratio: 1 });
+  await expect(heading).toHaveCSS("opacity", "1");
+  await expect(chapter.locator(".home-timeline-caption")).toHaveCSS(
+    "opacity",
+    "1",
+  );
   const arrival = await heading.evaluate((node) => {
     const box = node.getBoundingClientRect();
     const hit = document.elementFromPoint(
@@ -242,171 +202,125 @@ async function expectArchiveControlsInView(page: Page, index: number) {
     arrival.uncovered,
     "the selected story heading must not be covered",
   ).toBe(true);
-  await expect(heading).toBeInViewport({ ratio: 1 });
-  expect(arrival.top).toBeGreaterThanOrEqual(rail.bottom + 8);
   await test.info().attach(`archive-readable-arrival-${index}`, {
-    body: JSON.stringify(
-      {
-        index,
-        arrival,
-        rail,
-        landingOffset:
-          arrival.scrollY - (await archiveChapterDestination(page, index)),
-      },
-      null,
-      2,
-    ),
+    body: JSON.stringify({ index, arrival }, null, 2),
     contentType: "application/json",
   });
 }
 
-async function expectArchiveSpreadLayout(page: Page, index: number) {
+async function expectArchivePanelLayout(page: Page, index: number) {
   const chapter = archiveChapter(page, index);
-  await expect(chapter.locator(".home-archive-inline-copy h3")).toHaveText(
-    /\S/,
+  const panel = chapter.locator(".home-timeline-panel");
+  await expect(panel).toHaveCount(1);
+  await expect(panel).toHaveAttribute(
+    "data-side",
+    index % 2 ? "right" : "left",
   );
-  await expect(chapter.locator(".home-archive-description")).toHaveText(/\S/);
-  await expect(chapter.locator(".home-archive-achievement")).toHaveText(/\S/);
-  await expect(chapter.locator(".home-archive-image")).toHaveCount(1);
-  await expect(chapter.locator("figure")).toHaveCount(3);
-  await expect(chapter.locator("figure img")).toHaveCount(3);
-  await expect(chapter.locator("figure figcaption")).toHaveCount(3);
+  await expect(chapter.locator(".home-timeline-caption h3")).toHaveText(/\S/);
+  await expect(chapter.locator(".home-timeline-caption > p")).toHaveCount(1);
+  await expect(chapter.locator(".home-timeline-caption > p")).toHaveText(/\S/);
+  await expect(chapter.locator(".home-timeline-image img")).toHaveCount(1);
+  await expect(chapter.locator("figure:visible")).toHaveCount(1);
+  await expect(chapter.locator(".home-timeline-details")).not.toHaveAttribute(
+    "open",
+    "",
+  );
+  await expect(chapter.locator(".home-timeline-evidence figure")).toHaveCount(
+    3,
+  );
+  await expect(chapter.locator(".home-timeline-evidence")).not.toBeVisible();
   const geometry = await chapter.evaluate((element) => {
     const bounds = element.getBoundingClientRect();
-    const content = [
-      ...element.querySelectorAll(".home-archive-inline-copy, figure"),
-    ].map((node) => {
-      const rect = node.getBoundingClientRect();
-      return {
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        width: rect.width,
-        height: rect.height,
-      };
-    });
-    const captions = [...element.querySelectorAll("figure")].map((figure) => {
-      const image = figure.querySelector("img")!;
-      const caption = figure.querySelector("figcaption")!;
-      const imageRect = image.getBoundingClientRect();
-      const captionRect = caption.getBoundingClientRect();
-      return {
-        text: caption.textContent?.trim(),
-        alt: image.alt.trim(),
-        gap: captionRect.top - imageRect.bottom,
-        captionLeft: captionRect.left,
-        captionRight: captionRect.right,
-        imageLeft: imageRect.left,
-        imageRight: imageRect.right,
-      };
-    });
+    const panel = element.querySelector<HTMLElement>(".home-timeline-panel")!;
+    const panelBounds = panel.getBoundingClientRect();
+    const image = element.querySelector<HTMLElement>(".home-timeline-image")!;
+    const imageBounds = image.getBoundingClientRect();
+    const caption = element.querySelector<HTMLElement>(
+      ".home-timeline-caption",
+    )!;
+    const captionBounds = caption.getBoundingClientRect();
+    const details = element.querySelector<HTMLElement>(
+      ".home-timeline-details",
+    )!;
+    const year = element.querySelector<HTMLElement>(".home-archive-year")!;
+    const yearBounds = year.getBoundingClientRect();
     return {
       left: bounds.left,
       right: bounds.right,
       top: bounds.top,
       bottom: bounds.bottom,
+      panelLeft: panelBounds.left,
+      panelRight: panelBounds.right,
+      panelWidth: panelBounds.width,
+      chapterWidth: bounds.width,
+      chapterHeight: bounds.height,
+      panelHeight: panelBounds.height,
+      image: {
+        left: imageBounds.left,
+        right: imageBounds.right,
+        top: imageBounds.top,
+        bottom: imageBounds.bottom,
+      },
+      caption: {
+        left: captionBounds.left,
+        right: captionBounds.right,
+        top: captionBounds.top,
+        bottom: captionBounds.bottom,
+      },
+      detailsTop: details.getBoundingClientRect().top,
+      yearCenter: yearBounds.left + yearBounds.width / 2,
+      axisCenter: bounds.left + bounds.width / 2,
+      yearFontSize: Number.parseFloat(getComputedStyle(year).fontSize),
       width: innerWidth,
-      viewport: innerHeight,
-      score: Number(
-        (element as HTMLElement).style.getPropertyValue("--r32-progress"),
-      ),
-      pinned: element.querySelector(".home-r32-stage")
-        ? getComputedStyle(element.querySelector(".home-r32-stage")!)
-            .position === "sticky"
-        : false,
-      content,
-      captions,
     };
   });
-  for (const box of geometry.content) {
-    expect(box.width).toBeGreaterThan(0);
-    expect(box.height).toBeGreaterThan(0);
-    expect(box.left).toBeGreaterThanOrEqual(Math.max(0, geometry.left) - 1);
-    expect(box.right).toBeLessThanOrEqual(
-      Math.min(geometry.width, geometry.right) + 1,
-    );
-    expect(box.top).toBeGreaterThanOrEqual(geometry.top - 1);
-    expect(box.bottom).toBeLessThanOrEqual(geometry.bottom + 1);
+  expect(geometry.yearCenter).toBeCloseTo(geometry.axisCenter, 0);
+  expect(geometry.yearFontSize).toBeLessThanOrEqual(18);
+  expect(geometry.yearFontSize).toBeGreaterThanOrEqual(12);
+  expect(geometry.panelWidth / geometry.chapterWidth).toBeCloseTo(
+    geometry.width <= 700 ? 0.95 : 0.59,
+    2,
+  );
+  if (index % 2) expect(geometry.panelRight).toBeCloseTo(geometry.right, 0);
+  else expect(geometry.panelLeft).toBeCloseTo(geometry.left, 0);
+  for (const box of [geometry.image, geometry.caption]) {
+    expect(box.right - box.left).toBeGreaterThan(0);
+    expect(box.bottom - box.top).toBeGreaterThan(0);
+    expect(box.left).toBeGreaterThanOrEqual(-1);
+    expect(box.right).toBeLessThanOrEqual(geometry.width + 1);
+    expect(box.top).toBeGreaterThanOrEqual(geometry.top);
+    expect(box.bottom).toBeLessThanOrEqual(geometry.bottom);
   }
-  for (let left = 0; left < geometry.content.length; left++) {
-    for (const right of geometry.content.slice(left + 1)) {
-      const box = geometry.content[left];
-      const overlapWidth =
-        Math.min(box.right, right.right) - Math.max(box.left, right.left);
-      const overlapHeight =
-        Math.min(box.bottom, right.bottom) - Math.max(box.top, right.top);
-      expect(
-        overlapWidth > 1 && overlapHeight > 1,
-        "chapter copy and photographs must not overlap",
-      ).toBe(false);
-    }
-  }
-  // Merge occupied vertical bands so a tall artificial runway between real
-  // content is caught even when the chapter's first and last items are flush.
-  const bands = [...geometry.content].sort((a, b) => a.top - b.top);
-  let occupiedBottom = bands[0].bottom;
-  for (const band of bands.slice(1)) {
-    expect(band.top - occupiedBottom).toBeLessThanOrEqual(160);
-    occupiedBottom = Math.max(occupiedBottom, band.bottom);
-  }
-  if (geometry.pinned) {
-    // Each era has a bounded native sticky score. Its complete reading
-    // composition must fit the viewport without overlapping objects.
-    expect(geometry.bottom - geometry.top).toBeLessThan(geometry.viewport * 2);
-    if (geometry.score >= 0.6 && geometry.score <= 0.84) {
-      expect(
-        Math.min(...geometry.content.map((box) => box.top)),
-      ).toBeGreaterThan(130);
-      expect(
-        Math.max(...geometry.content.map((box) => box.bottom)),
-      ).toBeLessThanOrEqual(geometry.viewport);
-    }
-  } else {
-    expect(
-      Math.min(...geometry.content.map((box) => box.top)) - geometry.top,
-    ).toBeLessThanOrEqual(160);
-    expect(
-      geometry.bottom - Math.max(...geometry.content.map((box) => box.bottom)),
-    ).toBeLessThanOrEqual(160);
-  }
-  for (const caption of geometry.captions) {
-    expect(caption.text).toMatch(/\S/);
-    expect(caption.alt).toMatch(/\S/);
-    expect(caption.gap).toBeGreaterThanOrEqual(-1);
-    expect(caption.gap).toBeLessThanOrEqual(28);
-    expect(caption.captionLeft).toBeGreaterThanOrEqual(geometry.left - 1);
-    expect(caption.captionRight).toBeLessThanOrEqual(geometry.right + 1);
-  }
+  expect(geometry.caption.top - geometry.image.bottom).toBeGreaterThanOrEqual(
+    0,
+  );
+  expect(geometry.caption.top - geometry.image.bottom).toBeLessThanOrEqual(48);
+  expect(geometry.detailsTop).toBeGreaterThanOrEqual(geometry.caption.bottom);
+  // Only the factual year and modest breathing room precede/follow the panel.
+  // A synthetic sticky runway would violate this natural content-height bound.
+  expect(geometry.chapterHeight - geometry.panelHeight).toBeLessThanOrEqual(
+    180,
+  );
 }
 
 async function expectArchiveImagesDecoded(page: Page, index: number) {
-  for (const image of await archiveChapter(page, index)
-    .locator("figure img")
-    .all()) {
-    await image.scrollIntoViewIfNeeded();
-    await expect
-      .poll(() =>
+  const image = archiveChapter(page, index).locator(".home-timeline-image img");
+  await expect
+    .poll(
+      () =>
         image.evaluate((element) => {
           const img = element as HTMLImageElement;
           return img.complete && img.naturalWidth > 0 && img.naturalHeight > 0;
         }),
-      )
-      .toBe(true);
-    const dimensions = await image.evaluate(async (element) => {
-      const img = element as HTMLImageElement;
-      await img.decode();
-      const rect = img.getBoundingClientRect();
-      return {
-        renderedRatio: rect.width / rect.height,
-        naturalRatio: img.naturalWidth / img.naturalHeight,
-      };
-    });
-    expect(
-      Math.abs(dimensions.renderedRatio - dimensions.naturalRatio),
-    ).toBeLessThan(0.03);
-  }
-  await scrollArchiveChapter(page, index);
+      { timeout: 15000 },
+    )
+    .toBe(true);
+  await image.evaluate((element) => (element as HTMLImageElement).decode());
+  // Bounded height with object-fit:contain preserves the entire original photo,
+  // even when the element's box has a different ratio from its decoded source.
+  await expect(image).toHaveCSS("object-fit", "contain");
+  await expect(image).toHaveCSS("clip-path", "none");
+  await expect(image).toHaveAttribute("alt", /\S/);
 }
 
 async function expectCompactArchiveFlow(page: Page) {
@@ -449,11 +363,11 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     expect(media!.width).toBeCloseTo(page.viewportSize()!.width, 0);
     expect(media!.height).toBeCloseTo((page.viewportSize()!.width * 9) / 16, 0);
     expect(media!.y).toBeGreaterThanOrEqual(70);
-    if (page.viewportSize()!.height >= 700) {
-      const copy = await page.locator(".home-hero-copy").boundingBox();
-      expect(copy!.y - (media!.y + media!.height)).toBeGreaterThanOrEqual(20);
-      expect(copy!.y - (media!.y + media!.height)).toBeLessThanOrEqual(40);
-    }
+    const copy = (await page.locator(".home-hero-copy").boundingBox())!;
+    expect(copy.y).toBeGreaterThanOrEqual(0);
+    expect(copy.y + copy.height).toBeLessThanOrEqual(
+      page.viewportSize()!.height,
+    );
     const credit = page.locator(".home-film--hero .home-film-credit");
     const creditBox = await credit.boundingBox();
     expect(creditBox!.height).toBeGreaterThanOrEqual(44);
@@ -469,15 +383,32 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     const media = (await page
       .locator(".home-film--hero iframe")
       .boundingBox())!;
-    expect(media.x).toBeCloseTo(0, 0);
-    expect(media.width).toBeCloseTo(page.viewportSize()!.width, 0);
+    expect(media.x).toBeGreaterThanOrEqual(-1);
+    expect(media.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+    expect(media.x + media.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width + 1,
+    );
     expect(media.height).toBeCloseTo((media.width * 9) / 16, 0);
+    expect(media.y).toBeGreaterThanOrEqual(0);
+    expect(media.y + media.height).toBeLessThanOrEqual(
+      page.viewportSize()!.height,
+    );
     const copy = (await page.locator(".home-hero-copy").boundingBox())!;
     expect(copy.x).toBeGreaterThan(20);
     expect(copy.y + copy.height).toBeLessThanOrEqual(
       page.viewportSize()!.height,
     );
   }
+  await expect(page.locator(".home-film--hero .home-film-provider")).toHaveCSS(
+    "opacity",
+    "1",
+  );
+  await expect(
+    page.locator(".home-film--hero .home-film-controls"),
+  ).toBeInViewport({ ratio: 1 });
+  await expect(
+    page.locator(".home-film--hero .home-film-toggle:not(.home-film-retry)"),
+  ).toBeInViewport({ ratio: 1 });
   await page.screenshot({
     animations: "disabled",
     path: info.outputPath("01-home-hero.png"),
@@ -551,16 +482,45 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   if ((page.viewportSize()?.width || 0) <= 700) {
     const credit = page.locator(".home-film--detail .home-film-credit");
     const creditBox = await credit.boundingBox();
-    const toggleBox = await page
-      .locator(".home-film--detail .home-film-toggle")
-      .boundingBox();
-    expect(creditBox!.height).toBeGreaterThanOrEqual(44);
-    expect(creditBox!.x).toBeGreaterThanOrEqual(
-      toggleBox!.x + toggleBox!.width + 4,
-    );
-    expect(creditBox!.x + creditBox!.width).toBeLessThanOrEqual(
-      initial!.x + initial!.width - 12,
-    );
+    const film = page.locator(".home-film--detail");
+    const stop = film.getByRole("button", {
+      name: "Stop detail film",
+      exact: true,
+    });
+    const retry = film.getByRole("button", {
+      name: "Retry detail film",
+      exact: true,
+    });
+    await expect(stop).toBeVisible();
+    await expect(retry).toBeVisible();
+    const controlBoxes = [
+      creditBox!,
+      (await stop.boundingBox())!,
+      (await retry.boundingBox())!,
+    ];
+    for (const [index, box] of controlBoxes.entries()) {
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x).toBeGreaterThanOrEqual(initial!.x + 12);
+      expect(box.x + box.width).toBeLessThanOrEqual(
+        initial!.x + initial!.width - 12,
+      );
+      expect(box.y).toBeGreaterThanOrEqual(initial!.y);
+      expect(box.y + box.height).toBeLessThanOrEqual(
+        initial!.y + initial!.height,
+      );
+      for (const other of controlBoxes.slice(index + 1)) {
+        const overlapX =
+          Math.min(box.x + box.width, other.x + other.width) -
+          Math.max(box.x, other.x);
+        const overlapY =
+          Math.min(box.y + box.height, other.y + other.height) -
+          Math.max(box.y, other.y);
+        expect(
+          overlapX > 1 && overlapY > 1,
+          "film actions and credits do not overlap in either row",
+        ).toBe(false);
+      }
+    }
     expect(
       await credit.evaluate((element) =>
         Number.parseFloat(getComputedStyle(element).fontSize),
@@ -585,7 +545,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   expect(expanded!.width).toBeGreaterThan(middle!.width);
   expect(expanded!.width).toBeCloseTo(page.viewportSize()!.width, 0);
   if (page.viewportSize()!.width <= 767) {
-    expect(expanded!.height).toBeCloseTo((expanded!.width * 9) / 16 + 76, 0);
+    expect(expanded!.height).toBeCloseTo((expanded!.width * 9) / 16 + 132, 0);
     const player = await page
       .locator(".home-film--detail iframe")
       .boundingBox();
@@ -614,12 +574,11 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   for (const index of [0, 1, 2, 3]) {
     await scrollArchiveChapter(page, index);
     await expectArchiveImagesDecoded(page, index);
-    await expectArchiveControlsInView(page, index);
-    await expectArchiveSpreadLayout(page, index);
-    const image = archiveChapter(page, index).locator(".home-archive-image");
+    await expectArchiveArrivalInView(page, index);
+    await expectArchivePanelLayout(page, index);
+    const image = archiveChapter(page, index).locator(".home-timeline-image");
     const bounds = (await image.boundingBox())!;
-    // The framed exhibition is capped at1480px on wide displays; compare the
-    // lead object with its actual exhibition width, not the whole monitor.
+    // The timeline has a bounded reading width on wide displays.
     const chapterBounds = (await archiveChapter(page, index).boundingBox())!;
     expect(bounds.width).toBeGreaterThanOrEqual(
       page.viewportSize()!.width <= 700
@@ -637,7 +596,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     ).toBe("rgb(11, 13, 14)");
     headlines.push(
       await archiveChapter(page, index)
-        .locator(".home-archive-inline-copy h3")
+        .locator(".home-timeline-caption h3")
         .innerText(),
     );
     await page.screenshot({
@@ -651,9 +610,9 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   for (const index of [2, 1, 0]) {
     await scrollArchiveChapter(page, index);
     await expect(
-      archiveChapter(page, index).locator(".home-archive-inline-copy h3"),
+      archiveChapter(page, index).locator(".home-timeline-caption h3"),
     ).toHaveText(headlines[index], { useInnerText: true });
-    await expectArchiveControlsInView(page, index);
+    await expectArchiveArrivalInView(page, index);
   }
   const timeline = page.getByRole("navigation", { name: "GT-R eras" });
   await expect(timeline.getByRole("button")).toHaveCount(4);
@@ -674,7 +633,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     "3",
   );
   await settleNativeScroll(page, info, "archive-last-button-arrival");
-  await expectArchiveControlsInView(page, 3);
+  await expectArchiveArrivalInView(page, 3);
   await expect(archiveChapter(page, 3)).toBeFocused();
   await page
     .getByRole("button", { name: archiveNames[0], exact: true })
@@ -684,7 +643,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     "data-active-era",
     "0",
   );
-  await expectArchiveControlsInView(page, 0);
+  await expectArchiveArrivalInView(page, 0);
   await expect(archiveChapter(page, 0)).toBeFocused();
   await page.screenshot({
     animations: "disabled",
@@ -724,7 +683,10 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     await expect(
       page
         .getByRole("navigation", { name: "Explore all six models" })
-        .getByRole("link", { name: `Explore ${name}`, exact: true }),
+        .getByRole("link", {
+          name: `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
+          exact: true,
+        }),
     ).toHaveAttribute("href", `/configurator/${id}`);
   }
   await page.locator(".home-footer").scrollIntoViewIfNeeded();
@@ -769,9 +731,14 @@ test("reduced motion stays sequential and permits explicit film playback", async
   });
   expect(
     await page
-      .locator(".home-archive-stage")
+      .locator(".home-archive-navigation")
       .evaluate((element) => getComputedStyle(element).position),
-  ).toBe("sticky");
+  ).toBe("static");
+  for (const image of await page.locator(".home-timeline-image").all()) {
+    await expect(image).toHaveCSS("opacity", "1");
+    await expect(image).toHaveCSS("filter", "none");
+    await expect(image).toHaveCSS("transform", "none");
+  }
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,
@@ -996,7 +963,9 @@ test("additional viewport sanity stays within bounds with usable navigation", as
     ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(menu).toBeFocused();
-    await scrollArchiveChapter(page, 1);
+    await page
+      .getByRole("navigation", { name: "GT-R eras" })
+      .scrollIntoViewIfNeeded();
     for (const button of await page
       .getByRole("navigation", { name: "GT-R eras" })
       .getByRole("button")
@@ -1071,7 +1040,7 @@ test("short viewports use reachable sequential targets and keep playback control
       "false",
     );
     const playback = await page
-      .locator(".home-film--hero .home-film-toggle")
+      .locator(".home-film--hero .home-film-toggle:not(.home-film-retry)")
       .boundingBox();
     expect(playback!.y).toBeGreaterThanOrEqual(0);
     expect(playback!.y + playback!.height).toBeLessThanOrEqual(height + 1);
@@ -1082,9 +1051,9 @@ test("short viewports use reachable sequential targets and keep playback control
     });
     expect(
       await page
-        .locator(".home-archive-stage")
+        .locator(".home-archive-navigation")
         .evaluate((element) => getComputedStyle(element).position),
-    ).toBe("sticky");
+    ).toBe("static");
     const era = page.getByRole("button", { name: "2007: R35 GT-R" });
     await era.scrollIntoViewIfNeeded();
     await era.click();
@@ -1097,7 +1066,7 @@ test("short viewports use reachable sequential targets and keep playback control
       info,
       `short-era-arrival-${width}x${height}`,
     );
-    await expectArchiveControlsInView(page, 3);
+    await expectArchiveArrivalInView(page, 3);
     await expect(archiveChapter(page, 3)).toBeFocused();
     expect(
       await page.evaluate(
@@ -1274,33 +1243,29 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
     const headlines: string[] = [];
     for (const index of [0, 1, 2, 3]) {
       await scrollArchiveChapter(page, index);
-      await expectArchiveControlsInView(page, index);
-      await expectArchiveSpreadLayout(page, index);
+      await expectArchiveArrivalInView(page, index);
+      await expectArchivePanelLayout(page, index);
       const chapter = archiveChapter(page, index);
       const bounds = (await chapter
-        .locator(".home-archive-image")
+        .locator(".home-timeline-image")
         .boundingBox())!;
       expect(bounds.width).toBeGreaterThanOrEqual(width * 0.7);
       expect(bounds.x).toBeGreaterThanOrEqual(0);
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(width + 1);
-      const headingRow = (await chapter
-        .locator(".home-archive-heading-row")
+      const caption = (await chapter
+        .locator(".home-timeline-caption")
         .boundingBox())!;
-      expect(
-        bounds.y - headingRow.y - headingRow.height,
-      ).toBeGreaterThanOrEqual(16);
-      expect(bounds.y - headingRow.y - headingRow.height).toBeLessThanOrEqual(
-        80,
-      );
+      expect(caption.y - bounds.y - bounds.height).toBeGreaterThanOrEqual(0);
+      expect(caption.y - bounds.y - bounds.height).toBeLessThanOrEqual(48);
       headlines.push(
-        await chapter.locator(".home-archive-inline-copy h3").innerText(),
+        await chapter.locator(".home-timeline-caption h3").innerText(),
       );
     }
     expect(new Set(headlines).size).toBe(4);
     await expectCompactArchiveFlow(page);
     await scrollArchiveChapter(page, 1);
     await expect(
-      archiveChapter(page, 1).locator(".home-archive-inline-copy h3"),
+      archiveChapter(page, 1).locator(".home-timeline-caption h3"),
     ).toHaveText(headlines[1], { useInnerText: true });
     for (const [index, name] of archiveNames.entries()) {
       const button = page.getByRole("button", { name, exact: true });
@@ -1319,7 +1284,7 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
         info,
         `archive-button-${width}x${height}-${index}`,
       );
-      await expectArchiveControlsInView(page, index);
+      await expectArchiveArrivalInView(page, index);
       await expect(archiveChapter(page, index)).toBeFocused();
     }
     await page.screenshot({
@@ -1339,14 +1304,23 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
   );
   expect(
     await page
-      .locator(".home-archive-stage")
+      .locator(".home-archive-navigation")
       .evaluate((element) => getComputedStyle(element).position),
-  ).toBe("sticky");
+  ).toBe("static");
   for (const chapter of await page.locator(".home-archive-chapter").all()) {
     await expect(chapter.getByRole("heading")).toBeVisible();
-    expect(
-      await chapter.evaluate((element) => getComputedStyle(element).transform),
-    ).toBe("none");
+    await expect(chapter.locator(".home-timeline-image")).toHaveCSS(
+      "transform",
+      "none",
+    );
+    await expect(chapter.locator(".home-timeline-image")).toHaveCSS(
+      "filter",
+      "none",
+    );
+    await expect(chapter.locator(".home-timeline-image")).toHaveCSS(
+      "opacity",
+      "1",
+    );
   }
   for (const image of await page.locator(".home-editorial-image").all()) {
     expect(
@@ -1365,7 +1339,7 @@ test("archive chapters follow native forward and reverse wheel input", async ({
   await continueHomeWithout3D(page);
   await scrollArchiveChapter(page, 0);
   const headline = await archiveChapter(page, 0)
-    .locator(".home-archive-inline-copy h3")
+    .locator(".home-timeline-caption h3")
     .innerText();
   for (const index of [1, 2, 3, 2, 1, 0]) {
     const distance =
@@ -1385,10 +1359,10 @@ test("archive chapters follow native forward and reverse wheel input", async ({
     await expect(
       page.getByRole("button", { name: archiveNames[index], exact: true }),
     ).toHaveAttribute("aria-current", "step");
-    await expectArchiveControlsInView(page, index);
+    await expectArchiveArrivalInView(page, index);
   }
   await expect(
-    archiveChapter(page, 0).locator(".home-archive-inline-copy h3"),
+    archiveChapter(page, 0).locator(".home-timeline-caption h3"),
   ).toHaveText(headline);
 });
 
@@ -1600,7 +1574,9 @@ test("model invitations keep all six cards separated and keyboard reachable", as
       const card = cards.nth(index);
       await expect(card).toBeFocused();
       await expect(card).toHaveAttribute("href", `/configurator/${id}`);
-      await expect(card).toHaveAccessibleName(`Explore ${name}`);
+      await expect(card).toHaveAccessibleName(
+        `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
+      );
       await card.scrollIntoViewIfNeeded();
       await expect
         .poll(() =>
@@ -1654,7 +1630,7 @@ test("model invitations keep all six cards separated and keyboard reachable", as
   }
 });
 
-test("desktop archive captions stay attached and the era rail stays unobscured during scrolling", async ({
+test("desktop timeline keeps readable captions, native navigation and reversible photo focus", async ({
   page,
 }, info) => {
   test.skip(
@@ -1669,6 +1645,23 @@ test("desktop archive captions stay attached and the era rail stays unobscured d
     await page.setViewportSize({ width, height });
     await page.goto("/");
     await continueHomeWithout3D(page);
+    const navigation = page.getByRole("navigation", { name: "GT-R eras" });
+    await navigation.scrollIntoViewIfNeeded();
+    await expect(navigation).toBeInViewport({ ratio: 1 });
+    await expect(navigation).toHaveCSS("position", "static");
+    const hitTargets = await navigation
+      .locator("button")
+      .evaluateAll((buttons) =>
+        buttons.map((button) => {
+          const rect = button.getBoundingClientRect();
+          const hit = document.elementFromPoint(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2,
+          );
+          return hit !== null && (hit === button || button.contains(hit));
+        }),
+      );
+    expect(hitTargets).toEqual([true, true, true, true]);
     for (const index of [0, 1, 2, 3]) {
       const destination = await archiveChapterDestination(page, index);
       for (const offset of [0, 0.22, 0.44]) {
@@ -1679,56 +1672,130 @@ test("desktop archive captions stay attached and the era rail stays unobscured d
         await settleNativeScroll(
           page,
           info,
-          `collision-${width}-${index}-${offset}`,
+          `timeline-flow-${width}-${index}-${offset}`,
         );
-        await expectArchiveSpreadLayout(page, index);
-        // Natural-flow content can pass behind a sticky rail. It must never
-        // paint above its controls or intercept their real pointer targets.
-        const railHitTargets = await page
-          .locator(".home-archive-navigation button")
-          .evaluateAll((buttons) =>
-            buttons.map((button) => {
-              const rect = button.getBoundingClientRect();
-              return [0.2, 0.5, 0.8].every((position) => {
-                const hit = document.elementFromPoint(
-                  rect.left + rect.width * position,
-                  rect.top + rect.height / 2,
-                );
-                return hit !== null && (hit === button || button.contains(hit));
-              });
-            }),
-          );
-        expect(railHitTargets).toEqual([true, true, true, true]);
+        await expectArchivePanelLayout(page, index);
+        if (index > 0 || offset > 0)
+          await expect(navigation).not.toBeInViewport();
       }
     }
-    await scrollArchiveChapter(page, 1);
-    const heading = archiveChapter(page, 1).locator(
-      ".home-archive-inline-copy h3",
+    const chapter = archiveChapter(page, 1);
+    await chapter.evaluate((element) =>
+      window.scrollTo({
+        top: scrollY + element.getBoundingClientRect().top - innerHeight * 0.7,
+        behavior: "instant",
+      }),
     );
+    await settleNativeScroll(page, info, `timeline-focus-before-${width}`);
+    const readFocus = () =>
+      chapter.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const image = getComputedStyle(
+          element.querySelector(".home-timeline-image")!,
+        );
+        return {
+          scrollY,
+          opacity: Number(style.getPropertyValue("--timeline-opacity")),
+          blur: Number.parseFloat(style.getPropertyValue("--timeline-blur")),
+          scale: Number(style.getPropertyValue("--timeline-scale")),
+          renderedOpacity: Number(image.opacity),
+          renderedBlur: Number.parseFloat(image.filter.replace("blur(", "")),
+        };
+      });
+    const before = await readFocus();
+    await page.mouse.move(10, height / 2);
+    await page.mouse.wheel(0, height * 0.45);
+    await settleNativeScroll(page, info, `timeline-focus-forward-${width}`);
+    const forward = await readFocus();
+    expect(forward.scrollY).toBeGreaterThan(before.scrollY);
+    expect(forward.opacity).toBeGreaterThan(before.opacity);
+    expect(forward.blur).toBeLessThan(before.blur);
+    expect(forward.scale).toBeGreaterThan(before.scale);
+    expect(forward.renderedOpacity).toBeCloseTo(forward.opacity, 3);
+    expect(forward.renderedBlur).toBeCloseTo(forward.blur, 2);
+    await page.mouse.wheel(0, -height * 0.45);
+    await settleNativeScroll(page, info, `timeline-focus-reverse-${width}`);
+    const reversed = await readFocus();
+    expect(reversed.scrollY).toBeCloseTo(before.scrollY, 0);
+    expect(reversed.opacity).toBeCloseTo(before.opacity, 2);
+    expect(reversed.blur).toBeCloseTo(before.blur, 2);
+    expect(reversed.scale).toBeCloseTo(before.scale, 3);
+    await info.attach(`timeline-focus-${width}`, {
+      body: JSON.stringify({ before, forward, reversed }, null, 2),
+      contentType: "application/json",
+    });
+    await scrollArchiveChapter(page, 1);
+    await expectArchiveArrivalInView(page, 1);
+    const heading = chapter.locator(".home-timeline-caption h3");
     const stableTitle = await heading.innerText();
-    const opacitySamples: number[] = [];
-    for (const delta of [12, -12, 12, -12]) {
+    for (const [index, delta] of [12, -12, 12, -12].entries()) {
       await page.mouse.wheel(0, delta);
-      await settleNativeScroll(
-        page,
-        info,
-        `stable-title-${width}-${delta}-${opacitySamples.length}`,
-      );
+      await settleNativeScroll(page, info, `stable-title-${width}-${index}`);
       await expect(heading).toHaveText(stableTitle, { useInnerText: true });
       await expect(heading).toBeInViewport({ ratio: 1 });
-      await expect(page.locator("#home-heritage")).toHaveAttribute(
-        "data-active-era",
+      await expect(heading).toHaveCSS("opacity", "1");
+      await expect(chapter.locator(".home-timeline-caption")).toHaveCSS(
+        "opacity",
         "1",
       );
-      opacitySamples.push(
-        await heading.evaluate((el) => Number(getComputedStyle(el).opacity)),
-      );
     }
-    expect(Math.min(...opacitySamples)).toBeGreaterThan(0.98);
     await page.screenshot({
-      path: info.outputPath(`collision-fixed-${width}x${height}.png`),
+      path: info.outputPath(`timeline-readable-${width}x${height}.png`),
       scale: "css",
     });
+  }
+});
+
+test("archive disclosures retain original photo evidence and credits with keyboard access", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await continueHomeWithout3D(page);
+  for (const index of [0, 1, 2, 3]) {
+    const chapter = archiveChapter(page, index);
+    const details = chapter.locator(".home-timeline-details");
+    const summary = details.locator("summary");
+    await summary.scrollIntoViewIfNeeded();
+    await summary.focus();
+    await expect(summary).toBeFocused();
+    await expect(details).not.toHaveAttribute("open", "");
+    await summary.press("Space");
+    await expect(details).toHaveAttribute("open", "");
+    const figures = details.locator("figure");
+    await expect(figures).toHaveCount(3);
+    await expect(
+      details.getByRole("link", {
+        name: "Lead photograph credit",
+        exact: true,
+      }),
+    ).toHaveAttribute("href", /^\/credits#/);
+    await expect(
+      details.getByRole("link", { name: "Historical source", exact: true }),
+    ).toHaveAttribute("href", /^https:\/\//);
+    for (const figure of await figures.all()) {
+      await figure.scrollIntoViewIfNeeded();
+      const image = figure.locator("img");
+      await expect(image).toBeVisible();
+      await expect(image).toHaveCSS("object-fit", "contain");
+      await expect(image).toHaveAttribute("alt", /\S/);
+      await image.evaluate((node) => (node as HTMLImageElement).decode());
+      await expect(figure.locator("figcaption")).toHaveText(/\S/);
+      await expect(
+        figure.getByRole("link", { name: /^Photo credit:/ }),
+      ).toHaveAttribute("href", /^\/credits#/);
+    }
+    await summary.scrollIntoViewIfNeeded();
+    await summary.focus();
+    await summary.press("Enter");
+    await expect(details).not.toHaveAttribute("open", "");
+    await expect(details.locator(".home-timeline-evidence")).not.toBeVisible();
+    await expect(chapter.locator("figure:visible")).toHaveCount(1);
+    await settleNativeScroll(page, info, `archive-disclosure-closed-${index}`);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
   }
 });
 

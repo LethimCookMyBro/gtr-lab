@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { HeritageJourney } from "../src/components/home/HeritageJourney";
 import * as motion from "../src/components/home/motion";
 afterEach(cleanup);
-it("gives every archive chapter a centered factual year slot and three framed original photographs", () => {
+it("keeps the four launch years small and separate from the image-led panels", () => {
   const { container } = render(
     <MemoryRouter>
       <HeritageJourney
@@ -15,18 +15,13 @@ it("gives every archive chapter a centered factual year slot and three framed or
       />
     </MemoryRouter>,
   );
-  const chapters = [...container.querySelectorAll(".home-archive-chapter")];
   expect(
-    chapters.map(
-      (c) => c.querySelector(".home-archive-year-slot")?.textContent,
+    [...container.querySelectorAll(".home-archive-year")].map(
+      (year) => year.textContent,
     ),
   ).toEqual(["1969", "1989", "1999", "2007"]);
-  for (const chapter of chapters) {
-    expect(chapter.querySelector(".home-archive-exhibition")).toBeTruthy();
-    expect(chapter.querySelectorAll(".home-archive-photo-mat")).toHaveLength(3);
-    expect(chapter.querySelectorAll("figure img")).toHaveLength(3);
-    expect(chapter.querySelectorAll("figure figcaption a")).toHaveLength(3);
-  }
+  expect(container.querySelectorAll(".home-timeline-panel")).toHaveLength(4);
+  expect(container.querySelector(".home-archive-exhibition")).toBeNull();
 });
 it("moves the factual year through a masked slot then holds all photos for reading and reverses exactly", () => {
   expect(motion).toHaveProperty("exhibitionMotionAt");

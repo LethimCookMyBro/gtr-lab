@@ -80,7 +80,7 @@ const movePointer = (card: HTMLElement, pointerType = "mouse") => {
 };
 
 describe("hero delegates whole-page readiness", () => {
-  it("reports the loaded hosted document without claiming playback or owning a gate", () => {
+  it("does not treat a hosted document load as a usable opening image", () => {
     const ready = vi.fn();
     const { container } = render(
       <MemoryRouter>
@@ -100,7 +100,7 @@ describe("hero delegates whole-page readiness", () => {
     ).toBe("false");
     expect(ready).not.toHaveBeenCalled();
     fireEvent.load(container.querySelector("iframe")!);
-    expect(ready).toHaveBeenCalledOnce();
+    expect(ready).not.toHaveBeenCalled();
     // The parent still owns readiness even when this document finishes.
     expect(
       container
@@ -158,58 +158,23 @@ describe("truthful spatial model invitations", () => {
       );
       expect(
         within(links[index]).getByText(
-          index === 0 ? "View in 3D" : "Explore model",
+          index === 0 ? "View in 3D" : "View photos",
         ),
       ).toBeTruthy();
     }
-    expect(within(links[0]).getByText(/artist-built R35/i)).toBeTruthy();
+    expect(links[0].getAttribute("aria-describedby")).toBe(
+      "home-model-asset-note",
+    );
   });
-  it("moves the photograph and circular cue within the card, then resets on pointer exit", () => {
-    vi.useFakeTimers();
-    cards();
-    const card = screen.getByRole("link", { name: "Explore Premium" });
-    measureCard(card);
-    movePointer(card);
-    expect(card.getAttribute("data-pointer-active")).toBe("true");
-    expect(card.style.getPropertyValue("--card-pointer-x")).toBe("450px");
-    expect(card.style.getPropertyValue("--card-pointer-y")).toBe("100px");
-    expect(
-      parseFloat(card.style.getPropertyValue("--card-image-x")),
-    ).toBeGreaterThan(0);
-    expect(
-      parseFloat(card.style.getPropertyValue("--card-image-y")),
-    ).toBeLessThan(0);
-    fireEvent.pointerLeave(card);
-    expect(card.getAttribute("data-pointer-active")).not.toBe("true");
-    expect(card.style.getPropertyValue("--card-image-x")).toBe("");
-  });
-  it.each(["touch", "coarse", "reduced"])(
-    "does not run pointer motion for %s input",
-    (input) => {
-      vi.useFakeTimers();
-      finePointer = input !== "coarse";
-      reduced = input === "reduced";
-      cards();
-      const card = screen.getByRole("link", { name: "Explore Premium" });
-      measureCard(card);
-      movePointer(card, input === "touch" ? "touch" : "mouse");
-      expect(card.getAttribute("data-pointer-active")).not.toBe("true");
-      expect(card.style.getPropertyValue("--card-image-x")).toBe("");
-    },
-  );
-  it("clears an active pointer response when reduced motion is enabled", () => {
-    vi.useFakeTimers();
-    cards();
-    const card = screen.getByRole("link", { name: "Explore Premium" });
-    measureCard(card);
-    movePointer(card);
-    expect(card.getAttribute("data-pointer-active")).toBe("true");
-    act(() => {
-      reduced = true;
-      preferenceListeners.forEach((listener) => listener());
-    });
-    expect(card.getAttribute("data-pointer-active")).not.toBe("true");
-    expect(card.style.getPropertyValue("--card-image-x")).toBe("");
+  it("keeps one quiet action and no cursor-following bubble on every card", () => {
+    const { container } = cards();
+    expect(container.querySelector(".home-invitation-cursor")).toBeNull();
+    expect(container.querySelector(".home-invitation-meta")).toBeNull();
+    expect(container.querySelector(".home-invitation-copy p")).toBeNull();
+    for (const card of container.querySelectorAll(".home-model-invitation")) {
+      expect(card.querySelectorAll(".home-invitation-cta")).toHaveLength(1);
+      expect(card.querySelectorAll("h3")).toHaveLength(1);
+    }
   });
   it("keeps each card as one keyboard-operable link with a truthful destination", async () => {
     render(
@@ -225,7 +190,7 @@ describe("truthful spatial model invitations", () => {
     );
     await userEvent.setup().tab();
     expect(document.activeElement).toBe(
-      screen.getByRole("link", { name: "Explore Premium" }),
+      screen.getByRole("link", { name: "Explore Premium: View in 3D" }),
     );
     await userEvent.setup().keyboard("{Enter}");
     expect(screen.getByRole("heading", { name: "Premium model" })).toBeTruthy();

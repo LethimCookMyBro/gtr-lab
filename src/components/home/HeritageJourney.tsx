@@ -1,54 +1,52 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
 import { eras } from "./storyMedia";
+import { campaignMedia } from "./campaignMedia";
 import type { ArchivePhoto } from "./storyMedia";
 import "../../styles/home-heritage.css";
 
-function ArchiveFigure({
-  photo,
-  primary = false,
-  cue,
-}: {
-  photo: ArchivePhoto;
-  primary?: boolean;
-  cue: string;
-}) {
-  const { image } = photo;
+const introductions = [
+  {
+    title: "A racing heart.",
+    sentence:
+      "The first GT-R arrived in 1969 as a four-door Skyline with an S20 straight-six and a win on its racing debut.",
+  },
+  {
+    title: "The legend returns.",
+    sentence:
+      "Twin-turbo power and ATTESA E-TS four-wheel drive made the R32 a new force, with 29 wins from 29 JTCC starts.",
+  },
+  {
+    title: "A sharper instinct.",
+    sentence:
+      "The R34 carried the Skyline GT-R into 1999, refining a formula that had already become an icon.",
+  },
+  {
+    title: "Beyond Skyline.",
+    sentence:
+      "Introduced in 2007, the R35 gave GT-R its own name and a 3.8-litre twin-turbo V6.",
+  },
+];
+
+function ArchiveFigure({ photo }: { photo: ArchivePhoto }) {
   return (
-    <figure
-      className={primary ? "home-archive-image" : "home-archive-support-image"}
-      data-motion-anchor={primary ? cue : photo.credit}
-      data-motion-stage={primary ? "media" : "detail"}
-      data-motion-enter-with={primary ? undefined : cue}
-    >
-      <div className="home-archive-photo-mat">
-        <img
-          src={image.src}
-          srcSet={
-            image.small
-              ? `${image.small} ${image.smallWidth || 640}w, ${image.src} ${image.width}w`
-              : undefined
-          }
-          sizes={
-            primary
-              ? "(max-width: 700px) 90vw, (max-width: 1050px) 45vw, 31vw"
-              : "(max-width: 700px) 90vw, (max-width: 1050px) 45vw, 27vw"
-          }
-          width={image.width}
-          height={image.height}
-          alt={image.alt}
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
+    <figure className="home-archive-evidence">
+      <img
+        src={photo.image.src}
+        width={photo.image.width}
+        height={photo.image.height}
+        alt={photo.image.alt}
+        loading="lazy"
+        decoding="async"
+      />
       <figcaption>
-        <span className="home-archive-photo-label">{photo.label}</span>
         <span>{photo.caption}</span>
         <Link
           to={`/credits#${photo.credit}`}
           aria-label={`Photo credit: ${photo.caption}`}
         >
-          ↗
+          <ArrowUpRight size={16} aria-hidden="true" />
         </Link>
       </figcaption>
     </figure>
@@ -57,50 +55,70 @@ function ArchiveFigure({
 
 function ArchiveChapter({ index }: { index: number }) {
   const era = eras[index];
-  const [lead, road, engine] =
-    index === 1 ? [era.photos[1], era.photos[0], era.photos[2]] : era.photos;
+  const photo =
+    index === 2
+      ? campaignMedia.r34
+      : index === 3
+        ? campaignMedia.r35
+        : era.photos.find((item) => item.label === "The road car") ||
+          era.photos[0];
+  const copy = introductions[index];
   return (
     <article
       id={`home-era-${era.year}`}
-      className={`home-archive-chapter${index === 1 ? " home-archive-r32" : ""}`}
+      className="home-archive-chapter"
       tabIndex={-1}
       data-era-image={index}
-      aria-label={`${era.year} ${era.name}`}
+      aria-label={`${era.year} ${index === 0 ? "PGC10 " : ""}${era.name}`}
     >
-      <div className="home-archive-exhibition home-r32-stage home-archive-spread">
-        <div
-          className="home-archive-inline-copy home-archive-heading-row"
-          data-motion-anchor={`era-${era.year}-heading`}
-          data-motion-stage="heading"
-        >
-          <div className="home-archive-year-slot" aria-hidden="true">
-            <span className="home-archive-year">{era.year}</span>
+      <span className="home-archive-year">{era.year}</span>
+      <div
+        className="home-timeline-panel"
+        data-side={index % 2 ? "right" : "left"}
+      >
+        <figure className="home-timeline-image">
+          <img
+            src={photo.image.src}
+            srcSet={
+              photo.image.small
+                ? `${photo.image.small} ${photo.image.smallWidth || 640}w, ${photo.image.src} ${photo.image.width}w`
+                : undefined
+            }
+            sizes="(max-width: 700px) 85vw, 58vw"
+            width={photo.image.width}
+            height={photo.image.height}
+            alt={photo.image.alt}
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+        <div className="home-timeline-caption">
+          <h3>{copy.title}</h3>
+          <p>{copy.sentence}</p>
+        </div>
+        <details className="home-timeline-details">
+          <summary>Story &amp; photo credits</summary>
+          <div className="home-timeline-details-body">
+            <p>
+              {photo.caption}.{" "}
+              <Link to={`/credits#${photo.credit}`}>
+                Lead photograph credit
+              </Link>
+            </p>
+            <p>{era.note}</p>
+            <p>
+              <strong>{era.achievement}</strong> · {era.achievementNote}.{" "}
+              <a href={era.source} target="_blank" rel="noreferrer">
+                Historical source
+              </a>
+            </p>
+            <div className="home-timeline-evidence">
+              {era.photos.map((item) => (
+                <ArchiveFigure key={item.credit} photo={item} />
+              ))}
+            </div>
           </div>
-          <p className="home-archive-generation">
-            {era.generation} · {era.theme}
-          </p>
-          <h3>{era.title}</h3>
-          <p className="home-archive-description">{era.note}</p>
-          <div className="home-archive-achievement">
-            <strong>{era.achievement}</strong>
-            <span>{era.achievementNote}</span>
-            <a
-              href={era.source}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`${era.generation} milestone source`}
-            >
-              Milestone source ↗
-            </a>
-          </div>
-        </div>
-        <div className="home-archive-lead">
-          <ArchiveFigure photo={lead} primary cue={`era-${era.year}-lead`} />
-        </div>
-        <div className="home-archive-support">
-          <ArchiveFigure photo={road} cue={`era-${era.year}-lead`} />
-          <ArchiveFigure photo={engine} cue={`era-${era.year}-lead`} />
-        </div>
+        </details>
       </div>
     </article>
   );
@@ -125,26 +143,12 @@ export function HeritageJourney({
       Number.parseFloat(
         getComputedStyle(document.documentElement).scrollPaddingTop,
       ) || 88;
-    const railHeight =
-      section.current?.querySelector<HTMLElement>(".home-archive-stage")
-        ?.offsetHeight || 0;
-    const r32Stage = target.querySelector<HTMLElement>(".home-r32-stage");
-    const pinned = r32Stage && getComputedStyle(r32Stage).position === "sticky";
-    // Direct era navigation arrives at the complete reading hold. Native scrolling
-    // still owns every entrance and exit, including when travelling backwards.
-    const destination = pinned
-      ? scrollY +
-        target.getBoundingClientRect().top -
-        Number.parseFloat(getComputedStyle(r32Stage).top) +
-        (target.offsetHeight - r32Stage.offsetHeight - 52) * 0.65
-      : scrollY +
-        target.getBoundingClientRect().top -
-        scrollPadding -
-        railHeight -
-        16;
     onEra(index);
     window.scrollTo({
-      top: Math.max(0, destination),
+      top: Math.max(
+        0,
+        scrollY + target.getBoundingClientRect().top - scrollPadding - 24,
+      ),
       behavior: sequentialMotion ? "instant" : "smooth",
     });
     target.focus({ preventScroll: true });
@@ -159,48 +163,32 @@ export function HeritageJourney({
       data-active-era={activeEra}
       aria-labelledby="home-archive-title"
     >
-      <header
-        className="home-archive-intro"
-        data-motion-anchor="archive-intro"
-        data-motion-stage="heading"
-      >
+      <header className="home-archive-intro">
         <h2 id="home-archive-title">The road remembers.</h2>
-        <p>Four chapters. One restless idea: there is always more to find.</p>
-      </header>
-      <div className="home-archive-stage">
-        <span className="home-archive-rail-label" aria-hidden="true">
-          GT-R / HERITAGE
-        </span>
         <nav className="home-archive-navigation" aria-label="GT-R eras">
           {eras.map((era, index) => (
             <button
               key={era.year}
               type="button"
-              aria-label={`${era.year}: ${era.name}`}
+              aria-label={`${era.year}: ${index === 0 ? "PGC10 " : ""}${era.name}`}
               aria-current={activeEra === index ? "step" : undefined}
               aria-controls={`home-era-${era.year}`}
               onClick={() => navigateEra(index)}
             >
-              <span className="home-archive-rail-year">{era.year}</span>
-              <span className="home-archive-rail-generation">
-                {era.generation}
-              </span>
+              {era.generation}
             </button>
           ))}
         </nav>
-        <Link className="home-archive-source" to="/credits#story-photography">
-          Archive photography & sources <span aria-hidden="true">↗</span>
-        </Link>
-      </div>
+      </header>
       <div className="home-archive-track">
         {eras.map((era, index) => (
           <ArchiveChapter key={era.year} index={index} />
         ))}
       </div>
-      <p className="home-archive-colophon">
-        Historic machines, documented honestly. Capture dates and image credits
-        accompany every photograph.
-      </p>
+      <Link className="home-archive-source" to="/credits#story-photography">
+        Photography &amp; historical sources{" "}
+        <ArrowUpRight size={14} aria-hidden="true" />
+      </Link>
     </section>
   );
 }

@@ -46,13 +46,7 @@ function story(mobile = false) {
 
 it("uses the same opacity and translation channels for each independent editorial and archive item", () => {
   const { container } = story();
-  const selectors = [
-    ".home-editorial-copy",
-    ".home-editorial-image",
-    ".home-archive-inline-copy",
-    ".home-archive-image",
-    ".home-archive-support-image",
-  ];
+  const selectors = [".home-editorial-copy", ".home-editorial-image"];
   for (const selector of selectors) {
     const node = container.querySelector<HTMLElement>(selector)!;
     const styles = getComputedStyle(node);
@@ -61,18 +55,18 @@ it("uses the same opacity and translation channels for each independent editoria
       "translate3d(0, var(--item-shift, 0px), 0)",
     );
   }
-  // A spread-wide transform would double the photo motion and separate its reading order.
-  const spread = getComputedStyle(
-    container.querySelector(".home-archive-spread")!,
+  const image = getComputedStyle(
+    container.querySelector(".home-timeline-image")!,
   );
-  expect(spread.opacity).not.toContain("--chapter");
-  expect(spread.transform).not.toContain("--chapter");
+  expect(image.opacity).toBe("var(--timeline-opacity, 1)");
+  expect(image.filter).toBe("blur(var(--timeline-blur, 0px))");
+  expect(image.transform).toContain("--timeline-scale");
 });
 
 it("uses condensed bold motorsport headings and a neutral archive divider", () => {
   const { container } = story();
   for (const node of container.querySelectorAll(
-    ".home-editorial-copy h2, .home-archive-intro h2, .home-archive-inline-copy h3, .home-archive-achievement strong",
+    ".home-editorial-copy h2, .home-archive-intro h2, .home-timeline-caption h3",
   )) {
     const styles = getComputedStyle(node);
     expect(styles.fontFamily).toBe("var(--font-display)");
@@ -80,15 +74,11 @@ it("uses condensed bold motorsport headings and a neutral archive divider", () =
   }
   const archive = getComputedStyle(container.querySelector("#home-heritage")!);
   expect(archive.backgroundColor).toBe("rgb(11, 13, 14)");
-  const record = getComputedStyle(
-    container.querySelector(".home-archive-achievement")!,
+  const details = getComputedStyle(
+    container.querySelector(".home-timeline-details-body")!,
   );
-  expect(record.borderTopColor).toBe("rgb(69, 74, 78)");
-  expect(record.borderTopWidth).toBe("1px");
-  const stat = getComputedStyle(
-    container.querySelector(".home-archive-achievement strong")!,
-  );
-  expect(stat.color).toBe("rgb(244, 244, 244)");
+  expect(details.borderTopColor).toBe("rgb(69, 74, 78)");
+  expect(details.borderTopWidth).toBe("1px");
 });
 
 it("keeps the phone photograph on the same cue without a second crop, scale or overlap", () => {

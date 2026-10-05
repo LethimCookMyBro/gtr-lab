@@ -72,17 +72,23 @@ it("keeps the viewport gate closed when the film document is loaded but the mode
   expect(gate.textContent).toContain("1.0 MB / 8.4 MB");
   expect(document.body.style.overflow).toBe("hidden");
 });
-it("requires render preparation after bytes and decode, then releases and restores heading focus", () => {
+it("requires a decoded opening image and prepared 3D render, then restores heading focus", async () => {
   const { container } = show();
   fireEvent.load(container.querySelector(".home-film--hero iframe")!);
   for (const phase of ["decoding", "preparing"]) {
     act(() => rear.props.onLoadState({ phase }));
     expect(screen.getByRole("dialog")).toBeTruthy();
   }
-  expect(screen.getByRole("status").textContent).toContain(
-    "Preparing the 3D render",
-  );
+  expect(
+    within(screen.getByRole("dialog")).getByRole("status").textContent,
+  ).toContain("Preparing the 3D render");
   act(() => rear.props.onLoadState({ phase: "ready" }));
+  expect(screen.getByRole("dialog")).toBeTruthy();
+  const image = container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  Object.defineProperty(image, "complete", { value: true });
+  Object.defineProperty(image, "naturalWidth", { value: 1200 });
+  image.decode = () => Promise.resolve();
+  await act(async () => fireEvent.load(image));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(
     container.querySelector(".cinematic-home")?.hasAttribute("inert"),
@@ -90,14 +96,14 @@ it("requires render preparation after bytes and decode, then releases and restor
   expect(document.body.style.overflow).toBe("");
   expect(document.activeElement?.id).toBe("home-title");
 });
-it("does not release for an unavailable film without a usable decoded fallback", () => {
+it("does not release a missing opening image just because a cross-origin document loads", () => {
   const { container } = show();
   act(() => rear.props.onLoadState({ phase: "ready" }));
   expect(screen.getByRole("dialog")).toBeTruthy();
   fireEvent.error(container.querySelector(".home-film-backup")!);
   expect(screen.getByRole("dialog")).toBeTruthy();
   fireEvent.load(container.querySelector(".home-film--hero iframe")!);
-  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(screen.getByRole("dialog")).toBeTruthy();
 });
 it("makes Retry a new model attempt and Continue without 3D cancels that work explicitly", () => {
   const { container } = show();

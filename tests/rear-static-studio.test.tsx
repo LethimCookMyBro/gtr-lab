@@ -11,25 +11,29 @@ const runtime = vi.hoisted(() => ({
   asset: null as any,
   environmentBuilds: 0,
   shadowRenders: 0,
+  lights: [] as Record<string, any>[],
 }));
 // DOM tests do not render Three hosts. Keep the real React component boundaries,
 // which determine whether the static studio sends new work to Drei.
 vi.mock("react/jsx-runtime", async (importOriginal) => {
   const original = await importOriginal<typeof import("react/jsx-runtime")>();
   const react = await import("react");
-  const host = (type: unknown) => typeof type === "string";
+  const host = (type: unknown, props: any) => {
+    if (type === "rectAreaLight") runtime.lights.push(props);
+    return typeof type === "string";
+  };
   return {
     ...original,
     jsx: (type: any, props: any, key: any) =>
       original.jsx(
-        host(type) ? react.Fragment : type,
-        host(type) ? { children: props.children } : props,
+        host(type, props) ? react.Fragment : type,
+        host(type, props) ? { children: props.children } : props,
         key,
       ),
     jsxs: (type: any, props: any, key: any) =>
       original.jsxs(
-        host(type) ? react.Fragment : type,
-        host(type) ? { children: props.children } : props,
+        host(type, props) ? react.Fragment : type,
+        host(type, props) ? { children: props.children } : props,
         key,
       ),
   };
@@ -40,12 +44,14 @@ vi.mock("react/jsx-dev-runtime", async (importOriginal) => {
   const react = await import("react");
   return {
     ...original,
-    jsxDEV: (type: any, props: any, ...rest: any[]) =>
-      (original.jsxDEV as any)(
+    jsxDEV: (type: any, props: any, ...rest: any[]) => {
+      if (type === "rectAreaLight") runtime.lights.push(props);
+      return (original.jsxDEV as any)(
         typeof type === "string" ? react.Fragment : type,
         typeof type === "string" ? { children: props.children } : props,
         ...rest,
-      ),
+      );
+    },
   };
 });
 vi.mock("@react-three/fiber", () => ({
@@ -82,6 +88,7 @@ vi.mock("@react-three/drei/core/Lightformer", () => ({
 beforeEach(() => {
   runtime.environmentBuilds = 0;
   runtime.shadowRenders = 0;
+  runtime.lights = [];
   runtime.asset = {
     scene: new Group(),
     bindings: [],
@@ -138,4 +145,23 @@ it("keeps the actual taillight emission saturated red instead of passing it thro
   expect(lamp.emissive.g).toBeLessThan(lamp.emissive.r * 0.02);
   expect(lamp.emissive.b).toBeLessThan(lamp.emissive.r * 0.02);
   expect(lamp.toneMapped).toBe(false);
+});
+
+it("mounts a broad white overhead source instead of another frontal hotspot", () => {
+  render(
+    <RearVehicleScene
+      progress={1}
+      reducedMotion
+      onReady={() => {}}
+      onError={() => {}}
+      onProgress={() => {}}
+    />,
+  );
+  const roof = runtime.lights.find((light) => light.name === "rear-roof");
+  expect(roof).toBeDefined();
+  expect(roof!.color).toBe("#ffffff");
+  expect(roof!.width).toBeGreaterThanOrEqual(5);
+  expect(roof!.height).toBeGreaterThanOrEqual(2);
+  expect(roof!.position[1]).toBeGreaterThanOrEqual(3);
+  expect(roof!.position[2]).toBeGreaterThanOrEqual(0);
 });

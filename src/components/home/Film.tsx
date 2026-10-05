@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Square, Play } from "lucide-react";
+import { Square, Play, RotateCcw } from "lucide-react";
 import { homeFilms } from "../../data/films";
 import { mayAutoplay } from "./motion";
+/** Embed lifecycle only: Flixel exposes no verified playback event API here. */
 export type FilmState = "loading" | "embedded" | "stopped" | "unavailable";
 interface FilmProps {
   kind: "hero" | "detail";
@@ -23,16 +24,20 @@ export function Film({
   const holder = useRef<HTMLDivElement>(null);
   const backup = useRef<HTMLImageElement>(null);
   const [fallbackLoaded, setFallbackLoaded] = useState(false);
+  const [posterDecoded, setPosterDecoded] = useState(false);
   useEffect(() => {
     const image = backup.current;
-    if (!onFallbackReady || !image?.complete || !image.naturalWidth) return;
+    if (!image?.complete || !image.naturalWidth) return;
     let live = true;
     // decode() covers cached images too; a load event alone is not our readiness barrier.
     const decoded =
       typeof image.decode === "function" ? image.decode() : Promise.resolve();
     void decoded
       .then(() => {
-        if (live && image.naturalWidth) onFallbackReady();
+        if (!live || !image.naturalWidth) return;
+        setPosterDecoded(true);
+        // This certifies only the local photograph, never the hosted film.
+        onFallbackReady?.();
       })
       .catch(() => {});
     return () => {
@@ -47,6 +52,7 @@ export function Film({
   );
   const [choice, setChoice] = useState<"auto" | "play" | "stop">("auto");
   const [loaded, setLoaded] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const previousPolicy = useRef({ reducedMotion, saveData });
   const film = homeFilms[kind];
@@ -104,14 +110,16 @@ export function Film({
     if (!active || loaded) return;
     const timeout = window.setTimeout(() => setFailed(true), 20000);
     return () => window.clearTimeout(timeout);
-  }, [active, loaded, kind]);
+  }, [active, loaded, kind, attempt]);
+  const retry = () => {
+    setFailed(false);
+    setLoaded(false);
+    setAttempt((current) => current + 1);
+    setChoice("play");
+  };
   const toggle = () => {
     if (active) setChoice("stop");
-    else {
-      setFailed(false);
-      setLoaded(false);
-      setChoice("play");
-    }
+    else retry();
   };
   return (
     <div
@@ -119,6 +127,17 @@ export function Film({
       className={`home-film home-film--${kind}`}
       data-film-provider="flixel"
       data-film-state={state}
+      data-film-document={
+        active
+          ? loaded
+            ? "loaded"
+            : "loading"
+          : failed
+            ? "unavailable"
+            : "unmounted"
+      }
+      data-film-playback={active ? "unverified" : "inactive"}
+      data-film-poster={posterDecoded ? "decoded" : "loading"}
     >
       <img
         ref={backup}
@@ -127,10 +146,10 @@ export function Film({
         src="/images/gtr-premium.webp"
         alt="2018 Nissan GT-R Premium in Super Silver"
         loading={kind === "hero" ? "eager" : "lazy"}
-        hidden={active && loaded}
       />
       {active && (
         <iframe
+          key={attempt}
           ref={frame}
           className="home-film-provider"
           src={film.embed}
@@ -145,21 +164,34 @@ export function Film({
       )}
       <div className="home-film-shade" aria-hidden="true" />
       <div className="home-film-controls">
-        <button
-          type="button"
-          className="home-film-toggle"
-          onClick={toggle}
-          aria-label={`${active ? "Stop" : failed ? "Retry" : "Play"} ${name} film`}
-        >
-          {active ? (
-            <Square size={14} strokeWidth={1.5} aria-hidden="true" />
-          ) : (
-            <Play size={16} strokeWidth={1.5} aria-hidden="true" />
+        <div className="home-film-actions">
+          <button
+            type="button"
+            className="home-film-toggle"
+            onClick={toggle}
+            aria-label={`${active ? "Stop" : failed ? "Retry" : "Play"} ${name} film`}
+          >
+            {active ? (
+              <Square size={14} strokeWidth={1.5} aria-hidden="true" />
+            ) : (
+              <Play size={16} strokeWidth={1.5} aria-hidden="true" />
+            )}
+            <span>
+              {active ? "Stop film" : failed ? "Retry film" : "Play film"}
+            </span>
+          </button>
+          {active && (
+            <button
+              type="button"
+              className="home-film-toggle home-film-retry"
+              onClick={retry}
+              aria-label={`Retry ${name} film`}
+            >
+              <RotateCcw size={14} strokeWidth={1.5} aria-hidden="true" />
+              <span>Retry film</span>
+            </button>
           )}
-          <span>
-            {active ? "Stop film" : failed ? "Retry film" : "Play film"}
-          </span>
-        </button>
+        </div>
         <div className="home-film-credit">
           <a
             href={film.page}
@@ -173,6 +205,13 @@ export function Film({
           <Link to="/credits#films">Film credits</Link>
         </div>
       </div>
+      {active && (
+        <p className="home-film-status" role="status">
+          {loaded
+            ? "Film not moving? Retry or open the original."
+            : "Loading the publisher’s player…"}
+        </p>
+      )}
       {failed && (
         <p className="home-film-error" role="status">
           {title} film could not load. Try again or open the credited original.

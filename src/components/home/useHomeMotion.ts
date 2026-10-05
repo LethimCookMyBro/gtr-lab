@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { RefObject } from "react";
 import {
   clamp01,
+  timelineMotionAt,
   expansionAt,
   exhibitionMotionAt,
   heroExitAt,
@@ -73,6 +74,9 @@ export function useHomeMotion(
     ];
     if (reduced) {
       const properties = [
+        "--timeline-opacity",
+        "--timeline-blur",
+        "--timeline-scale",
         "--progress",
         "--copy-opacity",
         "--hero-exit-opacity",
@@ -242,6 +246,15 @@ export function useHomeMotion(
           nextEra = index;
         }
         if (!reduced) {
+          const timeline = timelineMotionAt(
+            (rect.top +
+              Math.min(rect.height, viewport * 0.7) / 2 -
+              viewport * 0.48) /
+              viewport,
+          );
+          write(element, "--timeline-opacity", timeline.opacity.toFixed(5));
+          write(element, "--timeline-blur", `${timeline.blur.toFixed(3)}px`);
+          write(element, "--timeline-scale", timeline.scale.toFixed(5));
           if (pinnedTop !== undefined) {
             const progress = clamp01(
               (pinnedTop - rect.top) /

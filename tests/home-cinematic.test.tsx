@@ -93,7 +93,10 @@ describe("cinematic homepage", () => {
         expect(
           within(chapter).getByRole("heading", { level: 3 }).textContent,
         ).not.toBe("");
-        expect(within(chapter).getAllByRole("img")).toHaveLength(3);
+        expect(
+          chapter.querySelectorAll(".home-timeline-image img"),
+        ).toHaveLength(1);
+        expect(chapter.querySelectorAll("details img")).toHaveLength(3);
       }
       expect(container.querySelectorAll('[aria-current="step"]')).toHaveLength(
         1,
@@ -129,7 +132,9 @@ describe("cinematic homepage", () => {
     ]) {
       expect(
         within(invitations)
-          .getByRole("link", { name: `Explore ${name}` })
+          .getByRole("link", {
+            name: `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
+          })
           .getAttribute("href"),
       ).toBe(`/configurator/${id}`);
     }
@@ -215,7 +220,7 @@ describe("cinematic homepage", () => {
       .setup()
       .click(screen.getByRole("button", { name: "2007: R35 GT-R" }));
     expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 784,
+      top: 776,
       behavior: "instant",
     });
     expect(
@@ -276,14 +281,14 @@ describe("cinematic homepage", () => {
         .getAllByRole("button")
         .map((button) => button.getAttribute("aria-label")),
     ).toEqual([
-      "1969: Skyline GT-R",
+      "1969: PGC10 Skyline GT-R",
       "1989: R32 GT-R",
       "1999: R34 GT-R",
       "2007: R35 GT-R",
     ]);
     expect(
       within(timeline)
-        .getByRole("button", { name: "1969: Skyline GT-R" })
+        .getByRole("button", { name: "1969: PGC10 Skyline GT-R" })
         .getAttribute("aria-current"),
     ).toBe("step");
     await userEvent

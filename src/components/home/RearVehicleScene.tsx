@@ -7,6 +7,7 @@ import {
   Light,
   RectAreaLight,
   Mesh,
+  type Material,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   SRGBColorSpace,
@@ -101,39 +102,83 @@ function RearCamera({
 function RearVehicle({ asset }: { asset: PreparedVehicle }) {
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    applyVehicleAppearance(asset.bindings, "#656a6d", true);
+    applyVehicleAppearance(asset.bindings, "#ecebe6", true);
     for (const b of asset.bindings) {
       if (b.role === "paint") {
-        b.material.metalness = 0.68;
-        b.material.roughness = 0.28;
+        b.material.metalness = 0.22;
+        b.material.roughness = 0.36;
         if (b.material instanceof MeshPhysicalMaterial) {
-          b.material.clearcoat = 1;
-          b.material.clearcoatRoughness = 0.18;
+          b.material.clearcoat = 0.8;
+          b.material.clearcoatRoughness = 0.24;
         }
       }
       if (b.role === "taillights") {
         b.material.emissive.set("#ff1007");
-        b.material.emissiveIntensity = 1.35;
+        // These are the source's very thin LED tubes. The broad existing lens
+        // annuli below carry the signature, rather than eight wire outlines.
+        b.material.emissiveIntensity = 0.3;
         // ACES shifts strong red emitters toward orange. Keep the real LED hue.
         b.material.toneMapped = false;
       }
       if (b.role === "headlights") b.material.emissiveIntensity = 0;
     }
-    // Exact materials verified in the already-public GLB. Only owned copies change.
+    // Exact meshes/materials verified in the already-public GLB. The Metal
+    // material is shared with badges, so only the three lamp housings get copies.
+    const housingNames = new Set([
+      "Taillights001_Metal_0",
+      "Taillights002_Metal_0",
+      "Taillights003_Metal_0",
+    ]);
+    const glassCopies = new Map<MeshStandardMaterial, MeshPhysicalMaterial>();
     asset.scene.traverse((object) => {
       if (!(object instanceof Mesh)) return;
-      for (const material of Array.isArray(object.material)
-        ? object.material
-        : [object.material]) {
-        if (!(material instanceof MeshStandardMaterial)) continue;
+      const adapt = (original: Material) => {
+        if (!(original instanceof MeshStandardMaterial)) return original;
+        let material = original;
+        if (housingNames.has(object.name) && material.name === "Metal") {
+          material = material.clone();
+          // A stable name makes StrictMode/effect re-entry reuse the owned copy.
+          material.name = "Rear_Taillight_Housing";
+          material.color.set("#16181c");
+          material.metalness = 0.22;
+          material.roughness = 0.46;
+          material.emissive.set("#000000");
+          material.emissiveIntensity = 0;
+        }
+        if (material.name === "Window_Glass") {
+          if (!(material instanceof MeshPhysicalMaterial)) {
+            let physical = glassCopies.get(material);
+            if (!physical) {
+              physical = new MeshPhysicalMaterial();
+              MeshStandardMaterial.prototype.copy.call(physical, material);
+              Object.assign(physical, {
+                defines: { STANDARD: "", PHYSICAL: "" },
+              });
+              glassCopies.set(material, physical);
+            }
+            material = physical;
+          }
+          material.color.set("#080b10");
+          material.roughness = 0.14;
+          material.metalness = 0;
+          material.opacity = 0.94;
+          // r180 takes environment intensity from the scene when envMap is null.
+          // Physical specular strength actually restrains the white studio card
+          // while following the existing scroll-bound environment reveal.
+          (material as MeshPhysicalMaterial).specularIntensity = 0.2;
+        }
         if (material.name === "Glass.001") {
-          material.color.set("#6d0208");
-          material.opacity = 0.2;
-          material.envMapIntensity = 0.08;
+          // This material covers the four real, broad annular lenses. Their
+          // existing holes preserve dark centers; no substitute geometry/glow.
+          material.color.set("#62050c");
+          material.emissive.set("#ff0905");
+          material.emissiveIntensity = 0.92;
+          material.opacity = 0.96;
           material.transparent = true;
           material.depthWrite = false;
           material.metalness = 0;
-          material.roughness = 0.28;
+          material.roughness = 0.26;
+          material.toneMapped = false;
         }
         if (material.name === "Reverse_Emitter") {
           material.color.set("#343941");
@@ -141,8 +186,16 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
           material.roughness = 0.4;
           material.emissiveIntensity = 0;
         }
-      }
+        return material;
+      };
+      object.material = Array.isArray(object.material)
+        ? object.material.map(adapt)
+        : adapt(object.material);
     });
+    // Glass replacements retain the maps, which the asset still owns. Dispose
+    // only the superseded material; every new material stays on the scene and
+    // is reclaimed by the existing idempotent asset disposer.
+    glassCopies.forEach((_copy, original) => original.dispose());
     invalidate();
   }, [asset, invalidate]);
   return (
@@ -209,15 +262,15 @@ const RearStudio = memo(function RearStudio() {
           />
           <Lightformer
             form="rect"
-            intensity={0.9}
+            intensity={0.5}
             position={[0, 2.8, -6]}
-            scale={[6, 0.65, 1]}
+            scale={[3.8, 0.45, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={1.2}
+            intensity={0.65}
             position={[0, 0.4, -4]}
-            scale={[4, 0.3, 1]}
+            scale={[3.4, 0.25, 1]}
           />
         </Environment>
         {/* Drei blurs with an unparented plane at world Y=0. Its upward-facing
@@ -233,11 +286,11 @@ const RearStudio = memo(function RearStudio() {
         </mesh>
         <ContactShadows
           position={[0, -0.001, 0]}
-          opacity={0.74}
+          opacity={0.9}
           scale={7}
-          blur={1.5}
-          far={3}
-          resolution={256}
+          blur={0.75}
+          far={1.6}
+          resolution={512}
           frames={1}
           color="#000000"
         />

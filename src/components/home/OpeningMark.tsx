@@ -111,7 +111,7 @@ export function OpeningMark({
           </div>
         )}
         <p className="home-loading-detail">
-          {heroReady ? "Opening visual ready" : "Loading the opening visual"} ·
+          {heroReady ? "Opening image ready" : "Loading the opening image"} ·
           Ciasny R35 exterior
         </p>
       </div>

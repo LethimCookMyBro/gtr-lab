@@ -1,8 +1,6 @@
 import { ArrowRight } from "lucide-react";
-import { useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Film } from "./Film";
-import type { FilmState } from "./Film";
 import "../../styles/home-opening-cards.css";
 import "../../styles/home-hero-exit.css";
 export function HeroFilm({
@@ -14,14 +12,9 @@ export function HeroFilm({
   reducedMotion: boolean;
   saveData: boolean;
   openingResolved?: boolean;
+  /** Called only after the local opening photograph decodes, not on iframe load. */
   onVisualReady?: () => void;
 }) {
-  const reportFilm = useCallback(
-    (state: FilmState) => {
-      if (state === "embedded") onVisualReady?.();
-    },
-    [onVisualReady],
-  );
   return (
     <>
       <section
@@ -36,7 +29,6 @@ export function HeroFilm({
             kind="hero"
             reducedMotion={reducedMotion}
             saveData={saveData}
-            onStateChange={reportFilm}
             onFallbackReady={onVisualReady}
           />
           <div className="home-hero-copy">

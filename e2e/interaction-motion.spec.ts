@@ -93,7 +93,10 @@ test("model invitation hover stays subtle and preserves card layout", async ({
 }, info) => {
   await page.goto("/");
   await continueHomeWithout3D(page);
-  const card = page.getByRole("link", { name: "Explore Premium", exact: true });
+  const card = page.getByRole("link", {
+    name: "Explore Premium: View in 3D",
+    exact: true,
+  });
   await card.scrollIntoViewIfNeeded();
   const before = await card.boundingBox();
   await card.hover();

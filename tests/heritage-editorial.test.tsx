@@ -31,25 +31,11 @@ it("sequential timeline preserves the whole selected story and moves keyboard fo
     right: 600,
     toJSON() {},
   });
-  vi.spyOn(
-    chapter.querySelector<HTMLElement>(".home-archive-image")!,
-    "getBoundingClientRect",
-  ).mockReturnValue({
-    top: 1300,
-    bottom: 1750,
-    height: 450,
-    x: 0,
-    y: 1300,
-    width: 600,
-    left: 0,
-    right: 600,
-    toJSON() {},
-  });
   document.documentElement.style.scrollPaddingTop = "100px";
   const button = screen.getByRole("button", { name: "2007: R35 GT-R" });
   button.focus();
   await userEvent.setup().keyboard("{Enter}");
-  expect(scroll).toHaveBeenCalledWith({ top: 884, behavior: "instant" });
+  expect(scroll).toHaveBeenCalledWith({ top: 876, behavior: "instant" });
   expect(document.activeElement).toBe(chapter);
 });
 
@@ -98,17 +84,20 @@ it("presents three individually captioned photographs and a sourced achievement 
   ];
   expect(chapters).toHaveLength(4);
   for (const chapter of chapters) {
-    expect(within(chapter).getAllByRole("img")).toHaveLength(3);
+    expect(chapter.querySelectorAll("details img")).toHaveLength(3);
+    expect(chapter.querySelectorAll(".home-timeline-image img")).toHaveLength(
+      1,
+    );
     expect(chapter.querySelectorAll("figure figcaption")).toHaveLength(3);
     expect(
-      chapter.querySelector(".home-archive-achievement")?.textContent,
+      chapter.querySelector(".home-timeline-details-body strong")?.textContent,
     ).toBeTruthy();
     expect(
       within(chapter)
-        .getByRole("link", { name: /milestone source/i })
+        .getByRole("link", { name: /historical source/i, hidden: true })
         .getAttribute("href"),
     ).toMatch(/^https:\/\//);
-    for (const figure of chapter.querySelectorAll("figure")) {
+    for (const figure of chapter.querySelectorAll("details figure")) {
       expect(figure.querySelector("figcaption")?.textContent).toBeTruthy();
       expect(figure.querySelector("a")?.getAttribute("href")).toMatch(
         /^\/credits#/,
@@ -122,7 +111,7 @@ it("presents three individually captioned photographs and a sourced achievement 
   expect(screen.getByText(/Bathurst, February 2015/i)).toBeTruthy();
 });
 
-it("normal-motion era navigation reveals the chapter heading below the slim rail", async () => {
+it("normal-motion era navigation reveals the chapter heading with clear space below the page header", async () => {
   const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   const onEra = vi.fn();
   const { container } = render(
@@ -142,16 +131,11 @@ it("normal-motion era navigation reveals the chapter heading below the slim rail
     right: 1200,
     toJSON() {},
   });
-  Object.defineProperty(
-    container.querySelector(".home-archive-stage"),
-    "offsetHeight",
-    { configurable: true, value: 64 },
-  );
   document.documentElement.style.scrollPaddingTop = "100px";
   await userEvent
     .setup()
     .click(screen.getByRole("button", { name: "1999: R34 GT-R" }));
-  expect(scroll).toHaveBeenCalledWith({ top: 1320, behavior: "smooth" });
+  expect(scroll).toHaveBeenCalledWith({ top: 1376, behavior: "smooth" });
   expect(onEra).toHaveBeenCalledWith(2);
   expect(document.activeElement).toBe(chapter);
 });

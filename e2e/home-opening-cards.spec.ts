@@ -108,7 +108,11 @@ test("opening keeps authentic identity visible until real scene readiness or exp
     contentType: "text/html",
     body: "<html><body>Hosted document loaded; playback not tested.</body></html>",
   });
-  // Film document readiness alone must never claim the rear model is ready.
+  // Film document readiness alone must never claim playback or rear readiness.
+  await expect(page.locator(".home-film--hero")).toHaveAttribute(
+    "data-film-playback",
+    "unverified",
+  );
   await expect(opening).toHaveAttribute("data-state", "loading");
   await continueHomeWithout3D(page);
   await expect(page.locator(".home-signature-runway")).toHaveAttribute(
@@ -145,67 +149,94 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
   });
   await expect(lineup.getByRole("link")).toHaveCount(6);
   await expect(lineup.getByText("View in 3D", { exact: true })).toHaveCount(1);
-  await expect(lineup.getByText("Explore model", { exact: true })).toHaveCount(
-    5,
-  );
+  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(5);
   for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"]) {
     await expect(lineup.locator(`a[href="/configurator/${id}"]`)).toHaveCount(
       1,
     );
   }
   const premium = lineup.getByRole("link", {
-    name: "Explore Premium",
+    name: "Explore Premium: View in 3D",
     exact: true,
   });
   await premium.scrollIntoViewIfNeeded();
-  await expect(premium.getByText("Artist-built R35")).toBeVisible();
+  await expect(premium).toHaveAttribute(
+    "aria-describedby",
+    "home-model-asset-note",
+  );
+  await expect(page.locator("#home-model-asset-note")).toContainText(
+    "artist-built, custom-aero R35 exterior",
+  );
+  for (const card of await lineup.getByRole("link").all()) {
+    await expect(card.locator(":scope > img")).toHaveCount(1);
+    await expect(card.getByRole("heading", { level: 3 })).toHaveCount(1);
+    await expect(card.locator(".home-invitation-cta")).toHaveCount(1);
+    await expect(card.locator(".home-invitation-cta")).toBeVisible();
+    await expect(
+      card.locator(
+        ".home-invitation-copy > p, .home-invitation-meta, .home-invitation-cursor",
+      ),
+    ).toHaveCount(0);
+    await expect(card.locator("img")).toHaveCSS("object-fit", "cover");
+    await expect(card.locator(".home-invitation-cta > span")).toHaveCSS(
+      "opacity",
+      "1",
+    );
+    const photoOnly =
+      (await card.getAttribute("href")) !== "/configurator/premium";
+    await expect(card).toHaveAccessibleName(
+      `Explore ${await card.getByRole("heading", { level: 3 }).innerText()}: ${photoOnly ? "View photos" : "View in 3D"}`,
+    );
+    await expect(card).toHaveAttribute(
+      "data-experience",
+      photoOnly ? "photography" : "3d",
+    );
+    await expect(card.locator(".home-invitation-cta")).toHaveText(
+      photoOnly ? "View photos" : "View in 3D",
+    );
+  }
   await settleCardGeometry(premium, info);
+  const cta = premium.locator(".home-invitation-cta");
+  const actionBounds = (await cta.boundingBox())!;
+  expect(actionBounds.height).toBeGreaterThanOrEqual(44);
   if (!isMobile) {
     const bounds = (await premium.boundingBox())!;
-    await premium.hover({
-      position: { x: bounds.width * 0.7, y: bounds.height * 0.33 },
-    });
-    await expect(premium).toHaveAttribute("data-pointer-active", "true");
-    const cue = premium.locator(".home-invitation-cursor");
-    await expect(cue).toHaveCSS("opacity", "1");
+    for (const x of [0.7, 0.3]) {
+      await premium.hover({
+        position: { x: bounds.width * x, y: bounds.height * 0.33 },
+      });
+      await expect(premium).not.toHaveAttribute("data-pointer-active", "true");
+      await expect(premium.locator(".home-invitation-cursor")).toHaveCount(0);
+      await expect(cta).toBeVisible();
+      const hoveredBounds = (await cta.boundingBox())!;
+      expect(hoveredBounds.x).toBeCloseTo(actionBounds.x, 0);
+      expect(hoveredBounds.y).toBeCloseTo(actionBounds.y, 0);
+      expect(
+        await premium.evaluate((el) =>
+          (el as HTMLElement).style.getPropertyValue("--card-pointer-x"),
+        ),
+      ).toBe("");
+    }
     await expect(premium.locator("img")).not.toHaveCSS("transform", "none");
-    const firstX = await premium.evaluate((el) =>
-      (el as HTMLElement).style.getPropertyValue("--card-pointer-x"),
-    );
-    await premium.hover({
-      position: { x: bounds.width * 0.3, y: bounds.height * 0.33 },
-    });
-    // Same-page WebGL/trace capture can delay a locator read in CI even
-    // after the pointer style has updated. Keep checking actual pointer movement.
-    await expect
-      .poll(
-        () =>
-          premium.evaluate((el) =>
-            (el as HTMLElement).style.getPropertyValue("--card-pointer-x"),
-          ),
-        { timeout: 15_000 },
-      )
-      .not.toBe(firstX);
     await page.screenshot({
-      path: info.outputPath("cards-pointer.png"),
+      path: info.outputPath("cards-hover.png"),
       scale: "css",
     });
     await page.mouse.move(0, 0);
-    await expect(premium).not.toHaveAttribute("data-pointer-active", "true");
     await premium.focus();
     await page.keyboard.press("Tab");
     await page.keyboard.press("Shift+Tab");
     await expect(premium).toBeFocused();
-    await expect(cue).toHaveCSS("opacity", "1");
+    await expect(premium).not.toHaveCSS("outline-style", "none");
+    await expect(cta).toBeVisible();
+    await expect(cta.locator("span")).toHaveCSS("opacity", "1");
     await page.screenshot({
       path: info.outputPath("cards-keyboard.png"),
       scale: "css",
     });
   } else {
-    await expect(premium.locator(".home-invitation-cursor")).toHaveCSS(
-      "display",
-      "none",
-    );
+    await expect(premium.locator(".home-invitation-cursor")).toHaveCount(0);
+    await expect(cta).toBeInViewport({ ratio: 1 });
     await page.screenshot({
       path: info.outputPath("cards-mobile.png"),
       scale: "css",
@@ -235,16 +266,13 @@ test("reduced motion keeps the gate static and preserves model card actions", as
     page.getByRole("button", { name: "Play opening film" }),
   ).toBeVisible();
   const premium = page.getByRole("link", {
-    name: "Explore Premium",
+    name: "Explore Premium: View in 3D",
     exact: true,
   });
   await premium.scrollIntoViewIfNeeded();
   await premium.hover();
   await expect(premium).not.toHaveAttribute("data-pointer-active", "true");
-  await expect(premium.locator(".home-invitation-cursor")).toHaveCSS(
-    "display",
-    "none",
-  );
+  await expect(premium.locator(".home-invitation-cursor")).toHaveCount(0);
   await expect(premium.locator("img")).toHaveCSS("transform", "none");
   await expect(premium.getByText("View in 3D", { exact: true })).toBeVisible();
   await page.screenshot({
@@ -302,11 +330,10 @@ test("model card borders stay inside their grid tracks without overlapping", asy
       };
       const text = [
         ...card.querySelectorAll<HTMLElement>(
-          ".home-invitation-copy, .home-invitation-cta > span, .home-invitation-meta",
+          ".home-invitation-copy, .home-invitation-cta > span",
         ),
       ].map(measure);
-      // The arrow intentionally translates beyond the CTA's flex box on hover.
-      // Check its transformed rectangle against the card, separately from text.
+      // Keep the single action, label and arrow within the full-photo card.
       const cta = measure(card.querySelector(".home-invitation-cta")!);
       const arrow = measure(card.querySelector(".home-invitation-cta > svg")!);
       return {

@@ -753,6 +753,153 @@
           "path": "/media/archive-r35-vr38-small.webp"
         }
       ]
+    },
+    {
+      "id": "campaign-r35-orange",
+      "caption": "Orange facelift Nissan GT-R R35 photographed by Martin Katler; model year unverified",
+      "alt": "Orange facelift Nissan GT-R R35 photographed by Martin Katler; model year unverified",
+      "author": "Martin Katler",
+      "authorUrl": "https://unsplash.com/@martinkatler",
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourceUrl": "https://unsplash.com/photos/orange-nissan-gt-r-sports-car-71MFodxIz8c",
+      "photoDate": "Published 2021-01-06; exact capture date unverified",
+      "framingNote": "Modern photograph of a later facelift R35. Do not label as a 2007-spec car. Full-car architectural photography, not seamless studio. Full source frame retained in local copies; campaign card uses a responsive crop.",
+      "credit": "Photo by Martin Katler on Unsplash. Free copyright license to download, copy, modify, distribute and use, including commercial use. Attribution appreciated, not required. Do not resell unmodified images or build a competing image service. Does not separately grant trademark, brand, or endorsement rights. Do not imply Nissan or photographer endorsement.",
+      "licenseVerifiedDate": "2026-10-05",
+      "original": {
+        "url": "https://images.unsplash.com/photo-1609964729554-a02fb2a04830",
+        "width": 3926,
+        "height": 4907,
+        "bytes": 1727684,
+        "sha256": "9f6060b2f6b1271a98a5a317f064b2974afda15cffb1a1c58de223cb1ffa8022"
+      },
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 2000,
+          "bytes": 216532,
+          "sha256": "3b52c49d1215f1591528c44010e666d6abd562b89b5f5fe0dc4d4b4313160daa",
+          "changes": [
+            "Proportional resize and WebP quality 88 encoding; no retouching or AI enhancement",
+            "Complete original frame retained; card uses responsive CSS crop where stated"
+          ],
+          "license": "Unsplash License",
+          "licenseUrl": "https://unsplash.com/license",
+          "path": "/media/campaign-r35-orange.webp"
+        },
+        {
+          "width": 640,
+          "height": 800,
+          "bytes": 65642,
+          "sha256": "1bfc830abbad25813874a2ef68a5f968bcb77909ad3994a9db8050ed048172d6",
+          "changes": [
+            "Proportional resize and WebP quality 88 encoding; no retouching or AI enhancement",
+            "Complete original frame retained; card uses responsive CSS crop where stated"
+          ],
+          "license": "Unsplash License",
+          "licenseUrl": "https://unsplash.com/license",
+          "path": "/media/campaign-r35-orange-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "campaign-r35-mountain",
+      "caption": "Modern rear three-quarter photograph of a charcoal Nissan GT-R R35 on a mountain road; model year unverified",
+      "alt": "Modern rear three-quarter photograph of a charcoal Nissan GT-R R35 on a mountain road; model year unverified",
+      "author": "D Panyukov",
+      "authorUrl": "https://unsplash.com/@dpanyukov",
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourceUrl": "https://unsplash.com/photos/matte-grey-sports-car-on-mountain-road-_4ZLmHzwARY",
+      "photoDate": "Published 2021-01-28; exact capture date unverified",
+      "framingNote": "Modern photograph of an R35, exact model year unverified. Not a period 2007 photo. Already dark; avoid heavy dark overlay. Landscape crop retains the complete car.",
+      "credit": "Photo by D Panyukov on Unsplash. Free copyright license to download, copy, modify, distribute and use, including commercial use. Attribution appreciated, not required. Do not resell unmodified images or build a competing image service. Does not separately grant trademark, brand, or endorsement rights. Do not imply Nissan or photographer endorsement.",
+      "licenseVerifiedDate": "2026-10-05",
+      "original": {
+        "url": "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b",
+        "width": 3363,
+        "height": 4204,
+        "bytes": 1146790,
+        "sha256": "1e1ad73547805d2036d55e60da0dd6dc1eeb4330ebcd6c03bc776d2cc8625e60"
+      },
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 1000,
+          "bytes": 71160,
+          "sha256": "7db773fd0734c9fd3dcfa9e42f69f54788325b49550c318b004a6a179070cfd8",
+          "changes": [
+            "Proportional resize and WebP quality 88 encoding; no retouching or AI enhancement",
+            "Landscape display crop [left, top, right, bottom] [0, 1160, 3363, 3262] retaining the complete visible car"
+          ],
+          "license": "Unsplash License",
+          "licenseUrl": "https://unsplash.com/license",
+          "path": "/media/campaign-r35-mountain.webp"
+        },
+        {
+          "width": 640,
+          "height": 400,
+          "bytes": 19764,
+          "sha256": "75a85a1d9840a0772e596c007f6950027e1e5443c69a74e3b59a67c1c706fa76",
+          "changes": [
+            "Proportional resize and WebP quality 88 encoding; no retouching or AI enhancement",
+            "Landscape display crop [left, top, right, bottom] [0, 1160, 3363, 3262] retaining the complete visible car"
+          ],
+          "license": "Unsplash License",
+          "licenseUrl": "https://unsplash.com/license",
+          "path": "/media/campaign-r35-mountain-small.webp"
+        }
+      ]
+    },
+    {
+      "id": "campaign-r34-white",
+      "caption": "Modified white Nissan Skyline R34 GT-R on a wet road, photographed in 2022; not factory-original or period 1999 photography",
+      "alt": "Modified white Nissan Skyline R34 GT-R on a wet road, photographed in 2022; not factory-original or period 1999 photography",
+      "author": "Timmie Ahl",
+      "authorUrl": "https://unsplash.com/@ahl_media",
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourceUrl": "https://unsplash.com/photos/a-white-sports-car-parked-on-a-wet-road-ZNPVwTqhhHo",
+      "photoDate": "Published 2022-07-18; exact capture date unverified",
+      "framingNote": "Source describes modified 700whp Nissan Skyline R34 GT-R. Modern illustrative example of the generation, not factory-original 1999 or period photography. Full source frame retained in local copies; campaign card uses a responsive crop.",
+      "credit": "Photo by Timmie Ahl on Unsplash. Free copyright license to download, copy, modify, distribute and use, including commercial use. Attribution appreciated, not required. Do not resell unmodified images or build a competing image service. Does not separately grant trademark, brand, or endorsement rights. Do not imply Nissan or photographer endorsement.",
+      "licenseVerifiedDate": "2026-10-05",
+      "original": {
+        "url": "https://images.unsplash.com/photo-1658162083129-5e008c4e5747",
+        "width": 3720,
+        "height": 2093,
+        "bytes": 1347173,
+        "sha256": "4cb759e4bd0b8be0ee3c0b3597af81c26be7fe8c85b26ede9bb0e74277cfd45f"
+      },
+      "derivatives": [
+        {
+          "width": 1600,
+          "height": 900,
+          "bytes": 181814,
+          "sha256": "73604cc9921b8c919d7d4d3b40fa3d441fa169f74bc0993eb5ec4eb21af7511b",
+          "changes": [
+            "Proportional resize and WebP quality 88 encoding; no retouching or AI enhancement",
+            "Complete original frame retained; card uses responsive CSS crop where stated"
+          ],
+          "license": "Unsplash License",
+          "licenseUrl": "https://unsplash.com/license",
+          "path": "/media/campaign-r34-white.webp"
+        },
+        {
+          "width": 640,
+          "height": 360,
+          "bytes": 42542,
+          "sha256": "b8e35da6a244aa976e4cba3154494e72d03a913d944bc69a0ac4301d48d1ba5f",
+          "changes": [
+            "Proportional resize and WebP quality 88 encoding; no retouching or AI enhancement",
+            "Complete original frame retained; card uses responsive CSS crop where stated"
+          ],
+          "license": "Unsplash License",
+          "licenseUrl": "https://unsplash.com/license",
+          "path": "/media/campaign-r34-white-small.webp"
+        }
+      ]
     }
   ]
 }
