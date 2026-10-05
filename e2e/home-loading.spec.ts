@@ -40,12 +40,46 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   const hold = new Promise<void>((resolve) => {
     release = resolve;
   });
+  let releaseProvider!: () => void;
+  const providerHold = new Promise<void>((resolve) => {
+    releaseProvider = resolve;
+  });
+  await page.route("https://media.flixel.com/**", async (route) => {
+    await providerHold;
+    await route.fallback();
+  });
   await page.route(model, async (route) => {
     requests++;
     await hold;
     await route.continue();
   });
+  await page.addInitScript(() => {
+    const probe = () => {
+      const root = document.querySelector(".cinematic-home");
+      if (!root) {
+        requestAnimationFrame(probe);
+        return;
+      }
+      (window as any).__openingFirstPaint = {
+        gateOpen: Boolean(
+          document.querySelector(".home-loading-gate")?.hasAttribute("open"),
+        ),
+        rootInert: root.hasAttribute("inert"),
+        iframeCount: root.querySelectorAll(".home-film--hero iframe").length,
+      };
+    };
+    requestAnimationFrame(probe);
+  });
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__openingFirstPaint))
+    .toEqual({ gateOpen: true, rootInert: true, iframeCount: 0 });
+  await info.attach("first-application-paint-gate", {
+    body: JSON.stringify(
+      await page.evaluate(() => (window as any).__openingFirstPaint),
+    ),
+    contentType: "application/json",
+  });
   await expect.poll(() => requests).toBe(1);
   await expect(page.locator(".home-film--hero")).toHaveAttribute(
     "data-film-poster",
@@ -108,6 +142,17 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   });
   await ready(page);
   await network.detach();
+  // Preserve a real recording beat after automatic gate completion. Only the
+  // test's provider-document fixture is held; application readiness is genuine.
+  await expect(page.locator(".home-film--hero iframe")).toHaveCSS(
+    "opacity",
+    "0",
+  );
+  await page.screenshot({
+    path: info.outputPath("automatic-completion-hero-poster.png"),
+  });
+  await page.waitForTimeout(750);
+  releaseProvider();
   expect(await page.evaluate(() => document.activeElement?.id)).toBe(
     "home-title",
   );

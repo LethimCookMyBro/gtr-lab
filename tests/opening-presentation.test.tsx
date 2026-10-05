@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { StrictMode } from "react";
+import { StrictMode, useLayoutEffect } from "react";
 import { readFileSync } from "node:fs";
 import { afterEach, expect, it, vi } from "vitest";
 import {
@@ -33,6 +33,29 @@ const opening = (pending: boolean, reducedMotion = false) => (
     <OpeningMark {...props} pending={pending} reducedMotion={reducedMotion} />
   </StrictMode>
 );
+it("opens and locks the preparation modal before the first visible application paint", () => {
+  const frames: { open: boolean; overflow: string }[] = [];
+  function PrePaintProbe() {
+    useLayoutEffect(() => {
+      frames.push({
+        open: Boolean(document.querySelector("dialog")?.hasAttribute("open")),
+        overflow: document.body.style.overflow,
+      });
+    }, []);
+    return null;
+  }
+  render(
+    <StrictMode>
+      <OpeningMark {...props} pending />
+      <PrePaintProbe />
+    </StrictMode>,
+  );
+  expect(frames.length).toBeGreaterThan(0);
+  expect(
+    frames.every((frame) => frame.open && frame.overflow === "hidden"),
+  ).toBe(true);
+});
+
 it("fades the real modal after readiness, then releases scroll and focus within a bounded time", () => {
   vi.useFakeTimers();
   const { rerender } = render(opening(true));

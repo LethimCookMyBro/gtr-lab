@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { ArrowRight, RotateCcw } from "lucide-react";
 import { GtrWordmark } from "./GtrWordmark";
 import { formatModelBytes, sceneLoadLabel } from "./homeReadiness";
 import type { HomeSceneLoadState } from "./homeReadiness";
+
+// A pending gate must be modal before the application can paint. The passive
+// fallback keeps server rendering free of browser-only layout work.
+const usePrePaintEffect =
+  typeof document === "undefined" ? useEffect : useLayoutEffect;
 
 /** A viewport-level, accessible gate around the actual homepage preparation. */
 export function OpeningMark({
@@ -40,11 +45,11 @@ export function OpeningMark({
     },
     [],
   );
-  useEffect(() => {
+  usePrePaintEffect(() => {
     const element = dialog.current;
     return () => closeGate(false, element);
   }, [closeGate]);
-  useEffect(() => {
+  usePrePaintEffect(() => {
     const element = dialog.current;
     if (!element) return;
     if (!pending) {
@@ -107,6 +112,12 @@ export function OpeningMark({
       document.removeEventListener("keydown", trap);
     };
   }, [pending, reducedMotion, closeGate]);
+  useEffect(() => {
+    // Sibling mount/autofocus hooks must not take the preparation control's
+    // focus. The modal and scroll lock are already in place before first paint.
+    if (pending && dialog.current?.hasAttribute("open"))
+      skip.current?.focus({ preventScroll: true });
+  }, [pending]);
   const downloading = scene.phase === "downloading" ? scene : undefined;
   const total = downloading?.totalBytes;
   const label =
