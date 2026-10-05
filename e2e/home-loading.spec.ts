@@ -71,8 +71,43 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   await page.screenshot({
     path: info.outputPath("initial-poster-ready-model-stalled.png"),
   });
+  // Throttle the real GLB response, not a fabricated progress counter. This
+  // preserves a genuinely pending download through more than one chrome pass.
+  const network = await page.context().newCDPSession(page);
+  await network.send("Network.enable");
+  await network.send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 0,
+    downloadThroughput: 650000,
+    uploadThroughput: -1,
+  });
   release();
+  await expect
+    .poll(() => gate(page).locator("progress").getAttribute("aria-valuenow"))
+    .not.toBe("0");
+  await page.waitForTimeout(3500);
+  const bytes = Number(
+    await gate(page).locator("progress").getAttribute("aria-valuenow"),
+  );
+  expect(bytes).toBeGreaterThan(0);
+  await expect(gate(page)).toBeVisible();
+  const sweep = await gate(page)
+    .locator(".gtr-brand-chrome-sweep")
+    .evaluate(
+      (node) => getComputedStyle(node, "::after").animationIterationCount,
+    );
+  expect(sweep).toBe("infinite");
+  await page.screenshot({
+    path: info.outputPath("actual-download-repeating-chrome.png"),
+  });
+  await network.send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  });
   await ready(page);
+  await network.detach();
   expect(await page.evaluate(() => document.activeElement?.id)).toBe(
     "home-title",
   );

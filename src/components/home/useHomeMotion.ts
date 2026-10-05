@@ -197,7 +197,16 @@ export function useHomeMotion(
           const progress =
             kind === "editorial"
               ? clamp01((viewport - rect.top) / (rect.height + viewport))
-              : sectionProgress(rect.top, rect.height, stickyHeight);
+              : sectionProgress(
+                  // A full-width 16:9 hero can be taller than the viewport.
+                  // Read it in native flow before beginning its exit beat.
+                  rect.top +
+                    (kind === "hero"
+                      ? Math.max(0, stickyHeight - viewport)
+                      : 0),
+                  rect.height,
+                  stickyHeight,
+                );
           write(element, "--progress", progress.toFixed(5));
           if (kind === "hero") {
             const exit = heroExitAt(progress);

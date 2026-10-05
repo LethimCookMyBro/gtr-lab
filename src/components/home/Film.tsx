@@ -190,7 +190,7 @@ export function Film({
               {active ? "Stop film" : failed ? "Retry film" : "Play film"}
             </span>
           </button>
-          {active && (
+          {active && kind !== "hero" && (
             <button
               type="button"
               className="home-film-toggle home-film-retry"
@@ -200,6 +200,29 @@ export function Film({
               <RotateCcw size={14} strokeWidth={1.5} aria-hidden="true" />
               <span>Retry film</span>
             </button>
+          )}
+          {kind === "hero" && (
+            <details className="home-film-tools">
+              <summary>Film controls</summary>
+              <div className="home-film-tools-panel">
+                <p>
+                  {active && !loaded
+                    ? "Loading the publisher’s player…"
+                    : "If the film does not move, retry it or open the credited original."}
+                </p>
+                {active && (
+                  <button
+                    type="button"
+                    className="home-film-toggle home-film-retry"
+                    onClick={retry}
+                    aria-label={`Retry ${name} film`}
+                  >
+                    <RotateCcw size={14} strokeWidth={1.5} aria-hidden="true" />
+                    <span>Retry film</span>
+                  </button>
+                )}
+              </div>
+            </details>
           )}
         </div>
         <div className="home-film-credit">
@@ -215,7 +238,7 @@ export function Film({
           <Link to="/credits#films">Film credits</Link>
         </div>
       </div>
-      {active && (
+      {active && kind !== "hero" && (
         <p className="home-film-status" role="status">
           {loaded
             ? "Film not moving? Retry or open the original."

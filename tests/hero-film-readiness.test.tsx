@@ -54,7 +54,11 @@ it("keeps document loading separate from playback and exposes recovery immediate
   const film = container.querySelector(".home-film")!;
   expect(film.getAttribute("data-film-document")).toBe("loading");
   expect(film.getAttribute("data-film-playback")).toBe("unverified");
-  expect(screen.getByRole("status").textContent).toMatch(/loading.*player/i);
+  expect(
+    container.querySelector(".home-film-tools-panel")?.textContent,
+  ).toMatch(/loading.*player/i);
+  expect(screen.queryByRole("status")).toBeNull();
+  container.querySelector("details")!.setAttribute("open", "");
   expect(
     screen.getByRole("button", { name: "Retry opening film" }),
   ).toBeTruthy();
@@ -71,7 +75,10 @@ it("never reports an iframe load as a usable image or actual video playback", ()
   expect(
     container.querySelector(".home-film")?.getAttribute("data-film-playback"),
   ).toBe("unverified");
-  expect(screen.getByRole("status").textContent).toMatch(/not moving.*retry/i);
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(
+    container.querySelector(".home-film-tools-panel")?.textContent,
+  ).toMatch(/does not move.*retry/i);
   expect(
     container.querySelector<HTMLImageElement>(".home-film-backup")?.hidden,
   ).toBe(false);
@@ -118,6 +125,7 @@ it("retries a loaded-but-unverified document with a fresh bounded load deadline"
   fireEvent.load(first);
   act(() => vi.advanceTimersByTime(30000));
   expect(container.querySelector("iframe")).toBe(first);
+  container.querySelector("details")!.setAttribute("open", "");
   fireEvent.click(screen.getByRole("button", { name: "Retry opening film" }));
   const second = container.querySelector("iframe")!;
   expect(second).not.toBe(first);
@@ -223,6 +231,7 @@ it("keeps the loading provider transparent over its poster without claiming play
     expect(
       container.querySelector(".home-film")?.getAttribute("data-film-playback"),
     ).toBe("unverified");
+    container.querySelector("details")!.setAttribute("open", "");
     fireEvent.click(screen.getByRole("button", { name: "Retry opening film" }));
     expect(getComputedStyle(container.querySelector("iframe")!).opacity).toBe(
       "0",

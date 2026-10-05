@@ -25,7 +25,6 @@ export function ModelInvitations() {
               to={`/configurator/${model.id}`}
               className={`home-model-invitation home-model-invitation--${model.id}`}
               aria-label={`Explore ${model.shortName}: ${has3D ? "View in 3D" : "View photos"}`}
-              aria-describedby={has3D ? "home-model-asset-note" : undefined}
               data-motion-anchor={`model-${model.id}`}
               data-experience={has3D ? "3d" : "photography"}
             >
@@ -56,11 +55,6 @@ export function ModelInvitations() {
           );
         })}
       </nav>
-      <p id="home-model-asset-note" className="home-model-asset-note">
-        The 3D experience uses an artist-built, custom-aero R35 exterior. Other
-        models are explored through photographs and specifications.{" "}
-        <Link to="/credits#campaign-r35-orange">Photography credits</Link>
-      </p>
     </section>
   );
 }

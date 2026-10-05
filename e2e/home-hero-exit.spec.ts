@@ -35,7 +35,11 @@ async function progressTo(page: Page, progress: number) {
     const box = node.getBoundingClientRect();
     const panel = node.querySelector<HTMLElement>(".home-hero-sticky")!;
     window.scrollTo({
-      top: scrollY + box.top + (box.height - panel.offsetHeight) * value,
+      top:
+        scrollY +
+        box.top +
+        Math.max(0, panel.offsetHeight - innerHeight) +
+        (box.height - panel.offsetHeight) * value,
       behavior: "instant",
     });
   }, progress);
@@ -289,7 +293,10 @@ test("Continue keeps heading focus while native scrolling activates the hero exi
       .evaluate(
         (node) =>
           node.getBoundingClientRect().height -
-          node.querySelector<HTMLElement>(".home-hero-sticky")!.offsetHeight,
+          Math.min(
+            innerHeight,
+            node.querySelector<HTMLElement>(".home-hero-sticky")!.offsetHeight,
+          ),
       );
     await page.mouse.move(8, 8);
     await page.mouse.wheel(0, runway * 0.85);
@@ -321,6 +328,14 @@ test("hero exit keeps focused film controls and credits fully readable", async (
   await expect(
     page.getByRole("button", { name: "Play opening film" }),
   ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(".home-film--hero summary")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".home-film--hero details")).toHaveAttribute(
+    "open",
+    "",
+  );
+  await page.keyboard.press("Enter");
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: /Watch original opening/ }),

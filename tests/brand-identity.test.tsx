@@ -78,7 +78,7 @@ describe("authentic GT-R identity", () => {
   });
 });
 
-describe("one-shot authentic loader emblem", () => {
+describe("authentic pending loader emblem", () => {
   it("adds a decorative chrome light pass only when the loading intro is active", () => {
     const { container, rerender } = render(<GtrWordmark sweep />);
     const light = container.querySelector(".gtr-brand-chrome-sweep");
@@ -88,7 +88,7 @@ describe("one-shot authentic loader emblem", () => {
     expect(container.querySelector(".gtr-brand-chrome-sweep")).toBeNull();
   });
 
-  it("runs one chrome sweep and red reveal, with static original imagery for reduced motion", () => {
+  it("repeats restrained chrome while pending, preserving original imagery for reduced motion", () => {
     const css = parse(read("../src/styles/home-opening-cards.css").toString());
     const animations: string[] = [];
     let reducedMotionDisablesSweep = false;
@@ -113,9 +113,14 @@ describe("one-shot authentic loader emblem", () => {
       animations.some((value) => value.includes("gtr-chrome-light-pass")),
     ).toBe(true);
     expect(animations.some((value) => value.includes("gtr-red-reveal"))).toBe(
-      true,
+      false,
     );
-    expect(animations.every((value) => !value.includes("infinite"))).toBe(true);
+    expect(
+      animations.some(
+        (value) =>
+          value.includes("gtr-chrome-light-pass") && value.includes("infinite"),
+      ),
+    ).toBe(true);
     expect(reducedMotionDisablesSweep).toBe(true);
   });
 });

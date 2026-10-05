@@ -44,6 +44,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 const show = () =>
   render(
@@ -73,6 +74,7 @@ it("keeps the viewport gate closed and film suspended while the model is downloa
   expect(document.body.style.overflow).toBe("hidden");
 });
 it("requires a decoded opening image and prepared 3D render, then restores heading focus", async () => {
+  vi.useFakeTimers();
   const { container } = show();
   expect(container.querySelector(".home-film--hero iframe")).toBeNull();
   for (const phase of ["decoding", "preparing"]) {
@@ -89,6 +91,10 @@ it("requires a decoded opening image and prepared 3D render, then restores headi
   Object.defineProperty(image, "naturalWidth", { value: 1200 });
   image.decode = () => Promise.resolve();
   await act(async () => fireEvent.load(image));
+  expect(screen.getByRole("dialog").getAttribute("data-state")).toBe(
+    "resolved",
+  );
+  act(() => vi.advanceTimersByTime(360));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(
     container.querySelector(".cinematic-home")?.hasAttribute("inert"),
@@ -146,6 +152,7 @@ it("offers a bounded recovery if both opening visual paths never become usable",
   vi.useRealTimers();
 });
 it("accepts a real decoded local poster without waiting for the hosted film", async () => {
+  vi.useFakeTimers();
   const { container } = show();
   const image = container.querySelector<HTMLImageElement>(".home-film-backup")!;
   Object.defineProperty(image, "complete", { value: true });
@@ -159,6 +166,7 @@ it("accepts a real decoded local poster without waiting for the hosted film", as
   act(() => rear.props.onLoadState({ phase: "ready" }));
   expect(screen.getByRole("dialog")).toBeTruthy();
   await act(async () => decoded!());
+  act(() => vi.advanceTimersByTime(360));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(
     container.querySelector(".home-film")?.getAttribute("data-film-state"),

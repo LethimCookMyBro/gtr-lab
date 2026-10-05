@@ -41,6 +41,7 @@ const exit = (value: number) => {
 beforeEach(() => {
   progress = 0;
   frame = undefined;
+  vi.stubGlobal("innerHeight", 1000);
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
     frame = callback;
     return 1;
@@ -139,6 +140,19 @@ describe("bounded reversible hero exit", () => {
     expect(hero.style.getPropertyValue("--hero-exit-lift")).toBe("0.000px");
     expect(hero.querySelector("iframe")).toBe(iframe);
     expect(iframe.style.transform).toBe("");
+  });
+
+  it("reads an oversized intact hero before starting its scroll exit", () => {
+    vi.stubGlobal("innerHeight", 768);
+    const { container } = render(<Scene />);
+    const hero = container.querySelector<HTMLElement>(".home-hero-runway")!;
+    exit(0.3); // 180px is still within the 232px natural overflow.
+    expect(hero.style.getPropertyValue("--progress")).toBe("0.00000");
+    expect(hero.style.getPropertyValue("--copy-opacity")).toBe("1");
+    exit((232 + 600 * 0.76) / 600);
+    expect(hero.style.getPropertyValue("--hero-exit-opacity")).toBe("0.88000");
+    exit(0);
+    expect(hero.style.getPropertyValue("--hero-exit-opacity")).toBe("1.00000");
   });
 
   it("allows Continue-to-heading focus to scroll out while protecting focused film controls and links", () => {

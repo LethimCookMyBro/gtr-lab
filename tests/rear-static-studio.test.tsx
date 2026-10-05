@@ -12,6 +12,9 @@ const runtime = vi.hoisted(() => ({
   environmentBuilds: 0,
   shadowRenders: 0,
   lights: [] as Record<string, any>[],
+  fog: {} as any,
+  environment: {} as any,
+  floor: {} as any,
 }));
 // DOM tests do not render Three hosts. Keep the real React component boundaries,
 // which determine whether the static studio sends new work to Drei.
@@ -21,6 +24,8 @@ vi.mock("react/jsx-runtime", async (importOriginal) => {
   const host = (type: unknown, props: any) => {
     if (type === "rectAreaLight" || type === "pointLight")
       runtime.lights.push(props);
+    if (type === "fog") runtime.fog = props;
+    if (type === "meshPhysicalMaterial") runtime.floor = props;
     return typeof type === "string";
   };
   return {
@@ -48,6 +53,8 @@ vi.mock("react/jsx-dev-runtime", async (importOriginal) => {
     jsxDEV: (type: any, props: any, ...rest: any[]) => {
       if (type === "rectAreaLight" || type === "pointLight")
         runtime.lights.push(props);
+      if (type === "fog") runtime.fog = props;
+      if (type === "meshPhysicalMaterial") runtime.floor = props;
       return (original.jsxDEV as any)(
         typeof type === "string" ? react.Fragment : type,
         typeof type === "string" ? { children: props.children } : props,
@@ -68,7 +75,9 @@ vi.mock("../src/components/three/StageGeometry", () => ({
   StageGeometry: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@react-three/drei/core/Environment", () => ({
-  Environment: ({ children }: { children: ReactNode }) => {
+  Environment: (props: { children: ReactNode }) => {
+    const { children } = props;
+    runtime.environment = props;
     // Installed Drei EnvironmentPortal rebuilds its cubemap when children changes.
     useLayoutEffect(() => {
       runtime.environmentBuilds++;
@@ -91,6 +100,9 @@ beforeEach(() => {
   runtime.environmentBuilds = 0;
   runtime.shadowRenders = 0;
   runtime.lights = [];
+  runtime.fog = {};
+  runtime.environment = {};
+  runtime.floor = {};
   runtime.asset = {
     scene: new Group(),
     bindings: [],
@@ -188,4 +200,20 @@ it("keeps four restrained short-range red spill sources at the measured rear len
     expect(light.intensity).toBeLessThanOrEqual(0.025);
     expect(light.position[2]).toBeLessThan(-2.2);
   }
+});
+
+it("initializes fog, cached environment influence, and local spill dark before the first demand frame", () => {
+  render(
+    <RearVehicleScene
+      progress={0}
+      reducedMotion={false}
+      onReady={() => {}}
+      onError={() => {}}
+      onProgress={() => {}}
+    />,
+  );
+  expect(runtime.fog.args[0]).toBe("#000000");
+  expect(runtime.environment.environmentIntensity).toBe(0);
+  expect(runtime.floor.emissive ?? "#000000").toBe("#000000");
+  for (const light of runtime.lights) expect(light.intensity).toBe(0);
 });

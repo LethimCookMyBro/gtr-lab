@@ -119,6 +119,17 @@ beforeEach(() => {
   paint.name = "CarPaint";
   paint.normalMap = new Texture();
   for (let i = 0; i < 8; i++) addMesh(`Body${i}_CarPaint_0`, paint);
+  const carbon = new MeshStandardMaterial({
+    color: "#202226",
+    roughness: 0.24,
+    metalness: 0.5,
+  });
+  carbon.name = "Carbon_Fiber";
+  carbon.map = new Texture();
+  carbon.normalMap = new Texture();
+  carbon.roughnessMap = new Texture();
+  addMesh("Spoiler_Carbon_Fiber_0", carbon);
+  addMesh("Rear_Bumper_Grid_Carbon_Fiber_0", carbon);
   const lens = new MeshStandardMaterial({
     color: "#69000a",
     opacity: 0.2,
@@ -224,6 +235,41 @@ it("lights the actual broad annular lens covers more strongly than the thin emit
   expect(material("Reverse_Emitter").emissiveIntensity).toBe(0);
 });
 
+it("isolates the white satin spoiler from the shared textured carbon grille without changing geometry", () => {
+  const carbon = material("Rear_Bumper_Grid_Carbon_Fiber_0");
+  const carbonColor = carbon.color.clone();
+  const carbonMap = carbon.map;
+  const carbonNormalMap = carbon.normalMap;
+  const carbonRoughnessMap = carbon.roughnessMap;
+  const geometry = (
+    asset.scene.getObjectByName("Spoiler_Carbon_Fiber_0") as Mesh
+  ).geometry;
+  expect(material("Spoiler_Carbon_Fiber_0")).toBe(carbon);
+  mount();
+  const spoiler = material("Spoiler_Carbon_Fiber_0") as MeshPhysicalMaterial;
+  const paint = material("Body0_CarPaint_0") as MeshPhysicalMaterial;
+  expect(spoiler).not.toBe(carbon);
+  expect(spoiler).not.toBe(paint);
+  expect(spoiler).toBeInstanceOf(MeshPhysicalMaterial);
+  expect(spoiler.name).toBe("Rear_Satin_Spoiler");
+  expect(spoiler.color.equals(paint.color)).toBe(true);
+  expect(spoiler.metalness).toBe(paint.metalness);
+  expect(spoiler.roughness).toBe(paint.roughness);
+  expect(spoiler.clearcoat).toBe(paint.clearcoat);
+  expect(spoiler.clearcoatRoughness).toBe(paint.clearcoatRoughness);
+  expect(Object.values(spoiler).some((value) => value instanceof Texture)).toBe(
+    false,
+  );
+  expect(material("Rear_Bumper_Grid_Carbon_Fiber_0")).toBe(carbon);
+  expect(carbon.color.equals(carbonColor)).toBe(true);
+  expect(carbon.map).toBe(carbonMap);
+  expect(carbon.normalMap).toBe(carbonNormalMap);
+  expect(carbon.roughnessMap).toBe(carbonRoughnessMap);
+  expect(
+    (asset.scene.getObjectByName("Spoiler_Carbon_Fiber_0") as Mesh).geometry,
+  ).toBe(geometry);
+});
+
 it("darkens only the three lamp housing meshes while leaving shared chrome badges untouched", () => {
   const badge = material("NissanLogo_Metal_0");
   const badgeColor = badge.color.clone();
@@ -263,16 +309,20 @@ it("keeps selective material copies stable on effect re-entry and disposes them 
   const first = mount();
   const housing = material("Taillights001_Metal_0");
   const glass = material("RearWindow_Glass_0");
+  const spoiler = material("Spoiler_Carbon_Fiber_0");
   expect(housing).not.toBe(material("NissanLogo_Metal_0"));
   const disposeHousing = vi.spyOn(housing, "dispose");
   const disposeGlass = vi.spyOn(glass, "dispose");
+  const disposeSpoiler = vi.spyOn(spoiler, "dispose");
   first.unmount();
   mount();
   expect(material("Taillights001_Metal_0")).toBe(housing);
   expect(material("RearWindow_Glass_0")).toBe(glass);
+  expect(material("Spoiler_Carbon_Fiber_0")).toBe(spoiler);
   asset.dispose();
   expect(disposeHousing).toHaveBeenCalledTimes(1);
   expect(disposeGlass).toHaveBeenCalledTimes(1);
+  expect(disposeSpoiler).toHaveBeenCalledTimes(1);
 });
 
 it("keeps frontal reflection cards dimmer and narrower than the body-shaping overhead source", () => {
@@ -375,7 +425,21 @@ it("binds the window fix and four emission profiles to the decoded published ass
     ["Reverse_Emitter"],
   );
   runtime.asset = asset;
+  const grille = material("Rear_Bumper_Grid_Carbon_Fiber_0");
+  const grilleColor = grille.color.clone();
+  const grilleMap = grille.map;
+  expect(material("Spoiler_Carbon_Fiber_0")).toBe(grille);
   mount();
+  const spoiler = material("Spoiler_Carbon_Fiber_0");
+  expect(spoiler).not.toBe(grille);
+  expect(spoiler.name).toBe("Rear_Satin_Spoiler");
+  expect(spoiler.color.getHexString()).toBe("ecebe6");
+  expect(Object.values(spoiler).some((value) => value instanceof Texture)).toBe(
+    false,
+  );
+  expect(material("Rear_Bumper_Grid_Carbon_Fiber_0")).toBe(grille);
+  expect(grille.color.equals(grilleColor)).toBe(true);
+  expect(grille.map).toBe(grilleMap);
   expect(material("Rear_Window_Glass_0").name).toBe("Window_Glass");
   expect(compiled(material("Rear_Window_Glass_0")).fragmentShader).toContain(
     "directSpecular *= 0.045",

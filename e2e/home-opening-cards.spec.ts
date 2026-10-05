@@ -182,13 +182,8 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
     exact: true,
   });
   await premium.scrollIntoViewIfNeeded();
-  await expect(premium).toHaveAttribute(
-    "aria-describedby",
-    "home-model-asset-note",
-  );
-  await expect(page.locator("#home-model-asset-note")).toContainText(
-    "artist-built, custom-aero R35 exterior",
-  );
+  await expect(premium).not.toHaveAttribute("aria-describedby");
+  await expect(page.locator("#home-model-asset-note")).toHaveCount(0);
   for (const card of await lineup.getByRole("link").all()) {
     await expect(card.locator(":scope > img")).toHaveCount(1);
     await expect(card.getByRole("heading", { level: 3 })).toHaveCount(1);
@@ -199,7 +194,12 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
         ".home-invitation-copy > p, .home-invitation-meta, .home-invitation-cursor",
       ),
     ).toHaveCount(0);
-    await expect(card.locator("img")).toHaveCSS("object-fit", "cover");
+    await expect(card.locator("img")).toHaveCSS(
+      "object-fit",
+      (await card.getAttribute("href")) === "/configurator/gtr50"
+        ? "contain"
+        : "cover",
+    );
     await expect(card.locator(".home-invitation-cta > span")).toHaveCSS(
       "opacity",
       "1",
@@ -482,4 +482,66 @@ test("opening player deadline starts after gate release and retry restores the p
   await expect(film.getByRole("status")).toHaveCount(0);
   await expect(film.locator("iframe")).toHaveCount(0);
   expect(requests).toBe(2);
+});
+
+test("full-width opening and complete GT-R50 keep their intact frames with keyboard film tools", async ({
+  page,
+}, info) => {
+  test.skip(
+    !["cards-desktop-1920", "cards-desktop-1180", "cards-mobile-390"].includes(
+      info.project.name,
+    ),
+    "Batched affected desktop/mobile composition",
+  );
+  await page.route("https://media.flixel.com/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><html><body>Document-only lifecycle fixture. Not playback evidence.</body></html>",
+    }),
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await continueHomeWithout3D(page);
+  const film = page.locator(".home-film--hero");
+  const frame = film.locator("iframe");
+  const box = (await frame.boundingBox())!;
+  expect(box.width).toBeCloseTo(page.viewportSize()!.width, 0);
+  expect(box.width / box.height).toBeCloseTo(16 / 9, 3);
+  const stop = film.getByRole("button", { name: "Stop opening film" });
+  await stop.click();
+  await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+  await page.locator(".home-hero-sticky").screenshot({
+    path: info.outputPath("full-width-hero-poster-composition.png"),
+    scale: "css",
+  });
+  await film.getByRole("button", { name: "Play opening film" }).click();
+  const summary = film.locator("summary");
+  await summary.focus();
+  await page.keyboard.press("Enter");
+  await expect(film.locator("details")).toHaveAttribute("open", "");
+  await page.keyboard.press("Tab");
+  await expect(
+    film.getByRole("button", { name: "Retry opening film" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(film.locator("iframe")).toHaveCount(1);
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Enter");
+  await expect(film.locator("details")).not.toHaveAttribute("open");
+  await page.keyboard.press("Tab");
+  await expect(
+    film.getByRole("link", { name: /Watch original opening/ }),
+  ).toBeFocused();
+  const card = page.locator(".home-model-invitation--gtr50");
+  await card.scrollIntoViewIfNeeded();
+  await card
+    .locator("img")
+    .evaluate((image: HTMLImageElement) => image.decode());
+  await expect(card.locator("img")).toHaveCSS("object-fit", "contain");
+  await card.focus();
+  await expect(card.locator("img")).toHaveCSS("transform", "none");
+  await card.screenshot({
+    path: info.outputPath("gtr50-complete-car.png"),
+    scale: "css",
+  });
+  await expect(page.locator("#home-model-asset-note")).toHaveCount(0);
 });

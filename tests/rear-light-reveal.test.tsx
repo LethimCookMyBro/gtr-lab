@@ -4,7 +4,10 @@ import { cleanup, render } from "@testing-library/react";
 import {
   AmbientLight,
   DirectionalLight,
+  Fog,
+  type Light,
   PerspectiveCamera,
+  PointLight,
   RectAreaLight,
   Scene,
   Vector3,
@@ -33,6 +36,7 @@ beforeEach(() => {
     invalidate: () => {},
     gl: { domElement: document.createElement("canvas") },
   };
+  runtime.state.scene.fog = new Fog("#030405", 13, 30);
 });
 afterEach(cleanup);
 const props = { onReady: () => {}, onError: () => {}, onProgress: () => {} };
@@ -40,16 +44,98 @@ function settle() {
   for (let i = 0; i < 80; i++)
     runtime.frames.forEach((frame) => frame({}, 1 / 30));
 }
-it("keeps a faint shell around the initial lamps, then reveals the white body with scroll", () => {
+function addStudioLights() {
+  const lights: [string, Light][] = [
+    ["rear-key", new DirectionalLight()],
+    ["rear-fill", new AmbientLight()],
+    ["rear-roof", new RectAreaLight()],
+    ["rear-sweep", new RectAreaLight()],
+    ...Array.from({ length: 4 }, (_, index): [string, Light] => [
+      `rear-lens-spill-${index}`,
+      new PointLight("#ff170b", 0.018),
+    ]),
+  ];
+  for (const [name, light] of lights) {
+    light.name = name;
+    runtime.state.scene.add(light);
+  }
+  return lights.map(([, light]) => light);
+}
+
+function lightLevels() {
+  return [
+    runtime.state.scene.environmentIntensity,
+    ...[
+      "rear-key",
+      "rear-fill",
+      "rear-roof",
+      "rear-sweep",
+      ...Array.from({ length: 4 }, (_, index) => `rear-lens-spill-${index}`),
+    ].map((name) => runtime.state.scene.getObjectByName(name).intensity),
+  ];
+}
+
+it("opens on black with no incident studio or lens-spill illumination", () => {
+  const lights = addStudioLights();
+  render(<RearVehicleScene {...props} progress={0} reducedMotion={false} />);
+  settle();
+  expect(runtime.state.scene.environmentIntensity).toBe(0);
+  for (const light of lights) expect(light.intensity).toBe(0);
+  expect(runtime.state.scene.background.getHexString()).toBe("000000");
+  expect(runtime.state.scene.fog.color.getHexString()).toBe("000000");
+});
+
+it("keeps the native-scroll midpoint restrained instead of flooding the shell", () => {
+  addStudioLights();
+  render(<RearVehicleScene {...props} progress={0.5} reducedMotion={false} />);
+  settle();
+  const levels = lightLevels();
+  expect(levels[0]).toBeGreaterThan(0.15);
+  expect(levels[0]).toBeLessThan(0.35);
+  expect(levels[4]).toBeLessThan(1.2);
+});
+
+it("reveals the studio gradually across native scroll and returns to the same darkness in reverse", () => {
+  addStudioLights();
   const { rerender } = render(
     <RearVehicleScene {...props} progress={0} reducedMotion={false} />,
   );
-  settle();
-  expect(runtime.state.scene.environmentIntensity).toBeGreaterThan(0);
-  expect(runtime.state.scene.environmentIntensity).toBeLessThan(0.08);
-  rerender(<RearVehicleScene {...props} progress={1} reducedMotion={false} />);
-  settle();
-  expect(runtime.state.scene.environmentIntensity).toBeGreaterThan(0.7);
+  const levels = new Map<number, number[]>();
+  let previousEnvironment = 0;
+  for (const progress of [0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1]) {
+    runtime.frames = [];
+    rerender(
+      <RearVehicleScene {...props} progress={progress} reducedMotion={false} />,
+    );
+    runtime.frames.forEach((frame) => frame({}, 1 / 60));
+    const current = lightLevels();
+    expect(current[0]).toBeGreaterThanOrEqual(previousEnvironment);
+    previousEnvironment = current[0];
+    levels.set(progress, current);
+    if (progress <= 0.2) expect(current).toEqual(Array(9).fill(0));
+    if (progress === 0.5) {
+      expect(current[0]).toBeGreaterThan(0.15);
+      expect(current[0]).toBeLessThan(0.35);
+      expect(current[4]).toBeLessThan(1.2);
+    }
+    if (progress === 0.9) expect(current[0]).toBeLessThan(0.98);
+  }
+  expect(levels.get(1)).toEqual([
+    0.98, 0.968, 0.087, 3.4, 0, 0.018, 0.018, 0.018, 0.018,
+  ]);
+  for (const progress of [0.9, 0.7, 0.5, 0.3, 0.2, 0.1, 0]) {
+    runtime.frames = [];
+    rerender(
+      <RearVehicleScene {...props} progress={progress} reducedMotion={false} />,
+    );
+    runtime.frames.forEach((frame) => frame({}, 1 / 60));
+    expect(lightLevels()).toEqual(levels.get(progress));
+    expect(runtime.state.gl.domElement.dataset.rearProgress).toBe(
+      progress.toFixed(4),
+    );
+  }
+  expect(runtime.state.scene.background.getHexString()).toBe("000000");
+  expect(runtime.state.scene.fog.color.getHexString()).toBe("000000");
 });
 it.each([
   [1440, 900],
@@ -145,13 +231,14 @@ it("sweeps one real white studio source over the shoulders and exhaust after the
 });
 
 it("shows the settled studio with no reflection sweep in reduced motion", () => {
-  const sweep = new RectAreaLight("#ffffff", 4);
-  sweep.name = "rear-sweep";
-  runtime.state.scene.add(sweep);
+  addStudioLights();
   render(<RearVehicleScene {...props} progress={0} reducedMotion />);
   settle();
-  expect(sweep.intensity).toBe(0);
-  expect(runtime.state.scene.environmentIntensity).toBeGreaterThan(0.7);
+  expect(lightLevels()).toEqual([
+    0.98, 0.968, 0.087, 3.4, 0, 0.018, 0.018, 0.018, 0.018,
+  ]);
+  expect(runtime.state.scene.background.getHexString()).toBe("030405");
+  expect(runtime.state.scene.fog.color.getHexString()).toBe("030405");
 });
 
 it.each([
@@ -189,10 +276,9 @@ it("reveals a broad neutral roof source and restrained fill only after the real 
     <RearVehicleScene {...props} progress={0.1} reducedMotion={false} />,
   );
   settle();
-  expect(roof.intensity).toBeGreaterThan(0);
-  expect(roof.intensity).toBeLessThan(0.3);
-  expect(fill.intensity).toBeGreaterThan(0);
-  expect(fill.intensity).toBeLessThan(0.04);
+  expect(roof.intensity).toBe(0);
+  expect(fill.intensity).toBe(0);
+  expect(key.intensity).toBe(0);
   runtime.frames = [];
   rerender(<RearVehicleScene {...props} progress={1} reducedMotion={false} />);
   settle();

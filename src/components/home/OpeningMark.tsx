@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ArrowRight, RotateCcw } from "lucide-react";
 import { GtrWordmark } from "./GtrWordmark";
 import { formatModelBytes, sceneLoadLabel } from "./homeReadiness";
@@ -22,11 +22,59 @@ export function OpeningMark({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
-  const wasOpen = useRef(false);
+  const releaseModal = useRef<(() => void) | null>(null);
+  const latestPending = useRef(pending);
+  latestPending.current = pending;
+  const skipped = useRef(false);
+  const closeGate = useCallback(
+    (restoreFocus = true, element = dialog.current) => {
+      const wasOpen = element?.hasAttribute("open");
+      if (element) {
+        if (typeof element.close === "function") element.close();
+        else element.removeAttribute("open");
+      }
+      releaseModal.current?.();
+      releaseModal.current = null;
+      if (wasOpen && restoreFocus)
+        document.getElementById("home-title")?.focus({ preventScroll: true });
+    },
+    [],
+  );
   useEffect(() => {
     const element = dialog.current;
-    if (!pending || !element) return;
-    wasOpen.current = true;
+    return () => closeGate(false, element);
+  }, [closeGate]);
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    if (!pending) {
+      if (!element.hasAttribute("open")) {
+        if (skipped.current)
+          document.getElementById("home-title")?.focus({ preventScroll: true });
+        skipped.current = false;
+        return;
+      }
+      if (reducedMotion) {
+        closeGate();
+        return;
+      }
+      // The real dialog remains present only for this completion fade. The
+      // deadline also releases it when transition events are suppressed.
+      const finish = () => {
+        if (!latestPending.current) closeGate();
+      };
+      const transition = (event: TransitionEvent) => {
+        if (event.target === element && event.propertyName === "opacity")
+          finish();
+      };
+      element.addEventListener("transitionend", transition);
+      const deadline = window.setTimeout(finish, 360);
+      return () => {
+        window.clearTimeout(deadline);
+        element.removeEventListener("transitionend", transition);
+      };
+    }
+    if (element.hasAttribute("open")) return;
     const bodyOverflow = document.body.style.overflow;
     const rootOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
@@ -53,20 +101,12 @@ export function OpeningMark({
       }
     };
     document.addEventListener("keydown", trap);
-    return () => {
+    releaseModal.current = () => {
       document.body.style.overflow = bodyOverflow;
       document.documentElement.style.overflow = rootOverflow;
       document.removeEventListener("keydown", trap);
-      if (typeof element.close === "function") element.close();
-      else element.removeAttribute("open");
     };
-  }, [pending]);
-  useEffect(() => {
-    if (!pending && wasOpen.current) {
-      wasOpen.current = false;
-      document.getElementById("home-title")?.focus({ preventScroll: true });
-    }
-  }, [pending]);
+  }, [pending, reducedMotion, closeGate]);
   const downloading = scene.phase === "downloading" ? scene : undefined;
   const total = downloading?.totalBytes;
   const label =
@@ -126,7 +166,12 @@ export function OpeningMark({
           ref={skip}
           className="home-opening-continue"
           type="button"
-          onClick={onContinue}
+          onClick={() => {
+            // Explicit skip never waits for the decorative completion fade.
+            skipped.current = true;
+            closeGate(false);
+            onContinue();
+          }}
         >
           Continue without 3D{" "}
           <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />

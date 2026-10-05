@@ -162,9 +162,8 @@ describe("truthful spatial model invitations", () => {
         ),
       ).toBeTruthy();
     }
-    expect(links[0].getAttribute("aria-describedby")).toBe(
-      "home-model-asset-note",
-    );
+    expect(links[0].hasAttribute("aria-describedby")).toBe(false);
+    expect(document.querySelector("#home-model-asset-note")).toBeNull();
   });
   it("keeps one quiet action and no cursor-following bubble on every card", () => {
     const { container } = cards();

@@ -11,6 +11,7 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   SRGBColorSpace,
+  Texture,
   Vector4,
 } from "three";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
@@ -37,6 +38,7 @@ type Props = {
 // One physical strip light moves across the real body; the environment stays cached.
 RectAreaLightUniformsLib.init();
 const source = models.find((model) => model.id === "premium")!.asset;
+const studioBackground = new Color("#030405");
 
 // r180's LTC area-light approximation drives grazing specular toward white
 // independently of MeshPhysicalMaterial.specularIntensity. Restrict that direct
@@ -98,7 +100,7 @@ function RearCamera({
     scene = useThree((s) => s.scene);
   const target = reducedMotion ? 1 : progress;
   useEffect(() => {
-    scene.background = new Color("#030405");
+    scene.background = new Color("#000000");
     invalidate();
   }, [target, size.width, size.height, invalidate, scene]);
   useFrame(() => {
@@ -106,18 +108,27 @@ function RearCamera({
     // instead of scheduling a second animation that can backlog on slower GPUs.
     const p = target,
       aspect = size.width / Math.max(1, size.height);
-    const t = Math.min(1, Math.max(0, (p - 0.13) / 0.64));
+    const t = Math.min(1, Math.max(0, (p - 0.2) / 0.8));
     const reveal = t * t * (3 - 2 * t);
-    // Keep the shell faintly legible around the lamps before the studio reveal.
-    scene.environmentIntensity = 0.045 + reveal * 0.935;
+    // The four emissive lenses lead alone. Every incident source and the stage
+    // emerge together, reaching the accepted studio only at the end of scroll.
+    scene.environmentIntensity = reveal * 0.98;
+    if (scene.background instanceof Color)
+      scene.background.copy(studioBackground).multiplyScalar(reveal);
+    if (scene.fog)
+      scene.fog.color.copy(studioBackground).multiplyScalar(reveal);
     const key = scene.getObjectByName("rear-key"),
       fill = scene.getObjectByName("rear-fill"),
       roof = scene.getObjectByName("rear-roof");
-    if (key instanceof Light) key.intensity = 0.018 + reveal * 0.95;
-    if (fill instanceof Light) fill.intensity = 0.012 + reveal * 0.075;
+    if (key instanceof Light) key.intensity = reveal * 0.968;
+    if (fill instanceof Light) fill.intensity = reveal * 0.087;
     if (roof instanceof RectAreaLight) {
-      roof.intensity = 0.14 + reveal * 3.26;
+      roof.intensity = reveal * 3.4;
       roof.lookAt(0, 1, -1);
+    }
+    for (let index = 0; index < 4; index++) {
+      const spill = scene.getObjectByName(`rear-lens-spill-${index}`);
+      if (spill instanceof Light) spill.intensity = reveal * 0.018;
     }
     const sweep = scene.getObjectByName("rear-sweep");
     if (sweep instanceof RectAreaLight) {
@@ -127,7 +138,7 @@ function RearCamera({
       sweep.intensity =
         reducedMotion || pass === 0 || pass === 1
           ? 0
-          : Math.sin(pass * Math.PI) * 3.2;
+          : Math.sin(pass * Math.PI) * 3.2 * reveal;
       sweep.position.set(-3.8 + pass * 7.6, 2.5 - pass * 2, -4.5);
       sweep.lookAt(0, 1.15 - pass * 0.8, -2.1);
     }
@@ -173,6 +184,7 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
       }
       if (b.role === "headlights") b.material.emissiveIntensity = 0;
     }
+    const satinPaint = asset.bindings.find((b) => b.role === "paint")?.material;
     // Exact meshes/materials verified in the already-public GLB. The Metal
     // material is shared with badges, so only the three lamp housings get copies.
     const housingNames = new Set([
@@ -186,6 +198,18 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
       const adapt = (original: Material) => {
         if (!(original instanceof MeshStandardMaterial)) return original;
         let material = original;
+        if (
+          object.name === "Spoiler_Carbon_Fiber_0" &&
+          material.name === "Carbon_Fiber" &&
+          satinPaint
+        ) {
+          // Carbon_Fiber is also used by the rear grille. Replace only the wing,
+          // using the configured body finish without inherited surface maps.
+          material = satinPaint.clone();
+          material.name = "Rear_Satin_Spoiler";
+          for (const [key, value] of Object.entries(material))
+            if (value instanceof Texture) Reflect.set(material, key, null);
+        }
         if (housingNames.has(object.name) && material.name === "Metal") {
           material = material.clone();
           // A stable name makes StrictMode/effect re-entry reuse the owned copy.
@@ -266,7 +290,7 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
 const RearStudio = memo(function RearStudio() {
   return (
     <>
-      <fog attach="fog" args={["#030405", 13, 30]} />
+      <fog attach="fog" args={["#000000", 13, 30]} />
       <StageGeometry>
         <ambientLight name="rear-fill" intensity={0} />
         <directionalLight
@@ -274,7 +298,7 @@ const RearStudio = memo(function RearStudio() {
           position={[-3, 6, -5]}
           intensity={0}
         />
-        {/* A broad overhead source separates the real roof and carbon wing
+        {/* A broad overhead source separates the real roof and satin wing
             from black without turning up the frontal body reflections. */}
         <rectAreaLight
           name="rear-roof"
@@ -306,12 +330,12 @@ const RearStudio = memo(function RearStudio() {
             name={`rear-lens-spill-${index}`}
             position={position as [number, number, number]}
             color="#ff170b"
-            intensity={0.018}
+            intensity={0}
             distance={0.36}
             decay={2}
           />
         ))}
-        <Environment resolution={256} frames={1}>
+        <Environment resolution={256} frames={1} environmentIntensity={0}>
           <color attach="background" args={["#090a0b"]} />
           <Lightformer
             form="rect"

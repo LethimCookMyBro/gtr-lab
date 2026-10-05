@@ -116,7 +116,7 @@ test("real satin rear lights and white studio reverse without recreating the can
   for (const [name, p] of [
     ["lamps", 0.03],
     ["reveal", 0.46],
-    ["satin", 0.76],
+    ["satin", 1],
     ["reverse", 0.46],
     ["lamps-return", 0.03],
   ] as const) {

@@ -17,6 +17,8 @@ dialog.home-loading-gate {
   background: #000;
   overflow: auto;
   overscroll-behavior: contain;
+  opacity: 1;
+  transition: opacity 320ms ease;
 }
 dialog.home-loading-gate[open] {
   display: grid;
@@ -26,7 +28,11 @@ dialog.home-loading-gate:not([open]) {
   display: none;
 }
 dialog.home-loading-gate::backdrop {
-  background: #000;
+  background: transparent;
+}
+dialog.home-loading-gate[data-state="resolved"] {
+  opacity: 0;
+  pointer-events: none;
 }
 .home-loading-gate .home-opening-center {
   align-self: center;
