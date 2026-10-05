@@ -297,11 +297,14 @@ test("model card borders stay inside their grid tracks without overlapping", asy
   });
   await lineup.locator("a").first().scrollIntoViewIfNeeded();
   await page.evaluate(() => document.fonts.ready);
-  await lineup.locator("img").evaluateAll(async (images) => {
-    await Promise.all(
-      images.map((image) => (image as HTMLImageElement).decode()),
-    );
-  });
+  // Lazy images outside the viewport must be visited before awaiting decode.
+  for (const card of await lineup.locator("a").all()) {
+    await card.scrollIntoViewIfNeeded();
+    await card
+      .locator("img")
+      .evaluate((image: HTMLImageElement) => image.decode());
+  }
+  await lineup.locator("a").first().scrollIntoViewIfNeeded();
   // Freeze only reveal translation so this measures the layout box, not scroll progress.
   await page.addStyleTag({
     content: ".home-model-invitation { --item-reveal: 1 !important; }",

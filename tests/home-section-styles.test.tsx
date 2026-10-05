@@ -95,3 +95,18 @@ it("keeps the phone photograph on the same cue without a second crop, scale or o
     "none",
   );
 });
+
+it("interrupts the timeline spine behind image and text panels", () => {
+  const { container } = story(true);
+  expect(
+    getComputedStyle(container.querySelector(".home-timeline-panel")!)
+      .backgroundColor,
+  ).toBe("rgb(11, 13, 14)");
+});
+
+it("gives the factual year an explicit readable size and weight", () => {
+  const { container } = story(true);
+  const year = getComputedStyle(container.querySelector(".home-archive-year")!);
+  expect(year.fontSize).toBe("14px");
+  expect(year.fontWeight).toBe("600");
+});

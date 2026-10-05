@@ -11,6 +11,7 @@ import {
   MeshStandardMaterial,
   PerspectiveCamera,
   Scene,
+  ShaderLib,
   Texture,
 } from "three";
 import RearVehicleScene from "../src/components/home/RearVehicleScene";
@@ -284,4 +285,104 @@ it("keeps frontal reflection cards dimmer and narrower than the body-shaping ove
   }
   const overhead = runtime.cards.find((card) => card.position[1] >= 4);
   expect(overhead.intensity).toBeGreaterThanOrEqual(2);
+});
+
+function compiled(material: MeshStandardMaterial) {
+  const shader = {
+    uniforms: {},
+    vertexShader: ShaderLib.physical.vertexShader,
+    fragmentShader: ShaderLib.physical.fragmentShader,
+  };
+  material.onBeforeCompile(shader as any, {} as any);
+  return shader;
+}
+
+it("suppresses the grazing direct-area reflection on real window glass after r180 lighting evaluation", () => {
+  mount();
+  const glass = material("RearWindow_Glass_0");
+  const shader = compiled(glass);
+  expect(shader.fragmentShader).toMatch(
+    /#include <lights_fragment_end>\s+reflectedLight.directSpecular \*= 0\.045;/,
+  );
+  expect(shader.fragmentShader).toContain(
+    "#include <lights_physical_fragment>",
+  );
+  expect(glass.customProgramCacheKey()).toBe("rear-window-ltc-v1");
+  expect(compiled(material("NissanLogo_Metal_0")).fragmentShader).not.toContain(
+    "directSpecular *= 0.045",
+  );
+});
+
+it("grades the real annular lens emission from a luminous band to dark red edges using source-local positions", () => {
+  mount();
+  const lens = material("TailightsGlass_Glass001_0");
+  const shader = compiled(lens);
+  expect(shader.vertexShader).toContain("vRearLensPosition = position.xy;");
+  expect(shader.fragmentShader).toContain("uniform vec4 rearLensBands[4];");
+  expect(shader.fragmentShader).toContain(
+    "exp(-2.4 * rearBandDistance * rearBandDistance)",
+  );
+  expect(shader.fragmentShader).toContain(
+    "totalEmissiveRadiance *= mix(0.1, 1.0, rearCore);",
+  );
+  const bands = (shader.uniforms as any).rearLensBands.value;
+  expect(bands).toHaveLength(4);
+  expect(bands.map((band: any) => band.x)).toEqual([
+    -0.87364, -0.61782, 0.61782, 0.87364,
+  ]);
+  expect(lens.customProgramCacheKey()).toBe("rear-lens-profile-v1");
+});
+
+it("binds the window fix and four emission profiles to the decoded published asset rather than fixture names", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { GLTFLoader } =
+    await import("three/examples/jsm/loaders/GLTFLoader.js");
+  const { MeshoptDecoder } =
+    await import("three/examples/jsm/libs/meshopt_decoder.module.js");
+  const loader = new GLTFLoader()
+    .setMeshoptDecoder(MeshoptDecoder)
+    .register((parser) => {
+      // Texture pixels are immaterial to mesh/material correspondence; keep the
+      // actual compressed geometry, authored names, transforms and materials.
+      (parser as any).loadTextureImage = () => Promise.resolve(new Texture());
+      return { name: "MappingWithoutImageDecode" };
+    });
+  const bytes = readFileSync("public/models/ciasny-r35.glb");
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  const loaded = await loader.parseAsync(buffer, "");
+  asset.dispose();
+  asset = prepareVehicle(
+    loaded.scene,
+    {
+      paint: ["CarPaint"],
+      headlights: ["Headlight_Emitter"],
+      taillights: ["Taillight_Emitter"],
+    },
+    ["Reverse_Emitter"],
+  );
+  runtime.asset = asset;
+  mount();
+  expect(material("Rear_Window_Glass_0").name).toBe("Window_Glass");
+  expect(compiled(material("Rear_Window_Glass_0")).fragmentShader).toContain(
+    "directSpecular *= 0.045",
+  );
+  const lens = asset.scene.getObjectByName("TailightsGlass_Glass001_0") as Mesh;
+  const shader = compiled(lens.material as MeshStandardMaterial);
+  const bands = (shader.uniforms as any).rearLensBands.value;
+  const position = lens.geometry.attributes.position;
+  for (let i = 0; i < position.count; i++) {
+    const normalizedBandDistance = Math.min(
+      ...bands.map((band: any) => {
+        const radius = Math.hypot(
+          position.getX(i) - band.x,
+          position.getY(i) - band.y,
+        );
+        return (
+          Math.abs(radius - (band.z + band.w) / 2) / ((band.w - band.z) / 2)
+        );
+      }),
+    );
+    expect(normalizedBandDistance).toBeLessThan(1.02);
+  }
 });

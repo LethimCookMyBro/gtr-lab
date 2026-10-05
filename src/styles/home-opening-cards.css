@@ -244,7 +244,7 @@
   }
 }
 @media (min-width: 701px) and (max-width: 1050px) {
-  .home-invitations > nav {
+  #home-lineup > nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .home-invitations .home-model-invitation {
@@ -318,20 +318,26 @@
   top: auto;
   bottom: 136px;
 }
-.home-hero-runway .home-film--hero .home-film-provider {
-  top: 64px;
-  left: 50%;
+.home-hero-runway .home-film--hero {
+  background: #070809;
+}
+.home-hero-runway .home-film--hero .home-film-provider,
+.home-hero-runway .home-film--hero .home-film-backup {
+  inset: 64px 0 auto;
+  margin: 0 auto;
   width: min(100%, calc((100svh - 176px) * 16 / 9));
   height: auto;
   aspect-ratio: 16 / 9;
-  transform: translateX(-50%);
+  transform: none;
+  object-fit: contain;
   opacity: 1;
 }
 [data-sequential-motion="true"] .home-hero-runway {
   height: auto;
 }
 @media (max-width: 767px) {
-  .home-hero-runway .home-film--hero .home-film-provider {
+  .home-hero-runway .home-film--hero .home-film-provider,
+  .home-hero-runway .home-film--hero .home-film-backup {
     top: 88px;
     width: 100%;
   }
@@ -359,7 +365,7 @@
   .home-expanding-frame .home-film-status {
     bottom: 100px;
   }
-  .home-expanding-frame {
+  .cinematic-home .home-expanding-frame {
     padding-bottom: 132px;
   }
 }

@@ -19,10 +19,10 @@ Spec: docs/design/sparse-timeline-preview.md
 
 ## Tasks
 
-- [ ] Write failing timeline tests for four single-photo panels, small factual years, preserved details/credits and reversible focus scores
-- [ ] Implement HeritageJourney.tsx, home-heritage.css and timelineMotionAt in the existing scroll loop; run focused tests
-- [ ] Write failing quiet-card tests, remove cursor motion and repeated labels, integrate campaign image provenance; run focused tests
-- [ ] In parallel, test and refine rear materials without changing the model or lifecycle
-- [ ] In parallel, test and repair film entry/readiness; integrate viewport CSS
+- [x] Write failing timeline tests for four single-photo panels, small factual years, preserved details/credits and reversible focus scores
+- [x] Implement HeritageJourney.tsx, home-heritage.css and timelineMotionAt in the existing scroll loop; run focused tests
+- [x] Write failing quiet-card tests, remove cursor motion and repeated labels, integrate campaign image provenance; run focused tests
+- [x] In parallel, test and refine rear materials without changing the model or lifecycle
+- [x] In parallel, test and repair film entry/readiness; integrate viewport CSS
 - [ ] Update browser acceptance tests to the approved composition, capture short native-scroll evidence, and run full required CI on exact commit
 - [ ] Review desktop/mobile pixels together, apply one material-fix batch, confirm and report remaining limits

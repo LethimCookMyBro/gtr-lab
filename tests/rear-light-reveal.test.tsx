@@ -40,12 +40,13 @@ function settle() {
   for (let i = 0; i < 80; i++)
     runtime.frames.forEach((frame) => frame({}, 1 / 30));
 }
-it("keeps the body studio dark for the initial actual-lamp silhouette, then reveals it with scroll", () => {
+it("keeps a faint shell around the initial lamps, then reveals the white body with scroll", () => {
   const { rerender } = render(
     <RearVehicleScene {...props} progress={0} reducedMotion={false} />,
   );
   settle();
-  expect(runtime.state.scene.environmentIntensity).toBe(0);
+  expect(runtime.state.scene.environmentIntensity).toBeGreaterThan(0);
+  expect(runtime.state.scene.environmentIntensity).toBeLessThan(0.08);
   rerender(<RearVehicleScene {...props} progress={1} reducedMotion={false} />);
   settle();
   expect(runtime.state.scene.environmentIntensity).toBeGreaterThan(0.7);
@@ -188,15 +189,18 @@ it("reveals a broad neutral roof source and restrained fill only after the real 
     <RearVehicleScene {...props} progress={0.1} reducedMotion={false} />,
   );
   settle();
-  expect(roof.intensity).toBe(0);
-  expect(fill.intensity).toBe(0);
+  expect(roof.intensity).toBeGreaterThan(0);
+  expect(roof.intensity).toBeLessThan(0.3);
+  expect(fill.intensity).toBeGreaterThan(0);
+  expect(fill.intensity).toBeLessThan(0.04);
   runtime.frames = [];
   rerender(<RearVehicleScene {...props} progress={1} reducedMotion={false} />);
   settle();
   expect(roof.intensity).toBeGreaterThanOrEqual(3);
-  expect(fill.intensity).toBeGreaterThanOrEqual(0.12);
+  expect(fill.intensity).toBeGreaterThanOrEqual(0.07);
   expect(fill.intensity).toBeLessThanOrEqual(0.2);
-  expect(key.intensity).toBeLessThanOrEqual(0.4);
+  expect(key.intensity).toBeGreaterThanOrEqual(0.85);
+  expect(key.intensity).toBeLessThanOrEqual(1.1);
   expect(roof.color.r).toBe(roof.color.g);
   expect(roof.color.g).toBe(roof.color.b);
 });

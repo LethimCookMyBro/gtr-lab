@@ -764,7 +764,7 @@
       "licenseUrl": "https://unsplash.com/license",
       "sourceUrl": "https://unsplash.com/photos/orange-nissan-gt-r-sports-car-71MFodxIz8c",
       "photoDate": "Published 2021-01-06; exact capture date unverified",
-      "framingNote": "Modern photograph of a later facelift R35. Do not label as a 2007-spec car. Full-car architectural photography, not seamless studio. Full source frame retained in local copies; campaign card uses a responsive crop.",
+      "framingNote": "Modern photograph of a later facelift R35. Do not label as a 2007-spec car. Full-car architectural photography, not seamless studio. Full source frame retained in local copies; campaign card uses a responsive crop. Hero uses a separately documented landscape crop retaining the complete car.",
       "credit": "Photo by Martin Katler on Unsplash. Free copyright license to download, copy, modify, distribute and use, including commercial use. Attribution appreciated, not required. Do not resell unmodified images or build a competing image service. Does not separately grant trademark, brand, or endorsement rights. Do not imply Nissan or photographer endorsement.",
       "licenseVerifiedDate": "2026-10-05",
       "original": {
@@ -800,6 +800,19 @@
           "license": "Unsplash License",
           "licenseUrl": "https://unsplash.com/license",
           "path": "/media/campaign-r35-orange-small.webp"
+        },
+        {
+          "width": 1600,
+          "height": 900,
+          "bytes": 155630,
+          "sha256": "31d1144360db7049d543241f199388f1f561c2c578b787679e9f855b11ee448d",
+          "changes": [
+            "Landscape hero crop [0, 1900, 3926, 4108], retaining the complete visible car",
+            "Proportional resize and WebP quality 88 encoding; no retouching or AI enhancement"
+          ],
+          "license": "Unsplash License",
+          "licenseUrl": "https://unsplash.com/license",
+          "path": "/media/campaign-r35-orange-hero.webp"
         }
       ]
     },

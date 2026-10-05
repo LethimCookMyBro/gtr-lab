@@ -147,3 +147,12 @@ it.each([
     expect(film.getAttribute("data-film-playback")).toBe("inactive");
   },
 );
+
+it("uses the licensed campaign poster rather than the rejected brick-wall fallback", () => {
+  const { container } = show();
+  const image = container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  expect(image.getAttribute("src")).toBe(
+    "/media/campaign-r35-orange-hero.webp",
+  );
+  expect(image.alt).toMatch(/orange.*R35/i);
+});

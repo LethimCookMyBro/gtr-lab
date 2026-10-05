@@ -71,11 +71,11 @@ test("sparse timeline and quiet cards through native forward and reverse input",
       (node) => scrollY + node.getBoundingClientRect().top - 80,
     ),
   );
+  // Record the genuinely visible first row; do not wait on still-lazy lower cards.
   await lineup
-    .locator("img")
-    .evaluateAll((nodes) =>
-      Promise.all(nodes.map((node) => (node as HTMLImageElement).decode())),
-    );
+    .locator(".home-model-invitation img")
+    .first()
+    .evaluate((node: HTMLImageElement) => node.decode());
   await expect(lineup.getByText("View in 3D", { exact: true })).toHaveCount(1);
   await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(5);
   await expect(lineup.locator(".home-invitation-cursor")).toHaveCount(0);

@@ -19,7 +19,8 @@ vi.mock("react/jsx-runtime", async (importOriginal) => {
   const original = await importOriginal<typeof import("react/jsx-runtime")>();
   const react = await import("react");
   const host = (type: unknown, props: any) => {
-    if (type === "rectAreaLight") runtime.lights.push(props);
+    if (type === "rectAreaLight" || type === "pointLight")
+      runtime.lights.push(props);
     return typeof type === "string";
   };
   return {
@@ -45,7 +46,8 @@ vi.mock("react/jsx-dev-runtime", async (importOriginal) => {
   return {
     ...original,
     jsxDEV: (type: any, props: any, ...rest: any[]) => {
-      if (type === "rectAreaLight") runtime.lights.push(props);
+      if (type === "rectAreaLight" || type === "pointLight")
+        runtime.lights.push(props);
       return (original.jsxDEV as any)(
         typeof type === "string" ? react.Fragment : type,
         typeof type === "string" ? { children: props.children } : props,
@@ -164,4 +166,26 @@ it("mounts a broad white overhead source instead of another frontal hotspot", ()
   expect(roof!.height).toBeGreaterThanOrEqual(2);
   expect(roof!.position[1]).toBeGreaterThanOrEqual(3);
   expect(roof!.position[2]).toBeGreaterThanOrEqual(0);
+});
+
+it("keeps four restrained short-range red spill sources at the measured rear lens positions", () => {
+  render(
+    <RearVehicleScene
+      progress={1}
+      reducedMotion
+      onReady={() => {}}
+      onError={() => {}}
+      onProgress={() => {}}
+    />,
+  );
+  const spill = runtime.lights.filter((light) =>
+    light.name?.startsWith("rear-lens-spill"),
+  );
+  expect(spill).toHaveLength(4);
+  for (const light of spill) {
+    expect(light.color).toBe("#ff170b");
+    expect(light.distance).toBeLessThanOrEqual(0.4);
+    expect(light.intensity).toBeLessThanOrEqual(0.025);
+    expect(light.position[2]).toBeLessThan(-2.2);
+  }
 });

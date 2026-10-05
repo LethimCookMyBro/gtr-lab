@@ -143,8 +143,16 @@ export function Film({
         ref={backup}
         className="home-film-backup"
         onLoad={() => setFallbackLoaded(true)}
-        src="/images/gtr-premium.webp"
-        alt="2018 Nissan GT-R Premium in Super Silver"
+        src={
+          kind === "hero"
+            ? "/media/campaign-r35-orange-hero.webp"
+            : "/images/gtr-premium.webp"
+        }
+        alt={
+          kind === "hero"
+            ? "Orange facelift Nissan GT-R R35 photographed by Martin Katler; modern example, exact model year unverified"
+            : "2018 Nissan GT-R Premium in Super Silver"
+        }
         loading={kind === "hero" ? "eager" : "lazy"}
       />
       {active && (

@@ -117,12 +117,10 @@ try {
           new PerformanceObserver((list) => {
             if (probe.active)
               probe.longTasks.push(
-                ...list
-                  .getEntries()
-                  .map((entry) => ({
-                    duration: entry.duration,
-                    start: entry.startTime,
-                  })),
+                ...list.getEntries().map((entry) => ({
+                  duration: entry.duration,
+                  start: entry.startTime,
+                })),
               );
           }).observe({ type: "longtask" });
         }
@@ -142,9 +140,9 @@ try {
             ".home-expanding-runway",
             ".home-expanding-frame",
             ".home-archive-runway",
-            ".home-archive-stage",
-            ".home-archive-inline-copy",
-            ".home-archive-achievement",
+            ".home-timeline-panel",
+            ".home-timeline-caption",
+            ".home-timeline-details",
             ".home-archive-navigation",
             ".home-signature-runway",
             ".home-signature-canvas",
@@ -326,18 +324,11 @@ try {
             .all()) {
             const geometry = await chapter.evaluate((element) => {
               const rect = element.getBoundingClientRect();
-              const section = element.closest(".home-archive-runway");
-              const railHeight = section.querySelector(
-                ".home-archive-stage",
-              ).offsetHeight;
               const padding =
                 parseFloat(
                   getComputedStyle(document.documentElement).scrollPaddingTop,
                 ) || 88;
-              const target = Math.max(
-                0,
-                scrollY + rect.top - padding - railHeight - 16,
-              );
+              const target = Math.max(0, scrollY + rect.top - padding - 24);
               return { index: element.dataset.eraImage, target };
             });
             await wheelTo(

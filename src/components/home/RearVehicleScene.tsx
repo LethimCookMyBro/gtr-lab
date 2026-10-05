@@ -11,6 +11,7 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   SRGBColorSpace,
+  Vector4,
 } from "three";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { models } from "../../data/models";
@@ -36,6 +37,56 @@ type Props = {
 // One physical strip light moves across the real body; the environment stays cached.
 RectAreaLightUniformsLib.init();
 const source = models.find((model) => model.id === "premium")!.asset;
+
+// r180's LTC area-light approximation drives grazing specular toward white
+// independently of MeshPhysicalMaterial.specularIntensity. Restrict that direct
+// term on smoked glass/matte floor; retain their environment and diffuse terms.
+function restrainStudioSpecular(
+  shader: Parameters<MeshStandardMaterial["onBeforeCompile"]>[0],
+) {
+  shader.fragmentShader = shader.fragmentShader.replace(
+    "#include <lights_fragment_end>",
+    "#include <lights_fragment_end>\nreflectedLight.directSpecular *= 0.045;",
+  );
+}
+
+// Source-local center XY and inner/outer radii measured from the four existing
+// Glass.001 annuli. This shades their actual surfaces; it adds no geometry.
+const rearLensBands = [
+  new Vector4(-0.87364, 0, 0.07259, 0.13009),
+  new Vector4(-0.61782, -0.0220954, 0.05168, 0.10495),
+  new Vector4(0.61782, -0.0220954, 0.05168, 0.10495),
+  new Vector4(0.87364, 0, 0.07259, 0.13009),
+];
+function gradeRearLens(
+  shader: Parameters<MeshStandardMaterial["onBeforeCompile"]>[0],
+) {
+  shader.uniforms.rearLensBands = { value: rearLensBands };
+  shader.vertexShader =
+    "varying vec2 vRearLensPosition;\n" + shader.vertexShader;
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <begin_vertex>",
+    "#include <begin_vertex>\nvRearLensPosition = position.xy;",
+  );
+  shader.fragmentShader =
+    "varying vec2 vRearLensPosition;\nuniform vec4 rearLensBands[4];\n" +
+    shader.fragmentShader;
+  shader.fragmentShader = shader.fragmentShader.replace(
+    "#include <emissivemap_fragment>",
+    `#include <emissivemap_fragment>
+     float rearBandDistance = 100.0;
+     for (int i = 0; i < 4; i++) {
+       vec4 band = rearLensBands[i];
+       float radius = length(vRearLensPosition - band.xy);
+       float halfWidth = (band.w - band.z) * 0.5;
+       rearBandDistance = min(rearBandDistance, abs(radius - (band.z + band.w) * 0.5) / halfWidth);
+     }
+     float rearCore = exp(-2.4 * rearBandDistance * rearBandDistance);
+     totalEmissiveRadiance *= mix(0.1, 1.0, rearCore);
+     totalEmissiveRadiance += rearCore * vec3(0.08, 0.035, 0.012);`,
+  );
+}
+
 function RearCamera({
   progress,
   reducedMotion,
@@ -57,15 +108,15 @@ function RearCamera({
       aspect = size.width / Math.max(1, size.height);
     const t = Math.min(1, Math.max(0, (p - 0.13) / 0.64));
     const reveal = t * t * (3 - 2 * t);
-    // Begin with emission only, then bring the studio onto the actual body.
-    scene.environmentIntensity = reveal * 0.88;
+    // Keep the shell faintly legible around the lamps before the studio reveal.
+    scene.environmentIntensity = 0.045 + reveal * 0.935;
     const key = scene.getObjectByName("rear-key"),
       fill = scene.getObjectByName("rear-fill"),
       roof = scene.getObjectByName("rear-roof");
-    if (key instanceof Light) key.intensity = reveal * 0.35;
-    if (fill instanceof Light) fill.intensity = reveal * 0.16;
+    if (key instanceof Light) key.intensity = 0.018 + reveal * 0.95;
+    if (fill instanceof Light) fill.intensity = 0.012 + reveal * 0.075;
     if (roof instanceof RectAreaLight) {
-      roof.intensity = reveal * 3.4;
+      roof.intensity = 0.14 + reveal * 3.26;
       roof.lookAt(0, 1, -1);
     }
     const sweep = scene.getObjectByName("rear-sweep");
@@ -116,7 +167,7 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
         b.material.emissive.set("#ff1007");
         // These are the source's very thin LED tubes. The broad existing lens
         // annuli below carry the signature, rather than eight wire outlines.
-        b.material.emissiveIntensity = 0.3;
+        b.material.emissiveIntensity = 0.14;
         // ACES shifts strong red emitters toward orange. Keep the real LED hue.
         b.material.toneMapped = false;
       }
@@ -166,11 +217,14 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
           // Physical specular strength actually restrains the white studio card
           // while following the existing scroll-bound environment reveal.
           (material as MeshPhysicalMaterial).specularIntensity = 0.2;
+          material.onBeforeCompile = restrainStudioSpecular;
+          material.customProgramCacheKey = () => "rear-window-ltc-v1";
+          material.needsUpdate = true;
         }
         if (material.name === "Glass.001") {
           // This material covers the four real, broad annular lenses. Their
           // existing holes preserve dark centers; no substitute geometry/glow.
-          material.color.set("#62050c");
+          material.color.set("#35040a");
           material.emissive.set("#ff0905");
           material.emissiveIntensity = 0.92;
           material.opacity = 0.96;
@@ -179,6 +233,9 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
           material.metalness = 0;
           material.roughness = 0.26;
           material.toneMapped = false;
+          material.onBeforeCompile = gradeRearLens;
+          material.customProgramCacheKey = () => "rear-lens-profile-v1";
+          material.needsUpdate = true;
         }
         if (material.name === "Reverse_Emitter") {
           material.color.set("#343941");
@@ -237,6 +294,23 @@ const RearStudio = memo(function RearStudio() {
           position={[-3.8, 2.5, -4.5]}
           rotation={[0, Math.PI, 0]}
         />
+        {/* Small local sources suggest lens spill on the surrounding real body. */}
+        {[
+          [-0.682, 0.872, -2.29],
+          [-0.481, 0.855, -2.31],
+          [0.486, 0.855, -2.31],
+          [0.686, 0.872, -2.29],
+        ].map((position, index) => (
+          <pointLight
+            key={index}
+            name={`rear-lens-spill-${index}`}
+            position={position as [number, number, number]}
+            color="#ff170b"
+            intensity={0.018}
+            distance={0.36}
+            decay={2}
+          />
+        ))}
         <Environment resolution={256} frames={1}>
           <color attach="background" args={["#090a0b"]} />
           <Lightformer
@@ -277,19 +351,21 @@ const RearStudio = memo(function RearStudio() {
             camera must stay below zero, with the receiver just above the floor. */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]}>
           <planeGeometry args={[150, 150]} />
-          <meshStandardMaterial
-            color="#08090a"
-            roughness={0.88}
+          <meshPhysicalMaterial
+            color="#17191c"
+            roughness={0.96}
             metalness={0}
-            envMapIntensity={0.12}
+            specularIntensity={0.08}
+            onBeforeCompile={restrainStudioSpecular}
+            customProgramCacheKey={() => "rear-floor-ltc-v1"}
           />
         </mesh>
         <ContactShadows
           position={[0, -0.001, 0]}
           opacity={0.9}
-          scale={7}
-          blur={0.75}
-          far={1.6}
+          scale={[3.2, 5.6]}
+          blur={0.42}
+          far={0.35}
           resolution={512}
           frames={1}
           color="#000000"
