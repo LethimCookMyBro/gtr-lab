@@ -1,14 +1,39 @@
 import { expect, test } from "@playwright/test";
+import type { Locator, Page, TestInfo } from "@playwright/test";
 import { continueHomeWithout3D } from "./helpers/home-gate";
-import { writeFile } from "node:fs/promises";
-import type { Page, TestInfo } from "@playwright/test";
-const names = [
-  "1969: Skyline GT-R",
-  "1989: R32 GT-R",
-  "1999: R34 GT-R",
-  "2007: R35 GT-R",
+
+const eras = [
+  { year: "1969", name: "1969: Skyline GT-R" },
+  { year: "1989", name: "1989: R32 GT-R" },
+  { year: "1999", name: "1999: R34 GT-R" },
+  { year: "2007", name: "2007: R35 GT-R" },
 ];
-async function settleArchiveMedia(page: Page) {
+const motionProperties = [
+  "--exhibition-progress",
+  "--exhibition-year-shift",
+  "--exhibition-lead-reveal",
+  "--exhibition-road-reveal",
+  "--exhibition-engine-reveal",
+];
+
+async function scrollRest(page: Page) {
+  expect(
+    await page.evaluate(async () => {
+      let previous = scrollY;
+      let stable = 0;
+      for (let frame = 0; frame < 240; frame++) {
+        await new Promise(requestAnimationFrame);
+        stable = Math.abs(scrollY - previous) < 0.5 ? stable + 1 : 0;
+        previous = scrollY;
+        if (stable >= 8) return true;
+      }
+      return false;
+    }),
+    "native scrolling settles before the next gesture",
+  ).toBe(true);
+}
+
+async function settleMedia(page: Page) {
   await page.evaluate(() => document.fonts.ready);
   await page.locator("#home-heritage img").evaluateAll(async (nodes) => {
     await Promise.all(
@@ -21,42 +46,32 @@ async function settleArchiveMedia(page: Page) {
     await new Promise(requestAnimationFrame);
   });
 }
-async function open(page: Page, settled = true) {
+
+async function openArchive(page: Page, settled = true) {
+  // These are isolated archive layout tests. Real loading/rendering and
+  // unmodified native-wheel video are covered by the exhibition preview suite.
   await page.route("https://media.flixel.com/**", (route) => route.abort());
   await page.goto("/");
   await continueHomeWithout3D(page);
-  await expect(page.locator("#home-title")).toHaveCSS("outline-style", "none");
-  // Layout composition is measured against settled document geometry. A separate
-  // cold-load case below observes the real lazy/font path without this setup.
-  if (settled) await settleArchiveMedia(page);
+  if (settled) await settleMedia(page);
   await page.locator("#home-heritage").scrollIntoViewIfNeeded();
 }
-async function waitForScrollRest(page: Page) {
-  const settled = await page.evaluate(async () => {
-    let previous = scrollY;
-    let stableFrames = 0;
-    for (let frame = 0; frame < 240; frame++) {
-      await new Promise(requestAnimationFrame);
-      const current = scrollY;
-      stableFrames = Math.abs(current - previous) < 0.5 ? stableFrames + 1 : 0;
-      previous = current;
-      if (stableFrames >= 8) return true;
-    }
-    return false;
+
+async function selectEra(page: Page, index: number, pointer = false) {
+  const button = page.getByRole("button", {
+    name: eras[index].name,
+    exact: true,
   });
-  expect(settled, "native scrolling must settle before the next gesture").toBe(
-    true,
-  );
-}
-async function select(page: Page, index: number) {
-  const button = page.getByRole("button", { name: names[index], exact: true });
-  await button.focus();
-  await button.press("Enter");
-  await waitForScrollRest(page);
+  if (pointer) await button.click();
+  else {
+    await button.focus();
+    await button.press("Enter");
+  }
+  await scrollRest(page);
   const chapter = page.locator(`[data-era-image="${index}"]`);
-  // Acceptance is a readable arrival below the rail, not an arbitrary
-  // three-pixel scroll coordinate. The strict old threshold rejected harmless
-  // 3.6–4.5px settling even while the complete heading stayed unobscured.
+  await expect(chapter).toBeFocused();
+  await expect(chapter).toHaveCSS("outline-style", "none");
+  await expect(button).toHaveAttribute("aria-current", "step");
   await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
   await expect
     .poll(() =>
@@ -68,620 +83,410 @@ async function select(page: Page, index: number) {
       }),
     )
     .toBeGreaterThan(8);
-  await expect(chapter).toBeFocused();
-  await expect(button).toHaveAttribute("aria-current", "step");
-  await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
-  await chapter.locator("img").evaluateAll(async (nodes) => {
-    for (const node of nodes as HTMLImageElement[]) {
-      node.loading = "eager";
-      await node.decode();
-    }
-  });
   return chapter;
 }
+
 async function capture(page: Page, info: TestInfo, name: string) {
-  await page.screenshot({
-    path: info.outputPath(`${name}.png`),
-    animations: "disabled",
+  // Do not disable animations, force opacity, move elements, or synthesize frames.
+  await page.screenshot({ path: info.outputPath(`${name}.png`), scale: "css" });
+}
+
+async function composition(chapter: Locator) {
+  return chapter.evaluate((node) => {
+    const rect = (element: Element) => {
+      const r = element.getBoundingClientRect();
+      return {
+        left: r.left,
+        right: r.right,
+        top: r.top,
+        bottom: r.bottom,
+        width: r.width,
+        height: r.height,
+      };
+    };
+    const copy = node.querySelector(".home-archive-inline-copy")!;
+    const year = node.querySelector(".home-archive-year")!;
+    const range = document.createRange();
+    range.selectNodeContents(year);
+    const ink = range.getBoundingClientRect();
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      overflow: document.documentElement.scrollWidth > innerWidth,
+      stage: rect(node.querySelector(".home-archive-exhibition")!),
+      copy: rect(copy),
+      year: {
+        text: year.textContent,
+        center: ink.left + ink.width / 2,
+        top: ink.top,
+        bottom: ink.bottom,
+      },
+      photos: [...node.querySelectorAll("figure")].map((figure) => {
+        const image = figure.querySelector("img")!;
+        const caption = figure.querySelector("figcaption")!;
+        const credit = caption.querySelector("a")!;
+        return {
+          rect: rect(figure),
+          image: rect(image),
+          caption: rect(caption),
+          loaded: image.complete && image.naturalWidth > 0,
+          fit: getComputedStyle(image).objectFit,
+          clip: getComputedStyle(image).clipPath,
+          credit: credit.getAttribute("href"),
+          text: caption.textContent?.trim(),
+          imageRatio: image.naturalWidth / image.naturalHeight,
+        };
+      }),
+    };
   });
 }
 
-test("four compact editorial spreads have a dominant photo, supporting evidence and attached captions", async ({
-  page,
-}, info) => {
-  await open(page);
-  for (const index of [0, 1, 2, 3, 0]) {
-    const chapter = await select(page, index);
-    await expect(chapter.locator("figure")).toHaveCount(3);
-    await expect(chapter.locator(".home-archive-achievement")).toBeVisible();
-    const geometry = await chapter.evaluate((node) => {
-      const primary = node
-        .querySelector(".home-archive-image")!
-        .getBoundingClientRect();
-      const supports = [
-        ...node.querySelectorAll(".home-archive-support-image"),
-      ].map((n) => n.getBoundingClientRect());
-      const photos = [...node.querySelectorAll("figure")].map((n) => {
-        const image = n.querySelector("img")!,
-          imageRect = image.getBoundingClientRect(),
-          caption = n.querySelector("figcaption")!.getBoundingClientRect();
-        return {
-          loaded: image.complete && image.naturalWidth > 0,
-          ratio: Math.abs(
-            imageRect.width / imageRect.height -
-              image.naturalWidth / image.naturalHeight,
-          ),
-          gap: caption.top - imageRect.bottom,
-        };
-      });
-      return {
-        height: node.getBoundingClientRect().height,
-        primary: { x: primary.x, width: primary.width },
-        supports: supports.map((n) => ({ x: n.x, width: n.width })),
-        photos,
-      };
-    });
-    if (index === 1) {
-      expect(geometry.height).toBeLessThan(900 * 2);
-      const stage = (await chapter.locator(".home-r32-stage").boundingBox())!;
-      expect(stage.y).toBeGreaterThan(130);
-      expect(stage.y + stage.height).toBeLessThanOrEqual(900);
-      await expect(chapter.locator(".home-archive-image img")).toHaveAttribute(
-        "src",
-        /archive-r32-oran-park/,
-      );
-    } else expect(geometry.height).toBeLessThan(1200);
-    expect(geometry.primary.width).toBeGreaterThan(
-      geometry.supports[0].width * 1.7,
-    );
-    for (const support of geometry.supports)
-      expect(support.x).toBeGreaterThan(
-        geometry.primary.x + geometry.primary.width,
-      );
-    for (const photo of geometry.photos) {
-      expect(photo.loaded).toBe(true);
-      expect(photo.ratio).toBeLessThan(0.02);
-      expect(photo.gap).toBeGreaterThanOrEqual(8);
-      expect(photo.gap).toBeLessThanOrEqual(16);
-    }
-    await capture(page, info, `desktop-spread-${index}`);
-    await chapter.screenshot({
-      path: info.outputPath(`desktop-entire-chapter-${index}.png`),
-      animations: "disabled",
-    });
+function assertNoOverlap(
+  a: { left: number; right: number; top: number; bottom: number },
+  b: { left: number; right: number; top: number; bottom: number },
+) {
+  const width = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+  const height = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+  expect(
+    width <= 1 || height <= 1,
+    "copy and photographic evidence do not overlap",
+  ).toBe(true);
+}
+
+async function assertPhotos(chapter: Locator) {
+  await expect(chapter.locator("figure")).toHaveCount(3);
+  const geometry = await composition(chapter);
+  expect(geometry.overflow).toBe(false);
+  for (const photo of geometry.photos) {
+    expect(photo.loaded).toBe(true);
+    // Bounded image boxes may contain letterboxing. Contain preserves the
+    // complete source photograph; box/source aspect equality is not required.
+    expect(photo.fit).toBe("contain");
+    expect(photo.clip).toBe("none");
+    expect(photo.imageRatio).toBeGreaterThan(0);
+    expect(photo.image.width).toBeGreaterThan(0);
+    expect(photo.image.height).toBeGreaterThan(0);
+    expect(photo.caption.top).toBeGreaterThanOrEqual(photo.image.bottom - 1);
+    expect(photo.caption.bottom).toBeLessThanOrEqual(photo.rect.bottom + 1);
+    expect(photo.credit).toMatch(/^\/credits#/);
+    expect(photo.text?.length).toBeGreaterThan(12);
   }
-  await expect(page.locator(".home-archive-narrative")).toHaveCount(0);
-  await expect(page.locator(".home-archive-year")).toHaveCount(0);
-});
+  return geometry;
+}
+
+async function assertReadingHold(chapter: Locator) {
+  await expect(chapter.locator(".home-archive-exhibition")).toHaveCSS(
+    "position",
+    "sticky",
+  );
+  await expect
+    .poll(() =>
+      chapter.evaluate((node) =>
+        Number(
+          (node as HTMLElement).style.getPropertyValue("--exhibition-progress"),
+        ),
+      ),
+    )
+    .toBeCloseTo(0.65, 1);
+  const geometry = await assertPhotos(chapter);
+  expect(geometry.stage.top).toBeGreaterThanOrEqual(149);
+  expect(geometry.stage.bottom).toBeLessThanOrEqual(
+    geometry.viewport.height + 1,
+  );
+  expect(
+    Math.abs(
+      (geometry.copy.left + geometry.copy.right) / 2 -
+        geometry.viewport.width / 2,
+    ),
+  ).toBeLessThan(8);
+  expect(
+    Math.abs(geometry.year.center - geometry.viewport.width / 2),
+  ).toBeLessThan(8);
+  for (const photo of geometry.photos) {
+    assertNoOverlap(geometry.copy, photo.rect);
+    expect(photo.rect.top).toBeGreaterThanOrEqual(geometry.stage.top - 1);
+    expect(photo.rect.bottom).toBeLessThanOrEqual(geometry.stage.bottom + 1);
+  }
+  for (const [index, photo] of geometry.photos.entries())
+    for (const other of geometry.photos.slice(index + 1))
+      assertNoOverlap(photo.rect, other.rect);
+  for (const property of motionProperties.slice(2)) {
+    expect(
+      await chapter.evaluate(
+        (node, name) =>
+          Number((node as HTMLElement).style.getPropertyValue(name)),
+        property,
+      ),
+    ).toBe(1);
+  }
+  expect(
+    await chapter.evaluate((node) =>
+      Number.parseFloat(
+        (node as HTMLElement).style.getPropertyValue("--exhibition-year-shift"),
+      ),
+    ),
+  ).toBe(0);
+  await expect(chapter.locator(".home-archive-year-slot")).toHaveCSS(
+    "overflow-y",
+    /hidden|clip/,
+  );
+  return geometry;
+}
+
+async function wheelToProgress(page: Page, chapter: Locator, progress: number) {
+  const target = await chapter.evaluate((node, p) => {
+    const stage = node.querySelector<HTMLElement>(".home-archive-exhibition")!;
+    return (
+      scrollY +
+      node.getBoundingClientRect().top -
+      Number.parseFloat(getComputedStyle(stage).top) +
+      (node.clientHeight - stage.offsetHeight - 52) * p
+    );
+  }, progress);
+  const delta = target - (await page.evaluate(() => scrollY));
+  for (let step = 0; step < 10; step++) {
+    await page.mouse.wheel(0, delta / 10);
+    await page.waitForTimeout(65);
+  }
+  await scrollRest(page);
+}
+
+for (const viewport of [
+  { width: 1051, height: 800 },
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+]) {
+  test(`all four centered exhibitions fit the reading hold at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }, info) => {
+    test.setTimeout(90000);
+    await page.setViewportSize(viewport);
+    await openArchive(page);
+    for (const index of [0, 1, 2, 3, 0]) {
+      const chapter = await selectEra(page, index);
+      await expect(chapter.locator(".home-archive-year")).toHaveText(
+        eras[index].year,
+      );
+      await expect(chapter.locator(".home-archive-achievement")).toBeVisible();
+      await expect(chapter.locator(".home-archive-description")).toBeVisible();
+      const geometry = await assertReadingHold(chapter);
+      await capture(
+        page,
+        info,
+        `centered-${eras[index].year}-${viewport.width}x${viewport.height}`,
+      );
+      await info.attach(`composition-${eras[index].year}`, {
+        body: JSON.stringify(geometry, null, 2),
+        contentType: "application/json",
+      });
+    }
+    await expect(page.locator(".home-archive-year")).toHaveCount(4);
+    await expect(
+      page.locator('[data-era-image="1"] .home-archive-image img'),
+    ).toHaveAttribute("src", /archive-r32-oran-park/);
+  });
+}
 
 for (const viewport of [
   { width: 375, height: 600 },
   { width: 390, height: 667 },
   { width: 390, height: 844 },
   { width: 430, height: 932 },
+  { width: 1440, height: 600 },
 ]) {
-  test(`natural mobile reading at ${viewport.width}x${viewport.height}`, async ({
+  test(`sequential natural reading has complete photographs and no overlap at ${viewport.width}x${viewport.height}`, async ({
     page,
   }, info) => {
+    test.setTimeout(90000);
     await page.setViewportSize(viewport);
-    await open(page);
+    await openArchive(page);
     for (const index of [0, 1, 2, 3]) {
-      const chapter = await select(page, index);
-      const geometry = await chapter.evaluate((node) => {
-        const copy = node
-          .querySelector(".home-archive-heading-row")!
-          .getBoundingClientRect();
-        const description = node
-          .querySelector(".home-archive-description")!
-          .getBoundingClientRect();
-        const figures = [...node.querySelectorAll("figure")].map((n) =>
-          n.getBoundingClientRect(),
-        );
-        return {
-          copyBottom: copy.bottom,
-          descriptionBottom: description.bottom,
-          figures: figures.map((n) => ({
-            top: n.top,
-            bottom: n.bottom,
-            width: n.width,
-          })),
-          overflow: document.documentElement.scrollWidth > innerWidth,
-        };
-      });
-      expect(geometry.overflow).toBe(false);
-      expect(geometry.copyBottom).toBeLessThan(geometry.figures[0].top);
-      expect(geometry.descriptionBottom).toBeLessThan(geometry.figures[1].top);
-      expect(geometry.figures[1].bottom).toBeLessThan(geometry.figures[2].top);
-      expect(geometry.figures[2].top - geometry.figures[1].bottom).toBeLessThan(
-        40,
+      const chapter = await selectEra(page, index);
+      await expect(chapter.locator(".home-archive-exhibition")).not.toHaveCSS(
+        "position",
+        "sticky",
       );
-      for (const figure of geometry.figures)
-        expect(figure.width).toBeGreaterThan(viewport.width * 0.85);
+      const geometry = await assertPhotos(chapter);
+      expect(Math.abs(geometry.year.center - viewport.width / 2)).toBeLessThan(
+        8,
+      );
+      expect(geometry.copy.bottom).toBeLessThanOrEqual(
+        geometry.photos[0].rect.top + 1,
+      );
+      for (const [photoIndex, photo] of geometry.photos.entries()) {
+        assertNoOverlap(geometry.copy, photo.rect);
+        if (photoIndex > 0 && (viewport.width < 701 || photoIndex === 2))
+          expect(photo.rect.top).toBeGreaterThanOrEqual(
+            geometry.photos[photoIndex - 1].rect.bottom,
+          );
+        if (viewport.width < 701)
+          expect(photo.rect.width).toBeGreaterThan(viewport.width * 0.84);
+      }
       await capture(
         page,
         info,
-        `mobile-${viewport.width}x${viewport.height}-heading-${index}`,
+        `natural-${eras[index].year}-${viewport.width}x${viewport.height}`,
       );
       await chapter.screenshot({
         path: info.outputPath(
-          `mobile-${viewport.width}x${viewport.height}-entire-${index}.png`,
+          `entire-${eras[index].year}-${viewport.width}x${viewport.height}.png`,
         ),
-        animations: "disabled",
+        scale: "css",
       });
-      if (index === 1) {
-        for (const [label, figureIndex] of [
-          ["road", 1],
-          ["engine", 2],
-          ["reverse-road", 1],
-        ] as const) {
-          const figure = chapter.locator("figure").nth(figureIndex);
-          const target = await figure.evaluate((node) => {
-            let top = 0;
-            let current: HTMLElement | null = node as HTMLElement;
-            while (current) {
-              top += current.offsetTop;
-              current = current.offsetParent as HTMLElement | null;
-            }
-            return top - innerHeight * 0.28;
-          });
-          await page.mouse.wheel(
-            0,
-            target - (await page.evaluate(() => scrollY)),
-          );
-          await waitForScrollRest(page);
-          await expect(figure).toHaveCSS("opacity", "1");
-          await expect(figure).toBeInViewport({ ratio: 1 });
-          await capture(
-            page,
-            info,
-            `mobile-r32-${label}-${viewport.width}x${viewport.height}`,
-          );
-        }
-      }
     }
   });
 }
 
-for (const mode of ["reduced", "short"] as const) {
-  test(`${mode} layout keeps natural chapters and keyboard rail`, async ({
-    page,
-  }, info) => {
-    if (mode === "reduced")
-      await page.emulateMedia({ reducedMotion: "reduce" });
-    else await page.setViewportSize({ width: 1440, height: 600 });
-    await open(page);
-    for (const index of [3, 0, 2]) {
-      const chapter = await select(page, index);
-      await expect(chapter.locator(".home-archive-spread")).toHaveCSS(
-        "transform",
-        "none",
+test("keyboard and pointer era selection both land on the complete centered reading hold", async ({
+  page,
+}, info) => {
+  test.setTimeout(90000);
+  await openArchive(page);
+  const first = page.getByRole("button", { name: eras[0].name, exact: true });
+  await first.focus();
+  await expect(first).toHaveCSS("outline-width", "2px");
+  for (const pointer of [false, true]) {
+    for (const index of [1, 2, 3, 0]) {
+      const chapter = await selectEra(page, index, pointer);
+      await assertReadingHold(chapter);
+      if (pointer)
+        expect(
+          await chapter.evaluate((node) => node.matches(":focus-visible")),
+        ).toBe(false);
+      await capture(
+        page,
+        info,
+        `${pointer ? "pointer" : "keyboard"}-hold-${eras[index].year}`,
       );
     }
-    await capture(page, info, `${mode}-archive`);
-  });
-}
-
-test("pointer era landings have no focus box and lower evidence reaches its readable hold", async ({
-  page,
-}, info) => {
-  test.setTimeout(60000);
-  await open(page);
-  // The era button retains keyboard feedback; the reading landmark does not
-  // draw a frame around a whole multi-viewport chapter after focus transfer.
-  const keyboardButton = page.getByRole("button", {
-    name: names[0],
-    exact: true,
-  });
-  await keyboardButton.focus();
-  await expect(keyboardButton).toHaveCSS("outline-width", "2px");
-  const keyboardChapter = await select(page, 0);
-  await expect(keyboardChapter).toBeFocused();
-  await expect(keyboardChapter).toHaveCSS("outline-style", "none");
-  await page.screenshot({
-    path: info.outputPath("keyboard-destination-outline.png"),
-  });
-
-  const frames = [];
-  for (const index of [1, 2, 3, 0]) {
-    const button = page.getByRole("button", {
-      name: names[index],
-      exact: true,
-    });
-    // Actual pointer input must clear keyboard modality before focus is handed
-    // from the clicked control to the corresponding chapter.
-    await button.click();
-    await waitForScrollRest(page);
-    const chapter = page.locator(`[data-era-image="${index}"]`);
-    await expect(chapter).toBeFocused();
-    expect(
-      await chapter.evaluate((node) => node.matches(":focus-visible")),
-    ).toBe(false);
-    await expect(chapter).toHaveCSS("outline-style", "none");
-    await expect(button).toHaveAttribute("aria-current", "step");
-    await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
-    await page.screenshot({
-      path: info.outputPath(`pointer-landing-${index}.png`),
-    });
-
-    const lowerEvidence = chapter.locator(
-      ".home-archive-support-image:last-child, .home-archive-description",
-    );
-    const target =
-      index === 1
-        ? await chapter.evaluate((node) => {
-            const stage = node.querySelector<HTMLElement>(".home-r32-stage")!;
-            return (
-              scrollY +
-              node.getBoundingClientRect().top -
-              150 +
-              (node.getBoundingClientRect().height - stage.offsetHeight - 52) *
-                0.65
-            );
-          })
-        : await lowerEvidence.evaluateAll((nodes) => {
-            const tops = nodes.map((node) => {
-              let top = 0;
-              let current: HTMLElement | null = node as HTMLElement;
-              while (current) {
-                top += current.offsetTop;
-                current = current.offsetParent as HTMLElement | null;
-              }
-              return top;
-            });
-            // Supporting details complete their entrance at43% viewport height.
-            // Put the later item just inside that reading hold using native scrolling.
-            return Math.max(...tops) - innerHeight * 0.42;
-          });
-    const viewport = page.viewportSize()!;
-    await page.mouse.move(viewport.width / 2, viewport.height * 0.8);
-    await page.mouse.wheel(0, target - (await page.evaluate(() => scrollY)));
-    await waitForScrollRest(page);
-    await expect(lowerEvidence).toHaveCount(2);
-    for (const item of await lowerEvidence.all()) {
-      if (index === 1) {
-        await expect
-          .poll(() =>
-            chapter.evaluate((node) =>
-              Number(
-                (node as HTMLElement).style.getPropertyValue(
-                  "--r32-engine-reveal",
-                ),
-              ),
-            ),
-          )
-          .toBe(1);
-      } else
-        await expect
-          .poll(() =>
-            item.evaluate((node) =>
-              Number(
-                (node as HTMLElement).style.getPropertyValue("--item-reveal"),
-              ),
-            ),
-          )
-          .toBe(1);
-      await expect(item).toHaveCSS("opacity", "1");
-      expect(
-        await item.evaluate(
-          (node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m42,
-        ),
-      ).toBe(0);
-      await expect(item).toBeInViewport();
-    }
-    // This pause is for the unretimed review video, after all readiness assertions.
-    // Production motion and opacity remain untouched throughout the capture.
-    await page.waitForTimeout(700);
-    await expect(chapter).toHaveCSS("outline-style", "none");
-    await page.screenshot({
-      path: info.outputPath(`pointer-lower-details-settled-${index}.png`),
-    });
-    frames.push({
-      index,
-      state: await chapter.evaluate((node) => ({
-        scrollY,
-        focused: node === document.activeElement,
-        focusVisible: node.matches(":focus-visible"),
-        outline: getComputedStyle(node).outline,
-        evidence: [
-          ...node.querySelectorAll<HTMLElement>(
-            ".home-archive-support-image:last-child, .home-archive-description",
-          ),
-        ].map((item) => ({
-          className: item.className,
-          reveal: Number(item.style.getPropertyValue("--item-reveal")),
-          opacity: Number(getComputedStyle(item).opacity),
-          transform: getComputedStyle(item).transform,
-          top: item.getBoundingClientRect().top,
-          bottom: item.getBoundingClientRect().bottom,
-        })),
-      })),
-    });
   }
-  await info.attach("pointer-focus-and-settled-evidence", {
-    body: JSON.stringify(frames, null, 2),
-    contentType: "application/json",
-  });
 });
 
-test("native forward and reverse wheel scrolling tracks the chapter at the reading line", async ({
+test("every chapter has ordered and reversible native-wheel entrance, hold and exit", async ({
   page,
 }, info) => {
-  await open(page);
-  await select(page, 0);
-  const frames = [];
-  for (const index of [1, 2, 3, 2, 1, 0]) {
-    const target = await page
-      .locator(`[data-era-image="${index}"]`)
-      .evaluate((node) => scrollY + node.getBoundingClientRect().top - 190);
-    const before = await page.evaluate(() => scrollY);
-    await page.mouse.wheel(0, target - before);
-    await waitForScrollRest(page);
-    await expect(page.locator("#home-heritage")).toHaveAttribute(
-      "data-active-era",
-      String(index),
+  test.setTimeout(120000);
+  await openArchive(page);
+  const evidence = [];
+  for (const index of [0, 1, 2, 3]) {
+    const chapter = page.locator(`[data-era-image="${index}"]`);
+    const snapshots: Array<{ name: string; state: Record<string, number> }> =
+      [];
+    for (const [name, progress] of [
+      ["enter", 0],
+      ["reveal", 0.3],
+      ["hold", 0.65],
+      ["exit", 0.98],
+      ["reverse-hold", 0.65],
+      ["reverse-enter", 0],
+    ] as const) {
+      await wheelToProgress(page, chapter, progress);
+      await expect(page.locator("#home-heritage")).toHaveAttribute(
+        "data-active-era",
+        String(index),
+      );
+      const state = await chapter.evaluate(
+        (node, properties) =>
+          Object.fromEntries(
+            properties.map((property) => [
+              property,
+              Number.parseFloat(
+                (node as HTMLElement).style.getPropertyValue(property),
+              ),
+            ]),
+          ),
+        motionProperties,
+      );
+      expect(state["--exhibition-progress"]).toBeCloseTo(progress, 1);
+      for (const property of motionProperties)
+        expect(Number.isFinite(state[property])).toBe(true);
+      if (name.includes("hold")) await assertReadingHold(chapter);
+      snapshots.push({ name, state });
+      await capture(page, info, `native-${eras[index].year}-${name}`);
+    }
+    expect(snapshots[0].state["--exhibition-year-shift"]).toBeGreaterThan(
+      snapshots[2].state["--exhibition-year-shift"],
+    );
+    expect(snapshots[0].state["--exhibition-lead-reveal"]).toBeLessThan(
+      snapshots[2].state["--exhibition-lead-reveal"],
+    );
+    expect(
+      snapshots[1].state["--exhibition-lead-reveal"],
+    ).toBeGreaterThanOrEqual(snapshots[1].state["--exhibition-road-reveal"]);
+    expect(
+      snapshots[1].state["--exhibition-road-reveal"],
+    ).toBeGreaterThanOrEqual(snapshots[1].state["--exhibition-engine-reveal"]);
+    for (const property of motionProperties)
+      expect(snapshots[5].state[property]).toBeCloseTo(
+        snapshots[0].state[property],
+        1,
+      );
+    evidence.push({ year: eras[index].year, snapshots });
+  }
+  // Return across chapter boundaries using real input, not navigation callbacks.
+  for (const index of [2, 1, 0]) {
+    await wheelToProgress(
+      page,
+      page.locator(`[data-era-image="${index}"]`),
+      0.65,
     );
     await expect(
-      page.getByRole("button", { name: names[index], exact: true }),
+      page.getByRole("button", { name: eras[index].name, exact: true }),
     ).toHaveAttribute("aria-current", "step");
-    frames.push({ index, scrollY: await page.evaluate(() => scrollY) });
   }
-  await info.attach("native-forward-reverse", {
-    body: JSON.stringify(frames, null, 2),
+  await info.attach("all-era-native-forward-reverse", {
+    body: JSON.stringify(evidence, null, 2),
     contentType: "application/json",
   });
 });
 
-test("cold chapter jump stays readable while photographs and fonts settle", async ({
+test("switching to reduced motion clears exhibition scores and leaves all content in static flow", async ({
+  page,
+}, info) => {
+  await openArchive(page);
+  await wheelToProgress(page, page.locator('[data-era-image="1"]'), 0.3);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const index of [0, 1, 2, 3]) {
+    const chapter = await selectEra(page, index);
+    await expect(chapter.locator(".home-archive-exhibition")).not.toHaveCSS(
+      "position",
+      "sticky",
+    );
+    for (const selector of [
+      ".home-archive-inline-copy",
+      ".home-archive-year",
+      "figure",
+    ]) {
+      for (const element of await chapter.locator(selector).all()) {
+        await expect(element).toHaveCSS("opacity", "1");
+        await expect(element).toHaveCSS("transform", "none");
+      }
+    }
+    expect(
+      await chapter.evaluate(
+        (node, properties) =>
+          properties.map((name) =>
+            (node as HTMLElement).style.getPropertyValue(name),
+          ),
+        motionProperties,
+      ),
+    ).toEqual(motionProperties.map(() => ""));
+    await assertPhotos(chapter);
+    await capture(page, info, `reduced-static-${eras[index].year}`);
+  }
+});
+
+test("cold chapter navigation stays readable after lazy photographs and fonts settle", async ({
   page,
 }, info) => {
   await page.setViewportSize({ width: 1440, height: 600 });
-  await open(page, false);
-  const snapshot = () =>
-    page.locator("#home-heritage").evaluate((section) => ({
-      scrollY,
-      fonts: document.fonts.status,
-      articleTop: section
-        .querySelector('[data-era-image="3"]')!
-        .getBoundingClientRect().top,
-      images: [...section.querySelectorAll("img")].map((image) => ({
-        src: image.currentSrc,
-        complete: image.complete,
-        naturalWidth: image.naturalWidth,
-        height: image.getBoundingClientRect().height,
-      })),
-      sections: [...document.querySelectorAll("[data-motion-section]")].map(
-        (node) => ({
-          kind: (node as HTMLElement).dataset.motionSection,
-          height: node.getBoundingClientRect().height,
-        }),
-      ),
-    }));
-  const before = await snapshot();
-  await page.getByRole("button", { name: names[3], exact: true }).click();
-  const arrival = await snapshot();
-  const chapter = page.locator('[data-era-image="3"]');
+  await openArchive(page, false);
+  const chapter = await selectEra(page, 3);
+  await settleMedia(page);
   await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
   await expect(
-    page.getByRole("button", { name: names[3], exact: true }),
+    page.getByRole("button", { name: eras[3].name, exact: true }),
   ).toHaveAttribute("aria-current", "step");
-  await settleArchiveMedia(page);
-  const settled = await snapshot();
-  await expect(chapter.getByRole("heading")).toBeInViewport({ ratio: 1 });
-  const rail = (await page.locator(".home-archive-stage").boundingBox())!;
-  expect((await chapter.getByRole("heading").boundingBox())!.y).toBeGreaterThan(
-    rail.y + rail.height + 8,
-  );
-  const geometryPath = info.outputPath("cold-to-settled-archive-geometry.json");
-  await writeFile(
-    geometryPath,
-    JSON.stringify({ before, arrival, settled }, null, 2),
-  );
-  await info.attach("cold-to-settled-archive-geometry", {
-    path: geometryPath,
-    contentType: "application/json",
-  });
-  await capture(page, info, "cold-r35-after-media-settles");
-  // Repeated keyboard navigation must keep the same visible story and active era.
-  await select(page, 3);
+  await assertPhotos(chapter);
+  await capture(page, info, "cold-r35-settled");
+  await selectEra(page, 3);
 });
-
-test("section motion has one ordered reversible phase and a fully readable reduced-motion state", async ({
-  page,
-}, info) => {
-  await open(page);
-  const readAt = async (topRatio: number) => {
-    const lead = page.locator('[data-era-image="0"] .home-archive-image');
-    const target = await lead.evaluate((node, ratio) => {
-      const element = node as HTMLElement;
-      // Motion transforms must never become input to the scroll measurement.
-      let top = 0;
-      let current: HTMLElement | null = element;
-      while (current) {
-        top += current.offsetTop;
-        current = current.offsetParent as HTMLElement | null;
-      }
-      return top - innerHeight * ratio;
-    }, topRatio);
-    await page.evaluate(
-      (y) => scrollTo({ top: y, behavior: "instant" }),
-      target,
-    );
-    await waitForScrollRest(page);
-    return page.locator('[data-era-image="0"]').evaluate((chapter) => {
-      const state = (selector: string) => {
-        const node = chapter.querySelector<HTMLElement>(selector)!;
-        const styles = getComputedStyle(node);
-        return {
-          reveal: Number(node.style.getPropertyValue("--item-reveal")),
-          opacity: Number(styles.opacity),
-          authoredOpacity: Number(
-            node.style.getPropertyValue("--item-opacity"),
-          ),
-          transform: styles.transform,
-          font: styles.fontFamily,
-        };
-      };
-      return {
-        heading: state(".home-archive-inline-copy"),
-        photo: state(".home-archive-image"),
-        detail: state(".home-archive-achievement"),
-      };
-    });
-  };
-  const entrance = await readAt(0.72);
-  expect(entrance.heading.reveal).toBeGreaterThan(entrance.photo.reveal);
-  expect(entrance.photo.reveal).toBeGreaterThan(entrance.detail.reveal);
-  expect(entrance.photo.opacity).toBeCloseTo(entrance.photo.authoredOpacity, 3);
-  expect(entrance.detail.opacity).toBeCloseTo(
-    entrance.detail.authoredOpacity,
-    3,
-  );
-  expect(entrance.photo.opacity).toBeLessThan(0.85);
-  await capture(page, info, "ordered-motion-entrance");
-  const reading = await readAt(0.3);
-  expect(reading.photo.opacity).toBe(1);
-  expect(reading.detail.opacity).toBe(1);
-  const reversed = await readAt(0.72);
-  expect(reversed).toEqual(entrance);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const selector of [
-    ".home-archive-inline-copy",
-    ".home-archive-image",
-    ".home-archive-achievement",
-    ".home-archive-support-image",
-    ".home-editorial-copy",
-    ".home-editorial-image",
-  ]) {
-    for (const element of await page.locator(selector).all()) {
-      await expect(element).toHaveCSS("opacity", "1");
-      await expect(element).toHaveCSS("transform", "none");
-    }
-  }
-  await capture(page, info, "reduced-motion-all-content-readable");
-});
-
-test("R32 race, record and engineering compose through native forward and reverse scroll", async ({
-  page,
-}, info) => {
-  test.setTimeout(60000);
-  await open(page);
-  await select(page, 0);
-  const r32 = page.locator(".home-archive-r32");
-  const snapshots = [];
-  for (const [name, progress] of [
-    ["enter", 0],
-    ["race", 0.3],
-    ["hold", 0.68],
-    ["exit", 0.98],
-    ["reverse-hold", 0.68],
-    ["reverse-enter", 0],
-  ] as const) {
-    const target = await r32.evaluate((node, p) => {
-      const stage = node.querySelector<HTMLElement>(".home-r32-stage")!;
-      const bounds = node.getBoundingClientRect();
-      return (
-        scrollY +
-        bounds.top -
-        150 +
-        (bounds.height - stage.offsetHeight - 52) * p
-      );
-    }, progress);
-    const delta = target - (await page.evaluate(() => scrollY));
-    for (let step = 0; step < 12; step++) {
-      await page.mouse.wheel(0, delta / 12);
-      await page.waitForTimeout(70);
-    }
-    await waitForScrollRest(page);
-    await expect(page.locator("#home-heritage")).toHaveAttribute(
-      "data-active-era",
-      "1",
-    );
-    const state = await r32.evaluate((node) => {
-      const read = (name: string) =>
-        Number.parseFloat((node as HTMLElement).style.getPropertyValue(name));
-      const stage = node.querySelector<HTMLElement>(".home-r32-stage")!;
-      return {
-        progress: read("--r32-progress"),
-        clip: read("--r32-photo-clip"),
-        title: read("--r32-title-shift"),
-        road: read("--r32-road-reveal"),
-        engine: read("--r32-engine-reveal"),
-        exit: read("--r32-exit-shift"),
-        top: stage.getBoundingClientRect().top,
-        bottom: stage.getBoundingClientRect().bottom,
-        overflow: document.documentElement.scrollWidth > innerWidth,
-      };
-    });
-    expect(state.overflow).toBe(false);
-    expect(state.progress).toBeCloseTo(progress, 1);
-    if (name === "exit")
-      await expect(r32.locator(".home-archive-inline-copy")).toHaveCSS(
-        "opacity",
-        /0\.0[0-9]+/,
-      );
-    if (name.includes("hold")) {
-      expect(state.clip).toBe(0);
-      expect(state.title).toBe(0);
-      expect(state.road).toBe(1);
-      expect(state.engine).toBe(1);
-      expect(state.top).toBeGreaterThan(130);
-      expect(state.bottom).toBeLessThanOrEqual(900);
-      await expect(
-        r32.locator(".home-archive-support-image:last-child"),
-      ).toBeInViewport({ ratio: 1 });
-    }
-    snapshots.push({ name, ...state });
-    await capture(page, info, `r32-${name}`);
-    await page.waitForTimeout(500);
-  }
-  expect(snapshots[0].clip).toBeGreaterThan(20);
-  expect(snapshots[1].clip).toBe(0);
-  expect(snapshots[3].exit).toBeLessThan(-30);
-  expect(snapshots[5].clip).toBeCloseTo(snapshots[0].clip, 1);
-  await info.attach("r32-native-score", {
-    body: JSON.stringify(snapshots, null, 2),
-    contentType: "application/json",
-  });
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(r32.locator(".home-r32-stage")).toHaveCSS("position", "static");
-  await expect(r32.locator(".home-archive-image img")).toHaveCSS(
-    "clip-path",
-    "none",
-  );
-  await expect(r32.locator(".home-r32-title-answer > span")).toHaveCSS(
-    "transform",
-    "none",
-  );
-});
-
-for (const viewport of [
-  { width: 1051, height: 800 },
-  { width: 1920, height: 1080 },
-]) {
-  test(`R32 reading hold fits the sticky viewport at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }, info) => {
-    await page.setViewportSize(viewport);
-    await open(page);
-    const r32 = await select(page, 1);
-    const stage = r32.locator(".home-r32-stage");
-    await expect(stage).toHaveCSS("position", "sticky");
-    const bounds = (await stage.boundingBox())!;
-    expect(bounds.y).toBeGreaterThan(130);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
-    await expect(
-      r32.locator(".home-archive-support-image:last-child"),
-    ).toBeInViewport({ ratio: 1 });
-    expect(
-      await r32
-        .locator(".home-archive-image img")
-        .evaluate((node) => node.getBoundingClientRect().width),
-    ).toBeLessThanOrEqual(1032);
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth > innerWidth,
-      ),
-    ).toBe(false);
-    await capture(page, info, `r32-hold-${viewport.width}x${viewport.height}`);
-  });
-}

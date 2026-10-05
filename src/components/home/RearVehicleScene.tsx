@@ -5,11 +5,13 @@ import {
   PerspectiveCamera,
   Color,
   Light,
+  RectAreaLight,
   Mesh,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   SRGBColorSpace,
 } from "three";
+import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { models } from "../../data/models";
 import { useVehicleAsset } from "../three/useVehicleAsset";
 import { applyVehicleAppearance } from "../three/materialAdapter";
@@ -30,6 +32,8 @@ type Props = {
   onLoadState?: (state: HomeSceneLoadState) => void;
   active?: boolean;
 };
+// One physical strip light moves across the real body; the environment stays cached.
+RectAreaLightUniformsLib.init();
 const source = models.find((model) => model.id === "premium")!.asset;
 function RearCamera({
   progress,
@@ -53,19 +57,37 @@ function RearCamera({
     const t = Math.min(1, Math.max(0, (p - 0.13) / 0.64));
     const reveal = t * t * (3 - 2 * t);
     // Begin with emission only, then bring the studio onto the actual body.
-    scene.environmentIntensity = reveal * 0.95;
+    scene.environmentIntensity = reveal * 0.88;
     const key = scene.getObjectByName("rear-key"),
       fill = scene.getObjectByName("rear-fill");
-    if (key instanceof Light) key.intensity = reveal * 0.65;
+    if (key instanceof Light) key.intensity = reveal * 0.5;
     if (fill instanceof Light) fill.intensity = reveal * 0.06;
+    const sweep = scene.getObjectByName("rear-sweep");
+    if (sweep instanceof RectAreaLight) {
+      const pass = Math.min(1, Math.max(0, (p - 0.2) / 0.6));
+      // This is scroll-bound, never a render loop. Lamps retain the opening beat;
+      // the white source crosses the shoulders, then drops toward the exhausts.
+      sweep.intensity =
+        reducedMotion || pass === 0 || pass === 1
+          ? 0
+          : Math.sin(pass * Math.PI) * 3.2;
+      sweep.position.set(-3.8 + pass * 7.6, 2.5 - pass * 2, -4.5);
+      sweep.lookAt(0, 1.15 - pass * 0.8, -2.1);
+    }
+    const desktop = size.width > 700 && size.height > 500;
     const distance = Math.max(
-      5.3,
+      // Short desktop windows need breathing room for the caption below the tyres.
+      desktop ? 3.4 + Math.max(0, 800 - size.height) * 0.004 : 5.3,
       2.12 / (2 * Math.tan(Math.PI / 12) * aspect * 0.86),
     );
-    camera.position.set(0, 0.96, -2.35 - distance * (0.9 + 0.1 * p));
+    camera.position.set(
+      0,
+      desktop ? 0.88 : 0.96,
+      -2.35 - distance * (desktop ? 1.03 - 0.03 * p : 0.9 + 0.1 * p),
+    );
     camera.fov = 30;
     camera.aspect = aspect;
-    camera.lookAt(0, 0.66, -1.6);
+    camera.lookAt(0, desktop ? 0.5 : 0.66, -1.6);
     camera.updateProjectionMatrix();
     gl.domElement.dataset.rearProgress = p.toFixed(4);
   });
@@ -74,14 +96,14 @@ function RearCamera({
 function RearVehicle({ asset }: { asset: PreparedVehicle }) {
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    applyVehicleAppearance(asset.bindings, "#68737b", true);
+    applyVehicleAppearance(asset.bindings, "#656a6d", true);
     for (const b of asset.bindings) {
       if (b.role === "paint") {
-        b.material.metalness = 0.58;
-        b.material.roughness = 0.36;
+        b.material.metalness = 0.68;
+        b.material.roughness = 0.28;
         if (b.material instanceof MeshPhysicalMaterial) {
           b.material.clearcoat = 1;
-          b.material.clearcoatRoughness = 0.22;
+          b.material.clearcoatRoughness = 0.18;
         }
       }
       if (b.role === "taillights") {
@@ -137,34 +159,49 @@ const RearStudio = memo(function RearStudio() {
           position={[-3, 6, -5]}
           intensity={0}
         />
+        <rectAreaLight
+          name="rear-sweep"
+          color="#ffffff"
+          width={2.8}
+          height={0.45}
+          intensity={0}
+          position={[-3.8, 2.5, -4.5]}
+          rotation={[0, Math.PI, 0]}
+        />
         <Environment resolution={256} frames={1}>
-          <color attach="background" args={["#0a0d11"]} />
+          <color attach="background" args={["#090a0b"]} />
           <Lightformer
             form="rect"
-            intensity={1.6}
-            position={[0, 5, -1]}
+            intensity={2.1}
+            position={[0, 4.5, 0]}
             rotation={[Math.PI / 2, 0, 0]}
-            scale={[9, 5, 1]}
+            scale={[7, 1.5, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={1.2}
-            position={[-6, 2, -2]}
+            intensity={1.8}
+            position={[-4, 2, -1.2]}
             rotation={[0, Math.PI / 2, 0]}
-            scale={[6, 4, 1]}
+            scale={[1.2, 3, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={1.8}
+            position={[4, 2, -1.2]}
+            rotation={[0, -Math.PI / 2, 0]}
+            scale={[1.2, 3, 1]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={1.1}
+            position={[0, 2.8, -6]}
+            scale={[6, 0.65, 1]}
           />
           <Lightformer
             form="rect"
             intensity={1.2}
-            position={[6, 2, 1]}
-            rotation={[0, -Math.PI / 2, 0]}
-            scale={[6, 4, 1]}
-          />
-          <Lightformer
-            form="rect"
-            intensity={0.8}
-            position={[0, 3, -8]}
-            scale={[8, 5, 1]}
+            position={[0, 0.4, -4]}
+            scale={[4, 0.3, 1]}
           />
         </Environment>
         {/* Drei blurs with an unparented plane at world Y=0. Its upward-facing
@@ -172,7 +209,7 @@ const RearStudio = memo(function RearStudio() {
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]}>
           <planeGeometry args={[150, 150]} />
           <meshStandardMaterial
-            color="#0b0e11"
+            color="#08090a"
             roughness={0.88}
             metalness={0}
             envMapIntensity={0.12}
@@ -180,9 +217,9 @@ const RearStudio = memo(function RearStudio() {
         </mesh>
         <ContactShadows
           position={[0, -0.001, 0]}
-          opacity={0.6}
-          scale={9}
-          blur={1.6}
+          opacity={0.74}
+          scale={7}
+          blur={1.5}
           far={3}
           resolution={256}
           frames={1}

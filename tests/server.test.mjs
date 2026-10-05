@@ -10,6 +10,7 @@ beforeAll(async () => {
   await writeFile(join(root, "car.glb"), "glTF-test");
   await writeFile(join(root, "film.mp4"), "0123456789abcdef");
   await writeFile(join(root, "film.webm"), "webm-test");
+  await writeFile(join(root, "r35.ogg"), "original-audio-test");
   await writeFile(join(root, "heading.ttf"), "font-test");
   server = createAppServer(root);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
@@ -20,6 +21,13 @@ afterAll(async () => {
   if (root) await rm(root, { recursive: true, force: true });
 });
 describe("production static server", () => {
+  it("serves the optional original Ogg recording with its audio MIME and nosniff", async () => {
+    const response = await fetch(url + "/r35.ogg");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("audio/ogg");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(await response.text()).toBe("original-audio-test");
+  });
   it("serves the self-hosted display font with its declared MIME type", async () => {
     const response = await fetch(url + "/heading.ttf");
     expect(response.status).toBe(200);

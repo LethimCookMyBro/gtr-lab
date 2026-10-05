@@ -94,7 +94,10 @@ describe("rear identity header budget", () => {
         "Header must end before the reserved vehicle region",
       ).toBeLessThanOrEqual(height * 0.28);
       expect(nissanWidth).toBeLessThan(badgeWidth * 0.35);
-      expect(badgeWidth).toBeGreaterThanOrEqual(55);
+      expect(badgeWidth).toBeGreaterThanOrEqual(40);
+      expect(badgeWidth).toBeLessThanOrEqual(80);
+      if (width > 700 && height > 600)
+        expect(bandBottom).toBeLessThanOrEqual(height * 0.14);
     },
   );
 });

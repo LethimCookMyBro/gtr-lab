@@ -1,0 +1,70 @@
+/* Deliberate listening sits outside the moving stage. It never covers the car. */
+.cinematic-home .home-signature-sound {
+  position: relative;
+  padding: 36px 24px 44px;
+  background: #030405;
+  color: #c1c5c9;
+  text-align: center;
+}
+.home-signature-sound .r35-sound-preview__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.home-signature-sound button {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid #6b7075;
+  color: #f1f2f3;
+  background: transparent;
+  font-size: 13px;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.home-signature-sound button:hover {
+  border-color: #d9dcdf;
+  background: #171a1c;
+}
+.home-signature-sound button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.home-signature-sound button:focus-visible,
+.home-signature-sound a:focus-visible {
+  outline: 2px solid #e86b76;
+  outline-offset: 5px;
+}
+.home-signature-sound .r35-sound-preview__mute {
+  border-color: transparent;
+  color: #b6bcc1;
+}
+.home-signature-sound .r35-sound-preview__status {
+  margin: 14px auto 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.home-signature-sound .r35-sound-preview__credit {
+  max-width: 740px;
+  margin: 14px auto 0;
+  color: #999fa5;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.home-signature-sound a {
+  color: #b6bcc1;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 700px) {
+  .cinematic-home .home-signature-sound {
+    padding: 28px 24px 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-signature-sound button {
+    transition: none;
+  }
+}

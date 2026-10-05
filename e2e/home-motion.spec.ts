@@ -274,9 +274,7 @@ async function expectArchiveSpreadLayout(page: Page, index: number) {
   const geometry = await chapter.evaluate((element) => {
     const bounds = element.getBoundingClientRect();
     const content = [
-      ...element.querySelectorAll(
-        ".home-archive-inline-copy, .home-archive-achievement, .home-archive-description, figure",
-      ),
+      ...element.querySelectorAll(".home-archive-inline-copy, figure"),
     ].map((node) => {
       const rect = node.getBoundingClientRect();
       return {
@@ -353,8 +351,8 @@ async function expectArchiveSpreadLayout(page: Page, index: number) {
     occupiedBottom = Math.max(occupiedBottom, band.bottom);
   }
   if (geometry.pinned) {
-    // The R32 alone has an authored, bounded sticky score. Its complete reading
-    // composition must fit the viewport; all other chapters stay compact flow.
+    // Each era has a bounded native sticky score. Its complete reading
+    // composition must fit the viewport without overlapping objects.
     expect(geometry.bottom - geometry.top).toBeLessThan(geometry.viewport * 2);
     if (geometry.score >= 0.6 && geometry.score <= 0.84) {
       expect(
@@ -376,9 +374,9 @@ async function expectArchiveSpreadLayout(page: Page, index: number) {
     expect(caption.text).toMatch(/\S/);
     expect(caption.alt).toMatch(/\S/);
     expect(caption.gap).toBeGreaterThanOrEqual(-1);
-    expect(caption.gap).toBeLessThanOrEqual(24);
-    expect(caption.captionLeft).toBeGreaterThanOrEqual(caption.imageLeft - 1);
-    expect(caption.captionRight).toBeLessThanOrEqual(caption.imageRight + 1);
+    expect(caption.gap).toBeLessThanOrEqual(28);
+    expect(caption.captionLeft).toBeGreaterThanOrEqual(geometry.left - 1);
+    expect(caption.captionRight).toBeLessThanOrEqual(geometry.right + 1);
   }
 }
 

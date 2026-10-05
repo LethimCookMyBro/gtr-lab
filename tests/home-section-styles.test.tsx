@@ -52,7 +52,6 @@ it("uses the same opacity and translation channels for each independent editoria
     ".home-archive-inline-copy",
     ".home-archive-image",
     ".home-archive-support-image",
-    ".home-archive-achievement",
   ];
   for (const selector of selectors) {
     const node = container.querySelector<HTMLElement>(selector)!;
@@ -70,7 +69,7 @@ it("uses the same opacity and translation channels for each independent editoria
   expect(spread.transform).not.toContain("--chapter");
 });
 
-it("uses condensed bold motorsport headings and neutral/red archive evidence", () => {
+it("uses condensed bold motorsport headings and a neutral archive divider", () => {
   const { container } = story();
   for (const node of container.querySelectorAll(
     ".home-editorial-copy h2, .home-archive-intro h2, .home-archive-inline-copy h3, .home-archive-achievement strong",
@@ -84,7 +83,8 @@ it("uses condensed bold motorsport headings and neutral/red archive evidence", (
   const record = getComputedStyle(
     container.querySelector(".home-archive-achievement")!,
   );
-  expect(record.borderLeftColor).toBe("rgb(200, 36, 53)");
+  expect(record.borderTopColor).toBe("rgb(69, 74, 78)");
+  expect(record.borderTopWidth).toBe("1px");
   const stat = getComputedStyle(
     container.querySelector(".home-archive-achievement strong")!,
   );

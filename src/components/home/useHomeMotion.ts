@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import {
   clamp01,
   expansionAt,
+  exhibitionMotionAt,
   heroExitAt,
   r32MotionAt,
   sectionProgress,
@@ -97,6 +98,12 @@ export function useHomeMotion(
         "--r32-engine-reveal",
         "--r32-exit-shift",
         "--r32-progress",
+        "--exhibition-progress",
+        "--exhibition-year-shift",
+        "--exhibition-lead-reveal",
+        "--exhibition-road-reveal",
+        "--exhibition-engine-reveal",
+        "--exhibition-exit-shift",
       ];
       [
         ...sections,
@@ -239,6 +246,33 @@ export function useHomeMotion(
             const progress = clamp01(
               (pinnedTop - rect.top) /
                 Math.max(1, rect.height - pinnedHeight - 52),
+            );
+            const exhibition = exhibitionMotionAt(progress);
+            write(element, "--exhibition-progress", progress.toFixed(5));
+            write(
+              element,
+              "--exhibition-year-shift",
+              `${exhibition.yearShift.toFixed(3)}%`,
+            );
+            write(
+              element,
+              "--exhibition-lead-reveal",
+              exhibition.leadReveal.toFixed(5),
+            );
+            write(
+              element,
+              "--exhibition-road-reveal",
+              exhibition.roadReveal.toFixed(5),
+            );
+            write(
+              element,
+              "--exhibition-engine-reveal",
+              exhibition.engineReveal.toFixed(5),
+            );
+            write(
+              element,
+              "--exhibition-exit-shift",
+              `${exhibition.exitShift.toFixed(3)}px`,
             );
             const score = r32MotionAt(progress);
             write(element, "--r32-progress", progress.toFixed(5));

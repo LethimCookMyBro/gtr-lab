@@ -83,7 +83,9 @@ it("contains a rejected scene import and offers reload instead of a cached lazy 
     screen.getByRole("link", { name: "Continue exploring models" }),
   ).toBeTruthy();
   expect(screen.queryByText("The whole page failed")).toBeNull();
-  expect(screen.getByRole("status").textContent).toContain("Reload the page");
+  expect(
+    screen.getByRole("status", { name: "R35 3D loading status" }).textContent,
+  ).toContain("Reload the page");
   expect(screen.getByRole("button", { name: "Reload page" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Retry 3D view" })).toBeNull();
   expect(document.querySelector('[aria-busy="true"]')).toBeNull();

@@ -12,9 +12,8 @@
 .home-signature-identity {
   position: absolute;
   z-index: 2;
-  /* Keep the entire two-emblem stack in the upper 28% of the viewport.
-     Vehicle framing is unchanged; all identity dimensions share a height budget. */
-  top: clamp(12px, 3svh, 32px);
+  /* A small provenance mark leaves the enlarged, complete car as the exhibit. */
+  top: clamp(12px, 2svh, 24px);
   left: 24px;
   right: 24px;
   text-align: center;
@@ -22,10 +21,10 @@
 }
 .home-signature-identity > p {
   color: #95999e;
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.2;
   letter-spacing: 0.24em;
-  margin-bottom: min(1svh, 10px);
+  margin-bottom: min(0.6svh, 6px);
 }
 .home-signature-identity h2 {
   margin: 0;
@@ -41,7 +40,7 @@
   z-index: 2;
   left: 24px;
   right: 24px;
-  bottom: 17%;
+  bottom: 9%;
   text-align: center;
   pointer-events: none;
   opacity: clamp(0, calc((var(--rear-progress, 0) - 0.45) * 2.5), 1);
@@ -49,6 +48,7 @@
 }
 .home-signature-caption p {
   font-size: clamp(19px, 2.1vw, 32px);
+  line-height: 1.25;
   letter-spacing: -0.01em;
   margin: 0 0 10px;
 }
@@ -147,8 +147,8 @@
 }
 
 .home-signature-identity .gtr-metal-wordmark {
-  --gtr-badge-width: min(18svh, 170px);
-  --gtr-nissan-width: min(4.8svh, 44px);
-  gap: min(1.2svh, 12px);
+  --gtr-badge-width: clamp(40px, 8svh, 80px);
+  --gtr-nissan-width: clamp(12px, 2.2svh, 22px);
+  gap: min(0.5svh, 4px);
   filter: none;
 }

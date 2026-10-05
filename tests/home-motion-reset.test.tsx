@@ -126,6 +126,12 @@ it("reads untransformed editorial geometry before writing any scroll styles", ()
   expect(r32.style.getPropertyValue("--r32-photo-clip")).not.toBe("");
   rerender(<Harness reduced />);
   for (const property of [
+    "--exhibition-progress",
+    "--exhibition-year-shift",
+    "--exhibition-lead-reveal",
+    "--exhibition-road-reveal",
+    "--exhibition-engine-reveal",
+    "--exhibition-exit-shift",
     "--r32-progress",
     "--r32-photo-clip",
     "--r32-title-shift",

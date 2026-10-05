@@ -20,6 +20,8 @@ on:
       - "e2e/rear-brand-layout.spec.ts"
       - "playwright.rear.config.ts"
       - "playwright.heritage.config.ts"
+      - "playwright.exhibition.config.ts"
+      - "e2e/centered-exhibition-preview.spec.ts"
       - "playwright.opening-cards.config.ts"
       - "playwright.loading.config.ts"
       - "e2e/home-loading.spec.ts"
@@ -79,11 +81,11 @@ jobs:
 
   component-evidence:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: ${{ matrix.suite == 'exhibition' && 25 || 18 }}
     strategy:
       fail-fast: false
       matrix:
-        suite: [rear, heritage, opening-cards, hero-exit, loading]
+        suite: [rear, heritage, opening-cards, hero-exit, loading, exhibition]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -104,4 +106,5 @@ jobs:
             playwright-rear-report/
             playwright-opening-cards-report/
             playwright-loading-report/
+            test-results/exhibition-report/
           retention-days: 14

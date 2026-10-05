@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { URL } from "node:url";
+import { parse } from "postcss";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { GtrWordmark } from "../src/components/home/GtrWordmark";
@@ -74,5 +75,47 @@ describe("authentic GT-R identity", () => {
         .getByRole("link", { name: "Barlow Condensed · SIL Open Font License" })
         .getAttribute("href"),
     ).toBe("/fonts/barlow-condensed/OFL.txt");
+  });
+});
+
+describe("one-shot authentic loader emblem", () => {
+  it("adds a decorative chrome light pass only when the loading intro is active", () => {
+    const { container, rerender } = render(<GtrWordmark sweep />);
+    const light = container.querySelector(".gtr-brand-chrome-sweep");
+    expect(light).not.toBeNull();
+    expect(light?.getAttribute("aria-hidden")).toBe("true");
+    rerender(<GtrWordmark />);
+    expect(container.querySelector(".gtr-brand-chrome-sweep")).toBeNull();
+  });
+
+  it("runs one chrome sweep and red reveal, with static original imagery for reduced motion", () => {
+    const css = parse(read("../src/styles/home-opening-cards.css").toString());
+    const animations: string[] = [];
+    let reducedMotionDisablesSweep = false;
+    css.walkRules((rule) => {
+      if (rule.selector.includes('[data-sweep="true"]')) {
+        rule.walkDecls("animation", ({ value }) => {
+          animations.push(value);
+        });
+      }
+      if (
+        rule.selector.includes(".gtr-brand-chrome-sweep") &&
+        rule.parent?.type === "atrule" &&
+        rule.parent.name === "media" &&
+        rule.parent.params.includes("prefers-reduced-motion: reduce")
+      ) {
+        rule.walkDecls("display", ({ value }) => {
+          if (value === "none") reducedMotionDisablesSweep = true;
+        });
+      }
+    });
+    expect(
+      animations.some((value) => value.includes("gtr-chrome-light-pass")),
+    ).toBe(true);
+    expect(animations.some((value) => value.includes("gtr-red-reveal"))).toBe(
+      true,
+    );
+    expect(animations.every((value) => !value.includes("infinite"))).toBe(true);
+    expect(reducedMotionDisablesSweep).toBe(true);
   });
 });

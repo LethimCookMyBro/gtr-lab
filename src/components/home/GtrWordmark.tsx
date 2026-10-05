@@ -33,6 +33,9 @@ export function GtrWordmark({
           alt=""
           draggable="false"
         />
+        {sweep && (
+          <span className="gtr-brand-chrome-sweep" aria-hidden="true" />
+        )}
       </span>
     </div>
   );

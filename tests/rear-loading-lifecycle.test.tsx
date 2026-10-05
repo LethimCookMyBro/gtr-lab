@@ -109,5 +109,7 @@ it("bounds a render stall instead of allowing an endless gate", async () => {
   act(() => runtime.props.onLoadState({ phase: "preparing" }));
   act(() => vi.advanceTimersByTime(20001));
   expect(screen.getByRole("button", { name: "Retry 3D view" })).toBeTruthy();
-  expect(screen.getByRole("status").textContent).toMatch(/render.*too long/i);
+  expect(
+    screen.getByRole("status", { name: "R35 3D loading status" }).textContent,
+  ).toMatch(/render.*too long/i);
 });

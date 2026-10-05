@@ -10,6 +10,8 @@ import {
 import { Link } from "react-router-dom";
 import { ArrowDown, RotateCcw } from "lucide-react";
 import { GtrWordmark } from "./GtrWordmark";
+import { R35SoundPreview } from "../R35SoundPreview";
+import "../../styles/home-audio.css";
 import { SceneBoundary } from "../three/SceneBoundary";
 import { sectionProgress } from "./motion";
 import {
@@ -41,13 +43,16 @@ export function RearSignature(props: RearSignatureProps) {
   const [retry, setRetry] = useState(0);
   const [optedIn, setOptedIn] = useState(false);
   return (
-    <RearSignatureAttempt
-      key={`${props.attempt ?? 0}:${retry}`}
-      {...props}
-      optedIn={optedIn}
-      onOptIn={() => setOptedIn(true)}
-      onRetry={() => setRetry((value) => value + 1)}
-    />
+    <>
+      <RearSignatureAttempt
+        key={`${props.attempt ?? 0}:${retry}`}
+        {...props}
+        optedIn={optedIn}
+        onOptIn={() => setOptedIn(true)}
+        onRetry={() => setRetry((value) => value + 1)}
+      />
+      <R35SoundPreview className="home-signature-sound" />
+    </>
   );
 }
 function RearSignatureAttempt({
@@ -226,7 +231,11 @@ function RearSignatureAttempt({
           )}
         </div>
         {(!ready || !permitted) && (
-          <div className="home-signature-status" role="status">
+          <div
+            className="home-signature-status"
+            role="status"
+            aria-label="R35 3D loading status"
+          >
             {disabled ? (
               <>
                 <p>3D view skipped for this visit.</p>
@@ -277,7 +286,6 @@ function RearSignatureAttempt({
           </div>
         )}
         <header className="home-signature-identity">
-          <p>THE R35 SIGNATURE</p>
           <h2 aria-label="NISSAN GT-R">
             <GtrWordmark />
           </h2>

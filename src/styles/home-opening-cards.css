@@ -48,6 +48,7 @@
   flex: none;
 }
 .gtr-brand-badge-frame {
+  position: relative;
   display: block;
   width: var(--gtr-badge-width, clamp(238px, 22vw, 280px));
   aspect-ratio: 640 / 450;
@@ -61,6 +62,72 @@
   height: auto;
   /* 170 of 640 source pixels; visible emblem occupies y=182 through y=595. */
   transform: translateY(-26.5625%);
+}
+/* The original badge supplies the shape and red pigment. One white reflection
+   crosses its luminance mask; image filters settle to the unchanged source. */
+.gtr-metal-wordmark[data-sweep="true"] .gtr-brand-badge {
+  animation: gtr-red-reveal 1600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.gtr-brand-chrome-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mask-image: url("/brand/gtr-stacked-badge.png");
+  mask-mode: luminance;
+  mask-size: 100% auto;
+  /* Same original-canvas crop as the actual image: (450 - 640) × 89.4737%. */
+  mask-position: center 89.4737%;
+  mask-repeat: no-repeat;
+}
+.gtr-brand-chrome-sweep::after {
+  content: "";
+  position: absolute;
+  inset: -20% -60%;
+  background: linear-gradient(
+    110deg,
+    transparent 39%,
+    #fff2 44%,
+    #ffffffa6 49%,
+    #fff2 54%,
+    transparent 59%
+  );
+  opacity: 0;
+}
+.gtr-metal-wordmark[data-sweep="true"] .gtr-brand-chrome-sweep::after {
+  animation: gtr-chrome-light-pass 1250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes gtr-chrome-light-pass {
+  0% {
+    transform: translateX(-65%);
+    opacity: 0;
+  }
+  20%,
+  65% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(65%);
+    opacity: 0;
+  }
+}
+@keyframes gtr-red-reveal {
+  0%,
+  40% {
+    filter: grayscale(1) brightness(0.72);
+  }
+  85%,
+  100% {
+    filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gtr-metal-wordmark[data-sweep="true"] .gtr-brand-badge {
+    animation: none;
+    filter: none;
+  }
+  .gtr-brand-chrome-sweep {
+    display: none;
+  }
 }
 .home-opening-rule {
   width: 54px;

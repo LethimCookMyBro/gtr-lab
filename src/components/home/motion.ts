@@ -89,3 +89,17 @@ export function r32MotionAt(progress: number) {
     exitShift: p <= 0.84 ? 0 : -48 * smoothstep((p - 0.84) / 0.16),
   };
 }
+
+/** Factual year → competition → road → engineering. One native, reversible
+ * exhibition score per era, with a generous fully readable middle hold. */
+export function exhibitionMotionAt(progress: number) {
+  const p = clamp01(progress);
+  const exit = smoothstep((p - 0.86) / 0.14);
+  return {
+    yearShift: 110 * (1 - smoothstep(p / 0.2)) - 110 * exit,
+    leadReveal: smoothstep((p - 0.05) / 0.25),
+    roadReveal: smoothstep((p - 0.17) / 0.25),
+    engineReveal: smoothstep((p - 0.29) / 0.25),
+    exitShift: exit === 0 ? 0 : -28 * exit,
+  };
+}

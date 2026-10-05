@@ -51,3 +51,5 @@ playwright-loading-report/
 /public/environments/roadside/
 
 playwright-loading-lifecycle-report/
+
+playwright-exhibition-report/

@@ -50,6 +50,11 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
   expect(bounds.image.width / bounds.image.height).toBeCloseTo(1, 2);
   expect(bounds.badge.width / bounds.badge.height).toBeCloseTo(640 / 450, 2);
   expect(bounds.nissan.width).toBeLessThan(bounds.badge.width * 0.35);
+  expect(bounds.badge.width).toBeLessThanOrEqual(80);
+  if (bounds.canvas.width > 700 && height > 600)
+    expect(bounds.header.bottom - bounds.sticky.y).toBeLessThanOrEqual(
+      height * 0.14,
+    );
 
   // Capture the actual rendered car without HTML overlays. This changes only
   // screenshot presentation and leaves the camera, scene and persistent UI intact.
@@ -73,7 +78,9 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
     const baseline = [data[0], data[1], data[2]];
     let consecutive = 0;
     let roof: number | null = null;
-    for (let y = Math.floor(image.height * 0.15); y < image.height * 0.5; y++) {
+    // The enlarged rear starts higher in the canvas; scan the actual roof
+    // from above its new band instead of assuming the old, smaller car position.
+    for (let y = Math.floor(image.height * 0.08); y < image.height * 0.5; y++) {
       let foreground = 0;
       for (let x = left; x < right; x++) {
         const offset = (y * image.width + x) * 4;
@@ -201,7 +208,7 @@ async function inspectHeader(page: Page, info: TestInfo, label: string) {
   await expect(family).toBeFocused();
 }
 
-test("rear identity clears the actual vehicle roof without changing the loader or captions", async ({
+test("compact rear identity clears the enlarged real vehicle and preserves authentic loader proportions", async ({
   page,
 }, info) => {
   const requests: string[] = [];

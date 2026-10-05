@@ -16,6 +16,7 @@ const MIME = {
   ".jpg": "image/jpeg",
   ".mp4": "video/mp4",
   ".webm": "video/webm",
+  ".ogg": "audio/ogg",
   ".glb": "model/gltf-binary",
   ".hdr": "application/octet-stream",
   ".woff2": "font/woff2",

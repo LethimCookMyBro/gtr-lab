@@ -104,7 +104,11 @@ describe("cinematic homepage", () => {
           ?.getAttribute("aria-label"),
       ).toContain(["1969", "1989", "1999", "2007"][index]);
       expect(container.querySelector(".home-archive-narrative")).toBeNull();
-      expect(container.querySelector(".home-archive-year")).toBeNull();
+      expect(
+        [...container.querySelectorAll(".home-archive-year")].map(
+          (year) => year.textContent,
+        ),
+      ).toEqual(["1969", "1989", "1999", "2007"]);
     }
   });
   it("contains two hosted-film sections and all six full-row model destinations", () => {
