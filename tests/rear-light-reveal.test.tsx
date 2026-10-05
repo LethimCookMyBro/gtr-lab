@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
-import { PerspectiveCamera, RectAreaLight, Scene, Vector3 } from "three";
+import {
+  AmbientLight,
+  DirectionalLight,
+  PerspectiveCamera,
+  RectAreaLight,
+  Scene,
+  Vector3,
+} from "three";
 import RearVehicleScene from "../src/components/home/RearVehicleScene";
 const runtime = vi.hoisted(() => ({
   state: {} as any,
@@ -168,3 +175,28 @@ it.each([
     expect(conservativeTyreBottom + 12).toBeLessThanOrEqual(captionTop);
   },
 );
+
+it("reveals a broad neutral roof source and restrained fill only after the real lamps", () => {
+  const roof = new RectAreaLight("#ffffff", 0, 6, 3);
+  roof.name = "rear-roof";
+  const fill = new AmbientLight("#ffffff", 0);
+  fill.name = "rear-fill";
+  const key = new DirectionalLight("#ffffff", 0);
+  key.name = "rear-key";
+  runtime.state.scene.add(roof, fill, key);
+  const { rerender } = render(
+    <RearVehicleScene {...props} progress={0.1} reducedMotion={false} />,
+  );
+  settle();
+  expect(roof.intensity).toBe(0);
+  expect(fill.intensity).toBe(0);
+  runtime.frames = [];
+  rerender(<RearVehicleScene {...props} progress={1} reducedMotion={false} />);
+  settle();
+  expect(roof.intensity).toBeGreaterThanOrEqual(3);
+  expect(fill.intensity).toBeGreaterThanOrEqual(0.12);
+  expect(fill.intensity).toBeLessThanOrEqual(0.2);
+  expect(key.intensity).toBeLessThanOrEqual(0.4);
+  expect(roof.color.r).toBe(roof.color.g);
+  expect(roof.color.g).toBe(roof.color.b);
+});

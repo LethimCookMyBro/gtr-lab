@@ -59,9 +59,14 @@ function RearCamera({
     // Begin with emission only, then bring the studio onto the actual body.
     scene.environmentIntensity = reveal * 0.88;
     const key = scene.getObjectByName("rear-key"),
-      fill = scene.getObjectByName("rear-fill");
-    if (key instanceof Light) key.intensity = reveal * 0.5;
-    if (fill instanceof Light) fill.intensity = reveal * 0.06;
+      fill = scene.getObjectByName("rear-fill"),
+      roof = scene.getObjectByName("rear-roof");
+    if (key instanceof Light) key.intensity = reveal * 0.35;
+    if (fill instanceof Light) fill.intensity = reveal * 0.16;
+    if (roof instanceof RectAreaLight) {
+      roof.intensity = reveal * 3.4;
+      roof.lookAt(0, 1, -1);
+    }
     const sweep = scene.getObjectByName("rear-sweep");
     if (sweep instanceof RectAreaLight) {
       const pass = Math.min(1, Math.max(0, (p - 0.2) / 0.6));
@@ -159,6 +164,17 @@ const RearStudio = memo(function RearStudio() {
           position={[-3, 6, -5]}
           intensity={0}
         />
+        {/* A broad overhead source separates the real roof and carbon wing
+            from black without turning up the frontal body reflections. */}
+        <rectAreaLight
+          name="rear-roof"
+          color="#ffffff"
+          width={6}
+          height={3}
+          intensity={0}
+          position={[0, 4, 0.5]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        />
         <rectAreaLight
           name="rear-sweep"
           color="#ffffff"
@@ -172,28 +188,28 @@ const RearStudio = memo(function RearStudio() {
           <color attach="background" args={["#090a0b"]} />
           <Lightformer
             form="rect"
-            intensity={2.1}
-            position={[0, 4.5, 0]}
+            intensity={2.6}
+            position={[0, 4.5, 1.5]}
             rotation={[Math.PI / 2, 0, 0]}
-            scale={[7, 1.5, 1]}
+            scale={[7, 4, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={1.8}
+            intensity={1.5}
             position={[-4, 2, -1.2]}
             rotation={[0, Math.PI / 2, 0]}
             scale={[1.2, 3, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={1.8}
+            intensity={1.5}
             position={[4, 2, -1.2]}
             rotation={[0, -Math.PI / 2, 0]}
             scale={[1.2, 3, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={1.1}
+            intensity={0.9}
             position={[0, 2.8, -6]}
             scale={[6, 0.65, 1]}
           />

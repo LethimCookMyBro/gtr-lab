@@ -40,6 +40,9 @@ export default defineConfig({
   },
   projects: viewports.map(({ name, width, height }) => ({
     name,
+    // Native1920px SwiftShader capture reached its final reverse hold at240s.
+    // Give genuine capture enough time without changing timing or pixels.
+    timeout: width >= 1920 ? 360000 : 240000,
     use: {
       viewport: { width, height },
       isMobile: width < 701,

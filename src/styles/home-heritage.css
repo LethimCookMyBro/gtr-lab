@@ -423,7 +423,7 @@
     display: none;
   }
   #home-heritage .home-archive-chapter {
-    padding: 36px 0 44px;
+    padding: 36px 0 56px;
   }
   #home-heritage .home-archive-exhibition {
     display: flex;
@@ -474,5 +474,22 @@
   #home-heritage .home-archive-year {
     transform: none !important;
     opacity: 1 !important;
+  }
+}
+
+/* A short landscape window still exposes the selected title below the index.
+   Keep the complete story in flow instead of pinning a clipped mini-stage. */
+@media (max-height: 599px) {
+  #home-heritage .home-archive-chapter {
+    padding-top: 24px;
+  }
+  #home-heritage .home-archive-year-slot {
+    font-size: 72px;
+  }
+  #home-heritage .home-archive-generation {
+    margin: 4px 0 14px;
+  }
+  #home-heritage .home-archive-inline-copy h3 {
+    font-size: 30px;
   }
 }

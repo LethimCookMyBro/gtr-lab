@@ -618,9 +618,13 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     await expectArchiveSpreadLayout(page, index);
     const image = archiveChapter(page, index).locator(".home-archive-image");
     const bounds = (await image.boundingBox())!;
+    // The framed exhibition is capped at1480px on wide displays; compare the
+    // lead object with its actual exhibition width, not the whole monitor.
+    const chapterBounds = (await archiveChapter(page, index).boundingBox())!;
     expect(bounds.width).toBeGreaterThanOrEqual(
-      page.viewportSize()!.width *
-        (page.viewportSize()!.width <= 700 ? 0.7 : 0.29),
+      page.viewportSize()!.width <= 700
+        ? page.viewportSize()!.width * 0.7
+        : chapterBounds.width * 0.3,
     );
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(

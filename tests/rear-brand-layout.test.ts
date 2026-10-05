@@ -180,3 +180,23 @@ describe("short-portrait car, caption and footer clearance", () => {
     ).toBeUndefined();
   });
 });
+
+describe("portrait identity grouping", () => {
+  it.each([
+    [390, 844],
+    [390, 600],
+    [430, 932],
+  ])(
+    "brings the identity toward the vehicle without moving or enlarging the stage at %dx%d",
+    (width, height) => {
+      const header = declarations(".home-signature-identity", width, height);
+      const top = length(header.top, width, height);
+      expect(top).toBeGreaterThanOrEqual(height * 0.12);
+      expect(top).toBeLessThanOrEqual(height * 0.15);
+      expect(
+        declarations(".cinematic-home .home-signature-runway", width, height)
+          .height,
+      ).toBe("230svh");
+    },
+  );
+});
