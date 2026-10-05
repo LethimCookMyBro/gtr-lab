@@ -974,7 +974,11 @@ test("additional viewport sanity stays within bounds with usable navigation", as
     await expect(menu).toBeVisible();
     await expect(primary).toBeVisible();
     for (const control of [menu, primary]) {
-      await control.scrollIntoViewIfNeeded();
+      // Nearest scrolling can leave a fractional CSS pixel clipped at 1366px.
+      // Center the real target; keep the full-visibility and size assertions.
+      await control.evaluate((node) =>
+        node.scrollIntoView({ block: "center", behavior: "instant" }),
+      );
       await expect(control).toBeInViewport({ ratio: 1 });
       const box = await control.boundingBox();
       expect(box!.x).toBeGreaterThanOrEqual(0);
