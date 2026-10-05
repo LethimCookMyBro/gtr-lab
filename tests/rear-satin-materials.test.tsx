@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   BoxGeometry,
   Color,
+  DoubleSide,
   Group,
   Mesh,
   MeshPhysicalMaterial,
@@ -123,6 +124,7 @@ beforeEach(() => {
     color: "#202226",
     roughness: 0.24,
     metalness: 0.5,
+    side: DoubleSide,
   });
   carbon.name = "Carbon_Fiber";
   carbon.map = new Texture();
@@ -253,10 +255,11 @@ it("isolates the white satin spoiler from the shared textured carbon grille with
   expect(spoiler).toBeInstanceOf(MeshPhysicalMaterial);
   expect(spoiler.name).toBe("Rear_Satin_Spoiler");
   expect(spoiler.color.equals(paint.color)).toBe(true);
-  expect(spoiler.metalness).toBe(paint.metalness);
+  expect(spoiler.metalness).toBe(0.08);
   expect(spoiler.roughness).toBe(paint.roughness);
-  expect(spoiler.clearcoat).toBe(paint.clearcoat);
+  expect(spoiler.clearcoat).toBe(0.22);
   expect(spoiler.clearcoatRoughness).toBe(paint.clearcoatRoughness);
+  expect(spoiler.side).toBe(carbon.side);
   expect(Object.values(spoiler).some((value) => value instanceof Texture)).toBe(
     false,
   );
@@ -347,6 +350,35 @@ function compiled(material: MeshStandardMaterial) {
   return shader;
 }
 
+it("adds reveal-scaled diffuse bounce only to the downward-facing satin spoiler without making it emissive", () => {
+  mount();
+  const spoiler = material("Spoiler_Carbon_Fiber_0");
+  const shader = compiled(spoiler);
+  expect(shader.fragmentShader).toContain(
+    "irradiance += vec3(PI * 0.5 * envMapIntensity);",
+  );
+  expect(shader.fragmentShader).toMatch(
+    /#include <lights_fragment_maps>\s+#if defined\( USE_ENVMAP \) && defined\( RE_IndirectDiffuse \)/,
+  );
+  expect(
+    shader.fragmentShader.indexOf("irradiance += vec3(PI * 0.5"),
+  ).toBeLessThan(
+    shader.fragmentShader.indexOf("#include <lights_fragment_end>"),
+  );
+  expect(spoiler.customProgramCacheKey()).toBe("rear-spoiler-bounce-v1");
+  expect(spoiler.envMap).toBeNull();
+  expect(spoiler.emissive.getHexString()).toBe("000000");
+  for (const name of [
+    "Body0_CarPaint_0",
+    "Rear_Bumper_Grid_Carbon_Fiber_0",
+    "RearWindow_Glass_0",
+    "TailightsGlass_Glass001_0",
+  ])
+    expect(compiled(material(name)).fragmentShader).not.toContain(
+      "PI * 0.5 * envMapIntensity",
+    );
+});
+
 it("suppresses the grazing direct-area reflection on real window glass after r180 lighting evaluation", () => {
   mount();
   const glass = material("RearWindow_Glass_0");
@@ -434,6 +466,11 @@ it("binds the window fix and four emission profiles to the decoded published ass
   expect(spoiler).not.toBe(grille);
   expect(spoiler.name).toBe("Rear_Satin_Spoiler");
   expect(spoiler.color.getHexString()).toBe("ecebe6");
+  expect(spoiler.side).toBe(grille.side);
+  expect((spoiler as MeshPhysicalMaterial).clearcoat).toBe(0.22);
+  expect(compiled(spoiler).fragmentShader).toContain(
+    "PI * 0.5 * envMapIntensity",
+  );
   expect(Object.values(spoiler).some((value) => value instanceof Texture)).toBe(
     false,
   );

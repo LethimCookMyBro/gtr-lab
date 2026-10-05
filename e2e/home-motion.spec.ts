@@ -57,6 +57,9 @@ async function scrollProgress(
         top:
           window.scrollY +
           rect.top +
+          ((element as HTMLElement).dataset.motionSection === "hero"
+            ? Math.max(0, stickyHeight - innerHeight)
+            : 0) +
           Math.max(0, rect.height - stickyHeight) * p,
         behavior: "instant",
       });
@@ -384,20 +387,17 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       .locator(".home-film--hero iframe")
       .boundingBox())!;
     expect(media.x).toBeGreaterThanOrEqual(-1);
-    expect(media.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+    expect(media.width).toBeCloseTo(page.viewportSize()!.width, 0);
     expect(media.x + media.width).toBeLessThanOrEqual(
       page.viewportSize()!.width + 1,
     );
     expect(media.height).toBeCloseTo((media.width * 9) / 16, 0);
     expect(media.y).toBeGreaterThanOrEqual(0);
-    expect(media.y + media.height).toBeLessThanOrEqual(
-      page.viewportSize()!.height,
-    );
+    const panel = (await page.locator(".home-hero-sticky").boundingBox())!;
+    expect(media.y + media.height).toBeLessThanOrEqual(panel.y + panel.height);
     const copy = (await page.locator(".home-hero-copy").boundingBox())!;
     expect(copy.x).toBeGreaterThan(20);
-    expect(copy.y + copy.height).toBeLessThanOrEqual(
-      page.viewportSize()!.height,
-    );
+    expect(copy.y + copy.height).toBeLessThanOrEqual(panel.y + panel.height);
   }
   // Layout checks must not require the external provider to finish in five seconds.
   // Loading retains the poster; document load reveals a still-unverified player.
@@ -410,6 +410,17 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   expect(presentation.opacity).toBe(
     presentation.documentState === "loading" ? "0" : "1",
   );
+  // The approved full-width film can be taller than a wide/short viewport.
+  // Its intact panel is reachable through real native scroll before the exit.
+  const overflow = await page
+    .locator(".home-hero-sticky")
+    .evaluate((node) =>
+      Math.max(0, (node as HTMLElement).offsetHeight - innerHeight),
+    );
+  if (overflow) {
+    await page.mouse.move(8, 8);
+    await page.mouse.wheel(0, overflow);
+  }
   await expect(
     page.locator(".home-film--hero .home-film-controls"),
   ).toBeInViewport({ ratio: 1 });
@@ -963,6 +974,8 @@ test("additional viewport sanity stays within bounds with usable navigation", as
     await expect(menu).toBeVisible();
     await expect(primary).toBeVisible();
     for (const control of [menu, primary]) {
+      await control.scrollIntoViewIfNeeded();
+      await expect(control).toBeInViewport({ ratio: 1 });
       const box = await control.boundingBox();
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.y).toBeGreaterThanOrEqual(0);
@@ -1057,9 +1070,12 @@ test("short viewports use reachable sequential targets and keep playback control
       "data-reduced-motion",
       "false",
     );
-    const playback = await page
-      .locator(".home-film--hero .home-film-toggle:not(.home-film-retry)")
-      .boundingBox();
+    const playbackControl = page.locator(
+      ".home-film--hero .home-film-toggle:not(.home-film-retry)",
+    );
+    await playbackControl.scrollIntoViewIfNeeded();
+    await expect(playbackControl).toBeInViewport({ ratio: 1 });
+    const playback = await playbackControl.boundingBox();
     expect(playback!.y).toBeGreaterThanOrEqual(0);
     expect(playback!.y + playback!.height).toBeLessThanOrEqual(height + 1);
     await page.screenshot({

@@ -46,6 +46,27 @@ it("fades the real modal after readiness, then releases scroll and focus within 
   expect(document.body.style.overflow).toBe("");
   expect(document.activeElement?.id).toBe("home-title");
 });
+it("completes only the real dialog opacity transition, without waiting for its safety deadline", () => {
+  vi.useFakeTimers();
+  const { rerender } = render(opening(true));
+  rerender(opening(false));
+  const gate = screen.getByRole("dialog");
+  const transition = (target: Element, propertyName: string) => {
+    const event = new Event("transitionend", { bubbles: true });
+    Object.defineProperty(event, "propertyName", { value: propertyName });
+    fireEvent(target, event);
+  };
+  transition(gate.firstElementChild!, "opacity");
+  transition(gate, "transform");
+  expect(screen.getByRole("dialog")).toBeTruthy();
+  transition(gate, "opacity");
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(document.body.style.overflow).toBe("");
+  expect(document.activeElement?.id).toBe("home-title");
+  act(() => vi.advanceTimersByTime(1000));
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
 it("cancels a stale close when preparation reenters during completion", () => {
   vi.useFakeTimers();
   const { rerender } = render(opening(true));

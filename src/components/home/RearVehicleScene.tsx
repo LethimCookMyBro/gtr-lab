@@ -52,6 +52,21 @@ function restrainStudioSpecular(
   );
 }
 
+// The wing's visible underside faces away from the studio cards. Approximate
+// their white bounce locally, before the satin BRDF/clearcoat are evaluated.
+// With no per-material envMap, r180 supplies the scroll-bound scene intensity.
+function fillRearSpoiler(
+  shader: Parameters<MeshStandardMaterial["onBeforeCompile"]>[0],
+) {
+  shader.fragmentShader = shader.fragmentShader.replace(
+    "#include <lights_fragment_maps>",
+    `#include <lights_fragment_maps>
+     #if defined( USE_ENVMAP ) && defined( RE_IndirectDiffuse )
+       irradiance += vec3(PI * 0.5 * envMapIntensity);
+     #endif`,
+  );
+}
+
 // Source-local center XY and inner/outer radii measured from the four existing
 // Glass.001 annuli. This shades their actual surfaces; it adds no geometry.
 const rearLensBands = [
@@ -207,6 +222,14 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
           // using the configured body finish without inherited surface maps.
           material = satinPaint.clone();
           material.name = "Rear_Satin_Spoiler";
+          material.side = original.side;
+          // A lighter satin coat keeps the low viewing angle from reflecting
+          // almost entirely black while the body retains its accepted finish.
+          material.metalness = 0.08;
+          if (material instanceof MeshPhysicalMaterial)
+            material.clearcoat = 0.22;
+          material.onBeforeCompile = fillRearSpoiler;
+          material.customProgramCacheKey = () => "rear-spoiler-bounce-v1";
           for (const [key, value] of Object.entries(material))
             if (value instanceof Texture) Reflect.set(material, key, null);
         }
