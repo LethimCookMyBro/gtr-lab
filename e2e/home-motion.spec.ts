@@ -553,7 +553,18 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     const controls = await page
       .locator(".home-film--detail .home-film-controls")
       .boundingBox();
-    expect(controls!.y - (player!.y + player!.height)).toBeLessThanOrEqual(32);
+    // The recovery footer now reserves its own status line above the actions.
+    // Validate the actual controls within that footer instead of the old 32px gap.
+    expect(controls!.y).toBeGreaterThanOrEqual(player!.y + player!.height);
+    expect(controls!.y + controls!.height).toBeLessThanOrEqual(
+      expanded!.y + expanded!.height + 1,
+    );
+    const status = page.locator(".home-film--detail .home-film-status");
+    if (await status.count()) {
+      const statusBox = (await status.boundingBox())!;
+      expect(statusBox.y).toBeGreaterThanOrEqual(player!.y + player!.height);
+      expect(statusBox.y + statusBox.height).toBeLessThanOrEqual(controls!.y);
+    }
   } else {
     expect(expanded!.height).toBeCloseTo((expanded!.width * 9) / 16 + 64, 0);
     const player = (await page
