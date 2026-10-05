@@ -25,3 +25,17 @@ Quality scope: 680 unit tests, both type checks, 43 E2E first-pass and one passe
 Release scope: accepted sparse timeline, quiet photographic model cards, satin rear presentation, and opening-film startup/recovery. Only the available licensed custom R35 exterior is interactive 3D; the remaining five variants remain photography/specification experiences.
 The two release markers change no application or asset bytes. Actual third-party playback and restart must be verified on the public origin after this deployment; document load is not proof of playback.
 Restore the 14 original Railway watch patterns only after matching-deployment SUCCESS and live verification.
+
+---
+
+Approved opening presentation corrections — 2026-10-05
+
+Tested application: a77dee5d07646ebc59f1cb5ec1316464b9b05d64
+Tested tree: eef3d272607cbdc49cf29a5d9345a44cc1e6bb50
+Quality checks: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37339686365 — SUCCESS
+Cinematic homepage QA: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37339686123 — SUCCESS
+Physical environment matrix: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37339686206/attempts/2 — SUCCESS
+
+Quality scope: 695 unit tests, both type checks, 43 E2E first-pass plus one retry-pass, 6 renderer tests, 14 vehicle tests. Homepage scope: all 7 jobs passed, 114 tests passed, 27 intentionally skipped. All 16 environment jobs passed after one isolated install-timeout retry. The legacy live verification remains pinned to older release34f72cdd and failed before browser execution; it is not counted as passed.
+Desktop and mobile first application frames show the preparation gate already open, the background inert, and zero hero iframes. Real download bytes, bounded completion, skip, reentry, keyboard controls, and native rear reveal/reverse are verified. The source preserves the intact third-party player and does not treat document load as playback.
+Only two release marker files change. Application and asset bytes are identical to the tested source. Verify the matching Railway release, exact public HTML/JS/CSS, genuine Flixel playback/restart, then restore all 14 original watch patterns without unrelated configuration changes.
