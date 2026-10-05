@@ -373,3 +373,13 @@
     aspect-ratio: 16 / 9;
   }
 }
+
+/* Keep the decoded local photograph visible while the embed document navigates.
+   This is a document-loading presentation only, not a playback-ready signal.
+   Preserve the full iframe geometry so the provider's visibility logic still runs. */
+.home-hero-runway
+  .home-film--hero[data-film-document="loading"]
+  .home-film-provider {
+  opacity: 0;
+  pointer-events: none;
+}

@@ -29,6 +29,7 @@ export function HeroFilm({
             kind="hero"
             reducedMotion={reducedMotion}
             saveData={saveData}
+            suspended={!openingResolved}
             onFallbackReady={onVisualReady}
           />
           <div className="home-hero-copy">

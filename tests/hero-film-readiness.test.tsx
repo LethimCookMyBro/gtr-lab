@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { StrictMode } from "react";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   act,
@@ -33,6 +34,7 @@ const show = (
   onVisualReady = vi.fn(),
   reducedMotion = false,
   saveData = false,
+  openingResolved = true,
 ) =>
   render(
     <MemoryRouter>
@@ -41,6 +43,7 @@ const show = (
           reducedMotion={reducedMotion}
           saveData={saveData}
           onVisualReady={onVisualReady}
+          openingResolved={openingResolved}
         />
       </StrictMode>
     </MemoryRouter>,
@@ -155,4 +158,76 @@ it("uses the licensed campaign poster rather than the rejected brick-wall fallba
     "/media/campaign-r35-orange-hero.webp",
   );
   expect(image.alt).toMatch(/orange.*R35/i);
+});
+
+it("does not consume the film load deadline behind the opening gate", () => {
+  vi.useFakeTimers();
+  const { container, rerender } = show(vi.fn(), false, false, false);
+  expect(container.querySelector("iframe")).toBeNull();
+  act(() => vi.advanceTimersByTime(30000));
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-state"),
+  ).toBe("stopped");
+  rerender(
+    <MemoryRouter>
+      <StrictMode>
+        <HeroFilm reducedMotion={false} saveData={false} openingResolved />
+      </StrictMode>
+    </MemoryRouter>,
+  );
+  expect(container.querySelector("iframe")).not.toBeNull();
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-document"),
+  ).toBe("loading");
+  act(() => vi.advanceTimersByTime(19999));
+  expect(container.querySelector("iframe")).not.toBeNull();
+  act(() => vi.advanceTimersByTime(1));
+  expect(container.querySelector("iframe")).toBeNull();
+  expect(screen.getByRole("status").textContent).toMatch(/could not load/i);
+});
+
+it("decodes the poster independently while the opening gate suspends the film", async () => {
+  const ready = vi.fn();
+  const { container } = show(ready, false, false, false);
+  const poster =
+    container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  Object.defineProperty(poster, "complete", { value: true });
+  Object.defineProperty(poster, "naturalWidth", { value: 1200 });
+  poster.decode = () => Promise.resolve();
+  await act(async () => fireEvent.load(poster));
+  expect(ready).toHaveBeenCalledOnce();
+  expect(container.querySelector("iframe")).toBeNull();
+});
+
+it("keeps the loading provider transparent over its poster without claiming playback", () => {
+  const styles = document.createElement("style");
+  styles.textContent = ["home.css", "home-opening-cards.css"]
+    .map((file) => readFileSync(`src/styles/${file}`, "utf8"))
+    .join("\n");
+  document.head.append(styles);
+  try {
+    const { container } = show();
+    const frame = container.querySelector("iframe")!;
+    const poster = container.querySelector(".home-film-backup")!;
+    expect(getComputedStyle(frame).opacity).toBe("0");
+    expect(getComputedStyle(frame).pointerEvents).toBe("none");
+    expect(frame.hasAttribute("inert")).toBe(true);
+    expect(frame.getAttribute("aria-hidden")).toBe("true");
+    expect(getComputedStyle(poster).opacity).toBe("1");
+    // Keep layout intact: display:none can change provider visibility/autoplay.
+    expect(getComputedStyle(frame).display).toBe("block");
+    fireEvent.load(frame);
+    expect(getComputedStyle(frame).opacity).toBe("1");
+    expect(frame.hasAttribute("inert")).toBe(false);
+    expect(frame.hasAttribute("aria-hidden")).toBe(false);
+    expect(
+      container.querySelector(".home-film")?.getAttribute("data-film-playback"),
+    ).toBe("unverified");
+    fireEvent.click(screen.getByRole("button", { name: "Retry opening film" }));
+    expect(getComputedStyle(container.querySelector("iframe")!).opacity).toBe(
+      "0",
+    );
+  } finally {
+    styles.remove();
+  }
 });

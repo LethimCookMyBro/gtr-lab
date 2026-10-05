@@ -160,6 +160,8 @@ export function Film({
           key={attempt}
           ref={frame}
           className="home-film-provider"
+          inert={kind === "hero" && !loaded}
+          aria-hidden={kind === "hero" && !loaded ? true : undefined}
           src={film.embed}
           title={`${title} film: ${film.description}`}
           allow="autoplay; fullscreen"

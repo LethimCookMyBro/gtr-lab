@@ -32,7 +32,7 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("film-ready model-pending gate releases only into an already prepared reusable rear scene", async ({
+test("poster-ready model-pending gate releases into a prepared rear scene before requesting the film", async ({
   page,
 }, info) => {
   let requests = 0;
@@ -48,9 +48,10 @@ test("film-ready model-pending gate releases only into an already prepared reusa
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect.poll(() => requests).toBe(1);
   await expect(page.locator(".home-film--hero")).toHaveAttribute(
-    "data-film-state",
-    "embedded",
+    "data-film-poster",
+    "decoded",
   );
+  await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
   await expect(gate(page)).toBeVisible();
   await expect(gate(page)).toHaveAttribute("data-load-phase", "downloading");
   const bounds = await gate(page).boundingBox();
@@ -68,7 +69,7 @@ test("film-ready model-pending gate releases only into an already prepared reusa
     await gate(page).evaluate((el) => el.contains(document.activeElement)),
   ).toBe(true);
   await page.screenshot({
-    path: info.outputPath("initial-film-ready-model-stalled.png"),
+    path: info.outputPath("initial-poster-ready-model-stalled.png"),
   });
   release();
   await ready(page);
@@ -132,7 +133,8 @@ test("film-ready model-pending gate releases only into an already prepared reusa
     body: JSON.stringify({
       requests,
       sameCanvas: true,
-      filmReadyDuringBlockedModel: true,
+      posterReadyDuringBlockedModel: true,
+      filmSuspendedDuringBlockedModel: true,
       readyBeforeFirstJump: true,
     }),
     contentType: "application/json",

@@ -399,9 +399,16 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       page.viewportSize()!.height,
     );
   }
-  await expect(page.locator(".home-film--hero .home-film-provider")).toHaveCSS(
-    "opacity",
-    "1",
+  // Layout checks must not require the external provider to finish in five seconds.
+  // Loading retains the poster; document load reveals a still-unverified player.
+  const presentation = await page
+    .locator(".home-film--hero")
+    .evaluate((film) => ({
+      documentState: film.getAttribute("data-film-document"),
+      opacity: getComputedStyle(film.querySelector("iframe")!).opacity,
+    }));
+  expect(presentation.opacity).toBe(
+    presentation.documentState === "loading" ? "0" : "1",
   );
   await expect(
     page.locator(".home-film--hero .home-film-controls"),

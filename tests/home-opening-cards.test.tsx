@@ -80,7 +80,7 @@ const movePointer = (card: HTMLElement, pointerType = "mouse") => {
 };
 
 describe("hero delegates whole-page readiness", () => {
-  it("does not treat a hosted document load as a usable opening image", () => {
+  it("keeps the hosted player suspended while the parent prepares the opening", () => {
     const ready = vi.fn();
     const { container } = render(
       <MemoryRouter>
@@ -99,9 +99,9 @@ describe("hero delegates whole-page readiness", () => {
         ?.getAttribute("data-opening-resolved"),
     ).toBe("false");
     expect(ready).not.toHaveBeenCalled();
-    fireEvent.load(container.querySelector("iframe")!);
+    expect(container.querySelector("iframe")).toBeNull();
     expect(ready).not.toHaveBeenCalled();
-    // The parent still owns readiness even when this document finishes.
+    // The parent owns readiness; a player is not started behind its gate.
     expect(
       container
         .querySelector(".home-hero-runway")

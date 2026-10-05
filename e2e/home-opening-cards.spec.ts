@@ -102,19 +102,41 @@ test("opening keeps authentic identity visible until real scene readiness or exp
     path: info.outputPath("opening-loader.png"),
     scale: "css",
   });
+  // The provider must not consume its deadline under the modal opening gate.
+  expect(release).toBeUndefined();
+  await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
+  await continueHomeWithout3D(page);
   await expect.poll(() => Boolean(release)).toBe(true);
+  const frame = page.locator(".home-film--hero iframe");
+  const poster = page.locator(".home-film--hero .home-film-backup");
+  await expect(frame).toHaveCSS("opacity", "0");
+  await expect(frame).toHaveCSS("pointer-events", "none");
+  await expect(frame).toHaveAttribute("inert", "");
+  await expect(frame).toHaveAttribute("aria-hidden", "true");
+  await expect(poster).toBeVisible();
+  await expect(poster).toHaveCSS("opacity", "1");
+  await expect(page.locator(".home-film--hero")).toHaveAttribute(
+    "data-film-poster",
+    "decoded",
+  );
+  await page.screenshot({
+    path: info.outputPath("opening-poster-during-player-load.png"),
+    scale: "css",
+  });
   // This is deliberately an iframe document, not a video or playback simulation.
   await release!.fulfill({
     contentType: "text/html",
     body: "<html><body>Hosted document loaded; playback not tested.</body></html>",
   });
-  // Film document readiness alone must never claim playback or rear readiness.
+  // A controlled document load reveals the player, never certifies playback.
+  await expect(frame).toHaveCSS("opacity", "1");
+  await expect(frame).not.toHaveAttribute("inert");
+  await expect(frame).not.toHaveAttribute("aria-hidden");
   await expect(page.locator(".home-film--hero")).toHaveAttribute(
     "data-film-playback",
     "unverified",
   );
-  await expect(opening).toHaveAttribute("data-state", "loading");
-  await continueHomeWithout3D(page);
+  await expect(opening).toHaveAttribute("data-state", "resolved");
   await expect(page.locator(".home-signature-runway")).toHaveAttribute(
     "data-scene-state",
     "skipped",
@@ -415,4 +437,49 @@ test("model card borders stay inside their grid tracks without overlapping", asy
     }
   }
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.documentWidth + 1);
+});
+
+test("opening player deadline starts after gate release and retry restores the poster", async ({
+  page,
+}, info) => {
+  test.skip(
+    !["cards-desktop-1440", "cards-mobile-390"].includes(info.project.name),
+    "Focused desktop and mobile failure lifecycle",
+  );
+  let requests = 0;
+  await page.route("https://media.flixel.com/**", () => {
+    requests++;
+  });
+  await page.route("**/models/ciasny-r35.glb", () => {});
+  await page.clock.install();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const film = page.locator(".home-film--hero");
+  const poster = film.locator(".home-film-backup");
+  await expect(film).toHaveAttribute("data-film-poster", "decoded");
+  await page.clock.fastForward(30000);
+  expect(requests).toBe(0);
+  await expect(film.locator("iframe")).toHaveCount(0);
+  await continueHomeWithout3D(page);
+  await expect.poll(() => requests).toBe(1);
+  await expect(film).toHaveAttribute("data-film-document", "loading");
+  await expect(film.locator("iframe")).toHaveCSS("opacity", "0");
+  await page.clock.fastForward(20001);
+  await expect(film.locator("iframe")).toHaveCount(0);
+  await expect(film).toHaveAttribute("data-film-state", "unavailable");
+  await expect(poster).toBeVisible();
+  await expect(film.getByRole("status")).toContainText("could not load");
+  await page.screenshot({
+    path: info.outputPath("opening-timeout-poster.png"),
+    scale: "css",
+  });
+  await film.getByRole("button", { name: "Retry opening film" }).click();
+  await expect.poll(() => requests).toBe(2);
+  await expect(film.locator("iframe")).toHaveCSS("opacity", "0");
+  await expect(film).toHaveAttribute("data-film-playback", "unverified");
+  await film.getByRole("button", { name: "Stop opening film" }).click();
+  await page.clock.fastForward(30000);
+  await expect(film).toHaveAttribute("data-film-state", "stopped");
+  await expect(film.getByRole("status")).toHaveCount(0);
+  await expect(film.locator("iframe")).toHaveCount(0);
+  expect(requests).toBe(2);
 });

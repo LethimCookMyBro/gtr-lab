@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   cleanup,
+  fireEvent,
   render,
   screen,
   within,
@@ -118,6 +119,10 @@ describe("cinematic homepage", () => {
     const { container } = setup();
     expect(container.querySelectorAll(".home-film")).toHaveLength(2);
     expect(container.querySelectorAll("video")).toHaveLength(0);
+    expect(container.querySelectorAll("iframe")).toHaveLength(0);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue without 3D" }),
+    );
     expect(container.querySelectorAll("iframe")).toHaveLength(1);
     const invitations = screen.getByRole("navigation", {
       name: "Explore all six models",
@@ -213,6 +218,9 @@ describe("cinematic homepage", () => {
         .querySelector(".cinematic-home")
         ?.getAttribute("data-reduced-motion"),
     ).toBe("false");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue without 3D" }),
+    );
     expect(
       screen.getByRole("button", { name: "Stop opening film" }),
     ).toBeTruthy();
