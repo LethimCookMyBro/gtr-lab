@@ -368,4 +368,8 @@
   .cinematic-home .home-expanding-frame {
     padding-bottom: 132px;
   }
+  .cinematic-home .home-film--detail .home-film-provider {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
 }

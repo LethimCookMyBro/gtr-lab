@@ -347,7 +347,20 @@ it("binds the window fix and four emission profiles to the decoded published ass
       (parser as any).loadTextureImage = () => Promise.resolve(new Texture());
       return { name: "MappingWithoutImageDecode" };
     });
-  const bytes = readFileSync("public/models/ciasny-r35.glb");
+  // Unit CI runs before build-time public/model reconstruction. Read the same
+  // committed, checksum-pinned chunks without depending on a prior local build.
+  const { createHash } = await import("node:crypto");
+  const manifest = JSON.parse(readFileSync("modeldata/manifest.json", "utf8"));
+  const entry = manifest.find(
+    (item: { id: string }) => item.id === "ciasny-r35",
+  );
+  const bytes = Buffer.concat(
+    entry.chunks.map((chunk: { path: string }) =>
+      readFileSync(`modeldata/${chunk.path}`),
+    ),
+  );
+  expect(bytes.byteLength).toBe(entry.bytes);
+  expect(createHash("sha256").update(bytes).digest("hex")).toBe(entry.sha256);
   const buffer = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(buffer).set(bytes);
   const loaded = await loader.parseAsync(buffer, "");
