@@ -167,3 +167,24 @@ it("times out a missing document without claiming playback and cancels that time
   act(() => vi.advanceTimersByTime(20001));
   expect(screen.queryByRole("status")).toBeNull();
 });
+
+it("contains the detail poster and player in one media viewport above the controls", () => {
+  const { container } = render(scene(false, false, "detail"));
+  visible(true);
+  const viewport = container.querySelector(".home-film-viewport");
+  expect(viewport).not.toBeNull();
+  expect(viewport?.contains(container.querySelector(".home-film-backup"))).toBe(
+    true,
+  );
+  expect(viewport?.contains(container.querySelector("iframe"))).toBe(true);
+  expect(
+    viewport?.contains(container.querySelector(".home-film-controls")),
+  ).toBe(false);
+  fireEvent.load(container.querySelector("iframe")!);
+  expect(container.firstElementChild?.getAttribute("data-film-playback")).toBe(
+    "unverified",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Stop detail film" }));
+  expect(viewport?.querySelector(".home-film-backup")).not.toBeNull();
+  expect(viewport?.querySelector("iframe")).toBeNull();
+});

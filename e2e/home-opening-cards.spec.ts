@@ -545,3 +545,76 @@ test("full-width opening and complete GT-R50 keep their intact frames with keybo
   });
   await expect(page.locator("#home-model-asset-note")).toHaveCount(0);
 });
+
+test("detail poster and intact player occupy the same viewport without leaking into the footer", async ({
+  page,
+}, info) => {
+  await page.route("https://media.flixel.com/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<body style='margin:0;background:#111;color:white'>App layout check only. Publisher playback is verified separately.</body>",
+    }),
+  );
+  await page.goto("/");
+  await continueHomeWithout3D(page);
+  await page.locator(".home-expanding-runway").evaluate((section) => {
+    const sticky = section.firstElementChild as HTMLElement;
+    scrollTo({
+      top:
+        scrollY +
+        section.getBoundingClientRect().top +
+        Math.max(0, section.clientHeight - sticky.clientHeight) * 0.5,
+      behavior: "instant",
+    });
+  });
+  const film = page.locator(".home-film--detail");
+  await expect(film).toHaveAttribute("data-film-document", "loaded");
+  await film
+    .locator(".home-film-backup")
+    .evaluate(async (image: HTMLImageElement) => image.decode());
+  const bounds = await film.evaluate((element) => {
+    const box = (selector: string) => {
+      const r = element.querySelector(selector)!.getBoundingClientRect();
+      return {
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+        bottom: r.bottom,
+      };
+    };
+    return {
+      viewport: box(".home-film-viewport"),
+      poster: box(".home-film-backup"),
+      player: box("iframe"),
+      controls: box(".home-film-controls"),
+      background: getComputedStyle(element).backgroundColor,
+      clipping: getComputedStyle(element.querySelector(".home-film-viewport")!)
+        .overflow,
+    };
+  });
+  expect(bounds.viewport.width / bounds.viewport.height).toBeCloseTo(16 / 9, 2);
+  for (const media of [bounds.poster, bounds.player]) {
+    for (const key of ["x", "y", "width", "height", "bottom"] as const)
+      expect(Math.abs(media[key] - bounds.viewport[key])).toBeLessThan(1);
+  }
+  expect(bounds.poster.bottom).toBeLessThanOrEqual(bounds.controls.y + 1);
+  expect(bounds.background).toBe("rgb(7, 8, 9)");
+  expect(bounds.clipping).toBe("hidden");
+  await expect(film).toHaveAttribute("data-film-playback", "unverified");
+  await page.screenshot({
+    path: info.outputPath("detail-clean-footer.png"),
+    scale: "css",
+  });
+  await film.getByRole("button", { name: "Stop detail film" }).click();
+  await expect(film.locator("iframe")).toHaveCount(0);
+  await expect(film.locator(".home-film-backup")).toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("detail-stopped-fallback.png"),
+    scale: "css",
+  });
+  await info.attach("detail-viewport-bounds", {
+    body: JSON.stringify(bounds, null, 2),
+    contentType: "application/json",
+  });
+});

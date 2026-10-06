@@ -403,3 +403,25 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* The poster and intact detail player share exactly one clipped 16:9 viewport.
+   The footer is the film's solid background, never an uncovered second image.
+   Keep the local fallback behind the player: document load is not playback. */
+.home-film--hero > .home-film-viewport {
+  display: contents;
+}
+.home-film--detail > .home-film-viewport {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #070809;
+}
+.cinematic-home .home-film--detail .home-film-viewport > .home-film-backup,
+.cinematic-home .home-film--detail .home-film-viewport > .home-film-provider {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}

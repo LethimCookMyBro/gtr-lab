@@ -1,4 +1,4 @@
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ACESFilmicToneMapping,
@@ -26,6 +26,7 @@ import { ContactShadows } from "@react-three/drei/core/ContactShadows";
 import { SceneBoundary } from "../three/SceneBoundary";
 import type { HomeSceneLoadState } from "./homeReadiness";
 import { useRearRenderPreparation } from "./useRearRenderPreparation";
+import { RearPixelDensity, rearRestPixelRatio } from "./RearPixelDensity";
 type Props = {
   progress: number;
   reducedMotion: boolean;
@@ -444,6 +445,15 @@ function RearRenderPreparation({
 
 /** Uses only the already-published Ciasny asset; this owns and disposes its load. */
 export default function RearVehicleScene(props: Props) {
+  const [dpr, setDpr] = useState(() =>
+    typeof window === "undefined"
+      ? 1
+      : rearRestPixelRatio(
+          window.innerWidth,
+          window.innerHeight,
+          window.devicePixelRatio || 1,
+        ),
+  );
   const asset = useVehicleAsset(
     source.url!,
     source.materialRoles,
@@ -457,17 +467,10 @@ export default function RearVehicleScene(props: Props) {
       <Canvas
         frameloop={props.active === false ? "never" : "demand"}
         shadows
-        dpr={
-          typeof window === "undefined" || innerWidth < 701
-            ? 1
-            : Math.min(devicePixelRatio, 1.25)
-        }
+        dpr={dpr}
         camera={{ position: [0, 1.1, -6], fov: 36, near: 0.05, far: 70 }}
         gl={{ antialias: true, alpha: false, powerPreference: "low-power" }}
-        onCreated={({ gl, size }) => {
-          gl.setPixelRatio(
-            size.width < 701 ? 1 : Math.min(devicePixelRatio, 1.25),
-          );
+        onCreated={({ gl }) => {
           gl.setClearAlpha(0);
           gl.outputColorSpace = SRGBColorSpace;
           gl.toneMapping = ACESFilmicToneMapping;
@@ -480,6 +483,12 @@ export default function RearVehicleScene(props: Props) {
         }}
       >
         <ContextHealth onError={props.onError} />
+        <RearPixelDensity
+          progress={props.progress}
+          reducedMotion={props.reducedMotion}
+          active={props.active}
+          onChange={setDpr}
+        />
         <RearCamera
           progress={props.progress}
           reducedMotion={props.reducedMotion}

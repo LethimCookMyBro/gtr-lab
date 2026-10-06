@@ -139,39 +139,41 @@ export function Film({
       data-film-playback={active ? "unverified" : "inactive"}
       data-film-poster={posterDecoded ? "decoded" : "loading"}
     >
-      <img
-        ref={backup}
-        className="home-film-backup"
-        onLoad={() => setFallbackLoaded(true)}
-        src={
-          kind === "hero"
-            ? "/media/campaign-r35-orange-hero.webp"
-            : "/images/gtr-premium.webp"
-        }
-        alt={
-          kind === "hero"
-            ? "Orange facelift Nissan GT-R R35 photographed by Martin Katler; modern example, exact model year unverified"
-            : "2018 Nissan GT-R Premium in Super Silver"
-        }
-        loading={kind === "hero" ? "eager" : "lazy"}
-      />
-      {active && (
-        <iframe
-          key={attempt}
-          ref={frame}
-          className="home-film-provider"
-          inert={kind === "hero" && !loaded}
-          aria-hidden={kind === "hero" && !loaded ? true : undefined}
-          src={film.embed}
-          title={`${title} film: ${film.description}`}
-          allow="autoplay; fullscreen"
-          allowFullScreen
-          referrerPolicy="strict-origin-when-cross-origin"
-          onLoad={(event) => {
-            if (event.currentTarget === frame.current) setLoaded(true);
-          }}
+      <div className="home-film-viewport">
+        <img
+          ref={backup}
+          className="home-film-backup"
+          onLoad={() => setFallbackLoaded(true)}
+          src={
+            kind === "hero"
+              ? "/media/campaign-r35-orange-hero.webp"
+              : "/images/gtr-premium.webp"
+          }
+          alt={
+            kind === "hero"
+              ? "Orange facelift Nissan GT-R R35 photographed by Martin Katler; modern example, exact model year unverified"
+              : "2018 Nissan GT-R Premium in Super Silver"
+          }
+          loading={kind === "hero" ? "eager" : "lazy"}
         />
-      )}
+        {active && (
+          <iframe
+            key={attempt}
+            ref={frame}
+            className="home-film-provider"
+            inert={kind === "hero" && !loaded}
+            aria-hidden={kind === "hero" && !loaded ? true : undefined}
+            src={film.embed}
+            title={`${title} film: ${film.description}`}
+            allow="autoplay; fullscreen"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+            onLoad={(event) => {
+              if (event.currentTarget === frame.current) setLoaded(true);
+            }}
+          />
+        )}
+      </div>
       <div className="home-film-shade" aria-hidden="true" />
       <div className="home-film-controls">
         <div className="home-film-actions">

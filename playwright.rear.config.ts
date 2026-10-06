@@ -1,7 +1,11 @@
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: ["rear-signature.spec.ts", "rear-brand-layout.spec.ts"],
+  testMatch: [
+    "rear-signature.spec.ts",
+    "rear-brand-layout.spec.ts",
+    "rear-pixel-quality.spec.ts",
+  ],
   workers: 1,
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
@@ -37,6 +41,21 @@ export default defineConfig({
         isMobile: true,
         hasTouch: true,
       },
+    },
+    ...[2, 3].map((dpr) => ({
+      name: `rear-mobile-dpr${dpr}`,
+      testMatch: "rear-pixel-quality.spec.ts",
+      use: {
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: dpr,
+      },
+    })),
+    {
+      name: "rear-desktop-dpr2",
+      testMatch: "rear-pixel-quality.spec.ts",
+      use: { viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 2 },
     },
   ],
   webServer: process.env.HOME_QA_URL
