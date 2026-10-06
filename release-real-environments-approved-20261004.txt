@@ -39,3 +39,21 @@ Physical environment matrix: https://github.com/LethimCookMyBro/gtr-lab/actions/
 Quality scope: 695 unit tests, both type checks, 43 E2E first-pass plus one retry-pass, 6 renderer tests, 14 vehicle tests. Homepage scope: all 7 jobs passed, 114 tests passed, 27 intentionally skipped. All 16 environment jobs passed after one isolated install-timeout retry. The legacy live verification remains pinned to older release34f72cdd and failed before browser execution; it is not counted as passed.
 Desktop and mobile first application frames show the preparation gate already open, the background inert, and zero hero iframes. Real download bytes, bounded completion, skip, reentry, keyboard controls, and native rear reveal/reverse are verified. The source preserves the intact third-party player and does not treat document load as playback.
 Only two release marker files change. Application and asset bytes are identical to the tested source. Verify the matching Railway release, exact public HTML/JS/CSS, genuine Flixel playback/restart, then restore all 14 original watch patterns without unrelated configuration changes.
+
+
+---
+
+Approved circular identity loader and opening-film entry correction — 2026-10-06
+
+Tested application: 44351f3a8b21678ff800feb7ef12ae59c88ee785
+Tested tree: d7cfb7f32dae1a3d854e2287d54fc745f697a0e3
+Quality checks: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37443788033 — SUCCESS
+Cinematic homepage QA: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37443787614/attempts/2 — SUCCESS
+Physical environment matrix: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37443787584 — SUCCESS
+Vehicle visual checkpoint: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37443787533 — SUCCESS
+
+Scope: 716 unit tests, both type checks, 44 navigation tests, 6 renderer tests and 14 vehicle tests. Loading: 12 passed, 4 intentional skips. Hero viewport and lifecycle: 16 passed. Cards: 45 passed, 11 intentional skips. Hero exit: 18 passed. Rear: 11 passed after one isolated unchanged-source job retry for a software-renderer screenshot timeout. All 16 environment jobs passed. SwiftShader evidence does not certify physical mobile GPU performance.
+
+Actual desktop/mobile loader PNGs, recorded rotating-ring motion, and corrected hero recovery PNGs were reviewed before this release. The circular loader retains authentic fixed Nissan/GT-R marks and real readiness gates. The opening-film cue is visible in the initial viewport without covering the header, and provides explicit Play/Retry when appropriate. Provider document readiness is not a playback claim.
+
+Only this release marker changes. Application, assets, tests and configuration bytes remain identical to the tested candidate. Acceptance requires this exact Railway release SUCCESS, matching public HTML and every JavaScript/CSS byte, scoped live tests, and genuine publisher playback/retry in the authorized cloud browser. Restore the complete original Railway configuration with all 14 watch patterns after verification.
