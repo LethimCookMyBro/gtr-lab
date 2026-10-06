@@ -77,6 +77,9 @@ try {
         await page.getByRole('dialog').waitFor({ state: 'hidden' });
       };
       const capture = async (label, lamps) => {
+        // Locator screenshots include overlapping controls. Normalize pointer state
+        // so an OFF comparison cannot measure a hovered Lights button instead.
+        await page.mouse.move(0, 0);
         await expect(lights).toHaveAttribute('aria-pressed', String(lamps));
         await page.waitForFunction(() => {
           const element = document.querySelector('.scene-stage canvas');
@@ -87,7 +90,7 @@ try {
           const frame = () => --count ? requestAnimationFrame(frame) : resolve();
           requestAnimationFrame(frame);
         }));
-        const png = await canvas.screenshot({ path: `${output}/${name}-${label}-canvas.png`, timeout: 60_000 });
+        const png = await canvas.screenshot({ path: `${output}/${name}-${label}-canvas.png`, animations: 'disabled', timeout: 60_000 });
         await page.screenshot({ path: `${output}/${name}-${label}-page.png`, animations: 'disabled', scale: 'css', timeout: 60_000 });
         const frame = { label, lamps, canvasSha256: hash(png), canvas: await canvas.evaluate(element => ({ width: element.width, height: element.height, cssWidth: element.clientWidth, cssHeight: element.clientHeight })) };
         view.frames.push(frame); await save();
