@@ -32,6 +32,8 @@ on:
       - "e2e/home-opening-cards.spec.ts"
       - "e2e/home-hero-exit.spec.ts"
       - "playwright.hero-exit.config.ts"
+      - "e2e/home-hero-viewport.spec.ts"
+      - "playwright.hero-viewport.config.ts"
       - "tests/hosted-film.test.tsx"
       - "docs/film-sources/QA_PROVIDER_LIMITATION.md"
       - "playwright.home.config.ts"
@@ -85,7 +87,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [rear, heritage, opening-cards, hero-exit, loading, exhibition]
+        suite: [rear, heritage, opening-cards, hero-exit, hero-viewport, loading, exhibition]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
