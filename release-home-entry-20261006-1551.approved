@@ -1,0 +1,18 @@
+Approved homepage entry and focused-title motion release - 2026-10-06
+
+Tested candidate: ff95c85f5c10785b16419a4abf0e18331476b91b
+Tested tree: 3b7016d8b0c651a36ffedcbc7049d429588be6eb
+Quality checks: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37501271430 - SUCCESS
+Cinematic homepage QA: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37501271278 - SUCCESS
+Application-identical mobile motion: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37491789889 - SUCCESS
+Application-identical environment matrix: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37491789700 - SUCCESS
+Application-identical vehicle checkpoint: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37491790029 - SUCCESS
+Application-identical interaction check: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37491789953 - SUCCESS
+
+Verification: 728 unit tests in 80 files, both typechecks, 44 navigation tests with no retries, 6 renderer checks, and 14 real-vehicle checks passed. The full homepage matrix passed, including 16 viewport/recovery checks, 18 hero-exit checks, 12 loading cases, 47 opening-card cases, 8 positive/negative helper-contract fixtures, and 10 exhibition cases without retries.
+
+Scope: remove the former 64px desktop / 88px mobile opening-media header inset while retaining the complete native 16:9 publisher frame; allow the intended scroll fade while the programmatically focused title remains focused; prepare one inert hero iframe in parallel with the opening gate, retaining it across entry and starting its 20-second missing-document timeout only after entry. Reduced-motion, Save-Data, explicit retry, and blocked-provider recovery remain covered. The loader artwork and style are unchanged. No media extraction, rehosting, or cropping is introduced.
+
+Actual 1440x900 and 390x844 candidate header images and mobile native-scroll fade images/measurements were reviewed. A repeated CI entry failure was traced to a one-shot test-helper state read just before parent-gate resolution. The helper now uses its existing bounded resolved/hidden postconditions; the native 5000ms click and all configured expect budgets are unchanged. The negative fixtures prove unresolved and still-visible gates remain failures. No application changes were made for this test-helper correction.
+
+Only this release-marker pair changes. Application, assets, tests, and workflow bytes remain identical to the tested candidate. Provider document load is not playback proof. Acceptance requires this exact Railway deployment SUCCESS, matching public HTML and all nine JavaScript/CSS assets, live loading/lifecycle flows, and genuine official-provider playback and restart in the cloud browser. Physical Android playback/performance remains unverified. Restore the complete baseline Railway configuration with its 14 watch patterns after live verification and follow all release CI to terminal results.
