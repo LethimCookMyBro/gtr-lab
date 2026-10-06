@@ -1,0 +1,6 @@
+Reviewed application candidate: 7441f1f0482583285dc4d25d555649cb1ba131ca
+Scope: desktop opening headline and Explore action remain visible inside the initial viewport.
+The complete full-width 16:9 provider frame retains native overflow below a short viewport.
+Mobile layout, loading gate, rear vehicle rendering, provider lifecycle and native hero exit are unchanged.
+Verification: local 704 tests/typecheck/full build; 10 viewport layout and keyboard cases; 18 hero exit cases; root pixel acceptance.
+Restore the saved 14 normal Railway watch patterns after exact live revision, asset identity and focused public layout verification.
