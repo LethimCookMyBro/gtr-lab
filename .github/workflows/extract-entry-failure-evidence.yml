@@ -1,0 +1,64 @@
+name: Extract pinned entry failure evidence
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/extract-entry-failure-evidence.yml'
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: entry-evidence-11428405876
+  cancel-in-progress: false
+jobs:
+  extract:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify exact source attempt, full head SHA and artifact metadata
+        run: python3 scripts/extract-entry-failures.py verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Download only the pinned existing artifact without decompressing it
+        uses: actions/download-artifact@v8
+        with:
+          repository: LethimCookMyBro/gtr-lab
+          run-id: '37493234609'
+          artifact-ids: '11428405876'
+          github-token: ${{ github.token }}
+          path: entry-source
+          skip-decompress: true
+          digest-mismatch: error
+      - name: Verify archive hash and retain only the two failure contexts
+        run: python3 scripts/extract-entry-failures.py extract
+      - name: Upload bounded 1920px failure evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: entry-failure-wide-1920-source37493234609-a2-diag${{ github.run_id }}-${{ github.run_attempt }}
+          path: entry-evidence/exhibition-wide-1920/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload bounded 390px failure evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: entry-failure-mobile-390-source37493234609-a2-diag${{ github.run_id }}-${{ github.run_attempt }}
+          path: entry-evidence/exhibition-mobile-390/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain small provenance and extraction summary
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: entry-failure-provenance-diag${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            entry-provenance/source.json
+            entry-evidence/extraction-summary.json
+          if-no-files-found: warn
+          retention-days: 7
