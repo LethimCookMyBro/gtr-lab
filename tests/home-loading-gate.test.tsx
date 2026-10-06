@@ -52,9 +52,11 @@ const show = () =>
       <HomePage />
     </MemoryRouter>,
   );
-it("keeps the viewport gate closed and film suspended while the model is downloading", () => {
+it("keeps the viewport gate closed while the film and model prepare independently", () => {
   const { container } = show();
-  expect(container.querySelector(".home-film--hero iframe")).toBeNull();
+  const frame = container.querySelector(".home-film--hero iframe");
+  expect(frame).not.toBeNull();
+  expect(frame?.hasAttribute("inert")).toBe(true);
   const gate = screen.getByRole("dialog", { name: "Preparing GT-R LAB" });
   expect(gate.getAttribute("aria-modal")).toBe("true");
   expect(
@@ -79,7 +81,8 @@ it("keeps the viewport gate closed and film suspended while the model is downloa
 it("requires a decoded opening image and prepared 3D render, then restores heading focus", async () => {
   vi.useFakeTimers();
   const { container } = show();
-  expect(container.querySelector(".home-film--hero iframe")).toBeNull();
+  const frame = container.querySelector(".home-film--hero iframe");
+  expect(frame).not.toBeNull();
   for (const phase of ["decoding", "preparing"]) {
     act(() => rear.props.onLoadState({ phase }));
     expect(screen.getByRole("dialog")).toBeTruthy();
@@ -104,20 +107,21 @@ it("requires a decoded opening image and prepared 3D render, then restores headi
   ).toBe(false);
   expect(document.body.style.overflow).toBe("");
   expect(document.activeElement?.id).toBe("home-title");
-  expect(container.querySelector(".home-film--hero iframe")).not.toBeNull();
+  expect(container.querySelector(".home-film--hero iframe")).toBe(frame);
 });
-it("does not release a missing opening image or mount the player behind the gate", () => {
+it("does not mistake the preloaded player for a decoded opening image", () => {
   const { container } = show();
   act(() => rear.props.onLoadState({ phase: "ready" }));
   expect(screen.getByRole("dialog")).toBeTruthy();
   fireEvent.error(container.querySelector(".home-film-backup")!);
   expect(screen.getByRole("dialog")).toBeTruthy();
-  expect(container.querySelector(".home-film--hero iframe")).toBeNull();
+  fireEvent.load(container.querySelector(".home-film--hero iframe")!);
   expect(screen.getByRole("dialog")).toBeTruthy();
 });
 it("makes Retry a new model attempt and Continue without 3D cancels that work explicitly", () => {
   const { container } = show();
-  expect(container.querySelector(".home-film--hero iframe")).toBeNull();
+  const frame = container.querySelector(".home-film--hero iframe");
+  expect(frame).not.toBeNull();
   act(() =>
     rear.props.onLoadState({
       phase: "error",
@@ -132,6 +136,7 @@ it("makes Retry a new model attempt and Continue without 3D cancels that work ex
   fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
   expect(rear.props.disabled).toBe(true);
   expect(screen.queryByRole("dialog")).toBeNull();
+  expect(container.querySelector(".home-film--hero iframe")).toBe(frame);
 });
 it("keeps keyboard focus in the gate and Escape does not silently claim readiness", () => {
   show();

@@ -83,6 +83,7 @@ for (const viewport of viewports) {
       animations: "disabled",
     });
     expect(geometry.film.left).toBeCloseTo(0, 1);
+    expect(geometry.film.top).toBeCloseTo(0, 1);
     expect(geometry.film.width).toBeCloseTo(geometry.viewport.width, 1);
     expect(geometry.film.width / geometry.film.height).toBeCloseTo(16 / 9, 3);
     expect(geometry.poster.width / geometry.poster.height).toBeCloseTo(
@@ -117,9 +118,8 @@ for (const viewport of viewports) {
         geometry.support.left,
       );
     } else {
-      // This correction must not change the established phone composition.
+      // Keep the phone copy placement while removing the former header gutter.
       expect(geometry.copyBottom).toBe("164px");
-      expect(geometry.film.top).toBe(88);
     }
     // Native keyboard traversal must reveal the lower controls when a complete
     // full-width player extends beyond the initial viewport.
@@ -170,7 +170,7 @@ for (const viewport of [
     await expect(film).toHaveAttribute("data-film-poster", "decoded");
     await expect(cue).toHaveCount(0);
     await page.clock.fastForward(30000);
-    expect(requests).toHaveLength(0);
+    expect(requests).toHaveLength(1);
     await continueHomeWithout3D(page);
     await expect.poll(() => requests.length).toBe(1);
     await expect(cue).toBeInViewport({ ratio: 1 });

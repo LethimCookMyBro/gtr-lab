@@ -168,14 +168,18 @@ it("uses the licensed campaign poster rather than the rejected brick-wall fallba
   expect(image.alt).toMatch(/orange.*R35/i);
 });
 
-it("does not consume the film load deadline behind the opening gate", () => {
+it("preloads one film behind the opening gate and starts its deadline only on entry", () => {
   vi.useFakeTimers();
   const { container, rerender } = show(vi.fn(), false, false, false);
-  expect(container.querySelector("iframe")).toBeNull();
+  const initial = container.querySelector("iframe");
+  expect(initial).not.toBeNull();
+  expect(initial?.hasAttribute("inert")).toBe(true);
   act(() => vi.advanceTimersByTime(30000));
   expect(
     container.querySelector(".home-film")?.getAttribute("data-film-state"),
-  ).toBe("stopped");
+  ).toBe("loading");
+  expect(container.querySelectorAll("iframe")).toHaveLength(1);
+  expect(container.querySelector("iframe")).toBe(initial);
   rerender(
     <MemoryRouter>
       <StrictMode>
@@ -183,7 +187,7 @@ it("does not consume the film load deadline behind the opening gate", () => {
       </StrictMode>
     </MemoryRouter>,
   );
-  expect(container.querySelector("iframe")).not.toBeNull();
+  expect(container.querySelector("iframe")).toBe(initial);
   expect(
     container.querySelector(".home-film")?.getAttribute("data-film-document"),
   ).toBe("loading");
@@ -194,7 +198,49 @@ it("does not consume the film load deadline behind the opening gate", () => {
   expect(screen.getByRole("status").textContent).toMatch(/could not load/i);
 });
 
-it("decodes the poster independently while the opening gate suspends the film", async () => {
+it("retains a preloaded document on entry without mounting or navigating it again", () => {
+  vi.useFakeTimers();
+  const { container, rerender } = show(vi.fn(), false, false, false);
+  const initial = container.querySelector("iframe")!;
+  expect(initial).not.toBeNull();
+  fireEvent.load(initial);
+  expect(initial.hasAttribute("inert")).toBe(true);
+  expect(initial.getAttribute("aria-hidden")).toBe("true");
+  rerender(
+    <MemoryRouter>
+      <StrictMode>
+        <HeroFilm reducedMotion={false} saveData={false} openingResolved />
+      </StrictMode>
+    </MemoryRouter>,
+  );
+  expect(container.querySelectorAll("iframe")).toHaveLength(1);
+  expect(container.querySelector("iframe")).toBe(initial);
+  expect(initial.hasAttribute("inert")).toBe(false);
+  expect(initial.hasAttribute("aria-hidden")).toBe(false);
+  expect(container.querySelector(".home-film-entry")).toBeNull();
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-document"),
+  ).toBe("loaded");
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-playback"),
+  ).toBe("unverified");
+  act(() => vi.advanceTimersByTime(30000));
+  expect(container.querySelector("iframe")).toBe(initial);
+});
+
+it.each([
+  [true, false],
+  [false, true],
+  [true, true],
+])(
+  "does not preload behind the gate under reduced-motion/Save-Data %s/%s",
+  (reducedMotion, saveData) => {
+    const { container } = show(vi.fn(), reducedMotion, saveData, false);
+    expect(container.querySelector("iframe")).toBeNull();
+  },
+);
+
+it("decodes the poster independently while the opening gate preloads the film", async () => {
   const ready = vi.fn();
   const { container } = show(ready, false, false, false);
   const poster =
@@ -204,7 +250,7 @@ it("decodes the poster independently while the opening gate suspends the film", 
   poster.decode = () => Promise.resolve();
   await act(async () => fireEvent.load(poster));
   expect(ready).toHaveBeenCalledOnce();
-  expect(container.querySelector("iframe")).toBeNull();
+  expect(container.querySelector("iframe")).not.toBeNull();
 });
 
 it("keeps the loading provider transparent over its poster without claiming playback", () => {

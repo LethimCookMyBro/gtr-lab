@@ -50,3 +50,32 @@ it("positions the desktop poster cue below the header's full interactive area", 
     parseFloat(header.height) + 16,
   );
 });
+
+it.each(["desktop", "mobile"])(
+  "starts the intact %s hero frame behind the menu without a black top inset",
+  (viewport) => {
+    style.textContent = ["home.css", "home-opening-cards.css"]
+      .map((file) => readFileSync(`src/styles/${file}`, "utf8"))
+      .join("\n");
+    document.head.append(style);
+    const rules = [...style.sheet!.cssRules].flatMap((rule) => {
+      if (rule instanceof CSSMediaRule)
+        return rule.conditionText ===
+          (viewport === "mobile" ? "(max-width: 767px)" : "(min-width: 768px)")
+          ? [...rule.cssRules].map((child) => child.cssText)
+          : [];
+      return [rule.cssText];
+    });
+    style.textContent = rules.join("\n");
+    document.body.innerHTML =
+      '<section class="home-hero-runway"><div class="home-film home-film--hero"><img class="home-film-backup"><iframe class="home-film-provider"></iframe></div></section>';
+    for (const selector of [".home-film-provider", ".home-film-backup"]) {
+      const css = getComputedStyle(document.querySelector(selector)!);
+      expect(css.inset.split(" ")[0]).toMatch(/^0(px)?$/);
+      // jsdom leaves physical top as auto for inset shorthand on desktop.
+      if (viewport === "mobile") expect(parseFloat(css.top)).toBe(0);
+      expect(css.aspectRatio).toBe("16 / 9");
+      expect(css.transform).toBe("none");
+    }
+  },
+);

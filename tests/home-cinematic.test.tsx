@@ -119,7 +119,8 @@ describe("cinematic homepage", () => {
     const { container } = setup();
     expect(container.querySelectorAll(".home-film")).toHaveLength(2);
     expect(container.querySelectorAll("video")).toHaveLength(0);
-    expect(container.querySelectorAll("iframe")).toHaveLength(0);
+    expect(container.querySelectorAll("iframe")).toHaveLength(1);
+    expect(container.querySelector("iframe")?.hasAttribute("inert")).toBe(true);
     fireEvent.click(
       screen.getByRole("button", { name: "Continue without 3D" }),
     );

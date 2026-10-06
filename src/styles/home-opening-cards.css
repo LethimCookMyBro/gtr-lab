@@ -275,7 +275,7 @@
   top: min(0px, calc(100svh - var(--hero-panel-height)));
 }
 .home-hero-runway {
-  --hero-panel-height: max(100svh, calc(56.25vw + 144px));
+  --hero-panel-height: max(100svh, calc(56.25vw + 80px));
   height: calc(var(--hero-panel-height) + 70svh);
 }
 .home-hero-runway .home-hero-copy {
@@ -299,7 +299,8 @@
 }
 .home-hero-runway .home-film--hero .home-film-provider,
 .home-hero-runway .home-film--hero .home-film-backup {
-  inset: 64px 0 auto;
+  /* The menu overlays the original complete image; no black header gutter. */
+  inset: 0 0 auto;
   margin: 0 auto;
   width: 100%;
   height: auto;
@@ -370,7 +371,7 @@
 @media (max-width: 767px) {
   .home-hero-runway .home-film--hero .home-film-provider,
   .home-hero-runway .home-film--hero .home-film-backup {
-    top: 88px;
+    top: 0;
     width: 100%;
   }
   .home-film-actions {

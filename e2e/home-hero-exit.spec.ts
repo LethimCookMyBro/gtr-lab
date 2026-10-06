@@ -93,6 +93,11 @@ test("hero exit reverses cleanly and hands the complete player into paper", asyn
   expect(original.width / original.height).toBeCloseTo(16 / 9, 2);
   expect(original.source).toContain("media.flixel.com/cinemagraph/");
   expect(await surface(page)).toEqual({ opacity: 1, y: 0 });
+  await expect(page.locator("#home-title")).toBeFocused();
+  await progressTo(page, 0.76);
+  await expect(page.locator(".home-hero-copy")).toHaveCSS("opacity", /0\.23/);
+  await expect(page.locator("#home-title")).toBeFocused();
+  await progressTo(page, 0);
   await capture(page, info, "hero-opening-unchanged");
 
   const samples = [];

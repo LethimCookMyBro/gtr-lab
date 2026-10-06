@@ -267,10 +267,14 @@
   line-height: 0.94;
   letter-spacing: -0.02em;
 }
-.home-hero-copy:focus-within {
+/* Loader completion focuses the noninteractive title. Only a focused action
+   should hold the copy on screen while the visitor continues scrolling. */
+.home-hero-copy:has(.home-hero-support:focus-within) {
   opacity: 1;
 }
-[data-copy-inactive] .home-hero-copy:not(:focus-within) .home-hero-support {
+[data-copy-inactive]
+  .home-hero-copy:not(:has(.home-hero-support:focus-within))
+  .home-hero-support {
   pointer-events: none;
 }
 .home-hero-support {

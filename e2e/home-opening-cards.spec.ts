@@ -120,9 +120,13 @@ test("opening keeps authentic identity visible until real scene readiness or exp
     path: info.outputPath("opening-loader.png"),
     scale: "css",
   });
-  // The provider must not consume its deadline under the modal opening gate.
-  expect(release).toBeUndefined();
-  await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
+  // Prepare one provider document under the gate without consuming its deadline.
+  await expect.poll(() => Boolean(release)).toBe(true);
+  await expect(page.locator(".home-film--hero iframe")).toHaveCount(1);
+  await expect(page.locator(".home-film--hero iframe")).toHaveAttribute(
+    "inert",
+    "",
+  );
   await continueHomeWithout3D(page);
   await expect.poll(() => Boolean(release)).toBe(true);
   const frame = page.locator(".home-film--hero iframe");
@@ -457,6 +461,51 @@ test("model card borders stay inside their grid tracks without overlapping", asy
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.documentWidth + 1);
 });
 
+test("opening keeps the preloaded player and modal focus until entry", async ({
+  page,
+}, info) => {
+  test.skip(
+    !["cards-desktop-1440", "cards-mobile-390"].includes(info.project.name),
+    "Focused desktop and mobile early-loading lifecycle",
+  );
+  let requests = 0;
+  await page.route("https://media.flixel.com/**", (route) => {
+    requests++;
+    return route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><title>Early provider document</title><body>Document readiness only, not playback evidence.</body>",
+    });
+  });
+  await page.route("**/models/ciasny-r35.glb", () => {});
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const film = page.locator(".home-film--hero");
+  const frame = film.locator("iframe");
+  await expect(film).toHaveAttribute("data-film-document", "loaded");
+  await expect(frame).toHaveAttribute("inert", "");
+  await expect(frame).toHaveAttribute("aria-hidden", "true");
+  const firstFrame = await frame.elementHandle();
+  await expect(page.locator(".home-opening")).toHaveAttribute("open", "");
+  await expect(
+    page.getByRole("button", { name: "Continue without 3D" }),
+  ).toBeFocused();
+  expect(requests).toBe(1);
+  await continueHomeWithout3D(page);
+  await expect(frame).toHaveCount(1);
+  expect(
+    await page.evaluate(
+      (first) => document.querySelector(".home-film--hero iframe") === first,
+      firstFrame,
+    ),
+  ).toBe(true);
+  expect(requests).toBe(1);
+  await expect(frame).not.toHaveAttribute("inert");
+  await expect(frame).not.toHaveAttribute("aria-hidden");
+  await expect(film).toHaveAttribute("data-film-document", "loaded");
+  await expect(film).toHaveAttribute("data-film-playback", "unverified");
+  await expect(page.locator("#home-title")).toBeFocused();
+  await expect(film.locator(".home-film-entry")).toHaveCount(0);
+});
+
 test("opening player deadline starts after gate release and retry restores the poster", async ({
   page,
 }, info) => {
@@ -475,8 +524,8 @@ test("opening player deadline starts after gate release and retry restores the p
   const poster = film.locator(".home-film-backup");
   await expect(film).toHaveAttribute("data-film-poster", "decoded");
   await page.clock.fastForward(30000);
-  expect(requests).toBe(0);
-  await expect(film.locator("iframe")).toHaveCount(0);
+  expect(requests).toBe(1);
+  await expect(film.locator("iframe")).toHaveCount(1);
   await continueHomeWithout3D(page);
   await expect.poll(() => requests).toBe(1);
   await expect(film).toHaveAttribute("data-film-document", "loading");

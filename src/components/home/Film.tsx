@@ -11,6 +11,8 @@ interface FilmProps {
   reducedMotion: boolean;
   saveData: boolean;
   suspended?: boolean;
+  /** Prepare the hero while the opening is modal, without spending its retry deadline. */
+  entryPending?: boolean;
   onStateChange?: (state: FilmState) => void;
   onFallbackReady?: () => void;
 }
@@ -19,6 +21,7 @@ export function Film({
   reducedMotion,
   saveData,
   suspended = false,
+  entryPending = false,
   onStateChange,
   onFallbackReady,
 }: FilmProps) {
@@ -118,10 +121,12 @@ export function Film({
     setLoaded(false);
   }, [active, kind]);
   useEffect(() => {
-    if (!active || loaded) return;
+    // Loading in parallel removes a mandatory poster-only wait after the 3D
+    // gate. A slow provider must not expire before the visitor can reach it.
+    if (!active || loaded || entryPending) return;
     const timeout = window.setTimeout(() => setFailed(true), 20000);
     return () => window.clearTimeout(timeout);
-  }, [active, loaded, kind, attempt]);
+  }, [active, loaded, kind, attempt, entryPending]);
   const retry = () => {
     setFailed(false);
     setLoaded(false);
@@ -172,8 +177,10 @@ export function Film({
             key={attempt}
             ref={frame}
             className="home-film-provider"
-            inert={kind === "hero" && !loaded}
-            aria-hidden={kind === "hero" && !loaded ? true : undefined}
+            inert={kind === "hero" && (!loaded || entryPending)}
+            aria-hidden={
+              kind === "hero" && (!loaded || entryPending) ? true : undefined
+            }
             src={film.embed}
             title={`${title} film: ${film.description}`}
             allow="autoplay; fullscreen"
@@ -191,6 +198,7 @@ export function Film({
       <div className="home-film-shade" aria-hidden="true" />
       {kind === "hero" &&
         !suspended &&
+        !entryPending &&
         visible &&
         documentVisible &&
         state !== "embedded" && (

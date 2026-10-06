@@ -66,6 +66,9 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
         ),
         rootInert: root.hasAttribute("inert"),
         iframeCount: root.querySelectorAll(".home-film--hero iframe").length,
+        iframeInert: root
+          .querySelector(".home-film--hero iframe")
+          ?.hasAttribute("inert"),
       };
     };
     requestAnimationFrame(probe);
@@ -73,7 +76,12 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect
     .poll(() => page.evaluate(() => (window as any).__openingFirstPaint))
-    .toEqual({ gateOpen: true, rootInert: true, iframeCount: 0 });
+    .toEqual({
+      gateOpen: true,
+      rootInert: true,
+      iframeCount: 1,
+      iframeInert: true,
+    });
   await info.attach("first-application-paint-gate", {
     body: JSON.stringify(
       await page.evaluate(() => (window as any).__openingFirstPaint),
@@ -85,7 +93,11 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
     "data-film-poster",
     "decoded",
   );
-  await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
+  await expect(page.locator(".home-film--hero iframe")).toHaveCount(1);
+  await expect(page.locator(".home-film--hero iframe")).toHaveAttribute(
+    "inert",
+    "",
+  );
   await expect(gate(page)).toBeVisible();
   await expect(gate(page)).toHaveAttribute("data-load-phase", "downloading");
   const emblem = gate(page).locator(".home-opening-emblem");
