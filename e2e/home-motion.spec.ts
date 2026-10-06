@@ -365,7 +365,8 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       .boundingBox();
     expect(media!.width).toBeCloseTo(page.viewportSize()!.width, 0);
     expect(media!.height).toBeCloseTo((page.viewportSize()!.width * 9) / 16, 0);
-    expect(media!.y).toBeGreaterThanOrEqual(70);
+    // The intact opening frame now begins behind the menu, with no top gutter.
+    expect(media!.y).toBe(0);
     const copy = (await page.locator(".home-hero-copy").boundingBox())!;
     expect(copy.y).toBeGreaterThanOrEqual(0);
     expect(copy.y + copy.height).toBeLessThanOrEqual(
