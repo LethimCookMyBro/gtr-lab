@@ -1,4 +1,7 @@
-import type { CameraView } from "../components/three/sceneHelpers";
+import type {
+  CameraView,
+  MaterialRoles,
+} from "../components/three/sceneHelpers";
 import facts from "./specifications.json";
 import imageCredits from "./image-credits.json";
 export type VariantId =
@@ -15,12 +18,7 @@ export interface AssetManifest {
   licenseName?: string;
   changes?: string[];
   author: string | null;
-  materialRoles: {
-    paint: string[];
-    headlights: string[];
-    taillights: string[];
-    lampCovers?: string[];
-  };
+  materialRoles: MaterialRoles;
   interior: boolean;
   lights: boolean;
   disabledEmissive?: string[];
@@ -134,11 +132,14 @@ const licensedR35: AssetManifest = {
     paint: ["CarPaint"],
     headlights: ["Headlight_Emitter"],
     taillights: ["Taillight_Emitter"],
-    lampCovers: [
-      "Headlights_Glass_0",
-      "TailightsGlass_Glass_0",
-      "TailightsGlass_Glass.001_0",
+    taillightLenses: ["Glass.001"],
+    wheelFinish: ["Brakes_Metal.001_0"],
+    lowerTrimFinish: [
+      "Front Bumper.007_Reflective Plastic_0",
+      "DoorStep_Reflective Plastic_0",
+      "Rear bottom Bumper_Reflective Plastic_0",
     ],
+    lampCovers: ["Headlights_Glass_0", "TailightsGlass_Glass_0"],
   },
   interior: false,
   lights: true,

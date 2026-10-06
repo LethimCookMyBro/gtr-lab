@@ -3,10 +3,16 @@ export type MaterialRoles = {
   paint: string[];
   headlights: string[];
   taillights: string[];
+  /** Existing red annular lenses, separate from clear covers and LED tubes. */
+  taillightLenses?: string[];
+  /** Exact existing mesh names; shared grille and mirror materials are excluded. */
+  wheelFinish?: string[];
+  lowerTrimFinish?: string[];
   /** Exact optical-cover mesh names; never includes windows or lamp housings. */
   lampCovers?: string[];
 };
-export type MaterialRole = "paint" | "headlights" | "taillights";
+export type MaterialRole =
+  "paint" | "headlights" | "taillights" | "taillight-lens";
 export type Bounds = { min: VectorTuple; max: VectorTuple };
 export type CameraView = {
   position: VectorTuple;
@@ -123,6 +129,12 @@ export function materialRole(
   meshName: string,
   roles: MaterialRoles,
 ): MaterialRole | null {
+  if (
+    roles.taillightLenses?.some(
+      (name) => name.length > 0 && (name === materialName || name === meshName),
+    )
+  )
+    return "taillight-lens";
   for (const role of ["headlights", "taillights", "paint"] as const) {
     if (
       roles[role].some(

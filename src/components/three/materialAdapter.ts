@@ -65,21 +65,26 @@ export function prepareVehicle(
   const scene = clone(source);
   const bindings: Binding[] = [];
   const inactiveMaterials = new Set(disabledEmissive);
-  const copies = new Map<
-    Material,
-    Map<MaterialRole | "lamp-cover" | null, Material>
-  >();
+  const copies = new Map<Material, Map<string, Material>>();
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return;
     object.castShadow = true;
     object.receiveShadow = true;
+    const declaredMesh = (names: string[] = []) =>
+      names.some(
+        (name) => name === object.name || name === object.userData.name,
+      );
     const adapt = (original: Material) => {
       const role = materialRole(original.name, object.name, roles);
-      const opticalCover =
-        roles.lampCovers?.some(
-          (name) => name === object.name || name === object.userData.name,
-        ) ?? false;
-      const cacheRole = opticalCover ? "lamp-cover" : role;
+      const opticalCover = declaredMesh(roles.lampCovers);
+      const finish = declaredMesh(roles.wheelFinish)
+        ? "wheel"
+        : declaredMesh(roles.lowerTrimFinish)
+          ? "lower-trim"
+          : "source";
+      // A wheel can share its source material with the grille. Include its
+      // declared finish in the clone key so unrelated parts stay unchanged.
+      const cacheRole = `${opticalCover ? "lamp-cover" : role}:${finish}`;
       let variants = copies.get(original);
       if (!variants) {
         variants = new Map();
@@ -111,6 +116,23 @@ export function prepareVehicle(
         material.depthWrite = false;
         material.roughness = 0.08;
         material.metalness = 0;
+      }
+      if (
+        role === "taillight-lens" &&
+        material instanceof MeshStandardMaterial
+      ) {
+        // A red lens must stay red with the lamps off. Keep the artist's tint
+        // and real annular topology rather than revealing bare chrome housings.
+        material.opacity = 0.96;
+        material.transparent = true;
+        material.depthWrite = false;
+        material.roughness = 0.26;
+        material.metalness = 0;
+        material.toneMapped = false;
+      }
+      if (material instanceof MeshStandardMaterial) {
+        if (finish === "wheel") material.roughness = 0.24;
+        if (finish === "lower-trim") material.roughness = 0.28;
       }
       const keepUnlit = inactiveMaterials.has(original.name);
       if (keepUnlit && material instanceof MeshStandardMaterial)
@@ -156,6 +178,9 @@ export function stepVehicleAppearance(
   targetPaintColor.set(paint);
   const alpha = interpolationAlpha(delta, reducedMotion);
   let settled = true;
+  const hasRearLenses = bindings.some(
+    (binding) => binding.role === "taillight-lens",
+  );
   for (const binding of bindings) {
     if (binding.role === "paint") {
       binding.material.color.lerp(targetPaintColor, alpha);
@@ -169,6 +194,9 @@ export function stepVehicleAppearance(
       ) {
         binding.material.color.copy(targetPaintColor);
       } else settled = false;
+    } else if (binding.role === "taillight-lens") {
+      binding.material.emissive.set("#ff0905");
+      binding.material.emissiveIntensity = lights ? 0.92 : 0;
     } else {
       binding.material.emissive.set(
         binding.role === "headlights" ? "#f5f2e9" : "#ff2118",
@@ -176,7 +204,9 @@ export function stepVehicleAppearance(
       binding.material.emissiveIntensity = lights
         ? binding.role === "headlights"
           ? 3
-          : 2
+          : hasRearLenses
+            ? 0.14
+            : 2
         : 0;
     }
   }
@@ -197,7 +227,9 @@ export function vehicleCapabilities(bindings: Binding[]) {
     paint: bindings.some((binding) => binding.role === "paint"),
     lights: bindings.some(
       (binding) =>
-        binding.role === "headlights" || binding.role === "taillights",
+        binding.role === "headlights" ||
+        binding.role === "taillights" ||
+        binding.role === "taillight-lens",
     ),
   };
 }

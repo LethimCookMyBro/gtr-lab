@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/capture-vehicle.mjs'
+      - 'scripts/capture-vehicle-materials.mjs'
       - '.github/workflows/vehicle-preview.yml'
       - 'src/**'
       - 'modeldata/**'
@@ -12,7 +13,7 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +23,15 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
+      - name: Capture production rear lamps and material details
+        run: node scripts/capture-vehicle-materials.mjs
+        timeout-minutes: 6
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vehicle-material-proof
+          path: vehicle-material-results/
+          retention-days: 14
       - run: node scripts/capture-vehicle.mjs
         timeout-minutes: 4
       - uses: actions/upload-artifact@v4
