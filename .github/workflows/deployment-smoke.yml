@@ -27,6 +27,7 @@ on:
       - "release-loading-disposal-approved-20261004.txt"
       - "release-r32-motion-approved-20261004.txt"
       - "release-detail-player-20261004.txt"
+      - "release-mobile-quality-approved-20261006.txt"
 permissions:
   contents: read
 jobs:
@@ -118,4 +119,43 @@ jobs:
             playwright-home-report/
             test-results/home-loading/
             playwright-loading-report/
+          retention-days: 14
+
+  mobile-quality:
+    if: ${{ !contains(github.event.head_commit.message, '[stage-driving-films]') && !contains(github.event.head_commit.message, '[stage-home-story]') && !contains(github.event.head_commit.message, '[stage-real-environments]') && !contains(github.event.head_commit.message, '[stage-loading-disposal]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      HOME_QA_URL: https://gtr-lab-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Wait for this exact Railway revision
+        run: node scripts/wait-railway.mjs
+        timeout-minutes: 6
+      - name: Verify exact public HTML and every local JS/CSS asset
+        run: node scripts/verify-release-assets.mjs
+        timeout-minutes: 4
+      - name: Verify live bounded retina buffers at mobile DPR2 and DPR3 plus desktop DPR2
+        run: npx playwright test -c playwright.rear.config.ts --grep "bounded native-density" --project=rear-mobile-dpr2 --project=rear-mobile-dpr3 --project=rear-desktop-dpr2
+        timeout-minutes: 5
+      - name: Verify live detail poster and player bounds on desktop and both mobile widths
+        run: npx playwright test -c playwright.opening-cards.config.ts --grep "detail poster and intact player" --project=cards-mobile-390 --project=cards-mobile-430 --project=cards-desktop-1440
+        timeout-minutes: 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: railway-mobile-quality-proof
+          path: |
+            environment-release-verification/
+            rear-signature-results/
+            playwright-rear-report/
+            test-results/opening-cards/
+            playwright-opening-cards-report/
           retention-days: 14

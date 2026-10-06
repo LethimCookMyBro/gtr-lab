@@ -153,3 +153,50 @@ Application candidate `62a5abe6ef7cdc56fafe607d495affacbf732aaf` passed [Quality
 Visual review accepted the dominant, source-size-bounded Australian R32 racing photograph, its distinct Japanese championship claim, staged road/engine evidence, reversible title exit and readable mobile fallback. The review corrected a large noninteractive chapter focus frame and a lingering title at the exit; genuine screenshots and a 13.32-second unretimed native-scroll recording were reviewed again. Earlier candidate tests exposed stale generic-fade and innerText/textContent assumptions; their failed runs are not reported as green. Source staging commit `1de9d10` also started a live-only smoke before promotion; the gate correctly withheld deployment, so that run is not release evidence.
 
 The promotion marker is `/release-r32-motion-approved-20261004.txt`. The release commit changes only documentation, release metadata and its live-smoke trigger beyond the tested application. Verify the new exact Railway SHA, byte-identical public HTML/JS/CSS and live scroll interactions, then restore and compare the saved complete service config, including all 14 normal watch patterns. Existing vehicle assets, configurator environments, rear preparation lifecycle and service resources are unchanged. This is a bounded homepage refinement, not completion of the five missing variant assets or accurate cabin.
+
+## Mobile rear resolution and detail poster containment, 6 October 2026
+
+Application candidate `71e8a292dd5e421a66d9931231f66fc4315974c4` removes the
+homepage rear scene's forced mobile 1x buffer. Resting and initial views respect
+native display density up to 2x and a 2,500,000-pixel framebuffer budget. Scroll
+updates may use up to 1.25x, recovering crisp still quality after 160ms idle;
+reduced motion and reveal endpoints use still quality directly. Canvas alone
+owns the DPR, avoiding a conflict between React Three Fiber's configuration and
+imperative renderer updates. The configurator, source model, materials, reveal,
+and one-shot environment/contact shadows are unchanged.
+
+The detail film's local poster and intact Flixel iframe now share one clipped
+16:9 viewport. The adjacent controls keep a solid background, so the fallback
+photograph cannot leak beneath the hosted footage. The poster remains available
+behind the frame; iframe document load still does not claim verified playback.
+
+All 703 local unit/DOM tests, typecheck and production build passed. Exact
+[candidate Quality checks](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37414165448)
+passed 703 unit/DOM, 44 main E2E, 6 renderer and 14 vehicle tests, with no retries
+or skips. Exact
+[candidate homepage QA](https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37414165559)
+passed: 126 first-pass cases, one retry-pass and 27 project-specific skips.
+The unchanged desktop native-scroll test exhausted its 240-second total budget
+while capturing a reduced-motion screenshot, after all reached assertions had
+passed; its retry completed the remaining lifecycle/error assertions. This is
+reported as a retry-pass, not a clean first-pass run. Every new density case and
+all eight detail-viewport widths passed first try.
+
+Actual browser measurements were 780x1688 buffers at CSS390x844 with native
+DPR2 and DPR3; CSS1920x1080/nativeDPR2 was capped at2108x1185. Mobile/desktop rear
+and active/stopped detail screenshots were reviewed. These are Chromium
+SwiftShader/emulated-DPR checks, not physical Android performance certification
+or improved source geometry. Provider fixtures in layout captures are not
+real-film playback evidence. The previous pinned live-loading workflow's
+identity guard rejects this new source before running browser tests; it is not
+candidate acceptance evidence.
+
+The temporary authorized watch gate is
+`/release-mobile-quality-approved-20261006.txt`. The promotion adds only this
+record, the marker and focused live-verification plumbing beyond the reviewed
+application. Public-origin checks verify the exact Railway revision, identical
+built HTML/JS/CSS, bounded retina buffers and shared media bounds. Actual Flixel
+playback remains a separate public-browser check. Restore and compare the exact
+saved service configuration, including all14 normal watch patterns, afterward.
+No service resources, other infrastructure, source branch, model or media assets
+are changed.

@@ -1,0 +1,5 @@
+Reviewed application candidate: 71e8a292dd5e421a66d9931231f66fc4315974c4
+Scope: bounded native-density homepage rear rendering and shared detail-film media bounds.
+No creative hero/loader changes or vehicle source/material replacements.
+App changes passed local703 tests/typecheck/build, exact candidate CI and batched desktop/mobile visual review.
+Restore the saved14 normal Railway watch patterns after exact live revision, asset identity, media and focused layout verification.
