@@ -88,6 +88,68 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   await expect(page.locator(".home-film--hero iframe")).toHaveCount(0);
   await expect(gate(page)).toBeVisible();
   await expect(gate(page)).toHaveAttribute("data-load-phase", "downloading");
+  const emblem = gate(page).locator(".home-opening-emblem");
+  const ring = emblem.locator(".home-opening-ring");
+  const arc = emblem.locator(".home-opening-ring-arc");
+  await expect(emblem).toHaveAttribute("data-active", "true");
+  await expect(ring).toHaveAttribute("aria-hidden", "true");
+  await expect(arc).toHaveCSS("animation-name", "home-opening-orbit");
+  await expect(arc).toHaveCSS("animation-timing-function", "linear");
+  await expect(arc).toHaveCSS("animation-iteration-count", "infinite");
+  await expect(gate(page).locator("progress")).toHaveCSS(
+    "clip-path",
+    "inset(50%)",
+  );
+  await expect(gate(page)).not.toContainText(/\d[\d.]* MB/);
+  await expect(
+    gate(page).locator(".home-opening-rule, .home-loading-download"),
+  ).toHaveCount(0);
+  const identity = await emblem.evaluate((node) => {
+    const circle = node.getBoundingClientRect();
+    const cx = circle.x + circle.width / 2;
+    const cy = circle.y + circle.height / 2;
+    const marks = [
+      ...node.querySelectorAll(".gtr-brand-nissan, .gtr-brand-badge-frame"),
+    ];
+    return {
+      width: circle.width,
+      height: circle.height,
+      insideRing: marks.every((mark) => {
+        const box = mark.getBoundingClientRect();
+        return [box.left, box.right].every((x) =>
+          [box.top, box.bottom].every(
+            (y) => Math.hypot(x - cx, y - cy) < circle.width / 2 - 10,
+          ),
+        );
+      }),
+      sources: [...node.querySelectorAll("img")].map((image) =>
+        image.getAttribute("src"),
+      ),
+    };
+  });
+  expect(identity.width).toBeCloseTo(identity.height, 1);
+  expect(identity.insideRing).toBe(true);
+  expect(identity.sources).toEqual([
+    "/brand/nissan-2001.svg",
+    "/brand/gtr-stacked-badge.png",
+  ]);
+  const firstRotation = await arc.evaluate(
+    (node) => getComputedStyle(node).transform,
+  );
+  await page.waitForTimeout(180);
+  const nextRotation = await arc.evaluate(
+    (node) => getComputedStyle(node).transform,
+  );
+  expect(nextRotation).not.toBe(firstRotation);
+  await info.attach("circular-loader-evidence", {
+    body: JSON.stringify({
+      ...identity,
+      firstRotation,
+      nextRotation,
+      visibleByteCounter: false,
+    }),
+    contentType: "application/json",
+  });
   const bounds = await gate(page).boundingBox();
   expect(bounds?.x).toBe(0);
   expect(bounds?.y).toBe(0);
@@ -127,10 +189,19 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   await expect(gate(page)).toBeVisible();
   const sweep = await gate(page)
     .locator(".gtr-brand-chrome-sweep")
-    .evaluate(
-      (node) => getComputedStyle(node, "::after").animationIterationCount,
-    );
-  expect(sweep).toBe("infinite");
+    .evaluate((node) => {
+      const style = getComputedStyle(node, "::after");
+      return {
+        name: style.animationName,
+        count: style.animationIterationCount,
+        easing: style.animationTimingFunction,
+      };
+    });
+  expect(sweep).toEqual({
+    name: "home-opening-chrome-pass",
+    count: "infinite",
+    easing: "linear",
+  });
   await page.screenshot({
     path: info.outputPath("actual-download-repeating-chrome.png"),
   });
@@ -219,6 +290,42 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
     }),
     contentType: "application/json",
   });
+});
+
+test("reduced motion keeps a static circular identity and immediate keyboard skip", async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  // A held real request keeps the preparation surface observable. It is not a
+  // simulated loading timer and is cancelled by the visitor's explicit skip.
+  await page.route(model, () => {});
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "downloading");
+  const emblem = gate(page).locator(".home-opening-emblem");
+  const arc = emblem.locator(".home-opening-ring-arc");
+  await expect(emblem).toHaveAttribute("data-active", "false");
+  await expect(arc).toHaveCSS("animation-name", "none");
+  await expect(emblem.locator(".gtr-metal-wordmark")).toHaveCSS("opacity", "1");
+  await expect(emblem.locator(".gtr-brand-chrome-sweep")).toHaveCount(0);
+  const before = await arc.evaluate((node) => getComputedStyle(node).transform);
+  await page.waitForTimeout(180);
+  expect(await arc.evaluate((node) => getComputedStyle(node).transform)).toBe(
+    before,
+  );
+  await page.screenshot({
+    path: info.outputPath("reduced-motion-static-ring.png"),
+  });
+  await gate(page)
+    .getByRole("button", { name: "Continue without 3D" })
+    .press("Enter");
+  await expect(gate(page)).not.toBeVisible();
+  await expect(page.locator(".cinematic-home")).not.toHaveAttribute(
+    "inert",
+    "",
+  );
+  expect(await page.evaluate(() => document.activeElement?.id)).toBe(
+    "home-title",
+  );
 });
 
 test("completed download and decoded geometry do not bypass a simulated shader-completion stall", async ({

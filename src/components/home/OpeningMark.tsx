@@ -120,6 +120,7 @@ export function OpeningMark({
   }, [pending]);
   const downloading = scene.phase === "downloading" ? scene : undefined;
   const total = downloading?.totalBytes;
+  const animate = pending && !reducedMotion && scene.phase !== "error";
   const label =
     scene.phase === "ready" || scene.phase === "deferred"
       ? "Preparing the opening image"
@@ -138,30 +139,32 @@ export function OpeningMark({
       onCancel={(event) => event.preventDefault()}
     >
       <div className="home-opening-center">
-        <GtrWordmark
-          sweep={pending && !reducedMotion && scene.phase !== "error"}
-        />
-        <span className="home-opening-rule" aria-hidden="true" />
+        <div className="home-opening-emblem" data-active={animate}>
+          <span className="home-opening-ring" aria-hidden="true">
+            <span className="home-opening-ring-arc" />
+          </span>
+          <GtrWordmark sweep={animate} />
+        </div>
         <p id="home-loading-status" role="status" aria-live="polite">
           {label}
         </p>
         {downloading && (
-          <div className="home-loading-download">
-            <progress
-              aria-label="R35 model download"
-              value={total ? downloading.loadedBytes : undefined}
-              max={total || undefined}
-              aria-valuenow={total ? downloading.loadedBytes : undefined}
-              aria-valuemin={0}
-              aria-valuemax={total}
-            />
-            <span>
-              {formatModelBytes(downloading.loadedBytes)}
-              {total ? ` / ${formatModelBytes(total)}` : " received"}
-            </span>
-          </div>
+          <progress
+            className="home-loading-assistive"
+            aria-label="R35 model download"
+            value={total ? downloading.loadedBytes : undefined}
+            max={total || undefined}
+            aria-valuenow={total ? downloading.loadedBytes : undefined}
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuetext={
+              total
+                ? `${formatModelBytes(downloading.loadedBytes)} of ${formatModelBytes(total)} downloaded`
+                : `${formatModelBytes(downloading.loadedBytes)} received`
+            }
+          />
         )}
-        <p className="home-loading-detail">
+        <p className="home-loading-assistive">
           {heroReady ? "Opening image ready" : "Loading the opening image"} ·
           Ciasny R35 exterior
         </p>

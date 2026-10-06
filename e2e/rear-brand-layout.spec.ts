@@ -232,13 +232,17 @@ test("compact rear identity clears the enlarged real vehicle and preserves authe
   });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   // Measure the real visible loader before releasing the same one model request.
-  // This guards the scope: only the rear identity may become compact.
+  // The opening has its own circular treatment; rear sizing remains independent.
   await expect(page.locator(".home-loading-gate")).toBeVisible();
   const loader = await page
     .locator(".home-loading-gate .gtr-brand-badge-frame")
     .boundingBox();
-  expect(loader!.width).toBeGreaterThanOrEqual(238);
-  expect(loader!.width).toBeLessThanOrEqual(280);
+  const openingRing = await page
+    .locator(".home-loading-gate .home-opening-emblem")
+    .boundingBox();
+  expect(openingRing).not.toBeNull();
+  expect(loader!.width / openingRing!.width).toBeCloseTo(0.62, 2);
+  expect(openingRing!.width).toBeCloseTo(openingRing!.height, 1);
   releaseModel();
   await expect(page.locator(".home-loading-gate")).toHaveAttribute(
     "data-state",

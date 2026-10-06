@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Square, Play, RotateCcw } from "lucide-react";
 import { homeFilms } from "../../data/films";
 import { mayAutoplay } from "./motion";
+import "../../styles/home-film-entry.css";
 /** Embed lifecycle only: Flixel exposes no verified playback event API here. */
 export type FilmState = "loading" | "embedded" | "stopped" | "unavailable";
 interface FilmProps {
@@ -45,6 +46,8 @@ export function Film({
     };
   }, [fallbackLoaded, onFallbackReady]);
   const frame = useRef<HTMLIFrameElement>(null);
+  const entry = useRef<HTMLDivElement>(null);
+  const focusPlayerAfterLoad = useRef(false);
   const [visible, setVisible] = useState(kind === "hero");
   const [documentVisible, setDocumentVisible] = useState(
     () =>
@@ -77,6 +80,14 @@ export function Film({
   useEffect(() => {
     onStateChange?.(state);
   }, [state, onStateChange]);
+  useEffect(() => {
+    if (!loaded || !focusPlayerAfterLoad.current) return;
+    focusPlayerAfterLoad.current = false;
+    // The contextual control has gone away; keep keyboard focus at the film.
+    if (document.activeElement === document.body) {
+      frame.current?.focus({ preventScroll: true });
+    }
+  }, [loaded]);
   useEffect(() => {
     const observer =
       typeof IntersectionObserver === "undefined"
@@ -169,12 +180,45 @@ export function Film({
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
             onLoad={(event) => {
-              if (event.currentTarget === frame.current) setLoaded(true);
+              if (event.currentTarget !== frame.current) return;
+              focusPlayerAfterLoad.current =
+                entry.current === document.activeElement;
+              setLoaded(true);
             }}
           />
         )}
       </div>
       <div className="home-film-shade" aria-hidden="true" />
+      {kind === "hero" &&
+        !suspended &&
+        visible &&
+        documentVisible &&
+        state !== "embedded" && (
+          <div ref={entry} className="home-film-entry" tabIndex={-1}>
+            {active ? (
+              <span role="status">Loading film…</span>
+            ) : (
+              <>
+                {failed && <span role="status">Film could not load.</span>}
+                <button
+                  type="button"
+                  aria-label={`${failed ? "Retry" : "Play"} opening video`}
+                  onClick={() => {
+                    entry.current?.focus({ preventScroll: true });
+                    retry();
+                  }}
+                >
+                  {failed ? (
+                    <RotateCcw size={14} strokeWidth={1.5} aria-hidden="true" />
+                  ) : (
+                    <Play size={16} strokeWidth={1.5} aria-hidden="true" />
+                  )}
+                  <span>{failed ? "Retry film" : "Play film"}</span>
+                </button>
+              </>
+            )}
+          </div>
+        )}
       <div className="home-film-controls">
         <div className="home-film-actions">
           <button
@@ -247,7 +291,7 @@ export function Film({
             : "Loading the publisher’s player…"}
         </p>
       )}
-      {failed && (
+      {failed && kind !== "hero" && (
         <p className="home-film-error" role="status">
           {title} film could not load. Try again or open the credited original.
         </p>

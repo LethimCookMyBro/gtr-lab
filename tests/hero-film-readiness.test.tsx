@@ -57,7 +57,7 @@ it("keeps document loading separate from playback and exposes recovery immediate
   expect(
     container.querySelector(".home-film-tools-panel")?.textContent,
   ).toMatch(/loading.*player/i);
-  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.getByRole("status").textContent).toBe("Loading film…");
   container.querySelector("details")!.setAttribute("open", "");
   expect(
     screen.getByRole("button", { name: "Retry opening film" }),
@@ -239,4 +239,71 @@ it("keeps the loading provider transparent over its poster without claiming play
   } finally {
     styles.remove();
   }
+});
+
+it("provides a contextual poster cue until the provider document loads", () => {
+  const { container } = show();
+  const entry = container.querySelector(".home-film-entry")!;
+  expect(entry).not.toBeNull();
+  expect(entry.textContent).toBe("Loading film…");
+  expect(entry.querySelector("button")).toBeNull();
+  fireEvent.load(container.querySelector("iframe")!);
+  expect(container.querySelector(".home-film-entry")).toBeNull();
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-playback"),
+  ).toBe("unverified");
+});
+
+it("offers direct poster recovery after timeout and moves focus into the loaded player", () => {
+  vi.useFakeTimers();
+  const { container } = show();
+  act(() => vi.advanceTimersByTime(20000));
+  const entry = container.querySelector(".home-film-entry")!;
+  expect(entry).not.toBeNull();
+  expect(screen.getByRole("status").textContent).toMatch(/could not load/i);
+  const retry = screen.getByRole("button", { name: "Retry opening video" });
+  retry.focus();
+  fireEvent.click(retry);
+  expect(container.querySelector("iframe")).not.toBeNull();
+  expect(document.activeElement).toBe(entry);
+  expect(entry.textContent).toBe("Loading film…");
+  const frame = container.querySelector("iframe")!;
+  fireEvent.load(frame);
+  expect(document.activeElement).toBe(frame);
+  expect(container.querySelector(".home-film-entry")).toBeNull();
+});
+
+it.each([
+  [true, false],
+  [false, true],
+])(
+  "keeps a poster play action available when motion policy is %s/%s",
+  (reducedMotion, saveData) => {
+    const { container } = show(vi.fn(), reducedMotion, saveData);
+    expect(container.querySelector("iframe")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Play opening video" }));
+    expect(container.querySelector("iframe")).not.toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("Loading film…");
+    fireEvent.load(container.querySelector("iframe")!);
+    expect(container.querySelector(".home-film-entry")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Stop opening film" }));
+    expect(
+      screen.getByRole("button", { name: "Play opening video" }),
+    ).toBeTruthy();
+  },
+);
+
+it("keeps the poster cue absent behind the opening gate", () => {
+  const { container } = show(vi.fn(), false, false, false);
+  expect(container.querySelector(".home-film-entry")).toBeNull();
+});
+
+it("does not take focus back when someone leaves the poster play action", () => {
+  const { container } = show(vi.fn(), true);
+  fireEvent.click(screen.getByRole("button", { name: "Play opening video" }));
+  const models = screen.getByRole("link", { name: "Explore the models" });
+  models.focus();
+  fireEvent.load(container.querySelector("iframe")!);
+  expect(document.activeElement).toBe(models);
+  expect(container.querySelector(".home-film-entry")).toBeNull();
 });

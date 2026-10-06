@@ -1,0 +1,42 @@
+/* Only the local poster carries this cue. It disappears with document load,
+   before the intact publisher player is shown; it never certifies playback. */
+.home-film-entry {
+  position: absolute;
+  z-index: 5;
+  inset-block-start: 84px;
+  inset-inline-end: var(--home-gutter, 24px);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  max-width: calc(100% - 2 * var(--home-gutter, 24px));
+  min-height: 44px;
+  padding-inline: 14px;
+  background: #101416;
+  color: #e6eaed;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.home-film-entry button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0;
+  color: inherit;
+}
+.home-film-entry button:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.home-film-entry:focus-visible,
+.home-film-entry button:focus-visible {
+  outline: 2px solid #edf0f2;
+  outline-offset: 4px;
+}
+@media (max-width: 767px) {
+  .home-film-entry {
+    inset-block-start: 104px;
+  }
+}

@@ -1,41 +1,44 @@
 name: Reviewed live loading verification
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/live-loading-verification.yml"
-      - "e2e/home-loading.spec.ts"
-      - "e2e/home-opening-cards.spec.ts"
-      - "e2e/helpers/**"
-      - "playwright.loading.config.ts"
-      - "playwright.opening-cards.config.ts"
+  # Automatic release checks are owned by deployment-smoke.yml.
+  # This workflow is an explicit diagnostic for a reviewed deployed revision.
+  workflow_dispatch:
+    inputs:
+      reviewed_release:
+        description: "Exact 40-character SHA of the reviewed deployed release"
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
   live:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         suite: [loading, opening-cards]
     env:
       HOME_QA_URL: https://gtr-lab-production.up.railway.app
-      REVIEWED_RELEASE: 34f72cdd8dbbbc4093de477aeb98998c26bc3d36
+      REVIEWED_RELEASE: ${{ inputs.reviewed_release }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.reviewed_release }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - name: Verify application is identical to the reviewed deployed release
+      - name: Verify exact reviewed checkout and successful deployment
         run: |
-          git fetch --depth=1 origin "$REVIEWED_RELEASE"
-          git diff --exit-code "$REVIEWED_RELEASE" HEAD -- src public modeldata filmdata package.json package-lock.json index.html vite.config.ts tsconfig.json server.mjs railway.json scripts/prepare-models.mjs scripts/prepare-films.mjs scripts/fetch-environments.mjs
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
           import { mkdir, writeFile } from 'node:fs/promises';
+          import { execFileSync } from 'node:child_process';
           const sha = process.env.REVIEWED_RELEASE;
+          assert.match(sha || '', /^[a-f0-9]{40}$/);
+          const head = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+          assert.equal(head, sha, 'Checked-out source must equal the reviewed deployed release');
           const url = process.env.HOME_QA_URL;
           const statusResponse = await fetch(`https://api.github.com/repos/LethimCookMyBro/gtr-lab/commits/${sha}/status`, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(20000) });
           assert.equal(statusResponse.status, 200);
@@ -47,9 +50,12 @@ jobs:
           assert.equal(asset.status, 200);
           assert.equal(asset.headers.get('content-length'), '8296356');
           await mkdir('test-results', { recursive: true });
-          await writeFile('test-results/reviewed-live-source.json', JSON.stringify({ testedSource: process.env.GITHUB_SHA, reviewedDeployedRelease: sha, url, applicationDiff: 'empty', railwayCommitStatus: status.state, modelBytes: 8296356 }, null, 2));
+          await writeFile('test-results/reviewed-live-source.json', JSON.stringify({ testedSource: head, reviewedDeployedRelease: sha, url, checkoutIdentity: 'exact', railwayCommitStatus: status.state, modelBytes: 8296356 }, null, 2));
           NODE
       - run: npm ci
+      - run: npm run build
+      - name: Verify exact public HTML and every local JavaScript/CSS asset
+        run: GITHUB_SHA="$REVIEWED_RELEASE" node scripts/verify-release-assets.mjs
       - run: npx playwright install --with-deps chromium
       - name: Verify actual live preparation and retained scene independently
         if: matrix.suite == 'loading'
@@ -63,6 +69,7 @@ jobs:
           name: reviewed-live-${{ matrix.suite }}-evidence
           path: |
             test-results/
+            environment-release-verification/
             playwright-loading-report/
             playwright-opening-cards-report/
           retention-days: 14

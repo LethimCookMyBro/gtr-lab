@@ -70,7 +70,10 @@ it("keeps the viewport gate closed and film suspended while the model is downloa
   expect(
     within(gate).getByRole("progressbar").getAttribute("aria-valuenow"),
   ).toBe("1048576");
-  expect(gate.textContent).toContain("1.0 MB / 8.4 MB");
+  expect(gate.textContent).not.toMatch(/\d[\d.]* MB/);
+  expect(
+    within(gate).getByRole("progressbar").getAttribute("aria-valuetext"),
+  ).toBe("1.0 MB of 8.4 MB downloaded");
   expect(document.body.style.overflow).toBe("hidden");
 });
 it("requires a decoded opening image and prepared 3D render, then restores heading focus", async () => {
