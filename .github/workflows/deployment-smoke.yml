@@ -62,6 +62,17 @@ jobs:
           await writeFile('media-live-results/policy.json', JSON.stringify({url, status:200, policy, mode:'intact publisher-hosted embeds; no video extraction'},null,2));
           NODE
         timeout-minutes: 1
+      - name: Verify public rear lamp restoration and wheel material views
+        run: node scripts/capture-vehicle-materials.mjs
+        env:
+          PREVIEW_BASE_URL: https://gtr-lab-production.up.railway.app
+        timeout-minutes: 6
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: railway-live-material-proof
+          path: vehicle-material-results/
+          retention-days: 14
       - run: node scripts/capture-vehicle.mjs
         env:
           PREVIEW_BASE_URL: https://gtr-lab-production.up.railway.app

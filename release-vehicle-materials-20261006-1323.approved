@@ -1,0 +1,15 @@
+Approved existing-R35 material correction release — 2026-10-06
+
+Tested candidate: 6f7e927ee99690d1f4c94705250f9383af88b300
+Tested tree: 45bba5072b32da050c0c87f9a8daa75f5f4ee435
+Quality checks: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37471535310 — SUCCESS
+Actual production-app material and vehicle captures: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37471535428 — SUCCESS
+Source-identical geometry regression: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37470730724 — SUCCESS
+Source-identical environment visual matrix: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37470730597 — SUCCESS
+Source-identical configurator controls: https://github.com/LethimCookMyBro/gtr-lab/actions/runs/37470730890 — SUCCESS
+
+Verification: 721 unit tests, both typechecks, 44 navigation E2E, 6 renderer tests and 14 real-vehicle tests passed. Actual built configurator WebGL proof covers desktop rear OFF/ON/OFF, wheel, front and rear three-quarter, and mobile rear OFF/ON/OFF. Exact OFF pixels restore on both viewports; no page/console errors. Desktop wheel, front three-quarter and mobile rear PNGs were reviewed before release.
+
+Scope: preserve red annular rear lenses when lamps are off, illuminate their existing geometry when on, and soften only declared wheel and lower-trim material roughness. The licensed GLB remains 8296356 bytes, SHA-256 fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d. No cabin, new vehicle geometry, or additional 3D models are included.
+
+Release changes only the unique gate marker, this existing release marker, and a focused public-material capture/upload step in the existing CI smoke workflow. Application/asset bytes are identical to the approved candidate. Acceptance requires this exact Railway release SUCCESS, matching public HTML and every JS/CSS byte, live focused material proof, and a real cloud-browser public UI check within its WebGL capabilities. Restore all 14 original watch patterns after live acceptance, then follow every triggered CI run to a terminal state. Software-renderer proof is not physical-device performance evidence.
