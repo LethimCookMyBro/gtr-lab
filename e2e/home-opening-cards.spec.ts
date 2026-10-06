@@ -83,8 +83,26 @@ test("opening keeps authentic identity visible until real scene readiness or exp
       image.naturalWidth / image.naturalHeight,
       3,
     );
-  expect(identity[1].width).toBeGreaterThanOrEqual(220);
-  expect(identity[1].width).toBeLessThanOrEqual(280);
+  // The circular opening scales its badge with the surrounding ring. The old
+  // standalone mark's 220px minimum does not apply to a 342px mobile ring.
+  const ring = opening.locator(".home-opening-ring");
+  await expect(ring).toBeInViewport({ ratio: 1 });
+  await expect(ring).toHaveCSS("border-radius", "50%");
+  const ringBounds = (await ring.boundingBox())!;
+  const markBounds = (await opening
+    .getByRole("img", { name: "Nissan GT-R" })
+    .boundingBox())!;
+  expect(ringBounds.width).toBeCloseTo(ringBounds.height, 1);
+  expect(identity[1].width / ringBounds.width).toBeCloseTo(0.62, 2);
+  const center = {
+    x: ringBounds.x + ringBounds.width / 2,
+    y: ringBounds.y + ringBounds.height / 2,
+  };
+  for (const x of [markBounds.x, markBounds.x + markBounds.width])
+    for (const y of [markBounds.y, markBounds.y + markBounds.height])
+      expect(Math.hypot(x - center.x, y - center.y)).toBeLessThan(
+        ringBounds.width / 2 - 10,
+      );
   expect(identity[0].width).toBeLessThan(identity[1].width / 3);
   expect(
     await page.evaluate(() =>
@@ -95,7 +113,7 @@ test("opening keeps authentic identity visible until real scene readiness or exp
     opening.getByRole("button", { name: "Continue without 3D" }),
   ).toBeInViewport({ ratio: 1 });
   await info.attach("authentic-brand-geometry", {
-    body: JSON.stringify(identity, null, 2),
+    body: JSON.stringify({ images: identity, ringBounds, markBounds }, null, 2),
     contentType: "application/json",
   });
   await page.screenshot({

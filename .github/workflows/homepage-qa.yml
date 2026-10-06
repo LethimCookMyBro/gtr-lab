@@ -98,6 +98,71 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Capture revised homepage component
         run: npx playwright test -c playwright.${{ matrix.suite }}.config.ts
+      - name: Package bounded full-size review images and loader motion
+        if: always() && (matrix.suite == 'loading' || matrix.suite == 'hero-viewport')
+        env:
+          REVIEW_SUITE: ${{ matrix.suite }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, re, shutil, subprocess
+          from pathlib import Path
+          suite = os.environ['REVIEW_SUITE']
+          root = Path('test-results') / ('home-loading' if suite == 'loading' else 'hero-viewport')
+          output = Path('compact-review')
+          limit = 12 * 1024 * 1024
+          part, total, records = 1, 0, []
+          for source in sorted(root.rglob('*.png')):
+              if any(re.search(r'-retry\d+$', part) for part in source.parts):
+                  continue
+              size = source.stat().st_size
+              assert size < limit, f'One full-size screenshot exceeds the review limit: {source}'
+              if total + size >= limit:
+                  part, total = part + 1, 0
+              assert part <= 3, 'Screenshot review needs more than three bounded bundles'
+              destination = output / f'screenshots-{part}' / source.relative_to(root)
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(source, destination)
+              total += size
+              records.append({'source': str(source), 'part': part, 'bytes': size, 'sha256': hashlib.sha256(source.read_bytes()).hexdigest()})
+          print(json.dumps({'suite': suite, 'fullSizeScreenshots': records}, indent=2))
+          if suite == 'loading' and shutil.which('ffmpeg'):
+              clips = output / 'loader-motion'
+              clips.mkdir(parents=True, exist_ok=True)
+              for source in sorted(root.glob('*poster-ready*loading-*/video.webm')):
+                  if any(re.search(r'-retry\d+$', part) for part in source.parts):
+                      continue
+                  destination = clips / f'{source.parent.name}.webm'
+                  subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(source), '-t', '12', '-an', '-c:v', 'libvpx-vp9', '-b:v', '600k', str(destination)], check=True)
+              assert sum(p.stat().st_size for p in clips.glob('*.webm')) < 24 * 1024 * 1024
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && (matrix.suite == 'loading' || matrix.suite == 'hero-viewport')
+        with:
+          name: story-${{ matrix.suite }}-screenshots-1
+          path: compact-review/screenshots-1/
+          if-no-files-found: ignore
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always() && (matrix.suite == 'loading' || matrix.suite == 'hero-viewport')
+        with:
+          name: story-${{ matrix.suite }}-screenshots-2
+          path: compact-review/screenshots-2/
+          if-no-files-found: ignore
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always() && (matrix.suite == 'loading' || matrix.suite == 'hero-viewport')
+        with:
+          name: story-${{ matrix.suite }}-screenshots-3
+          path: compact-review/screenshots-3/
+          if-no-files-found: ignore
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.suite == 'loading'
+        with:
+          name: story-loading-motion-review
+          path: compact-review/loader-motion/
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:

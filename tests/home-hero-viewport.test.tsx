@@ -36,3 +36,17 @@ it("anchors desktop copy to the visible viewport when the intact film is taller"
   expect(copy.bottom).toContain("100svh");
   expect(copy.bottom).toContain("--hero-panel-height");
 });
+
+it("positions the desktop poster cue below the header's full interactive area", () => {
+  style.textContent = ["home.css", "home-film-entry.css"]
+    .map((file) => readFileSync(`src/styles/${file}`, "utf8"))
+    .join("\n");
+  document.head.append(style);
+  document.body.innerHTML =
+    '<header class="home-header"></header><div class="home-film-entry">Loading film…</div>';
+  const header = getComputedStyle(document.querySelector(".home-header")!);
+  const cue = getComputedStyle(document.querySelector(".home-film-entry")!);
+  expect(parseFloat(cue.insetBlockStart)).toBeGreaterThanOrEqual(
+    parseFloat(header.height) + 16,
+  );
+});
