@@ -1,4 +1,4 @@
-import { Suspense, useRef } from "react";
+import { memo, Suspense, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEnvironment } from "@react-three/drei/core/useEnvironment";
 import { EnvironmentBoundary } from "./EnvironmentBoundary";
@@ -18,7 +18,9 @@ type Props = {
   onReady: () => void;
 };
 
-export function RecoverableEnvironment({
+// A scene control update must not rebuild the unchanged reflection capture or
+// restart the one-frame contact shadows in this separate renderer root.
+export const RecoverableEnvironment = memo(function RecoverableEnvironment({
   environment,
   reducedMotion,
   onFallback,
@@ -65,7 +67,7 @@ export function RecoverableEnvironment({
       </Suspense>
     </EnvironmentBoundary>
   );
-}
+});
 
 function EnvironmentRendered({ onReady }: { onReady: () => void }) {
   const frames = useRef(0);

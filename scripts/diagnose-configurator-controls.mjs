@@ -17,6 +17,29 @@ export async function captureWithTimeoutRetry(capture, onRetry) {
     return await capture();
   }
 }
+export async function auditCabinPreviewAvailability({ page, open, close, cabinRequests, screenshotPath }) {
+  let text;
+  try {
+    await open('Camera');
+    const dialog = page.getByRole('dialog');
+    const preview = dialog.getByRole('button', { name: 'Cabin preview · work in progress', exact: true });
+    assert.equal(await preview.isDisabled(), false, 'Premium cabin preview must be available as an explicit opt-in');
+    assert.equal(await preview.getAttribute('aria-describedby'), 'cabin-preview-note');
+    text = (await dialog.locator('#cabin-preview-note').innerText()).replace(/\s+/g, ' ');
+    assert.match(text, /original authored cabin/i);
+    assert.match(text, /still in progress/i);
+    assert.match(text, /separate 14\.6 MB model/i);
+    assert.match(text, /not a verified factory interior/i);
+    assert.equal(cabinRequests.length, 0, 'Opening Camera must not download the opt-in cabin');
+    await page.screenshot({ path: screenshotPath });
+  } finally {
+    // A failed availability assertion must not leave a modal blocking paint
+    // controls and turn one useful diagnostic into unrelated click timeouts.
+    await close();
+  }
+  assert.equal(cabinRequests.length, 0, 'Inspecting cabin availability must not download the cabin');
+  return { available: true, optIn: true, explanation: text, cabinRequests: [...cabinRequests] };
+}
 async function runControlAudit() {
 const directory = process.env.CONTROLS_OUTPUT || 'configurator-controls-results';
 const baseURL = process.env.CONTROLS_URL || 'http://127.0.0.1:4178';
@@ -40,9 +63,11 @@ try {
     page.on('pageerror', error => result.errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error') result.errors.push(message.text()); if (message.type() === 'warning') result.warnings.push(message.text()); });
     const hdrRequests = [];
+    const cabinRequests = [];
     page.on('request', request => {
       const path = new URL(request.url()).pathname;
       if (/^\/environments\/.*\.hdr$/.test(path)) hdrRequests.push(path);
+      if (path === '/models/r35-cabin-sealed-spatial.glb') cabinRequests.push(path);
     });
     const canvas = page.locator('.scene-stage canvas');
     const shot = async label => {
@@ -111,7 +136,7 @@ try {
         assert.equal(restored, canonical, 'Reselecting a camera must restore its exact canonical perspective after manual orbit');
         return { canonical, manual, restored, pixelsChanged: true };
       });
-      await check('Unavailable interior explains the asset limitation', async () => { await open('Camera'); const interior = page.getByRole('dialog').getByRole('button', { name: /Interior/ }); assert.equal(await interior.isDisabled(), true); const text = await interior.innerText(); assert.match(text, /cabin required|unavailable/i); await page.screenshot({ path: `${directory}/${name}-interior-unavailable.png` }); await close(); return { disabled: true, explanation: text }; });
+      await check('Cabin preview is an explicitly disclosed opt-in', async () => auditCabinPreviewAvailability({ page, open, close, cabinRequests, screenshotPath: `${directory}/${name}-cabin-preview-available.png` }));
       let paintPixels = await shot('paint-start');
       for (const label of ['Gun Metallic', 'Pearl White', 'Jet Black', 'Vibrant Red', 'Deep Blue', 'Stealth Gray', 'Midnight Violet', 'Dark Metal Gray', 'Ultimate Silver']) {
         await check(`Paint ${label}`, async () => { const before = paintPixels; const button = page.getByRole('button', { name: label, exact: true }); await button.scrollIntoViewIfNeeded(); await button.click(); await pause(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); const after = await shot('paint-after-' + result.controls.length); assert.notEqual(after, before); paintPixels = after; return { pressed: true, pixelsChanged: true, before, after }; });

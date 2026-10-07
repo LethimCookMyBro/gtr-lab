@@ -111,3 +111,77 @@ describe("bounded control audit screenshot recovery", () => {
     );
   });
 });
+
+const cabinPreviewLabel = 'Cabin preview · work in progress';
+const cabinDisclosure = 'An original authored cabin, still in progress. Choosing the preview downloads a separate 14.6 MB model. Not a verified factory interior.';
+
+function cabinDrawerFixture({ disabled = false, disclosure = cabinDisclosure, eagerDownload = false, lateDownload = false, screenshotError } = {}) {
+  const cabinRequests = [];
+  const state = { open: false };
+  const preview = {
+    isDisabled: async () => disabled,
+    getAttribute: async name => name === 'aria-describedby' ? 'cabin-preview-note' : null,
+    click: vi.fn(() => { throw new Error('The availability audit must never select the cabin'); }),
+  };
+  const page = {
+    getByRole: role => {
+      expect(role).toBe('dialog');
+      return {
+        getByRole: (role, options) => {
+          if (role !== 'button' || options.name !== cabinPreviewLabel || options.exact !== true) {
+            throw new Error('No obsolete Interior button exists in the Premium camera drawer');
+          }
+          return preview;
+        },
+        locator: selector => {
+          expect(selector).toBe('#cabin-preview-note');
+          return { innerText: async () => disclosure };
+        },
+      };
+    },
+    screenshot: vi.fn(async () => {
+      if (screenshotError) throw screenshotError;
+      if (lateDownload) cabinRequests.push('/models/r35-cabin-sealed-spatial.glb');
+    }),
+  };
+  const open = vi.fn(async label => {
+    expect(label).toBe('Camera'); state.open = true;
+    if (eagerDownload) cabinRequests.push('/models/r35-cabin-sealed-spatial.glb');
+  });
+  const close = vi.fn(async () => { state.open = false; });
+  return { page, open, close, cabinRequests, screenshotPath: 'cabin-preview-available.png', state, preview };
+}
+
+describe('production control audit cabin availability', () => {
+  it('accepts the enabled WIP opt-in, checks disclosure and closes without entering', async () => {
+    const fixture = cabinDrawerFixture();
+    await expect(audit.auditCabinPreviewAvailability(fixture)).resolves.toMatchObject({
+      available: true, optIn: true, explanation: cabinDisclosure, cabinRequests: [],
+    });
+    expect(fixture.preview.click).not.toHaveBeenCalled();
+    expect(fixture.page.screenshot).toHaveBeenCalledWith({ path: fixture.screenshotPath });
+    expect(fixture.close).toHaveBeenCalledOnce();
+    expect(fixture.state.open).toBe(false);
+  });
+
+  it.each([
+    ['disabled opt-in', { disabled: true }],
+    ['missing factory limitation', { disclosure: 'Original authored cabin, still in progress. Separate 14.6 MB model.' }],
+    ['eager cabin request when Camera opens', { eagerDownload: true }],
+    ['cabin request while the availability screenshot is captured', { lateDownload: true }],
+  ])('rejects %s and still closes the drawer', async (_label, options) => {
+    const fixture = cabinDrawerFixture(options);
+    await expect(audit.auditCabinPreviewAvailability(fixture)).rejects.toThrow();
+    expect(fixture.close).toHaveBeenCalledOnce();
+    expect(fixture.state.open).toBe(false);
+    expect(fixture.preview.click).not.toHaveBeenCalled();
+  });
+
+  it('closes the drawer when screenshot capture fails', async () => {
+    const screenshotError = new Error('screenshot readback failed');
+    const fixture = cabinDrawerFixture({ screenshotError });
+    await expect(audit.auditCabinPreviewAvailability(fixture)).rejects.toBe(screenshotError);
+    expect(fixture.close).toHaveBeenCalledOnce();
+    expect(fixture.state.open).toBe(false);
+  });
+});
