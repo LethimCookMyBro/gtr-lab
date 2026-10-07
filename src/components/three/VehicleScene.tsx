@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { AdaptiveDpr } from "@react-three/drei/core/AdaptiveDpr";
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
 import { CABIN_URL, cabinCameraView } from "./cabinPreview";
+import { prepareAsyncRendererDisposal } from "./asyncRendererDisposal";
 import { CabinAttachment } from "./CabinAttachment";
 import { CameraRig } from "./CameraRig";
 import { RecoverableEnvironment } from "./RecoverableEnvironment";
@@ -147,6 +148,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
         }}
         fallback={<CanvasFallback />}
         onCreated={({ gl }) => {
+          prepareAsyncRendererDisposal(gl);
           // ContactShadows removes scene.background for its depth pass. Clear
           // unused render-target pixels transparently even with an opaque canvas.
           gl.setClearAlpha(0);

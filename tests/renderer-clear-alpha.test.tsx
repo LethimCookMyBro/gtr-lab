@@ -32,7 +32,9 @@ afterEach(() => {
 
 it("clears background-free contact passes transparently while keeping the displayed scene opaque", () => {
   let clearAlpha = 1;
+  const dispose = vi.fn();
   const renderer = {
+    dispose,
     domElement: document.createElement("canvas"),
     outputColorSpace: SRGBColorSpace,
     shadowMap: { type: 0 },
@@ -83,6 +85,7 @@ it("clears background-free contact passes transparently while keeping the displa
   );
   expect(host.alpha).toBe(false);
   host.onCreated!({ gl: renderer });
+  expect(renderer.dispose).not.toBe(dispose);
   const scene = new Scene();
   background.render(scene);
   expect(clearAlpha).toBe(0);

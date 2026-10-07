@@ -24,14 +24,17 @@ function harness(options = {}) {
     replaceState(state, unused, path) { if (this !== history) throw new Error('wrong history receiver'); location.pathname = path; return state; },
   };
   const failure = new Error('native deletion failure');
-  const extension = { loseContext() { if (this !== extension) throw new Error('wrong extension receiver'); clock += 2; return 73; } };
   class GL {
+    constructor() {
+      const extension = { loseContext() { if (this !== extension) throw new Error('wrong extension receiver'); clock += 2; return 73; } };
+      this.extension = extension;
+    }
     createProgram() { clock += 1; return {}; }
     useProgram(program) { this.program = program; return 17; }
     drawElements(...args) { this.args = args; clock += 12; return this.program; }
     bufferData(...args) { this.bufferArgs = args; clock += 3; return 'uploaded'; }
     deleteProgram(program) { if (program === 'throw') throw failure; clock += 4; return true; }
-    getExtension(name) { return name === 'WEBGL_lose_context' ? extension : null; }
+    getExtension(name) { return name === 'WEBGL_lose_context' ? this.extension : null; }
   }
   class GL2 extends GL { drawElementsInstanced(...args) { this.instanced = args; clock += 5; return 27; } }
   const window = { WebGLRenderingContext: GL, WebGL2RenderingContext: GL2,
@@ -129,4 +132,17 @@ it('rejects local or unreviewed execution before browser and server work', () =>
 it('evidence collection deadlines fail explicitly and do not hide action failure', async () => {
   expect(await within(Promise.resolve('evidence'), 100, 'test')).toBe('evidence');
   await expect(within(new Promise(() => {}), 5, 'test')).rejects.toThrow(/collection budget/);
+});
+
+
+it('correlates final release to the target context rather than a late earlier renderer', () => {
+  const test = harness(); const first = new test.GL(), target = new test.GL();
+  const firstId = test.window.__r35TeardownProbe.contextId(first);
+  const targetId = test.window.__r35TeardownProbe.contextId(target);
+  expect(targetId).not.toBe(firstId); test.arm();
+  first.getExtension('WEBGL_lose_context').loseContext();
+  expect(test.window.__r35TeardownProbe.releaseStatus(firstId)).toMatchObject({ count: 1 });
+  expect(test.window.__r35TeardownProbe.releaseStatus(targetId)).toBeNull();
+  target.getExtension('WEBGL_lose_context').loseContext();
+  expect(test.window.__r35TeardownProbe.releaseStatus(targetId)).toMatchObject({ context: targetId, count: 1, maxMs: 2 });
 });

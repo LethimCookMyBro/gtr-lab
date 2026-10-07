@@ -46,7 +46,7 @@ jobs:
         timeout-minutes: 14
         env:
           R35_ALLOW_CABIN_TEARDOWN_DIAGNOSTIC: '1'
-          R35_EXPECTED_APP_TREE: 'ee6efef7629a63fb726a9dedf638d830d72ddbb3991daaacc0757d943a1868f2'
+          R35_EXPECTED_APP_TREE: '0820b36963eb70e3d2e488a02f17132d09427355971f8d6eca46c2a8c27bbafc'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

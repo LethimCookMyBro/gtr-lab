@@ -66,7 +66,7 @@ async function runCase({ screenshots, baseURL, directory, identity, save }) {
     screenshots, result: 'running', phase: 'setup', steps: [], errors: [], pageErrors: [], console: [], requests: [],
     sourceCommit: process.env.GITHUB_SHA, applicationTree: identity.sha256,
     bounds: { clickMs: 15_000, drawerMs: 5_000, canvasMs: 5_000 },
-    observation: 'A failed strict bound remains failed. Up to 30s afterward is evidence collection only.',
+    observation: 'A failed strict bound remains failed. Final-release observation has a separate 45s budget; browser evidence and trace exports have their own bounded collection budgets.',
     instrumentation: 'External init script + bounded CDP trace/CPU profile. No screenshots requested by the driver and no extra frame-settle wait after cabin activation.',
   };
   await mkdir(directory, { recursive: true });
@@ -117,7 +117,7 @@ async function runCase({ screenshots, baseURL, directory, identity, save }) {
     report.renderer = await canvas.evaluate(element => {
       const gl = element.getContext('webgl2') || element.getContext('webgl');
       const extension = gl?.getExtension('WEBGL_debug_renderer_info');
-      return { version: gl?.getParameter(gl.VERSION), renderer: extension ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) : gl?.getParameter(gl.RENDERER) };
+      return { contextId: gl ? window.__r35TeardownProbe.contextId(gl) : null, version: gl?.getParameter(gl.VERSION), renderer: extension ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) : gl?.getParameter(gl.RENDERER) };
     });
     await cdp.send('Profiler.enable');
     await cdp.send('Profiler.setSamplingInterval', { interval: 1000 });
@@ -153,7 +153,34 @@ async function runCase({ screenshots, baseURL, directory, identity, save }) {
   } catch (error) {
     report.result = 'failed'; report.errors.push({ phase: report.phase, message: String(error), stack: error.stack });
   } finally {
+    report.strictResult = report.result;
     await write();
+    if (armed && page && Number.isInteger(report.renderer?.contextId)) {
+      const targetContext = report.renderer.contextId;
+      const started = performance.now();
+      report.cleanup = { result: 'observing', targetContext, budgetMs: 45_000 };
+      await write();
+      try {
+        // Separate from the unchanged route budgets: observe this renderer's
+        // final release, not a late release from the first Premium canvas.
+        const released = await page.waitForFunction(
+          id => window.__r35TeardownProbe.releaseStatus(id),
+          targetContext,
+          { timeout: 45_000, polling: 100 },
+        );
+        const call = await released.jsonValue();
+        await released.dispose();
+        report.cleanup = {
+          result: 'completed', targetContext, budgetMs: 45_000,
+          elapsedMs: performance.now() - started,
+          forceContextLossCalls: call.count, forceContextLossMs: call.maxMs,
+        };
+      } catch (error) {
+        report.cleanup = { result: 'not-observed', targetContext, budgetMs: 45_000, elapsedMs: performance.now() - started, error: String(error) };
+        report.result = 'failed';
+        report.errors.push({ phase: 'target renderer final release', message: String(error) });
+      }
+    } else report.cleanup = { result: 'not-started' };
     // This is diagnostic observation only. It cannot convert a strict failure
     // into a pass and does not issue screenshots, frame barriers or GPU fences.
     if (armed && page) {

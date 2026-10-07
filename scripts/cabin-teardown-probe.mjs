@@ -168,6 +168,8 @@ export function installCabinTeardownProbe({ maxEvents = 6000, slowCallMs = 8 } =
     } });
   }
   window.__r35TeardownProbe = {
+    contextId(context) { return contextInfo(context).id; },
+    releaseStatus(contextId) { return aggregate[`${contextId}:loseContext`] ?? null; },
     arm() {
       events = []; aggregate = {}; ringCursor = dropped = sequence = frameSequence = 0;
       phaseKeys = new Set(); previousDOM = ''; armedAt = now(); armed = true;

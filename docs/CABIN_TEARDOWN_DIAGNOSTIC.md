@@ -8,7 +8,7 @@ The gated, main-only workflow runs the exact production build at desktop 1440 ×
 
 Two fresh browser processes run sequentially on the same CI runner. Both keep Playwright action snapshots; the first enables trace screenshots and the second disables them. The setup is Premium ready → photographic NISMO → Premium ready, preserving the second Premium canvas. The measured sequence is Camera → cabin opt-in → active UI → Switch model → NISMO.
 
-The driver retains 15-second click waits, including Playwright's scheduled-navigation wait, and five-second drawer/canvas teardown requirements. A failure remains failed even if later evidence shows clean NISMO. Post-outcome evidence collection has a separate 30-second budget. The driver adds no screenshots, frame-settle waits, readbacks, GPU fences or awaited page evaluations between active readiness and the route clicks. Filesystem report writes are deferred during this interval too.
+The driver retains 15-second click waits, including Playwright's scheduled-navigation wait, and five-second drawer/canvas teardown requirements. A failure remains failed even if later evidence shows clean NISMO. After the strict outcome, the diagnostic observes the identified second renderer’s final release for up to 45 seconds, then exports browser evidence within a separate 30-second budget. The CPU/GL trace stays open until that release or bounded observation failure. The driver adds no screenshots, frame-settle waits, readbacks, GPU fences or awaited page evaluations between active readiness and the route clicks. Filesystem report writes are deferred during this interval too.
 
 The focused setup intentionally omits the full visual/fault-injection suite. If it does not reproduce, that is inconclusive: earlier repeated cabin loads or trace accumulation may be necessary. Neither a pass nor a slower instrumented run should be interpreted as physical-device performance evidence.
 
@@ -43,4 +43,17 @@ No second production fix should be inferred solely from this instrumentation's e
 
 Only syntax and Node instrumentation tests may be run locally. The driver requires GITHUB_ACTIONS=true, explicit diagnostic opt-in and the exact reviewed application-tree digest. Do not set these flags locally or run a browser/app server as a workaround.
 
-The seven Node tests cover native-call semantics, RAF semantics without extra scheduling, repeated installation/inheritance/extension wrapping, bounded event accounting, timeline summaries, execution guards and evidence-collection deadlines.
+The eight Node instrumentation tests cover native-call semantics, RAF semantics without extra scheduling, repeated installation/inheritance/extension wrapping, bounded event accounting, timeline summaries, execution guards, evidence-collection deadlines and target-context final-release correlation.
+
+
+## Async disposal candidate
+
+The application candidate installs an idempotent disposal wrapper on the configurator renderer only. Normal renderer, model, geometry, material and texture cleanup still happens immediately and exactly once. The wrapper returns a Promise into the installed R3F 9.8.1 disposal contract. It inserts a WebGL2 fence, flushes, then polls with clientWaitSync(sync, 0, 0) every 16 ms on later tasks. The sync and timer are removed on settlement. A context-loss event cancels waiting; an already-lost context settles without a new fence.
+
+A signaled fence is the healthy path. R3F then performs its unchanged final forceContextLoss. There is no renderer pool, permanent forced-loss suppression, fixed delay before an unsafe loss, dependency edit or GPU/security setting change.
+
+Null fences, WAIT_FAILED, thrown device/cleanup calls and a 30-second background drainage limit reject the Promise. R3F's existing warning and final-release fallback remain in force. That exceptional path may retain the current driver's blocking behavior and is not a successful nonblocking result. It is finite and does not leave polling or context ownership hanging indefinitely.
+
+Node tests verify the actual installed R3F path and include 24 overlapping retirements. They prove root deregistration, stopped rendering, one-time normal disposal, deferred final loss until successful drainage, and cleanup on the failure paths. They do not prove physical GPU responsiveness.
+
+CI reports strictResult separately from cleanup. The target context ID is recorded from the second Premium canvas before opt-in; a late release from the first canvas cannot satisfy the cleanup check. The post-outcome observation reports forceContextLossCalls and forceContextLossMs. Acceptance requires the original strict flows and a measured reduction of the final native call/main-thread long task, with no disposal warning indicating fallback. A passing route alone, or a later timer running the same slow native call, is insufficient.
