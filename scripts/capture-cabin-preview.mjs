@@ -4,8 +4,20 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createAppServer } from '../server.mjs';
 
+export function isExpectedCabinRequestFailure(item, responses, cabinPath = '/models/r35-cabin-sealed-spatial.glb') {
+  if (item.path !== cabinPath || item.failure !== 'net::ERR_ABORTED' || !Number.isSafeInteger(item.requestId)) return false;
+  const response = responses.find(candidate => candidate.requestId === item.requestId && candidate.path === cabinPath);
+  // Cleanup can abort the unread body after the app has handled this exact 404.
+  // A successful retry or unrelated request in the same phase is not exempt.
+  return response?.status === 404 && response.injectedFault === 'missing'
+    || response?.status === 200 && response.injectedFault === 'held-stream' && /cancel|in-flight/i.test(item.phase);
+}
+
+export async function main() {
 // Local browser/server execution is deliberately disabled. This check must run
 // only in the reviewed, explicitly opted-in GitHub Actions job.
 assert.equal(process.env.GITHUB_ACTIONS, 'true', 'This browser proof is CI-only');
@@ -16,6 +28,7 @@ const viewport = selectedViewport === 'mobile' ? { width: 390, height: 844 } : {
 const output = 'cabin-integration-results';
 const cabinPath = '/models/r35-cabin-sealed-spatial.glb';
 const exteriorPath = '/models/ciasny-r35.glb';
+const networkFaultHeader = 'x-r35-cabin-qa-fault';
 const cabinSha256 = '3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd';
 const exteriorSha256 = 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d';
 const cabinBytes = 14_599_520;
@@ -36,6 +49,12 @@ let nextFault = null;
 let phase = 'setup';
 const pendingBodies = [];
 const pendingGates = new Set();
+const requestIds = new WeakMap();
+let nextRequestId = 1;
+const requestId = request => {
+  if (!requestIds.has(request)) requestIds.set(request, nextRequestId++);
+  return requestIds.get(request);
+};
 const assetCounts = () => ({
   exterior: report.requests.filter(item => item.path === exteriorPath).length,
   cabin: report.requests.filter(item => item.path === cabinPath).length,
@@ -63,12 +82,12 @@ try {
     const fault = nextFault; nextFault = null;
     fault.started = true;
     if (fault.kind === 'missing') {
-      response.writeHead(404, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
+      response.writeHead(404, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store', [networkFaultHeader]: fault.kind });
       response.end('Intentional cabin-only 404 for recovery verification');
       fault.finished = true;
       return;
     }
-    response.writeHead(200, { 'Content-Type': 'model/gltf-binary', 'Content-Length': cabin.length, 'Cache-Control': 'no-store' });
+    response.writeHead(200, { 'Content-Type': 'model/gltf-binary', 'Content-Length': cabin.length, 'Cache-Control': 'no-store', [networkFaultHeader]: fault.kind });
     // These are genuine model bytes, not an invented percentage. Holding the
     // remaining body makes partial byte progress and cancellation deterministic.
     response.write(cabin.subarray(0, 1_048_576));
@@ -108,13 +127,13 @@ try {
   });
   page.on('request', request => {
     const path = new URL(request.url()).pathname;
-    if (path.endsWith('.glb')) report.requests.push({ phase, path, method: request.method() });
+    if (path.endsWith('.glb')) report.requests.push({ requestId: requestId(request), phase, path, method: request.method() });
   });
-  page.on('requestfailed', request => report.requestFailures.push({ phase, path: new URL(request.url()).pathname, failure: request.failure()?.errorText }));
+  page.on('requestfailed', request => report.requestFailures.push({ requestId: requestId(request), phase, path: new URL(request.url()).pathname, failure: request.failure()?.errorText }));
   page.on('response', response => {
     const path = new URL(response.url()).pathname;
     if (![cabinPath, exteriorPath].includes(path)) return;
-    const record = { phase, path, status: response.status() };
+    const record = { requestId: requestId(response.request()), phase, path, status: response.status(), injectedFault: response.headers()[networkFaultHeader] };
     report.responses.push(record);
     if (response.ok()) pendingBodies.push(response.body().then(bytes => {
       record.bytes = bytes.length; record.sha256 = hash(bytes);
@@ -441,8 +460,8 @@ try {
     assert.deepEqual(report.runtimeAssetErrors, [], 'Every completed runtime asset keeps its exact identity');
     assert.deepEqual(report.pageErrors, [], 'No uncaught application errors');
     assert.deepEqual(report.console.filter(item => item.type === 'error' && !item.intentional404), [], 'No unexpected console errors');
-    const unexpectedFailures = report.requestFailures.filter(item => !(item.path === cabinPath && /cancel|in-flight/i.test(item.phase) && /ERR_ABORTED/i.test(item.failure ?? '')));
-    assert.deepEqual(unexpectedFailures, [], 'Only explicitly cancelled cabin streams may fail');
+    const unexpectedFailures = report.requestFailures.filter(item => !isExpectedCabinRequestFailure(item, report.responses, cabinPath));
+    assert.deepEqual(unexpectedFailures, [], 'Only correlated, deliberately injected cabin faults may abort');
     assert.equal(nextFault, null, 'Every armed network fault was exercised');
     return { finalRequestCounts: assetCounts() };
   });
@@ -461,3 +480,6 @@ try {
   await save();
 }
 console.log(JSON.stringify(report, null, 2));
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();
