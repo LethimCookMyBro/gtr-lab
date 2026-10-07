@@ -23,6 +23,8 @@ const qa = window.__R35_QA__ = {
 let renderer, scene, camera, orbit, modelRoot, roles, contract, appearanceContract, inputManifest, loadGeneration=0;
 let appearanceBindings=[], appearance={paint:'#b8bec5',lights:false}, activeSample=null;
 let capturePaused=false, captureFrameSerial=0, continuousFrameSerial=0;
+const transmissionTargets=new Map();
+let observedTransmissionSceneRevision=null;
 const renderSchedule=createRenderSchedule();
 let records=[], helperGroup, currentView='exterior', pan={yaw:0,pitch:0};
 let glassEnabled=params.get('glass')!=='0', cabinOnly=params.get('cabin')==='1';
@@ -37,6 +39,47 @@ const materialSignature = material => JSON.stringify(Object.fromEntries(Object.e
 function invalidateScene(minimumFrames=1) {
   renderSchedule.invalidate(minimumFrames);
   if(!activeSample){lastFrame=0;frameTimes=[];}
+}
+
+function setTransmissionResolutionScale(value) {
+  if(value!==1 && value!==0.5) throw new RangeError('Transmission resolution scale must be 1 or 0.5');
+  if(capturePaused || activeSample) throw new Error('Cannot change transmission resolution scale during capture or timing');
+  renderer.transmissionResolutionScale=value;
+  invalidateScene();
+  return renderer.transmissionResolutionScale;
+}
+
+function resetTransmissionObservations(sceneRevision=renderSchedule.state().sceneRevision) {
+  transmissionTargets.clear();
+  observedTransmissionSceneRevision=sceneRevision;
+}
+
+function installTransmissionProbe(mesh, windowName) {
+  const previous=mesh.onBeforeRender;
+  mesh.onBeforeRender=function(...args) {
+    const result=typeof previous==='function' ? previous.apply(this,args) : undefined;
+    // r180 renders DoubleSide transmission backfaces into its intermediate target
+    // unless WEBGL_multisampled_render_to_texture is present. Missing observations
+    // remain empty; no target size is inferred from the requested scale.
+    const target=args[0].getRenderTarget();
+    if(target!==null) {
+      let observation=transmissionTargets.get(target);
+      if(!observation) {
+        observation={width:target.width,height:target.height,samples:target.samples,windowNames:new Set()};
+        transmissionTargets.set(target,observation);
+      }
+      observation.windowNames.add(windowName);
+    }
+    return result;
+  };
+}
+
+function getTransmissionDiagnostics() {
+  const gl=renderer.getContext();
+  return {scale:renderer.transmissionResolutionScale,
+    drawingBuffer:{width:gl.drawingBufferWidth,height:gl.drawingBufferHeight},
+    observedTargets:[...transmissionTargets.values()].map(target=>({width:target.width,height:target.height,samples:target.samples,windowNames:[...target.windowNames]})),
+    observedSceneRevision:observedTransmissionSceneRevision};
 }
 
 function fail(error) {
@@ -225,7 +268,7 @@ function getCaptureState() {
   return {ready:qa.ready,loadGeneration,modelGeneration,model:qa.model,capturePaused,captureFrameSerial,continuousFrameSerial,...renderSchedule.state(),
     renderMode:capturePaused?'capture':activeSample?activeSample.phase:'demand',
     renderedFrames:renderFrameCount,camera:getCameraState(),viewLabel:$('view-label').textContent,selectedView:document.querySelector('[data-view][aria-pressed="true"]')?.dataset.view,glass:glassEnabled,cabinOnly,appearance:{...appearance},
-    canvas:{width:renderer.domElement.width,height:renderer.domElement.height,pixelRatio:renderer.getPixelRatio()},bounds:{x,y,width,height},
+    canvas:{width:renderer.domElement.width,height:renderer.domElement.height,pixelRatio:renderer.getPixelRatio()},bounds:{x,y,width,height},transmission:getTransmissionDiagnostics(),
     rendererCounters:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles}};
 }
 
@@ -241,7 +284,7 @@ async function renderCaptureFrame() {
   if(!capturePaused || activeSample) throw new Error('Capture frame requires paused continuous submissions and no timing sample');
   const started=performance.now();
   const revision=renderSchedule.state().sceneRevision;
-  renderer.info.reset();renderer.render(scene,camera);renderFrameCount++;
+  renderer.info.reset();resetTransmissionObservations(revision);renderer.render(scene,camera);renderFrameCount++;
   renderSchedule.markSubmitted(revision);
   const submitted=performance.now();
   const gpuCompletionWaitWallMs=await waitForGpuCompletion('capture');
@@ -322,6 +365,7 @@ async function loadModel(key) {
   }
   if(generation!==loadGeneration) {disposeModel(gltf.scene);return;}
   if(modelRoot) {scene.remove(modelRoot);disposeModel(modelRoot,records);}
+  resetTransmissionObservations(null);
   modelRoot=gltf.scene; records=[]; modelGeneration=generation;
   appearanceBindings=gltf.bindings;
   qa.loadMeasurements=assetResults.map(result=>result.measurement);
@@ -332,6 +376,7 @@ async function loadModel(key) {
   modelRoot.traverse(object=>{
     if(!object.isMesh) return;
     const classification=classifyMesh(object,roles);
+    if(classification.isWindow) installTransmissionProbe(object,classification.name);
     const baseline=object.material;
     const override=classification.isWindow
       ? (Array.isArray(baseline) ? baseline.map(createWindowMaterial) : createWindowMaterial(baseline)) : null;
@@ -404,7 +449,7 @@ function animate(now) {
   lastFrame=now;
   const cpuStart=performance.now();
   const revision=renderSchedule.state().sceneRevision;
-  renderer.info.reset(); renderer.render(scene,camera);
+  renderer.info.reset(); resetTransmissionObservations(revision); renderer.render(scene,camera);
   renderSchedule.markSubmitted(revision);
   const sampledFrame=createFrameSample(now,previousFrame,performance.now()-cpuStart,renderer.info.render.calls,renderer.info.render.triangles);
   if(activeSample && qa.ready) {
@@ -423,6 +468,7 @@ function animate(now) {
 function timingSnapshot(sample=activeSample) {
   if(!sample)return null;
   return {...summarizeSamples(sample.samples),phase:sample.phase,view:currentView,glass:glassEnabled,cabinOnly,model:qa.model,appearance:{...appearance},
+    transmission:getTransmissionDiagnostics(),
     viewport:{width:renderer.domElement.width,height:renderer.domElement.height},priorGpuDrainWallMs:sample.priorGpuDrainWallMs??null,
     submissionWallMs:sample.submissionEnd&&sample.started?sample.submissionEnd-sample.started:null,
     measurementMode:`${sample.count} explicit continuous render submissions; prior work and completion drained separately. Demand-idle time and capture waits are excluded. No physical Android claim.`};
@@ -461,7 +507,8 @@ async function start() {
   renderer.info.autoReset=false;
   const gl=renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');
   qa.renderer={version:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),unmaskedRenderer:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):null,
-    webgl2:renderer.capabilities.isWebGL2,multiDraw:Boolean(gl.getExtension('WEBGL_multi_draw')),timerQuery:Boolean(gl.getExtension('EXT_disjoint_timer_query_webgl2')),gpuTimingMeasured:false};
+    webgl2:renderer.capabilities.isWebGL2,multiDraw:Boolean(gl.getExtension('WEBGL_multi_draw')),timerQuery:Boolean(gl.getExtension('EXT_disjoint_timer_query_webgl2')),
+    multisampledRenderToTexture:Boolean(gl.getExtension('WEBGL_multisampled_render_to_texture')),gpuTimingMeasured:false};
   $('viewport').appendChild(renderer.domElement);
   renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();fail(new Error('WebGL context lost. Reload to retry.'));});
   scene=new THREE.Scene(); scene.background=new THREE.Color(0x202a35);
@@ -481,6 +528,7 @@ async function start() {
   new ResizeObserver(resize).observe($('viewport'));resize();
   Object.assign(qa,{
     selectView,setGlass,setCabinOnly,loadModel,getCameraState,setAppearance,getCaptureState,beginCapture,renderCaptureFrame,resumeAfterCapture,
+    setTransmissionResolutionScale,getTransmissionDiagnostics,
     getAppearance:()=>({...appearance}),
     selectExteriorRear:()=>{
       selectView('exterior');
@@ -495,7 +543,7 @@ async function start() {
     getChecks:updateChecks,
     getWindowAssignments:()=>records.filter(record=>record.isWindow).map(record=>({name:record.name,role:record.role,
       baseline:materials(record.baseline).map(m=>({uuid:m.uuid,name:m.name})),active:materials(record.mesh.material).map(m=>({uuid:m.uuid,name:m.name,transmission:m.transmission || 0}))})),
-    snapshot:()=>{renderer.info.reset();renderer.render(scene,camera);return renderer.domElement.toDataURL('image/png');},
+    snapshot:()=>{renderer.info.reset();resetTransmissionObservations();renderer.render(scene,camera);return renderer.domElement.toDataURL('image/png');},
   });
   if(Object.hasOwn(contract.presets,params.get('view'))) currentView=params.get('view');
   requestAnimationFrame(animate);

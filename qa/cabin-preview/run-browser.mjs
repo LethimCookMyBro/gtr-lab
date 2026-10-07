@@ -10,8 +10,8 @@ assert.equal(process.env.GITHUB_ACTIONS,'true','Use the separately authorized Gi
 assert.equal(process.env.R35_ALLOW_BROWSER_QA,'1','Explicit CI browser QA gate required');
 const output='cabin-webgl-results';await mkdir(output,{recursive:true});
 const plan=process.env.R35_QA_VIEWPORT || 'desktop';assert.ok(['desktop','mobile'].includes(plan));
-const focus=process.env.R35_QA_FOCUS || 'full';assert.ok(['full','remaining-desktop'].includes(focus));
-if(focus==='remaining-desktop')assert.equal(plan,'desktop');
+const focus=process.env.R35_QA_FOCUS || 'full';assert.ok(['full','remaining-desktop','transmission-desktop'].includes(focus));
+if(focus!=='full')assert.equal(plan,'desktop');
 const viewport=plan==='desktop'?{width:1440,height:1000}:{width:390,height:844};
 const baseline=JSON.parse(await readFile(new URL('./reference-baseline.json',import.meta.url),'utf8'));
 assert.equal(baseline.commit,'93d4fda63915c64ff1b3a8d852128fba667873f0');
@@ -21,6 +21,10 @@ const report={focus,coverage:{fullSpatialVisualSet:focus==='full',priorRun:37595
   scope:'Separate Three.js inspector using exact new cabin and unchanged accepted exterior. Production app integration is not under test.',
   limitations:['SwiftShader is a software renderer. A 390px emulated viewport is not a physical Android test.','Screenshots require visual review. Functional success is not visual acceptance.','Render CPU times exclude asynchronous GPU completion.'],
   screenshots:[],captureStages:[],dirtyChecks:[],checks:[],timings:[],appearanceChecks:[],errors:[],consoleErrors:[],requestFailures:[]};
+if(focus==='transmission-desktop') {
+  report.coverage={fullSpatialVisualSet:false,priorRun:37601107213,priorCommit:'989eac52ed6c130d3f9c22ab76a0b2de92a1d707',skipped:['full 51-view visual set','closure/near-plane ray repetitions','input bursts','model reloads','global/spatial timing comparison','paint/lamp-toggle cases'],note:'Single-variable transmission target resolution diagnostic; previous geometry and input evidence is retained, not rerun'};
+  report.limitations.push('One non-counterbalanced timing block per scale is directional evidence, not a general speedup benchmark. Half-scale transmission changes through-window image quality while retaining the full main canvas.');
+}
 const save=()=>writeFile(`${output}/${plan}-report.json`,JSON.stringify(report,null,2));
 const server=spawn('python3',['-m','http.server','8765','--bind','127.0.0.1','--directory','.qa-cabin-runtime'],{stdio:'inherit'});
 const base='http://127.0.0.1:8765/viewer/';let browser,page,capture;
@@ -84,6 +88,12 @@ try {
       const image=await page.screenshot({path:`${output}/${plan}-${label}.png`,...(scope==='canvas'?{clip}:{}),scale:'css',timeout:remaining()});
       const after=await bounded('post-PNG state',page.evaluate(()=>window.__R35_QA__.getCaptureState()));
       const finalChecks=captureEvidenceChecks(before,after);
+      if(focus==='transmission-desktop') {
+        assert.deepEqual(after.transmission,settled.transmission,`${label}: transmission observation stays fixed through PNG`);
+        assert.equal(before.transmission.scale,after.transmission.scale,`${label}: transmission scale stays fixed during capture`);
+        assert.deepEqual(before.transmission.drawingBuffer,after.transmission.drawingBuffer,`${label}: full canvas stays fixed during capture`);
+        checkTransmission(after,after.transmission.scale);
+      }
       for(const [key,passed] of Object.entries(finalChecks))assert.equal(passed,true,`${label}: ${key} after PNG`);
       const item={file:`${plan}-${label}.png`,sha256:createHash('sha256').update(image).digest('hex'),status:'captured-unreviewed',camera:after.camera,captureState:after,captureChecks:finalChecks,scope};
       assert.equal(after.viewLabel,after.camera.view==='exterior'?'EXTERIOR ORBIT':`${after.camera.view.toUpperCase()} / FIXED EYE`,`${label}: camera label matches current view`);
@@ -97,7 +107,7 @@ try {
           assert.deepEqual(after[key],expected,`${label}: expected ${key} at original baseline camera`);
         }
         report.baselineComparison.push({file:item.file,baselineFile:reference.file,sameControls:label!=='rear-exterior-source-windows',controlDifference:label==='rear-exterior-source-windows'?{glass:{baseline:reference.glass,candidate:false}}:null,baselineSha256:reference.sha256,candidateSha256:item.sha256,sameCamera:true,
-          baselineCounters:reference.rendererCounters,candidateCounters:after.rendererCounters});
+          sameRenderSettings:focus!=='transmission-desktop' || after.transmission.scale===1,renderSettingDifference:focus==='transmission-desktop' && after.transmission.scale!==1?{transmissionResolutionScale:{baseline:1,candidate:after.transmission.scale}}:null,baselineCounters:reference.rendererCounters,candidateCounters:after.rendererCounters});
         if(baselineLabel==='cabin-isolated')assert.ok(after.rendererCounters.calls<reference.rendererCounters.calls,'Batching reduces measured isolated-cabin draw submissions');
       } else assert.equal(label,'failure','Every planned capture has an original baseline reference');
       report.screenshots.push(item);await stage('page-screenshot-complete',{file:item.file});return item.sha256;
@@ -123,6 +133,15 @@ try {
     try {
       const timing=await withCaptureDeadline(page.evaluate(moving=>window.__R35_QA__.sampleFrames(24,moving),moving),`${label}: continuous timing sample`,120000);
       report.timings.push({label,comparison,...timing});await save();
+      if(focus==='transmission-desktop') {
+        checkTransmission({...comparison.setup.state,transmission:timing.transmission},comparison.scale);
+        assert.equal(timing.samples,24,'Both transmission scales submit the same 24 frames');
+        for(const frame of timing.frames) {assert.equal(frame.calls,comparison.counters.calls);assert.equal(frame.triangles,comparison.counters.triangles);}
+        if(report.timings.length===2) {
+          assert.deepEqual(timing.drawCalls,report.timings[0].drawCalls,'Scale changes no draw submissions');
+          assert.deepEqual(timing.renderedTriangles,report.timings[0].renderedTriangles,'Scale changes no rendered triangles');
+        }
+      }
       assert.equal(timing.gpuCompletion.status,'completed',`${label}: all sampled GPU work completed`);
       report.performancePhase={label,status:'completed'};await save();
     } catch(error) {
@@ -149,7 +168,59 @@ try {
   }
   await save();
   };
+  const checkTransmission=(state,scale)=>{
+    const diagnostics=state.transmission;
+    assert.equal(diagnostics.scale,scale);
+    assert.deepEqual(diagnostics.drawingBuffer,{width:state.canvas.width,height:state.canvas.height},'Main drawing buffer stays full-sized');
+    assert.equal(diagnostics.observedSceneRevision,state.sceneRevision,'Observations belong to the current submitted scene');
+    if(!state.glass)assert.deepEqual(diagnostics.observedTargets,[],'Source windows have no transmission pass');
+    else {
+      // This is a deliberately strict observation gate, not an inferred size. The
+      // public window callback is unavailable on Three r180's MSRTT fast path.
+      assert.equal(report.renderer.multisampledRenderToTexture,false,'Actual target observation requires the tested non-MSRTT window backface path');
+      assert.ok(diagnostics.observedTargets.length>0,'Physical windows produce an actually observed intermediate target');
+      for(const target of diagnostics.observedTargets) {
+        assert.equal(target.width,state.canvas.width*scale);assert.equal(target.height,state.canvas.height*scale);
+        assert.ok(target.windowNames.length>0);for(const name of target.windowNames)assert.ok(report.windowAssignments.some(window=>window.name===name),'Only the four classified windows observe the target');
+      }
+    }
+  };
   await verify('initial-runtime');
+  if(focus==='transmission-desktop') {
+    report.windowAssignments=await page.evaluate(()=>window.__R35_QA__.getWindowAssignments());assert.equal(report.windowAssignments.length,4);
+    assert.equal(report.initialLoad.assets.find(asset=>asset.file!=='ciasny-r35.glb').sha256,'111457de471188208c934e982cbcb076b37417f302560cfbab4b8d88ed092be8');
+    report.comparisonProtocol={variable:'renderer.transmissionResolutionScale',scales:[0.5,1],sameLoadedScene:true,sameGeometryMaterialsAndCamera:true,sameMainCanvas:true,assetSha256:'111457de471188208c934e982cbcb076b37417f302560cfbab4b8d88ed092be8',samplesPerCase:24,repeatsPerCase:1,counterbalanced:false,note:'Half scale first, full scale last. Existing 90s GPU fence and 120s sample limit retained. Actual intermediate dimensions are observed; through-glass pixels require review.'};
+    await mutate('selectView',['exterior']);await mutate('setGlass',[false]);
+    await mutate('setTransmissionResolutionScale',[1]);
+    const opaqueHash=await capture('transmission-opaque-full','canvas','exterior-source-windows');
+    const opaqueCounters=report.screenshots.at(-1).captureState.rendererCounters;
+    await mutate('setTransmissionResolutionScale',[0.5]);
+    assert.equal(await capture('transmission-opaque-half','canvas','exterior-source-windows'),opaqueHash,'Negative control: source-window PNG is byte-identical across scales');
+    assert.deepEqual(report.screenshots.at(-1).captureState.rendererCounters,opaqueCounters,'Negative control counters are identical');
+    await mutate('setGlass',[true]);await mutate('setTransmissionResolutionScale',[1]);
+    const physicalHash=await capture('transmission-exterior-full','canvas','exterior-transparent-windows');
+    await mutate('setTransmissionResolutionScale',[0.5]);
+    await capture('transmission-exterior-half','canvas','exterior-transparent-windows');
+    await mutate('setTransmissionResolutionScale',[1]);
+    assert.equal(await capture('transmission-exterior-restored','canvas','exterior-transparent-windows'),physicalHash,'Full-scale restoration returns byte-identical physical-window pixels');
+    await mutate('selectView',['driver']);
+    await capture('transmission-driver-full','canvas','driver');
+    const driverCounters=report.screenshots.at(-1).captureState.rendererCounters;
+    await mutate('setTransmissionResolutionScale',[0.5]);
+    await capture('transmission-driver-half','canvas','driver');
+    assert.deepEqual(report.screenshots.at(-1).captureState.rendererCounters,driverCounters,'Changing target resolution changes no draw or triangle count');
+    await verify('transmission-visual-controls');
+    report.allVisualChecksCompletedAt=new Date().toISOString();await save();
+    for(const scale of report.comparisonProtocol.scales) {
+      await mutate('setTransmissionResolutionScale',[scale]);
+      // Wait for the new setting's demand frame; sampleFrames drains its GPU work
+      // before starting the unchanged 24 continuous submissions.
+      await page.waitForFunction(()=>{const state=window.__R35_QA__.getCaptureState();return state.transmission.observedSceneRevision===state.sceneRevision && state.renderedSceneRevision===state.sceneRevision;},{},{timeout:30000});
+      const setup=await page.evaluate(()=>({state:window.__R35_QA__.getCaptureState(),model:window.__R35_QA__.model}));
+      checkTransmission(setup.state,scale);assert.equal(setup.model,'runtime');
+      await sample(`transmission-driver-${scale===1?'full':'half'}`,false,{scale,counters:driverCounters,setup});
+    }
+  } else {
   if(focus==='full') {
   // Preserve first actual pixels before longer input/measurement sequences.
   await capture('initial-runtime');
@@ -281,9 +352,10 @@ try {
     assert.deepEqual(pose,reference.camera);for(const field of ['canvas','appearance','glass','cabinOnly'])assert.deepEqual(setup.state[field],reference[field]);
     await sample(`${variant}-${config.case}`,false,{variant,case:config.case,assetSha256:expectedHash,setup});
   }
+  }
   report.finalStats=await page.evaluate(()=>window.__R35_QA__.stats);
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.consoleErrors,[]);assert.deepEqual(report.requestFailures,[]);
-  report.status=focus==='full'?'functional-checks-passed-visual-review-pending':'focused-checks-passed-visual-review-pending';
+  report.status=focus==='full'?'functional-checks-passed-visual-review-pending':focus==='transmission-desktop'?'transmission-diagnostic-passed-visual-review-pending':'focused-checks-passed-visual-review-pending';
 } catch(error) {
   report.status='failed';report.failure=error.stack;process.exitCode=1;
   if(report.performanceIncomplete)report.failureScreenshotError='Skipped because incomplete performance work may still be pending; earlier visual evidence is retained';
