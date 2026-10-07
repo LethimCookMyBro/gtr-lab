@@ -73,6 +73,38 @@ export function validateContract(contract) {
   return ['exterior', 'driver', 'passenger', 'rear'].flatMap(name => validatePreset(contract.presets?.[name], name));
 }
 
+export function createRenderSchedule() {
+  let sceneRevision = 1;
+  let renderedSceneRevision = 0;
+  let pendingFrames = 1;
+
+  return {
+    invalidate(minimumFrames = 1) {
+      if (!Number.isInteger(minimumFrames) || minimumFrames < 1 || minimumFrames > 120) {
+        throw new RangeError('minimumFrames must be an integer between 1 and 120');
+      }
+      sceneRevision++;
+      pendingFrames = Math.max(pendingFrames, minimumFrames);
+      return sceneRevision;
+    },
+    needsRender() {
+      return renderedSceneRevision !== sceneRevision || pendingFrames > 0;
+    },
+    markSubmitted(submittedRevision) {
+      if (!Number.isSafeInteger(submittedRevision) || submittedRevision < 1 ||
+          submittedRevision < renderedSceneRevision || submittedRevision > sceneRevision) {
+        throw new RangeError('submittedRevision must be an existing scene revision at least as recent as the last submission');
+      }
+      // Use the revision captured before rendering, not a newer invalidation.
+      renderedSceneRevision = submittedRevision;
+      pendingFrames = Math.max(0, pendingFrames - 1);
+    },
+    state() {
+      return { sceneRevision, renderedSceneRevision, pendingFrames };
+    },
+  };
+}
+
 export function hasCurrentRender(state, minimumFrames = 1) {
   return state.ready === true && state.stats?.modelGeneration === state.loadGeneration &&
     state.stats?.renderedFrames >= minimumFrames;
@@ -85,6 +117,8 @@ export function captureEvidenceChecks(before, after) {
     pausedDuringCapture: before.capturePaused === true && after.capturePaused === true,
     freshCompletedCaptureFrame: after.captureFrameSerial === before.captureFrameSerial + 1,
     continuousFramesStopped: same('continuousFrameSerial'),
+    sceneUnchanged: Number.isSafeInteger(before.sceneRevision) && before.sceneRevision > 0 && same('sceneRevision'),
+    currentSceneRendered: Number.isSafeInteger(after.sceneRevision) && after.sceneRevision > 0 && after.renderedSceneRevision === after.sceneRevision,
     cameraUnchanged: same('camera'),
     modelUnchanged: same('model'),
     appearanceUnchanged: same('appearance') && same('glass') && same('cabinOnly'),

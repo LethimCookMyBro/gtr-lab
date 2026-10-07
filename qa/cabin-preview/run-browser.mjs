@@ -14,7 +14,7 @@ const viewport=plan==='desktop'?{width:1440,height:1000}:{width:390,height:844};
 const report={status:'running',qaCommit:process.env.GITHUB_SHA,startedAt:new Date().toISOString(),viewport,plan,
   scope:'Separate Three.js inspector using exact new cabin and unchanged accepted exterior. Production app integration is not under test.',
   limitations:['SwiftShader is a software renderer. A 390px emulated viewport is not a physical Android test.','Screenshots require visual review. Functional success is not visual acceptance.','Render CPU times exclude asynchronous GPU completion.'],
-  screenshots:[],captureStages:[],checks:[],timings:[],appearanceChecks:[],errors:[],consoleErrors:[],requestFailures:[]};
+  screenshots:[],captureStages:[],dirtyChecks:[],checks:[],timings:[],appearanceChecks:[],errors:[],consoleErrors:[],requestFailures:[]};
 const save=()=>writeFile(`${output}/${plan}-report.json`,JSON.stringify(report,null,2));
 const server=spawn('python3',['-m','http.server','8765','--bind','127.0.0.1','--directory','.qa-cabin-runtime'],{stdio:'inherit'});
 const base='http://127.0.0.1:8765/viewer/';let browser,page,capture;
@@ -43,6 +43,16 @@ try {
     for(const [key,passed] of Object.entries(checks))assert.equal(passed,true,`${label}: ${key}`);
     await save();
   };
+  const mutate=async(method,args=[])=>{
+    const change=await page.evaluate(({method,args})=>{
+      const qa=window.__R35_QA__,before=qa.getCaptureState().sceneRevision;
+      const result=qa[method](...args);
+      return {result,before,after:qa.getCaptureState().sceneRevision};
+    },{method,args});
+    assert.ok(change.after>change.before,`${method}: scene invalidation advances`);
+    report.dirtyChecks.push({method,before:change.before,after:change.after});
+    return change.result;
+  };
   capture=async(label,scope='canvas')=>{
     const stage=async(name,evidence)=>{report.captureStages.push({label,stage:name,at:new Date().toISOString(),...evidence});await save();};
     const deadline=Date.now()+120000;
@@ -53,7 +63,7 @@ try {
     try {
       pauseAttempted=true;
       before=await bounded('pause',page.evaluate(()=>window.__R35_QA__.beginCapture()));
-      await stage('continuous-render-paused',{state:before});
+      await stage('render-submissions-paused',{state:before});
       await stage('fresh-frame-and-gpu-completion-start',{});
       const rendered=await bounded('render and GPU completion',page.evaluate(()=>window.__R35_QA__.renderCaptureFrame()));
       await stage('fresh-frame-gpu-complete',{state:rendered});
@@ -80,7 +90,7 @@ try {
         try {
           const resumed=await withCaptureDeadline(page.evaluate(()=>window.__R35_QA__.resumeAfterCapture()),`${label}: resume`,30000);
           await page.waitForFunction(previous=>{const state=window.__R35_QA__.getCaptureState();return !state.capturePaused && state.modelGeneration===previous.modelGeneration && state.continuousFrameSerial>previous.continuousFrameSerial;},resumed,{timeout:30000});
-          await stage('continuous-render-resumed',{state:await withCaptureDeadline(page.evaluate(()=>window.__R35_QA__.getCaptureState()),`${label}: resumed state`,30000)});
+          await stage('demand-render-resumed',{state:await withCaptureDeadline(page.evaluate(()=>window.__R35_QA__.getCaptureState()),`${label}: resumed state`,30000)});
         } catch(error) {
           report.captureCleanupFailed=true;await stage('resume-failed',{error:error.stack});
           if(!primaryError)throw error;
@@ -89,8 +99,18 @@ try {
     }
   };
   const sample=async(label,moving=false)=>{
-    const timing=await page.evaluate(moving=>window.__R35_QA__.sampleFrames(24,moving),moving);
-    report.timings.push({label,...timing});await save();
+    report.performancePhase={label,status:'running'};await save();
+    try {
+      const timing=await withCaptureDeadline(page.evaluate(moving=>window.__R35_QA__.sampleFrames(24,moving),moving),`${label}: continuous timing sample`,120000);
+      report.timings.push({label,...timing});await save();
+      assert.equal(timing.gpuCompletion.status,'completed',`${label}: all sampled GPU work completed`);
+      report.performancePhase={label,status:'completed'};await save();
+    } catch(error) {
+      report.performanceIncomplete=true;
+      report.performancePhase={label,status:'failed',error:error.stack};
+      await withCaptureDeadline(page.evaluate(()=>window.__R35_QA__.getTimingState()),`${label}: partial timing evidence`,10000).then(state=>{report.partialTiming=state;},diagnosticError=>{report.partialTimingError=diagnosticError.message;});
+      await save();throw error;
+    }
   };
   await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});await waitReady();
   report.renderer=await page.evaluate(()=>window.__R35_QA__.renderer);assert.equal(report.renderer.webgl2,true);
@@ -116,23 +136,25 @@ try {
   report.windowAssignments=await page.evaluate(()=>window.__R35_QA__.getWindowAssignments());assert.equal(report.windowAssignments.length,4);
   report.eyeClearance=await page.evaluate(()=>window.__R35_QA__.inspectEyeClearance());
   for(const eye of report.eyeClearance)assert.equal(eye.nearPlaneClearForAllPanDirections,true,`${eye.camera}: near plane`);
-  await page.evaluate(()=>window.__R35_QA__.setGlass(false));
-  const opaqueHash=await capture('exterior-source-windows');await sample('exterior-source-windows');
-  await page.evaluate(()=>window.__R35_QA__.setGlass(true));
+  await mutate('setGlass',[false]);
+  const opaqueHash=await capture('exterior-source-windows');
+  await mutate('setGlass',[true]);
   assert.notEqual(await capture('exterior-transparent-windows'),opaqueHash,'Transparent windows change rendered pixels at a fixed camera');
-  await sample('exterior-transparent-windows');
-  await page.evaluate(()=>window.__R35_QA__.setGlass(false));
+  await mutate('setGlass',[false]);
   assert.equal(await capture('exterior-source-windows-restored'),opaqueHash,'Window restoration returns baseline pixels');
-  await page.evaluate(()=>window.__R35_QA__.setGlass(true));
+  await mutate('setGlass',[true]);
   for(const view of ['driver','passenger','rear']) {
+    const beforeButton=await page.evaluate(()=>window.__R35_QA__.getCaptureState().sceneRevision);
     await page.getByRole('button',{name:{driver:'Driver eye',passenger:'Passenger eye',rear:'Rear eye'}[view],exact:true}).click();
+    const afterButton=await page.evaluate(()=>window.__R35_QA__.getCaptureState().sceneRevision);
+    assert.ok(afterButton>beforeButton,`${view}: camera button invalidates`);report.dirtyChecks.push({method:`button-${view}`,before:beforeButton,after:afterButton});
     const before=await page.evaluate(()=>window.__R35_QA__.getCameraState());assert.equal(before.view,view);
-    await capture(view);await sample(`${view}-idle`);await sample(`${view}-panning`,true);
-    await page.evaluate(view=>window.__R35_QA__.selectView(view),view);
+    await capture(view);
+    await mutate('selectView',[view]);
     if(plan==='desktop')for(const [label,yaw,pitch] of [['left',90,0],['right',-90,0],['behind',180,0],['up',0,60],['down',0,-60]]) {
-      await page.evaluate(([yaw,pitch])=>window.__R35_QA__.look(yaw,pitch),[yaw,pitch]);await capture(`${view}-${label}`);
+      await mutate('look',[yaw,pitch]);await capture(`${view}-${label}`);
     }
-    await page.evaluate(view=>window.__R35_QA__.selectView(view),view);
+    await mutate('selectView',[view]);
     const bounds=await page.locator('#viewport canvas').boundingBox();
     await page.mouse.move(bounds.x+bounds.width*.4,bounds.y+bounds.height*.4);await page.mouse.down();
     await page.mouse.move(bounds.x+bounds.width*.7,bounds.y+bounds.height*.6,{steps:5});await page.mouse.up();
@@ -141,16 +163,16 @@ try {
     assert.deepEqual(after.position,before.position,`${view}: camera cannot translate`);
     assert.notDeepEqual(after.direction,before.direction,`${view}: look input changes direction`);
     for(const [yaw,pitch] of [[999,999],[-999,-999]]) {
-      const edge=await page.evaluate(([yaw,pitch])=>window.__R35_QA__.look(yaw,pitch),[yaw,pitch]);
+      const edge=await mutate('look',[yaw,pitch]);
       assert.deepEqual(edge.position,before.position);assert.ok(Math.abs(edge.pan.yaw)<=180 && Math.abs(edge.pan.pitch)<=70);
     }
     await verify(`${view}-camera-controls`);
   }
-  await page.evaluate(()=>window.__R35_QA__.selectView('exterior'));
+  await mutate('selectView',['exterior']);
   const initialAppearance=await page.evaluate(()=>window.__R35_QA__.getAppearance()),appearanceHashes={};
   const initialAppearanceHash=await capture('appearance-baseline');
   for(const [label,paint,lights] of [['paint-red','#b31625',false],['paint-red-lights-on','#b31625',true],['paint-blue-lights-on','#183f80',true],['appearance-restored',initialAppearance.paint,initialAppearance.lights]]) {
-    const result=await page.evaluate(([paint,lights])=>window.__R35_QA__.setAppearance(paint,lights),[paint,lights]);
+    const result=await mutate('setAppearance',[paint,lights]);
     assert.equal(result.protectedUnchanged,true);assert.equal(result.cabinBindings,0);report.appearanceChecks.push({label,...result});
     const screenshotHash=await capture(label);appearanceHashes[label]=screenshotHash;
     if(label==='paint-red-lights-on')assert.notEqual(screenshotHash,appearanceHashes['paint-red'],'Lamp toggle changes pixels with paint fixed');
@@ -161,26 +183,38 @@ try {
   }
   await page.evaluate(()=>window.__R35_QA__.selectExteriorRear());
   const rearOff=await capture('rear-exterior-lamps-off');
-  await page.evaluate(paint=>window.__R35_QA__.setAppearance(paint,true),initialAppearance.paint);
+  await mutate('setAppearance',[initialAppearance.paint,true]);
   assert.notEqual(await capture('rear-exterior-lamps-on'),rearOff,'Rear lights alter pixels with paint fixed');
-  await page.evaluate(paint=>window.__R35_QA__.setAppearance(paint,false),initialAppearance.paint);
+  await mutate('setAppearance',[initialAppearance.paint,false]);
   assert.equal(await capture('rear-exterior-lamps-restored'),rearOff,'Rear lamp restoration returns baseline pixels');await verify('rear-lamp-isolation');
-  await page.evaluate(()=>{window.__R35_QA__.selectView('exterior');window.__R35_QA__.setCabinOnly(true);});
-  await capture('cabin-isolated');await verify('cabin-isolated');await sample('cabin-isolated');
+  await mutate('selectView',['exterior']);await mutate('setCabinOnly',[true]);
+  await capture('cabin-isolated');await verify('cabin-isolated');
   await page.evaluate(()=>window.__R35_QA__.loadModel('original'));await waitReady();await capture('cabin-separate-file');await verify('cabin-separate-file');
   await page.evaluate(()=>window.__R35_QA__.loadModel('runtime'));await waitReady();
-  await page.evaluate(()=>{window.__R35_QA__.setCabinOnly(false);window.__R35_QA__.selectView('driver');});
-  for(let index=0;index<6;index++)await page.evaluate(index=>window.__R35_QA__.setGlass(index%2===0),index);
-  await page.evaluate(()=>window.__R35_QA__.setGlass(true));await verify('repeated-window-toggles-and-reload');
+  await mutate('setCabinOnly',[false]);await mutate('selectView',['driver']);
+  for(let index=0;index<6;index++)await mutate('setGlass',[index%2===0]);
+  await mutate('setGlass',[true]);await verify('repeated-window-toggles-and-reload');
   await page.evaluate(()=>Promise.all([window.__R35_QA__.loadModel('original'),window.__R35_QA__.loadModel('runtime')]));await waitReady();
   assert.equal(await page.evaluate(()=>window.__R35_QA__.model),'runtime');await verify('overlapping-load-latest-wins');
-  report.finalStats=await page.evaluate(()=>window.__R35_QA__.stats);
   await capture('page','viewport');
+  report.allVisualChecksCompletedAt=new Date().toISOString();await save();
+  // Collect every view and recovery assertion before the expensive, explicit performance phase.
+  for(const config of [
+    {label:'exterior-source-windows',view:'exterior',glass:false},
+    {label:'exterior-transparent-windows',view:'exterior',glass:true},
+    ...['driver','passenger','rear'].flatMap(view=>[{label:`${view}-idle`,view,glass:true},{label:`${view}-panning`,view,glass:true,moving:true}]),
+    {label:'cabin-isolated',view:'exterior',glass:true,cabinOnly:true},
+  ]) {
+    await page.evaluate(config=>{const qa=window.__R35_QA__;qa.setCabinOnly(Boolean(config.cabinOnly));qa.setGlass(config.glass);qa.selectView(config.view);},config);
+    await sample(config.label,Boolean(config.moving));
+  }
+  report.finalStats=await page.evaluate(()=>window.__R35_QA__.stats);
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.consoleErrors,[]);assert.deepEqual(report.requestFailures,[]);
   report.status='functional-checks-passed-visual-review-pending';
 } catch(error) {
   report.status='failed';report.failure=error.stack;process.exitCode=1;
-  if(report.captureOperationUncertain || error.name==='CaptureStageTimeout' || error.name==='TimeoutError')report.failureScreenshotError='Skipped because a timed-out browser operation may still be pending';
+  if(report.performanceIncomplete)report.failureScreenshotError='Skipped because incomplete performance work may still be pending; earlier visual evidence is retained';
+  else if(report.captureOperationUncertain || error.name==='CaptureStageTimeout' || error.name==='TimeoutError')report.failureScreenshotError='Skipped because a timed-out browser operation may still be pending';
   else if(capture && !report.captureCleanupFailed)await capture('failure','viewport').catch(error=>{report.failureScreenshotError=error.stack;});
   else if(report.captureCleanupFailed)report.failureScreenshotError='Skipped because renderer resume could not be verified';
   else if(page)await page.screenshot({path:`${output}/${plan}-failure.png`,timeout:30000}).catch(error=>{report.failureScreenshotError=error.stack;});

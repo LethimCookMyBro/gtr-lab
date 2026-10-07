@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { classifyMesh, cabinPose, validateContract, withinBounds, hasCurrentRender } from './runtime-core.js';
+import { classifyMesh, cabinPose, validateContract, withinBounds, hasCurrentRender, createRenderSchedule } from './runtime-core.js';
 import { createWindowMaterial } from './window-materials.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { prepareVehicle, applyVehicleAppearance } from './app-source/materialAdapter.js';
@@ -22,6 +22,7 @@ const qa = window.__R35_QA__ = {
 let renderer, scene, camera, orbit, modelRoot, roles, contract, appearanceContract, inputManifest, loadGeneration=0;
 let appearanceBindings=[], appearance={paint:'#b8bec5',lights:false}, activeSample=null;
 let capturePaused=false, captureFrameSerial=0, continuousFrameSerial=0;
+const renderSchedule=createRenderSchedule();
 let records=[], helperGroup, currentView='exterior', pan={yaw:0,pitch:0};
 let glassEnabled=params.get('glass')!=='0', cabinOnly=params.get('cabin')==='1';
 let lastFrame=0, frameTimes=[], lastStatsUpdate=0;
@@ -32,7 +33,13 @@ const materialSignature = material => JSON.stringify(Object.fromEntries(Object.e
     (value===null || ['string','number','boolean'].includes(typeof value) || value?.isColor || value?.isTexture))
   .map(([key,value])=>[key,value?.isTexture ? value.uuid : value?.isColor ? value.toArray() : value])));
 
+function invalidateScene(minimumFrames=1) {
+  renderSchedule.invalidate(minimumFrames);
+  if(!activeSample){lastFrame=0;frameTimes=[];}
+}
+
 function fail(error) {
+  if(activeSample){activeSample.reject(error);activeSample=null;}
   qa.ready=false; qa.error=error?.message || String(error);
   $('error').textContent=`Unable to complete runtime inspection.\n${qa.error}\n\nServe the runtime package over local HTTP. Check that both GLBs, roles.json and camera-contract.json are beside the viewer folder.`;
   $('error').hidden=false; $('status').textContent='Inspection blocked';
@@ -63,6 +70,7 @@ function disposeModel(root, oldRecords=[]) {
 function applyVisibility() {
   records.forEach(record=>{ record.mesh.visible=record.baselineVisible && (!cabinOnly || record.isCabin); });
   $('cabin').checked=cabinOnly;
+  invalidateScene();
   updateChecks();
 }
 function setCabinOnly(value) { cabinOnly=Boolean(value); applyVisibility(); return cabinOnly; }
@@ -70,6 +78,7 @@ function setGlass(value) {
   glassEnabled=Boolean(value);
   records.filter(record=>record.isWindow).forEach(record=>{record.mesh.material=glassEnabled ? record.override : record.baseline;});
   $('glass').checked=glassEnabled;
+  invalidateScene();
   updateChecks();
   return glassEnabled;
 }
@@ -80,6 +89,7 @@ function setAppearance(paint, lights) {
   const bindingsBefore=appearanceBindings.map(binding=>({role:binding.role,signature:materialSignature(binding.material)}));
   applyVehicleAppearance(appearanceBindings,paint,lights);
   appearance={paint,lights};
+  invalidateScene();
   const protectedUnchanged=protectedRecords.every((record,index)=>materials(record.baseline).every((material,slot)=>materialSignature(material)===before[index][slot]));
   if(!protectedUnchanged) throw new Error('Paint or light control changed cabin/window source materials');
   records.forEach(record=>{record.signatures=materials(record.baseline).map(materialSignature);});
@@ -178,6 +188,7 @@ function applyCabinLook(yaw, pitch) {
   pan={yaw:pose.yaw,pitch:pose.pitch};
   camera.position.fromArray(pose.position);
   camera.lookAt(new THREE.Vector3().fromArray(pose.position).add(new THREE.Vector3().fromArray(pose.direction)));
+  invalidateScene();
   updateChecks();
 }
 function selectView(name) {
@@ -198,6 +209,7 @@ function selectView(name) {
   $('instructions').textContent=name==='exterior'
     ? 'Drag to orbit · Scroll to dolly · Orbit target is fixed'
     : 'Drag or arrow keys to look around · Eye position is fixed · R resets view';
+  invalidateScene();
   updateChecks();
   return getCameraState();
 }
@@ -209,7 +221,8 @@ function getCameraState() {
 
 function getCaptureState() {
   const {x,y,width,height}=renderer.domElement.getBoundingClientRect();
-  return {ready:qa.ready,loadGeneration,modelGeneration,model:qa.model,capturePaused,captureFrameSerial,continuousFrameSerial,
+  return {ready:qa.ready,loadGeneration,modelGeneration,model:qa.model,capturePaused,captureFrameSerial,continuousFrameSerial,...renderSchedule.state(),
+    renderMode:capturePaused?'capture':activeSample?activeSample.phase:'demand',
     renderedFrames:renderFrameCount,camera:getCameraState(),glass:glassEnabled,cabinOnly,appearance:{...appearance},
     canvas:{width:renderer.domElement.width,height:renderer.domElement.height,pixelRatio:renderer.getPixelRatio()},bounds:{x,y,width,height},
     rendererCounters:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles}};
@@ -226,34 +239,43 @@ function beginCapture() {
 async function renderCaptureFrame() {
   if(!capturePaused || activeSample) throw new Error('Capture frame requires paused continuous submissions and no timing sample');
   const started=performance.now();
+  const revision=renderSchedule.state().sceneRevision;
   renderer.info.reset();renderer.render(scene,camera);renderFrameCount++;
+  renderSchedule.markSubmitted(revision);
   const submitted=performance.now();
-  // Capture-only completion fence. Timer polling does not depend on presentation RAF.
+  const gpuCompletionWaitWallMs=await waitForGpuCompletion('capture');
+  captureFrameSerial++;
+  return {...getCaptureState(),renderSubmissionCpuMs:submitted-started,gpuCompletionWaitWallMs};
+}
+
+async function waitForGpuCompletion(label) {
+  const submitted=performance.now();
+  // Completion fence. Timer polling does not depend on presentation RAF.
   // This wall time includes queued work and polling; it is not a GPU timer measurement.
   const gl=renderer.getContext(),fence=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);
-  if(!fence)throw new Error('Unable to create GPU capture completion fence');
+  if(!fence)throw new Error(`Unable to create GPU ${label} completion fence`);
   gl.flush();
   try {
     await new Promise((resolve,reject)=>{
       const poll=()=>{
-        if(gl.isContextLost()){reject(new Error('WebGL context lost during capture'));return;}
+        if(gl.isContextLost()){reject(new Error(`WebGL context lost during ${label}`));return;}
         const status=gl.clientWaitSync(fence,0,0);
         if(status===gl.ALREADY_SIGNALED || status===gl.CONDITION_SATISFIED){resolve();return;}
-        if(status===gl.WAIT_FAILED){reject(new Error('GPU capture completion fence failed'));return;}
-        if(performance.now()-submitted>=90000){reject(new Error('GPU capture completion fence timed out after 90 seconds'));return;}
+        if(status===gl.WAIT_FAILED){reject(new Error(`GPU ${label} completion fence failed`));return;}
+        if(performance.now()-submitted>=90000){reject(new Error(`GPU ${label} completion fence timed out after 90 seconds`));return;}
         setTimeout(poll,25);
       };
       poll();
     });
   } finally {gl.deleteSync(fence);}
-  captureFrameSerial++;
-  return {...getCaptureState(),renderSubmissionCpuMs:submitted-started,gpuCompletionWaitWallMs:performance.now()-submitted};
+  return performance.now()-submitted;
 }
 
 function resumeAfterCapture() {
   capturePaused=false;
   // Do not count capture/readback wall time as an idle/panning frame interval.
   lastFrame=0;frameTimes=[];
+  invalidateScene();
   return getCaptureState();
 }
 function buildHelpers() {
@@ -331,7 +353,7 @@ async function loadModel(key) {
   if(contract.notes) qa.warnings.push(...(Array.isArray(contract.notes)?contract.notes:[contract.notes]));
   if(contract.limitations) qa.warnings.push(contract.limitations);
   $('status').textContent='Loaded · Runtime visual review pending'; $('progress').hidden=true; $('controls').disabled=false;
-  qa.ready=true; updateChecks();
+  qa.ready=true;invalidateScene(4);updateChecks();
   return {model:key,meshes:records.length,checks:qa.checks};
 }
 
@@ -340,7 +362,7 @@ function bindControls() {
   $('reset').addEventListener('click',()=>selectView(currentView));
   $('glass').addEventListener('change',event=>setGlass(event.target.checked));
   $('cabin').addEventListener('change',event=>setCabinOnly(event.target.checked));
-  $('helpers').addEventListener('change',event=>{helperGroup.visible=event.target.checked;});
+  $('helpers').addEventListener('change',event=>{helperGroup.visible=event.target.checked;invalidateScene();});
   $('model').addEventListener('change',event=>loadModel(event.target.value).catch(fail));
   let drag=null;
   renderer.domElement.addEventListener('pointerdown',event=>{
@@ -373,24 +395,57 @@ function bindControls() {
 function animate(now) {
   requestAnimationFrame(animate);
   if(!renderer || document.hidden || qa.error || capturePaused) return;
+  if(activeSample && activeSample.phase!=='sampling') return;
   if(currentView==='exterior') orbit.update();
+  if(!activeSample && !renderSchedule.needsRender())return;
   const previousFrame=lastFrame;
   if(lastFrame) {frameTimes.push(now-lastFrame);if(frameTimes.length>180)frameTimes.shift();}
   lastFrame=now;
   const cpuStart=performance.now();
+  const revision=renderSchedule.state().sceneRevision;
   renderer.info.reset(); renderer.render(scene,camera);
+  renderSchedule.markSubmitted(revision);
   const sampledFrame=createFrameSample(now,previousFrame,performance.now()-cpuStart,renderer.info.render.calls,renderer.info.render.triangles);
   if(activeSample && qa.ready) {
     activeSample.samples.push(sampledFrame);
-    if(activeSample.moving && currentView!=='exterior') applyCabinLook(Math.sin(activeSample.samples.length*.18)*30,Math.cos(activeSample.samples.length*.18)*10);
+    if(activeSample.moving && currentView!=='exterior' && activeSample.samples.length<activeSample.count) applyCabinLook(Math.sin(activeSample.samples.length*.18)*30,Math.cos(activeSample.samples.length*.18)*10);
     if(activeSample.samples.length>=activeSample.count) {
-      activeSample.resolve({...summarizeSamples(activeSample.samples),view:currentView,glass:glassEnabled,cabinOnly,model:qa.model,appearance:{...appearance},viewport:{width:renderer.domElement.width,height:renderer.domElement.height}});
-      activeSample=null;
+      const sample=activeSample;sample.phase='draining';sample.submissionEnd=performance.now();
+      waitForGpuCompletion('timing sample').then(drainMs=>finishSample(sample,{status:'completed',gpuDrainWallMs:drainMs}),error=>finishSample(sample,{status:'failed',error:error.message}));
     }
   }
   if(modelRoot && qa.ready && modelGeneration===loadGeneration) {renderFrameCount++;continuousFrameSerial++;}
   if(modelRoot && qa.ready && qa.firstFrameSubmittedMs===null) qa.firstFrameSubmittedMs=performance.now()-loadStart;
-  if(modelRoot && now-lastStatsUpdate>500) updateStats(now);
+  if(modelRoot && (now-lastStatsUpdate>500 || (!activeSample && !renderSchedule.needsRender()))) updateStats(now);
+}
+
+function timingSnapshot(sample=activeSample) {
+  if(!sample)return null;
+  return {...summarizeSamples(sample.samples),phase:sample.phase,view:currentView,glass:glassEnabled,cabinOnly,model:qa.model,appearance:{...appearance},
+    viewport:{width:renderer.domElement.width,height:renderer.domElement.height},priorGpuDrainWallMs:sample.priorGpuDrainWallMs??null,
+    submissionWallMs:sample.submissionEnd&&sample.started?sample.submissionEnd-sample.started:null,
+    measurementMode:`${sample.count} explicit continuous render submissions; prior work and completion drained separately. Demand-idle time and capture waits are excluded. No physical Android claim.`};
+}
+
+function finishSample(sample,gpuCompletion) {
+  if(activeSample!==sample)return;
+  const result={...timingSnapshot(sample),gpuCompletion,totalSampleWallMs:performance.now()-sample.started};
+  updateStats(performance.now());
+  activeSample=null;lastFrame=0;frameTimes=[];sample.resolve(result);
+}
+
+function sampleFrames(count=24,moving=false) {
+  return new Promise((resolve,reject)=>{
+    if(activeSample){reject(new Error('A frame sample is already running'));return;}
+    if(capturePaused){reject(new Error('Timing cannot run during a screenshot pause'));return;}
+    if(!Number.isInteger(count)||count<1||count>240){reject(new Error('Frame count must be 1 through 240'));return;}
+    if(!qa.ready||qa.error||modelGeneration!==loadGeneration){reject(new Error('Timing requires the current ready model'));return;}
+    const sample={count,moving,samples:[],resolve,reject,phase:'preparing'};activeSample=sample;
+    waitForGpuCompletion('timing preflight').then(priorGpuDrainWallMs=>{
+      if(activeSample!==sample)return;
+      sample.priorGpuDrainWallMs=priorGpuDrainWallMs;sample.started=performance.now();sample.phase='sampling';lastFrame=0;frameTimes=[];
+    },error=>{if(activeSample===sample)activeSample=null;reject(error);});
+  });
 }
 
 async function start() {
@@ -412,6 +467,7 @@ async function start() {
   camera=new THREE.PerspectiveCamera(45,1,0.03,100);
   orbit=new OrbitControls(camera,renderer.domElement);
   orbit.enableDamping=false; orbit.enablePan=false; orbit.minDistance=0.2; orbit.maxDistance=16;
+  orbit.addEventListener('change',()=>invalidateScene());
   orbit.maxPolarAngle=Math.PI; orbit.minPolarAngle=0;
   const pmrem=new THREE.PMREMGenerator(renderer), room=new RoomEnvironment();
   const env=pmrem.fromScene(room,0.04); scene.environment=env.texture;
@@ -420,7 +476,7 @@ async function start() {
   const key=new THREE.DirectionalLight(0xffffff,2.7);key.position.set(4,7,5);scene.add(key);
   const fill=new THREE.DirectionalLight(0xd5e7ff,1.3);fill.position.set(-4,3,-4);scene.add(fill);
   buildHelpers(); bindControls();
-  const resize=()=>{const width=$('viewport').clientWidth,height=$('viewport').clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();};
+  const resize=()=>{const width=$('viewport').clientWidth,height=$('viewport').clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();invalidateScene();};
   new ResizeObserver(resize).observe($('viewport'));resize();
   Object.assign(qa,{
     selectView,setGlass,setCabinOnly,loadModel,getCameraState,setAppearance,getCaptureState,beginCapture,renderCaptureFrame,resumeAfterCapture,
@@ -431,13 +487,8 @@ async function start() {
       camera.position.copy(orbit.target).add(offset);orbit.update();return getCameraState();
     },
     inspectEyeClearance:()=>inspectEyeClearance(modelRoot,contract.presets,camera.aspect),
-    sampleFrames:(count=24,moving=false)=>new Promise((resolve,reject)=>{
-      if(activeSample) {reject(new Error('A frame sample is already running'));return;}
-      if(capturePaused) {reject(new Error('Timing cannot run during a screenshot pause'));return;}
-      if(!Number.isInteger(count) || count<1 || count>240) {reject(new Error('Frame count must be 1 through 240'));return;}
-      activeSample={count,moving,samples:[],resolve};
-    }),
-    isRenderReady:minimumFrames=>hasCurrentRender(qa,minimumFrames),
+    sampleFrames,getTimingState:()=>timingSnapshot(),
+    isRenderReady:minimumFrames=>hasCurrentRender({ready:qa.ready,loadGeneration,stats:{modelGeneration,renderedFrames:renderFrameCount}},minimumFrames),
     look:(yaw,pitch)=>{applyCabinLook(yaw,pitch);return getCameraState();},
     getChecks:updateChecks,
     getWindowAssignments:()=>records.filter(record=>record.isWindow).map(record=>({name:record.name,role:record.role,
