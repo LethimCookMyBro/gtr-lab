@@ -12,7 +12,7 @@ import { inspectClosureRays } from './closure-rays.mjs';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const MODELS = Object.freeze({ runtime: ['../ciasny-r35.glb', '../r35-original-cabin-lod0.glb'], original: ['../r35-original-cabin-lod0.glb'] });
+const MODELS = Object.freeze({ runtime: ['../ciasny-r35.glb', '../r35-original-cabin-lod0.glb'], original: ['../r35-original-cabin-lod0.glb'], global: ['../ciasny-r35.glb', '../r35-contained-global-control.glb'] });
 const expectedScreenshots = ['exterior-baseline.png','exterior-windows.png','driver.png','passenger.png','rear.png','cabin-isolated.png','original-cabin.png'];
 const qa = window.__R35_QA__ = {
   ready: false, error: null, version: 1, threeRevision: THREE.REVISION,
@@ -122,7 +122,7 @@ function updateChecks() {
   if (!modelRoot) return;
   const windowRecords=records.filter(record=>record.isWindow);
   const confirmedNames=(roles.windowMeshes || []).filter(role=>role.confirmed).map(role=>role.name);
-  const expectedNames=qa.model==='runtime' ? confirmedNames : [];
+  const expectedNames=MODELS[qa.model]?.includes('../ciasny-r35.glb') ? confirmedNames : [];
   const exterior=contract.presets.exterior;
   const exteriorDistance=camera.position.distanceTo(orbit.target);
   qa.checks={
@@ -224,7 +224,7 @@ function getCaptureState() {
   const {x,y,width,height}=renderer.domElement.getBoundingClientRect();
   return {ready:qa.ready,loadGeneration,modelGeneration,model:qa.model,capturePaused,captureFrameSerial,continuousFrameSerial,...renderSchedule.state(),
     renderMode:capturePaused?'capture':activeSample?activeSample.phase:'demand',
-    renderedFrames:renderFrameCount,camera:getCameraState(),glass:glassEnabled,cabinOnly,appearance:{...appearance},
+    renderedFrames:renderFrameCount,camera:getCameraState(),viewLabel:$('view-label').textContent,selectedView:document.querySelector('[data-view][aria-pressed="true"]')?.dataset.view,glass:glassEnabled,cabinOnly,appearance:{...appearance},
     canvas:{width:renderer.domElement.width,height:renderer.domElement.height,pixelRatio:renderer.getPixelRatio()},bounds:{x,y,width,height},
     rendererCounters:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles}};
 }

@@ -10,14 +10,39 @@ const directory = dirname(fileURLToPath(import.meta.url)), root = resolve(direct
 const output = join(root, '.qa-cabin-runtime');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const gitHash = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
-const expectedCabin = 'c7d87646650c0cc6e825248052e02301c9fb8b03bb950f531d930238932a2ff1';
+const cabinModels = [
+  {
+    variant: 'spatial', file: 'r35-original-cabin-lod0.glb', bytes: 14187168,
+    sha256: '111457de471188208c934e982cbcb076b37417f302560cfbab4b8d88ed092be8',
+    gzip: { file: 'r35-original-cabin-lod0.glb.gz', bytes: 7532332, sha256: '02235501d454c343314d6fd9c0dc838b69989862d818d5a7d3ed4806938e515e' },
+    loadedPrimitives: 303,
+  },
+  {
+    variant: 'global', file: 'r35-contained-global-control.glb', bytes: 14216128,
+    sha256: 'f1e96e98d36d132d37b7419ea255205b1c9e0e2137ca6891311432a27b60fa9c',
+    gzip: { file: 'r35-contained-global-control.glb.gz', bytes: 7459198, sha256: '64fe1bb0fffa9cbbaacb90b972b2968f6716c5a6798ca95f5b46c1f0d50bacff' },
+    loadedPrimitives: 162,
+  },
+];
+// Frozen lineage from gtr-cabin-spatial-batching-20261007/FINAL_HANDOFF.json.
+const geometrySourceSha256 = 'bf38f51d0386e80b2fbbba9b7acda936aba0f5fbaf0ec183f5a96b646933af7f';
+const finishedSourceSha256 = 'f69ea1e852811e0c2ca022c43e689d2e864904d02c7199b999ab66c751335781';
 const expectedExterior = 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d';
 await mkdir(output, { recursive: true });
-const bytes = gunzipSync(await readFile(join(directory, 'r35-original-cabin-lod0.glb.gz')));
-assert.equal(bytes.length, 14216316); assert.equal(sha256(bytes), expectedCabin);
+const validatedModels = [];
+for (const model of cabinModels) {
+  const compressed = await readFile(join(directory, model.gzip.file));
+  assert.equal(compressed.length, model.gzip.bytes, `${model.variant} gzip byte length`);
+  assert.equal(sha256(compressed), model.gzip.sha256, `${model.variant} gzip SHA-256`);
+  const bytes = gunzipSync(compressed);
+  assert.equal(bytes.length, model.bytes, `${model.variant} GLB byte length`);
+  assert.equal(sha256(bytes), model.sha256, `${model.variant} GLB SHA-256`);
+  validatedModels.push({ model, bytes });
+}
 const exterior = await readFile(join(root, 'public/models/ciasny-r35.glb'));
+assert.equal(exterior.length, 8296356);
 assert.equal(sha256(exterior), expectedExterior);
-await writeFile(join(output, 'r35-original-cabin-lod0.glb'), bytes);
+for (const { model, bytes } of validatedModels) await writeFile(join(output, model.file), bytes);
 await writeFile(join(output, 'ciasny-r35.glb'), exterior);
 await cp(join(directory, 'viewer'), join(output, 'viewer'), { recursive: true });
 for (const name of ['roles.json', 'camera-contract.json', 'PROVENANCE.md']) await cp(join(directory, name), join(output, name));
@@ -52,9 +77,11 @@ const { default: asset } = await import(`data:text/javascript;base64,${Buffer.fr
 await writeFile(join(output, 'app-appearance.json'), JSON.stringify({ materialRoles: asset.materialRoles, disabledEmissive: asset.disabledEmissive, sourceGitBlob: modelsGitSha }, null, 2));
 const manifest = {
   sourceBaselineCommit: '276be604e8ff22afbeabecb42d6805187a7068cb', qaCommit: process.env.GITHUB_SHA || null, sourceFiles: sourceManifest,
+  geometrySourceSha256, finishedSourceSha256,
   assets: [
-    { file: 'r35-original-cabin-lod0.glb', bytes: bytes.length, sha256: expectedCabin, origin: 'Authored cabin with repaired closures, material retune, static batches and attributed Ciasny steering-badge geometry; separate inspection candidate' },
-    { file: 'ciasny-r35.glb', bytes: exterior.length, sha256: expectedExterior, origin: 'Existing accepted Ciasny exterior reused unchanged from repository modeldata' },
+    ...cabinModels.map(model => ({ ...model, triangles: 487228, materials: 46, images: 0, textures: 0,
+      origin: `Frozen contained ${model.variant} batches from the identical finished cabin source; separate inspection candidate` })),
+    { file: 'ciasny-r35.glb', bytes: exterior.length, sha256: expectedExterior, loadedPrimitives: 82, triangles: 566475, origin: 'Existing accepted Ciasny exterior reused unchanged from repository modeldata' },
   ], scope: 'Separate preview only. No production UI integration, deployment or physical Android performance claim.',
 };
 await writeFile(join(output, 'input-manifest.json'), JSON.stringify(manifest, null, 2));

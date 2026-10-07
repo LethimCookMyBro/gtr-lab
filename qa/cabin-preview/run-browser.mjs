@@ -57,7 +57,7 @@ try {
     report.dirtyChecks.push({method,before:change.before,after:change.after});
     return change.result;
   };
-  capture=async(label,scope='canvas')=>{
+  capture=async(label,scope='canvas',baselineLabel=label)=>{
     const stage=async(name,evidence)=>{report.captureStages.push({label,stage:name,at:new Date().toISOString(),...evidence});await save();};
     const deadline=Date.now()+120000;
     const remaining=()=>Math.max(1,deadline-Date.now());
@@ -84,14 +84,16 @@ try {
       const finalChecks=captureEvidenceChecks(before,after);
       for(const [key,passed] of Object.entries(finalChecks))assert.equal(passed,true,`${label}: ${key} after PNG`);
       const item={file:`${plan}-${label}.png`,sha256:createHash('sha256').update(image).digest('hex'),status:'captured-unreviewed',camera:after.camera,captureState:after,captureChecks:finalChecks,scope};
-      const reference=baseline.plans[plan].screenshots.find(value=>value.file===item.file);
+      assert.equal(after.viewLabel,after.camera.view==='exterior'?'EXTERIOR ORBIT':`${after.camera.view.toUpperCase()} / FIXED EYE`,`${label}: camera label matches current view`);
+      assert.equal(after.selectedView,after.camera.view,`${label}: selected camera matches rendered view`);
+      const reference=baseline.plans[plan].screenshots.find(value=>value.file===`${plan}-${baselineLabel}.png`);
       if(reference) {
         const pose=Object.fromEntries(Object.entries(after.camera).filter(([key])=>Object.hasOwn(reference.camera,key)));
         assert.deepEqual(pose,reference.camera,`${label}: same camera as original baseline`);
         for(const key of ['canvas','appearance','glass','cabinOnly'])assert.deepEqual(after[key],reference[key],`${label}: same ${key} as original baseline`);
-        report.baselineComparison.push({file:item.file,baselineSha256:reference.sha256,candidateSha256:item.sha256,sameCamera:true,
+        report.baselineComparison.push({file:item.file,baselineFile:reference.file,baselineSha256:reference.sha256,candidateSha256:item.sha256,sameCamera:true,
           baselineCounters:reference.rendererCounters,candidateCounters:after.rendererCounters});
-        if(label==='cabin-isolated')assert.ok(after.rendererCounters.calls<reference.rendererCounters.calls,'Batching reduces measured isolated-cabin draw submissions');
+        if(baselineLabel==='cabin-isolated')assert.ok(after.rendererCounters.calls<reference.rendererCounters.calls,'Batching reduces measured isolated-cabin draw submissions');
       } else assert.equal(label,'failure','Every planned capture has an original baseline reference');
       report.screenshots.push(item);await stage('page-screenshot-complete',{file:item.file});return item.sha256;
     } catch(error) {
@@ -111,11 +113,11 @@ try {
       }
     }
   };
-  const sample=async(label,moving=false)=>{
+  const sample=async(label,moving=false,comparison=null)=>{
     report.performancePhase={label,status:'running'};await save();
     try {
       const timing=await withCaptureDeadline(page.evaluate(moving=>window.__R35_QA__.sampleFrames(24,moving),moving),`${label}: continuous timing sample`,120000);
-      report.timings.push({label,...timing});await save();
+      report.timings.push({label,comparison,...timing});await save();
       assert.equal(timing.gpuCompletion.status,'completed',`${label}: all sampled GPU work completed`);
       report.performancePhase={label,status:'completed'};await save();
     } catch(error) {
@@ -217,17 +219,41 @@ try {
   await mutate('setGlass',[true]);await verify('repeated-window-toggles-and-reload');
   await page.evaluate(()=>Promise.all([window.__R35_QA__.loadModel('original'),window.__R35_QA__.loadModel('runtime')]));await waitReady();
   assert.equal(await page.evaluate(()=>window.__R35_QA__.model),'runtime');await verify('overlapping-load-latest-wins');
+  await mutate('selectView',['driver']);
   await capture('page','viewport');
+  report.spatialVisualChecksCompletedAt=new Date().toISOString();await save();
+  // A matched control is loaded only after the complete spatial visual set.
+  await mutate('setCabinOnly',[true]);await mutate('selectView',['exterior']);
+  await page.evaluate(()=>window.__R35_QA__.loadModel('global'));await waitReady();
+  await capture('global-control-cabin-isolated','canvas','cabin-isolated');await verify('global-control-isolated');
+  await mutate('setCabinOnly',[false]);await mutate('selectView',['driver']);
+  await capture('global-control-driver','canvas','driver');await verify('global-control-driver');
   report.allVisualChecksCompletedAt=new Date().toISOString();await save();
-  // Collect every view and recovery assertion before the expensive, explicit performance phase.
-  for(const config of [
-    {label:'cabin-isolated',view:'exterior',glass:true,cabinOnly:true},
-    ...['driver','passenger','rear'].flatMap(view=>[{label:`${view}-idle`,view,glass:true},{label:`${view}-panning`,view,glass:true,moving:true}]),
-    {label:'exterior-source-windows',view:'exterior',glass:false},
-    {label:'exterior-transparent-windows',view:'exterior',glass:true},
-  ]) {
-    await page.evaluate(config=>{const qa=window.__R35_QA__;qa.setCabinOnly(Boolean(config.cabinOnly));qa.setGlass(config.glass);qa.selectView(config.view);},config);
-    await sample(config.label,Boolean(config.moving));
+  report.comparisonProtocol={
+    sameSource:true,geometrySourceSha256:'bf38f51d0386e80b2fbbba9b7acda936aba0f5fbaf0ec183f5a96b646933af7f',
+    finishedSourceSha256:'f69ea1e852811e0c2ca022c43e689d2e864904d02c7199b999ab66c751335781',
+    spatialSha256:'111457de471188208c934e982cbcb076b37417f302560cfbab4b8d88ed092be8',
+    globalSha256:'f1e96e98d36d132d37b7419ea255205b1c9e0e2137ca6891311432a27b60fa9c',
+    sameBrowserRendererAndJob:true,samplesPerCase:24,repeatsPerCase:1,counterbalanced:false,
+    note:'Bounded same-source comparison, not a repeated benchmark or physical Android test. Spatial runs first; expensive global driver runs last. Existing 90s completion and 120s sample deadlines are unchanged.',
+    cases:[{view:'exterior',case:'cabin-isolated',cabinOnly:true},{view:'driver',case:'driver-idle',cabinOnly:false}],
+  };
+  for(const config of report.comparisonProtocol.cases) for(const variant of ['spatial','global']) {
+    const key=variant==='spatial'?'runtime':'global';
+    // Use identical inexpensive warmup pose before each fresh variant load.
+    await page.evaluate(()=>{const qa=window.__R35_QA__;qa.setCabinOnly(true);qa.setGlass(true);qa.selectView('exterior');});
+    await page.evaluate(key=>window.__R35_QA__.loadModel(key),key);await waitReady();
+    const setup=await page.evaluate(({config,key})=>{
+      const qa=window.__R35_QA__;qa.setCabinOnly(config.cabinOnly);qa.setGlass(true);qa.selectView(config.view);
+      return {state:qa.getCaptureState(),assets:qa.loadMeasurements,model:qa.model,renderer:qa.renderer};
+    },{config,key});
+    assert.equal(setup.model,key);assert.deepEqual(setup.renderer,report.renderer);
+    const expectedHash=variant==='spatial'?report.comparisonProtocol.spatialSha256:report.comparisonProtocol.globalSha256;
+    assert.equal(setup.assets.find(asset=>asset.file!=='ciasny-r35.glb').sha256,expectedHash);
+    const reference=baseline.plans[plan].screenshots.find(item=>item.file===`${plan}-${config.cabinOnly?'cabin-isolated':'driver'}.png`);
+    const pose=Object.fromEntries(Object.entries(setup.state.camera).filter(([field])=>Object.hasOwn(reference.camera,field)));
+    assert.deepEqual(pose,reference.camera);for(const field of ['canvas','appearance','glass','cabinOnly'])assert.deepEqual(setup.state[field],reference[field]);
+    await sample(`${variant}-${config.case}`,false,{variant,case:config.case,assetSha256:expectedHash,setup});
   }
   report.finalStats=await page.evaluate(()=>window.__R35_QA__.stats);
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.consoleErrors,[]);assert.deepEqual(report.requestFailures,[]);
