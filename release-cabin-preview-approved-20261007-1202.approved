@@ -1,0 +1,10 @@
+{
+  "release": "Premium cabin preview · work in progress",
+  "reviewedSource": "87e8132d4a6360b0ebc2c46ac5f794d3e9d57311",
+  "applicationIdentitySha256": "0820b36963eb70e3d2e488a02f17132d09427355971f8d6eca46c2a8c27bbafc",
+  "cabinGlbSha256": "3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd",
+  "strictIntegrationRun": 37637847170,
+  "qualityRun": 37637847000,
+  "teardownProofRun": 37633615119,
+  "scope": "Premium only. Original-authored R35 approximation; not official factory geometry. The other five models remain photographic."
+}
