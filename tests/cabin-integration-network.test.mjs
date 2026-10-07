@@ -51,3 +51,11 @@ describe('cabin integration network fault classification', () => {
     expect(isExpectedCabinRequestFailure({ ...aborted, phase: 'Delayed download cancel and stale response ignored' }, [{ ...missing, status: 200, injectedFault: undefined }])).toBe(false);
   });
 });
+
+it('allows only the correlated public throttled request during cancellation', () => {
+  const response = { ...missing, status: 200, injectedFault: 'throttled-stream' };
+  const failure = { ...aborted, phase: 'Delayed download cancel and stale response ignored' };
+  expect(isExpectedCabinRequestFailure(failure, [response])).toBe(true);
+  expect(isExpectedCabinRequestFailure({ ...failure, requestId: 4 }, [response])).toBe(false);
+  expect(isExpectedCabinRequestFailure(aborted, [response])).toBe(false);
+});

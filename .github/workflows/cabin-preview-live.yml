@@ -1,0 +1,63 @@
+name: Public cabin preview verification
+on:
+  push:
+    branches: [main]
+    # Source and QA-only staging pushes cannot start this release-only proof.
+    paths:
+      - 'release-cabin-preview-approved-20261007-1202.approved'
+permissions:
+  contents: read
+concurrency:
+  group: cabin-live-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  public-cabin:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[stage-cabin-integration]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Preserve exact release identity and require the approved marker
+        run: |
+          mkdir -p cabin-live-results
+          printf '%s\n' '${{ github.sha }}' > cabin-live-results/source-sha.txt
+          test -f release-cabin-preview-approved-20261007-1202.approved
+          test "$(git rev-parse HEAD)" = '${{ github.sha }}'
+      - run: npm ci
+      - name: Build the exact release for public byte comparison
+        run: npm run build
+        timeout-minutes: 8
+      - name: Wait for this exact Railway revision
+        run: node scripts/wait-railway.mjs
+        timeout-minutes: 6
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Verify public HTML, all JS/CSS and exact models before shared browser flows
+        # The driver calls verifyReleaseAssets before Chromium launch and never
+        # creates a local server in live mode. Both matrix jobs fail closed.
+        run: node scripts/capture-cabin-preview.mjs
+        timeout-minutes: 16
+        env:
+          R35_ALLOW_CABIN_INTEGRATION: '1'
+          R35_ALLOW_LIVE_CABIN: '1'
+          R35_CABIN_MODE: live
+          R35_CABIN_BASE_URL: https://gtr-lab-production.up.railway.app
+          R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-cabin-preview-${{ matrix.viewport }}
+          path: cabin-live-results/
+          retention-days: 14
+          if-no-files-found: warn

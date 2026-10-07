@@ -5,6 +5,10 @@ on:
     paths:
       - 'src/**'
       - 'scripts/capture-cabin-preview.mjs'
+      - 'scripts/cabin-integration-policy.mjs'
+      - 'tests/cabin-live-policy.test.mjs'
+      - 'tests/cabin-integration-network.test.mjs'
+      - '.github/workflows/cabin-preview-live.yml'
       - 'scripts/prepare-cabin.mjs'
       - 'scripts/prepare-models.mjs'
       - 'qa/cabin-preview/r35-sealed-spatial.glb.gz'
@@ -45,7 +49,11 @@ jobs:
       - name: Build the actual production app and exact assets
         run: npm run build
         timeout-minutes: 8
-      - run: node --check scripts/capture-cabin-preview.mjs
+      - name: Validate shared local/live driver and public-mode boundaries without sockets
+        run: |
+          node --check scripts/capture-cabin-preview.mjs
+          node --check scripts/cabin-integration-policy.mjs
+          npx vitest run tests/cabin-integration-network.test.mjs tests/cabin-live-policy.test.mjs tests/verify-release-assets.test.mjs --pool=threads --maxWorkers=2 --minWorkers=1
       - run: npx playwright install --with-deps chromium
         timeout-minutes: 5
       - name: Exercise cabin opt-in, recovery, seats and teardown

@@ -8,43 +8,39 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createAppServer } from '../server.mjs';
 
-export function isExpectedCabinRequestFailure(item, responses, cabinPath = '/models/r35-cabin-sealed-spatial.glb') {
-  if (item.path !== cabinPath || item.failure !== 'net::ERR_ABORTED' || !Number.isSafeInteger(item.requestId)) return false;
-  const response = responses.find(candidate => candidate.requestId === item.requestId && candidate.path === cabinPath);
-  // Cleanup can abort the unread body after the app has handled this exact 404.
-  // A successful retry or unrelated request in the same phase is not exempt.
-  return response?.status === 404 && response.injectedFault === 'missing'
-    || response?.status === 200 && response.injectedFault === 'held-stream' && /cancel|in-flight/i.test(item.phase);
-}
+import { verifyReleaseAssets } from './verify-release-assets.mjs';
+import {
+  cabinModels, networkFaultHeader, resolveCabinTarget, verifyPublicCabinModels,
+  createLiveCabinFaults, isExpectedCabinRequestFailure, isExpectedCabinBodyError, isExpectedCabinWarning, correlateCabinConsole404,
+} from './cabin-integration-policy.mjs';
+export { resolveCabinTarget, verifyPublicCabinModels, createLiveCabinFaults, isExpectedCabinRequestFailure, isExpectedCabinBodyError, isExpectedCabinWarning, correlateCabinConsole404 } from './cabin-integration-policy.mjs';
 
 export async function main() {
 // Local browser/server execution is deliberately disabled. This check must run
 // only in the reviewed, explicitly opted-in GitHub Actions job.
-assert.equal(process.env.GITHUB_ACTIONS, 'true', 'This browser proof is CI-only');
-assert.equal(process.env.R35_ALLOW_CABIN_INTEGRATION, '1', 'Explicit CI opt-in required');
+const target = resolveCabinTarget(process.env);
+const live = target.mode === 'live';
 const selectedViewport = process.env.R35_QA_VIEWPORT;
-assert.ok(['desktop', 'mobile'].includes(selectedViewport), 'Choose one matrix viewport');
 const viewport = selectedViewport === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
-const output = 'cabin-integration-results';
-const cabinPath = '/models/r35-cabin-sealed-spatial.glb';
-const exteriorPath = '/models/ciasny-r35.glb';
-const networkFaultHeader = 'x-r35-cabin-qa-fault';
-const cabinSha256 = '3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd';
-const exteriorSha256 = 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d';
-const cabinBytes = 14_599_520;
+const { output, baseUrl } = target;
+const [cabinModel, exteriorModel] = cabinModels;
+const cabinPath = cabinModel.path, exteriorPath = exteriorModel.path;
+const cabinSha256 = cabinModel.sha256, exteriorSha256 = exteriorModel.sha256;
+const cabinBytes = cabinModel.bytes;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const report = {
   commit: process.env.GITHUB_SHA, viewport: { name: selectedViewport, ...viewport }, result: 'running',
-  scope: 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; no application test hooks or alternate scene.',
+  mode: target.mode,
+  scope: live ? 'Actual public Railway app after exact HTML/JS/CSS and GLB preflight. A single request-scoped 404 is intercepted; partial downloads use real public bytes under CDP throttling. No local server or application test hooks.' : 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; no application test hooks or alternate scene.',
   renderer: 'Chromium ANGLE SwiftShader software WebGL; no physical-device FPS or performance claim',
   expectedAssets: { cabin: { path: cabinPath, sha256: cabinSha256, bytes: cabinBytes }, exterior: { path: exteriorPath, sha256: exteriorSha256 } },
-  checks: [], frames: [], requests: [], responses: [], requestFailures: [], console: [], pageErrors: [], runtimeAssetErrors: [], errors: [], networkFaults: [],
+  checks: [], frames: [], requests: [], responses: [], requestFailures: [], console: [], pageErrors: [], runtimeAssetErrors: [], errors: [], networkFaults: [], networkConsole: [], networkResponses: [],
   remaining: ['Physical-device performance, Safari/WebKit and Android device behavior are not measured', 'Late GPU/decoder callbacks are covered by production unit tests; browser faults specifically exercise aborted streaming responses and route teardown'],
 };
 await mkdir(output, { recursive: true });
 const save = () => writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
-let browser, server, page, observer, originalCanvas;
+let browser, server, page, observer, originalCanvas, liveFaults;
 let nextFault = null;
 let phase = 'setup';
 const pendingBodies = [];
@@ -72,6 +68,11 @@ try {
   assert.equal(cabin.length, cabinBytes, 'Built cabin byte length is exact');
   assert.equal(hash(cabin), cabinSha256, 'Built cabin is the reviewed asset');
   assert.equal(hash(await readFile(`dist${exteriorPath}`)), exteriorSha256, 'Built exterior remains unchanged');
+  if (live) {
+    report.releaseAssets = await verifyReleaseAssets();
+    report.publicModels = await verifyPublicCabinModels();
+    await save();
+  } else {
   // Delegate every ordinary request to the real production server. Only the
   // next explicitly armed cabin request gets a deterministic network fault.
   const production = createAppServer();
@@ -103,7 +104,7 @@ try {
   });
   server.requestTimeout = 90_000;
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(4178, '127.0.0.1', resolve); });
-  const baseUrl = 'http://127.0.0.1:4178';
+  }
   report.baseUrl = baseUrl;
   browser = await chromium.launch({ timeout: 30_000, args: [
     '--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader',
@@ -118,22 +119,40 @@ try {
   const cdp = await context.newCDPSession(page);
   await cdp.send('Network.enable');
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+  if (live) liveFaults = createLiveCabinFaults({ page, cdp, cabinUrl: baseUrl + cabinPath, requestId, faults: report.networkFaults });
+  cdp.on('Log.entryAdded', ({ entry }) => { if (entry.source === 'network' && entry.level === 'error') report.networkConsole.push(entry); });
+  cdp.on('Network.responseReceived', ({ requestId: id, response }) => {
+    if (response.url !== baseUrl + cabinPath) return;
+    report.networkResponses.push({ requestId: id, url: response.url, status: response.status, injectedFault: Object.entries(response.headers).find(([key]) => key.toLowerCase() === networkFaultHeader)?.[1] });
+  });
+  await cdp.send('Log.enable');
   page.on('pageerror', error => report.pageErrors.push({ phase, message: error.message }));
   page.on('console', message => {
     if (!['error', 'warning'].includes(message.type())) return;
     const location = message.location();
-    const intentional404 = message.type() === 'error' && location.url && new URL(location.url).pathname === cabinPath && /404/.test(message.text()) && report.networkFaults.some(item => item.kind === 'missing' && item.started);
-    report.console.push({ phase, type: message.type(), text: message.text(), location, intentional404: Boolean(intentional404) });
+    report.console.push({ phase, type: message.type(), text: message.text(), location });
   });
   page.on('request', request => {
     const path = new URL(request.url()).pathname;
+    liveFaults?.onRequest(request);
     if (path.endsWith('.glb')) report.requests.push({ requestId: requestId(request), phase, path, method: request.method() });
   });
-  page.on('requestfailed', request => report.requestFailures.push({ requestId: requestId(request), phase, path: new URL(request.url()).pathname, failure: request.failure()?.errorText }));
+  page.on('requestfailed', request => {
+    liveFaults?.onFailed(request);
+    report.requestFailures.push({ requestId: requestId(request), phase, path: new URL(request.url()).pathname, failure: request.failure()?.errorText });
+  });
   page.on('response', response => {
     const path = new URL(response.url()).pathname;
     if (![cabinPath, exteriorPath].includes(path)) return;
     const record = { requestId: requestId(response.request()), phase, path, status: response.status(), injectedFault: response.headers()[networkFaultHeader] };
+    if (live) record.injectedFault = report.networkFaults.find(fault => fault.requestId === record.requestId)?.kind;
+    else if (record.injectedFault) {
+      const fault = report.networkFaults.findLast(item => item.kind === record.injectedFault && item.started && item.requestId === undefined);
+      assert.ok(fault, 'Marked local response belongs to an armed fault');
+      fault.requestId = record.requestId;
+    }
+    record.url = response.url();
+    assert.equal(record.url, baseUrl + path, 'Runtime model remains on the exact verification origin');
     report.responses.push(record);
     if (response.ok()) pendingBodies.push(response.body().then(bytes => {
       record.bytes = bytes.length; record.sha256 = hash(bytes);
@@ -142,9 +161,7 @@ try {
     }).catch(error => {
       record.bodyError = String(error);
       // An interrupted response body is expected only in the two streaming faults.
-      if (!(path === cabinPath && /cancel|in-flight/i.test(record.phase) && /abort|closed|No resource|No data|Protocol error/i.test(String(error)))) {
-        report.runtimeAssetErrors.push({ phase: record.phase, path, message: String(error) });
-      }
+      report.runtimeAssetErrors.push(record);
     }));
   });
   const canvas = page.locator('.scene-stage canvas');
@@ -256,7 +273,8 @@ try {
     await expect(page.getByRole('button', { name: 'Rotate', exact: true })).toBeDisabled();
     await assertLayout();
   };
-  const armFault = kind => {
+  const armFault = async kind => {
+    if (live) return liveFaults.arm(kind, phase);
     assert.equal(nextFault, null, 'One network fault at a time');
     const fault = { kind, phase };
     report.networkFaults.push(fault); nextFault = fault; return fault;
@@ -265,12 +283,22 @@ try {
     await expect(controls.getByRole('button', { name: 'Cancel cabin loading', exact: true })).toBeVisible();
     const progress = controls.getByRole('progressbar', { name: 'Cabin download', exact: true });
     await expect(progress).toHaveAttribute('max', String(cabinBytes));
-    await expect(progress).toHaveAttribute('value', '1048576');
-    await expect(controls.getByRole('status')).toContainText('1.0 MB / 14.6 MB');
+    if (live) {
+      await expect.poll(async () => Number(await progress.getAttribute('value'))).toBeGreaterThan(0);
+      const bytes = Number(await progress.getAttribute('value'));
+      assert.ok(bytes > 0 && bytes < cabinBytes, 'Public cabin reports genuine partial downloaded bytes');
+      const fault = report.networkFaults.findLast(item => item.kind === 'throttled-stream');
+      assert.ok(Number.isSafeInteger(fault?.requestId), 'Partial progress belongs to the armed public request');
+      fault.observedPartialBytes = bytes;
+      await expect(controls.getByRole('status')).toContainText('/ 14.6 MB');
+    } else {
+      await expect(progress).toHaveAttribute('value', '1048576');
+      await expect(controls.getByRole('status')).toContainText('1.0 MB / 14.6 MB');
+    }
   };
   const releaseAborted = async fault => {
     await expect.poll(() => fault.closed === true, { timeout: 5_000 }).toBe(true);
-    fault.release();
+    await fault.release();
     assert.equal(fault.clientAlreadyClosed, true, 'Opt-out aborted the in-flight network stream');
     await frames();
   };
@@ -298,7 +326,7 @@ try {
   const exteriorBefore = await capture('exterior-before');
 
   await check('Delayed download cancel and stale response ignored', async () => {
-    const fault = armFault('held-stream');
+    const fault = await armFault('held-stream');
     await openCabin(); await assertPartialDownload();
     await capture('loading-partial-bytes');
     await sameExterior(1);
@@ -313,7 +341,7 @@ try {
   });
 
   await check('Missing cabin preserves exterior and Retry loads real asset', async () => {
-    armFault('missing'); await openCabin();
+    await armFault('missing'); await openCabin();
     await expect(controls.getByRole('alert')).toContainText('HTTP 404');
     await expect(controls.getByRole('button', { name: 'Retry cabin preview', exact: true })).toBeVisible();
     await sameExterior(1);
@@ -410,7 +438,7 @@ try {
     } finally { await watch.evaluate(value => value.stop()); await watch.dispose(); }
   };
   await check('In-flight cabin switch tears down and all other five stay photographic', async () => {
-    const fault = armFault('held-stream'); await openCabin(); await assertPartialDownload();
+    const fault = await armFault('held-stream'); await openCabin(); await assertPartialDownload();
     await switchModel('nismo'); await photoOnly();
     await watchNoResurrection(() => releaseAborted(fault));
     for (const id of ['nismo', 'tspec', 'gtr50', 'gt3', 'gt500']) {
@@ -456,13 +484,18 @@ try {
     await Promise.all(pendingBodies);
     assert.ok(report.responses.some(item => item.path === cabinPath && item.sha256 === cabinSha256), 'A successful real cabin response was inspected');
     assert.ok(report.responses.some(item => item.path === exteriorPath && item.sha256 === exteriorSha256), 'A successful real exterior response was inspected');
-    assert.equal(report.responses.filter(item => item.path === cabinPath && item.status === 404).length, 1, 'Exactly one intentional cabin 404');
-    assert.deepEqual(report.runtimeAssetErrors, [], 'Every completed runtime asset keeps its exact identity');
+    const missingResponses = report.responses.filter(item => item.status === 404);
+    assert.equal(missingResponses.length, 1, 'Exactly one intentional cabin 404');
+    assert.equal(missingResponses[0].injectedFault, 'missing', 'The only 404 is the exact armed request');
+    assert.equal(missingResponses[0].requestId, report.networkFaults.find(item => item.kind === 'missing')?.requestId, 'The 404 belongs to the missing fault');
+    correlateCabinConsole404(report.console, report.networkConsole, report.networkResponses, baseUrl + cabinPath);
+    assert.deepEqual(report.runtimeAssetErrors.filter(item => !isExpectedCabinBodyError(item, report.requestFailures)), [], 'Every completed runtime asset keeps its exact identity');
     assert.deepEqual(report.pageErrors, [], 'No uncaught application errors');
     assert.deepEqual(report.console.filter(item => item.type === 'error' && !item.intentional404), [], 'No unexpected console errors');
     const unexpectedFailures = report.requestFailures.filter(item => !isExpectedCabinRequestFailure(item, report.responses, cabinPath));
     assert.deepEqual(unexpectedFailures, [], 'Only correlated, deliberately injected cabin faults may abort');
-    assert.equal(nextFault, null, 'Every armed network fault was exercised');
+    assert.equal(live ? liveFaults.pending : nextFault, null, 'Every armed network fault was exercised');
+    assert.deepEqual(report.console.filter(item => item.type === 'warning' && !isExpectedCabinWarning(item)), [], 'No disposal fallback or unexpected warnings');
     return { finalRequestCounts: assetCounts() };
   });
   report.result = 'passed';
@@ -470,6 +503,7 @@ try {
   report.result = 'failed'; report.errors.push({ phase, message: String(error), stack: error.stack }); process.exitCode = 1;
   if (page && !page.isClosed()) await page.screenshot({ path: `${output}/${selectedViewport}-failure-page.png`, fullPage: true, timeout: 15_000 }).catch(() => {});
 } finally {
+  await liveFaults?.dispose().catch(error => { report.result = 'failed'; process.exitCode = 1; report.errors.push({ phase: 'restore-public-network', message: String(error) }); });
   for (const fault of pendingGates) fault.release();
   await observer?.evaluate(state => state.stop()).catch(() => {});
   await page?.context().tracing.stop({ path: `${output}/${selectedViewport}-trace.zip` }).catch(error => report.errors.push({ phase: 'trace', message: String(error) }));
