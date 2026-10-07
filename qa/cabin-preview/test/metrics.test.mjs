@@ -1,6 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { summarizeSamples, createFrameSample } from '../viewer/metrics.js';
+import { captureEvidenceChecks, withCaptureDeadline } from '../viewer/runtime-core.js';
+
+test('capture-stage deadline bounds an unresolved operation and preserves normal results',async()=>{
+  assert.equal(await withCaptureDeadline(Promise.resolve(42),'ready',100),42);
+  await assert.rejects(withCaptureDeadline(new Promise(()=>{}),'GPU completion',5),{name:'CaptureStageTimeout'});
+  const original=new Error('original failure');
+  await assert.rejects(withCaptureDeadline(Promise.reject(original),'render',100),error=>error===original);
+});
+
+test('capture evidence requires one fresh GPU-completed frame and no state change while paused',()=>{
+  const before={ready:true,loadGeneration:2,modelGeneration:2,model:'runtime',capturePaused:true,captureFrameSerial:3,continuousFrameSerial:7,camera:{position:[1,2,3]},glass:true,cabinOnly:false,appearance:{paint:'#fff',lights:false},canvas:{width:100,height:100},bounds:{x:0,y:0,width:100,height:100}};
+  const after={...before,captureFrameSerial:4};
+  assert.ok(Object.values(captureEvidenceChecks(before,after)).every(Boolean));
+  for(const changed of [{captureFrameSerial:3},{continuousFrameSerial:8},{capturePaused:false},{loadGeneration:3},{camera:{position:[2,2,3]}},{bounds:{x:1,y:0,width:100,height:100}},{appearance:{paint:'#000',lights:false}}]) {
+    assert.ok(Object.values(captureEvidenceChecks(before,{...after,...changed})).some(value=>!value));
+  }
+});
 
 test('records a slow current frame rather than reusing an older fast interval', () => {
   assert.equal(createFrameSample(3500, 100, 90, 101, 2000).intervalMs, 3400);

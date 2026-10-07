@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { captureEvidenceChecks, withCaptureDeadline } from './viewer/runtime-core.js';
 
 // Explicitly scoped to the separately reviewed GitHub Actions job.
 assert.equal(process.env.GITHUB_ACTIONS,'true','Use the separately authorized GitHub Actions runner only');
@@ -13,10 +14,10 @@ const viewport=plan==='desktop'?{width:1440,height:1000}:{width:390,height:844};
 const report={status:'running',qaCommit:process.env.GITHUB_SHA,startedAt:new Date().toISOString(),viewport,plan,
   scope:'Separate Three.js inspector using exact new cabin and unchanged accepted exterior. Production app integration is not under test.',
   limitations:['SwiftShader is a software renderer. A 390px emulated viewport is not a physical Android test.','Screenshots require visual review. Functional success is not visual acceptance.','Render CPU times exclude asynchronous GPU completion.'],
-  screenshots:[],checks:[],timings:[],appearanceChecks:[],errors:[],consoleErrors:[],requestFailures:[]};
+  screenshots:[],captureStages:[],checks:[],timings:[],appearanceChecks:[],errors:[],consoleErrors:[],requestFailures:[]};
 const save=()=>writeFile(`${output}/${plan}-report.json`,JSON.stringify(report,null,2));
 const server=spawn('python3',['-m','http.server','8765','--bind','127.0.0.1','--directory','.qa-cabin-runtime'],{stdio:'inherit'});
-const base='http://127.0.0.1:8765/viewer/';let browser,page;
+const base='http://127.0.0.1:8765/viewer/';let browser,page,capture;
 try {
   let available=false;
   for(let index=0;index<100;index++) {
@@ -29,6 +30,7 @@ try {
   const context=await browser.newContext({viewport,deviceScaleFactor:1,...(plan==='mobile'?{isMobile:true,hasTouch:true}:{})});
   page=await context.newPage();page.setDefaultTimeout(120000);
   page.on('pageerror',error=>report.errors.push(error.message));
+  page.on('crash',()=>report.errors.push('Browser page crashed'));
   page.on('console',message=>{if(message.type()==='error')report.consoleErrors.push(message.text());});
   page.on('requestfailed',request=>report.requestFailures.push({url:request.url(),error:request.failure()?.errorText}));
   const waitReady=async()=>{
@@ -41,11 +43,50 @@ try {
     for(const [key,passed] of Object.entries(checks))assert.equal(passed,true,`${label}: ${key}`);
     await save();
   };
-  const capture=async label=>{
-    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-    const image=await page.locator('#viewport canvas').screenshot({path:`${output}/${plan}-${label}.png`,timeout:120000});
-    const item={file:`${plan}-${label}.png`,sha256:createHash('sha256').update(image).digest('hex'),status:'captured-unreviewed',camera:await page.evaluate(()=>window.__R35_QA__.getCameraState())};
-    report.screenshots.push(item);await save();return item.sha256;
+  capture=async(label,scope='canvas')=>{
+    const stage=async(name,evidence)=>{report.captureStages.push({label,stage:name,at:new Date().toISOString(),...evidence});await save();};
+    const deadline=Date.now()+120000;
+    const remaining=()=>Math.max(1,deadline-Date.now());
+    const bounded=(name,operation)=>withCaptureDeadline(operation,`${label}: ${name}`,remaining());
+    let before,pauseAttempted=false,primaryError=null;
+    await stage('begin',{});
+    try {
+      pauseAttempted=true;
+      before=await bounded('pause',page.evaluate(()=>window.__R35_QA__.beginCapture()));
+      await stage('continuous-render-paused',{state:before});
+      await stage('fresh-frame-and-gpu-completion-start',{});
+      const rendered=await bounded('render and GPU completion',page.evaluate(()=>window.__R35_QA__.renderCaptureFrame()));
+      await stage('fresh-frame-gpu-complete',{state:rendered});
+      await bounded('presentation callbacks',page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))));
+      const settled=await bounded('settled state',page.evaluate(()=>window.__R35_QA__.getCaptureState()));
+      const checks=captureEvidenceChecks(before,settled);
+      for(const [key,passed] of Object.entries(checks))assert.equal(passed,true,`${label}: ${key}`);
+      const clip=settled.bounds;
+      assert.ok(clip.x>=0 && clip.y>=0 && clip.width>0 && clip.height>0 && clip.x+clip.width<=viewport.width+0.01 && clip.y+clip.height<=viewport.height+0.01,'Capture bounds lie inside fixed viewport');
+      await stage('page-screenshot-start',{scope,bounds:clip});
+      // Direct page clipping does not invoke locator scrolling or its RAF stability waiter.
+      const image=await page.screenshot({path:`${output}/${plan}-${label}.png`,...(scope==='canvas'?{clip}:{}),scale:'css',timeout:remaining()});
+      const after=await bounded('post-PNG state',page.evaluate(()=>window.__R35_QA__.getCaptureState()));
+      const finalChecks=captureEvidenceChecks(before,after);
+      for(const [key,passed] of Object.entries(finalChecks))assert.equal(passed,true,`${label}: ${key} after PNG`);
+      const item={file:`${plan}-${label}.png`,sha256:createHash('sha256').update(image).digest('hex'),status:'captured-unreviewed',camera:after.camera,captureState:after,captureChecks:finalChecks,scope};
+      report.screenshots.push(item);await stage('page-screenshot-complete',{file:item.file});return item.sha256;
+    } catch(error) {
+      primaryError=error;
+      if(error.name==='CaptureStageTimeout' || error.name==='TimeoutError')report.captureOperationUncertain=true;
+      await stage('failed',{error:error.stack});throw error;
+    } finally {
+      if(pauseAttempted) {
+        try {
+          const resumed=await withCaptureDeadline(page.evaluate(()=>window.__R35_QA__.resumeAfterCapture()),`${label}: resume`,30000);
+          await page.waitForFunction(previous=>{const state=window.__R35_QA__.getCaptureState();return !state.capturePaused && state.modelGeneration===previous.modelGeneration && state.continuousFrameSerial>previous.continuousFrameSerial;},resumed,{timeout:30000});
+          await stage('continuous-render-resumed',{state:await withCaptureDeadline(page.evaluate(()=>window.__R35_QA__.getCaptureState()),`${label}: resumed state`,30000)});
+        } catch(error) {
+          report.captureCleanupFailed=true;await stage('resume-failed',{error:error.stack});
+          if(!primaryError)throw error;
+        }
+      }
+    }
   };
   const sample=async(label,moving=false)=>{
     const timing=await page.evaluate(moving=>window.__R35_QA__.sampleFrames(24,moving),moving);
@@ -56,6 +97,8 @@ try {
   report.inputs=await page.evaluate(()=>window.__R35_QA__.inputManifest);
   report.initialLoad=await page.evaluate(()=>({assets:window.__R35_QA__.loadMeasurements,firstFrameSubmittedMs:window.__R35_QA__.firstFrameSubmittedMs,exteriorDerivedAppTransform:window.__R35_QA__.exteriorDerivedAppTransform}));
   await verify('initial-runtime');
+  // Preserve first actual pixels before longer input/measurement sequences.
+  await capture('initial-runtime');
   const originalExteriorCamera=await page.evaluate(()=>window.__R35_QA__.getCameraState());
   const exteriorBounds=await page.locator('#viewport canvas').boundingBox();
   await page.mouse.move(exteriorBounds.x+exteriorBounds.width*.35,exteriorBounds.y+exteriorBounds.height*.5);
@@ -132,13 +175,18 @@ try {
   await page.evaluate(()=>Promise.all([window.__R35_QA__.loadModel('original'),window.__R35_QA__.loadModel('runtime')]));await waitReady();
   assert.equal(await page.evaluate(()=>window.__R35_QA__.model),'runtime');await verify('overlapping-load-latest-wins');
   report.finalStats=await page.evaluate(()=>window.__R35_QA__.stats);
-  await page.screenshot({path:`${output}/${plan}-page.png`,fullPage:true});
+  await capture('page','viewport');
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.consoleErrors,[]);assert.deepEqual(report.requestFailures,[]);
   report.status='functional-checks-passed-visual-review-pending';
 } catch(error) {
   report.status='failed';report.failure=error.stack;process.exitCode=1;
-  await page?.screenshot({path:`${output}/${plan}-failure.png`,fullPage:true}).catch(()=>{});
+  if(report.captureOperationUncertain || error.name==='CaptureStageTimeout' || error.name==='TimeoutError')report.failureScreenshotError='Skipped because a timed-out browser operation may still be pending';
+  else if(capture && !report.captureCleanupFailed)await capture('failure','viewport').catch(error=>{report.failureScreenshotError=error.stack;});
+  else if(report.captureCleanupFailed)report.failureScreenshotError='Skipped because renderer resume could not be verified';
+  else if(page)await page.screenshot({path:`${output}/${plan}-failure.png`,timeout:30000}).catch(error=>{report.failureScreenshotError=error.stack;});
 } finally {
-  report.finishedAt=new Date().toISOString();await save();await browser?.close();server.kill('SIGTERM');
+  report.finishedAt=new Date().toISOString();await save();
+  if(browser)await withCaptureDeadline(browser.close(),'browser cleanup',30000).catch(error=>{report.browserCleanupError=error.stack;});
+  server.kill('SIGTERM');await save();
 }
 console.log(JSON.stringify({status:report.status,report:`${output}/${plan}-report.json`}));

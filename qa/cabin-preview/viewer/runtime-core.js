@@ -77,3 +77,26 @@ export function hasCurrentRender(state, minimumFrames = 1) {
   return state.ready === true && state.stats?.modelGeneration === state.loadGeneration &&
     state.stats?.renderedFrames >= minimumFrames;
 }
+
+export function captureEvidenceChecks(before, after) {
+  const same = key => JSON.stringify(before[key]) === JSON.stringify(after[key]);
+  return {
+    currentGeneration: before.ready === true && after.ready === true && before.loadGeneration === before.modelGeneration && after.loadGeneration === after.modelGeneration && same('loadGeneration'),
+    pausedDuringCapture: before.capturePaused === true && after.capturePaused === true,
+    freshCompletedCaptureFrame: after.captureFrameSerial === before.captureFrameSerial + 1,
+    continuousFramesStopped: same('continuousFrameSerial'),
+    cameraUnchanged: same('camera'),
+    modelUnchanged: same('model'),
+    appearanceUnchanged: same('appearance') && same('glass') && same('cabinOnly'),
+    canvasUnchanged: same('canvas') && same('bounds'),
+  };
+}
+
+export async function withCaptureDeadline(operation, label, timeoutMs) {
+  let timer;
+  try {
+    return await Promise.race([operation,new Promise((_,reject)=>{
+      timer=setTimeout(()=>{const error=new Error(`${label} exceeded its capture deadline (${timeoutMs}ms)`);error.name='CaptureStageTimeout';reject(error);},timeoutMs);
+    })]);
+  } finally { clearTimeout(timer); }
+}

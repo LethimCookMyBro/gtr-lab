@@ -21,6 +21,7 @@ const qa = window.__R35_QA__ = {
 };
 let renderer, scene, camera, orbit, modelRoot, roles, contract, appearanceContract, inputManifest, loadGeneration=0;
 let appearanceBindings=[], appearance={paint:'#b8bec5',lights:false}, activeSample=null;
+let capturePaused=false, captureFrameSerial=0, continuousFrameSerial=0;
 let records=[], helperGroup, currentView='exterior', pan={yaw:0,pitch:0};
 let glassEnabled=params.get('glass')!=='0', cabinOnly=params.get('cabin')==='1';
 let lastFrame=0, frameTimes=[], lastStatsUpdate=0;
@@ -205,6 +206,56 @@ function getCameraState() {
     fov:camera.fov,near:camera.near,pan:{...pan},orbitEnabled:orbit.enabled,
     orbitTarget:orbit.target.toArray(),orbitDistance:camera.position.distanceTo(orbit.target),orbitMinDistance:orbit.minDistance,orbitMaxDistance:orbit.maxDistance};
 }
+
+function getCaptureState() {
+  const {x,y,width,height}=renderer.domElement.getBoundingClientRect();
+  return {ready:qa.ready,loadGeneration,modelGeneration,model:qa.model,capturePaused,captureFrameSerial,continuousFrameSerial,
+    renderedFrames:renderFrameCount,camera:getCameraState(),glass:glassEnabled,cabinOnly,appearance:{...appearance},
+    canvas:{width:renderer.domElement.width,height:renderer.domElement.height,pixelRatio:renderer.getPixelRatio()},bounds:{x,y,width,height},
+    rendererCounters:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles}};
+}
+
+function beginCapture() {
+  if(activeSample) throw new Error('Cannot pause rendering during a timing sample');
+  if(capturePaused) throw new Error('A capture is already active');
+  if(!qa.ready || qa.error || modelGeneration!==loadGeneration || renderFrameCount<1) throw new Error('Capture requires a current rendered model');
+  capturePaused=true;
+  return getCaptureState();
+}
+
+async function renderCaptureFrame() {
+  if(!capturePaused || activeSample) throw new Error('Capture frame requires paused continuous submissions and no timing sample');
+  const started=performance.now();
+  renderer.info.reset();renderer.render(scene,camera);renderFrameCount++;
+  const submitted=performance.now();
+  // Capture-only completion fence. Timer polling does not depend on presentation RAF.
+  // This wall time includes queued work and polling; it is not a GPU timer measurement.
+  const gl=renderer.getContext(),fence=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);
+  if(!fence)throw new Error('Unable to create GPU capture completion fence');
+  gl.flush();
+  try {
+    await new Promise((resolve,reject)=>{
+      const poll=()=>{
+        if(gl.isContextLost()){reject(new Error('WebGL context lost during capture'));return;}
+        const status=gl.clientWaitSync(fence,0,0);
+        if(status===gl.ALREADY_SIGNALED || status===gl.CONDITION_SATISFIED){resolve();return;}
+        if(status===gl.WAIT_FAILED){reject(new Error('GPU capture completion fence failed'));return;}
+        if(performance.now()-submitted>=90000){reject(new Error('GPU capture completion fence timed out after 90 seconds'));return;}
+        setTimeout(poll,25);
+      };
+      poll();
+    });
+  } finally {gl.deleteSync(fence);}
+  captureFrameSerial++;
+  return {...getCaptureState(),renderSubmissionCpuMs:submitted-started,gpuCompletionWaitWallMs:performance.now()-submitted};
+}
+
+function resumeAfterCapture() {
+  capturePaused=false;
+  // Do not count capture/readback wall time as an idle/panning frame interval.
+  lastFrame=0;frameTimes=[];
+  return getCaptureState();
+}
 function buildHelpers() {
   helperGroup=new THREE.Group(); helperGroup.name='QA_camera_eye_helpers'; helperGroup.visible=false;
   const colors={driver:0xffa06a,passenger:0x71cce7,rear:0xc7a1ff};
@@ -253,6 +304,7 @@ async function loadModel(key) {
   qa.loadMeasurements=assetResults.map(result=>result.measurement);
   qa.exteriorDerivedAppTransform=modelRoot.userData.exteriorDerivedAppTransform || null;
   renderFrameCount=0; frameTimes=[]; lastFrame=0;
+  captureFrameSerial=0;continuousFrameSerial=0;capturePaused=false;
   qa.stats={renderedFrames:0,modelGeneration};
   modelRoot.traverse(object=>{
     if(!object.isMesh) return;
@@ -320,7 +372,7 @@ function bindControls() {
 
 function animate(now) {
   requestAnimationFrame(animate);
-  if(!renderer || document.hidden || qa.error) return;
+  if(!renderer || document.hidden || qa.error || capturePaused) return;
   if(currentView==='exterior') orbit.update();
   const previousFrame=lastFrame;
   if(lastFrame) {frameTimes.push(now-lastFrame);if(frameTimes.length>180)frameTimes.shift();}
@@ -336,7 +388,7 @@ function animate(now) {
       activeSample=null;
     }
   }
-  if(modelRoot && qa.ready && modelGeneration===loadGeneration) renderFrameCount++;
+  if(modelRoot && qa.ready && modelGeneration===loadGeneration) {renderFrameCount++;continuousFrameSerial++;}
   if(modelRoot && qa.ready && qa.firstFrameSubmittedMs===null) qa.firstFrameSubmittedMs=performance.now()-loadStart;
   if(modelRoot && now-lastStatsUpdate>500) updateStats(now);
 }
@@ -371,7 +423,7 @@ async function start() {
   const resize=()=>{const width=$('viewport').clientWidth,height=$('viewport').clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();};
   new ResizeObserver(resize).observe($('viewport'));resize();
   Object.assign(qa,{
-    selectView,setGlass,setCabinOnly,loadModel,getCameraState,setAppearance,
+    selectView,setGlass,setCabinOnly,loadModel,getCameraState,setAppearance,getCaptureState,beginCapture,renderCaptureFrame,resumeAfterCapture,
     getAppearance:()=>({...appearance}),
     selectExteriorRear:()=>{
       selectView('exterior');
@@ -381,6 +433,7 @@ async function start() {
     inspectEyeClearance:()=>inspectEyeClearance(modelRoot,contract.presets,camera.aspect),
     sampleFrames:(count=24,moving=false)=>new Promise((resolve,reject)=>{
       if(activeSample) {reject(new Error('A frame sample is already running'));return;}
+      if(capturePaused) {reject(new Error('Timing cannot run during a screenshot pause'));return;}
       if(!Number.isInteger(count) || count<1 || count>240) {reject(new Error('Frame count must be 1 through 240'));return;}
       activeSample={count,moving,samples:[],resolve};
     }),
