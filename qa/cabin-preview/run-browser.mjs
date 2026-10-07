@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { captureEvidenceChecks, withCaptureDeadline } from './viewer/runtime-core.js';
 
@@ -11,7 +11,11 @@ assert.equal(process.env.R35_ALLOW_BROWSER_QA,'1','Explicit CI browser QA gate r
 const output='cabin-webgl-results';await mkdir(output,{recursive:true});
 const plan=process.env.R35_QA_VIEWPORT || 'desktop';assert.ok(['desktop','mobile'].includes(plan));
 const viewport=plan==='desktop'?{width:1440,height:1000}:{width:390,height:844};
-const report={status:'running',qaCommit:process.env.GITHUB_SHA,startedAt:new Date().toISOString(),viewport,plan,
+const baseline=JSON.parse(await readFile(new URL('./reference-baseline.json',import.meta.url),'utf8'));
+assert.equal(baseline.commit,'93d4fda63915c64ff1b3a8d852128fba667873f0');
+assert.equal(createHash('sha256').update(await readFile(new URL('./camera-contract.json',import.meta.url))).digest('hex'),baseline.cameraContractSha256,'Camera contract remains identical to the measured baseline');
+assert.deepEqual(viewport,baseline.plans[plan].viewport);
+const report={baselineCommit:baseline.commit,baselineComparison:[],status:'running',qaCommit:process.env.GITHUB_SHA,startedAt:new Date().toISOString(),viewport,plan,
   scope:'Separate Three.js inspector using exact new cabin and unchanged accepted exterior. Production app integration is not under test.',
   limitations:['SwiftShader is a software renderer. A 390px emulated viewport is not a physical Android test.','Screenshots require visual review. Functional success is not visual acceptance.','Render CPU times exclude asynchronous GPU completion.'],
   screenshots:[],captureStages:[],dirtyChecks:[],checks:[],timings:[],appearanceChecks:[],errors:[],consoleErrors:[],requestFailures:[]};
@@ -80,6 +84,15 @@ try {
       const finalChecks=captureEvidenceChecks(before,after);
       for(const [key,passed] of Object.entries(finalChecks))assert.equal(passed,true,`${label}: ${key} after PNG`);
       const item={file:`${plan}-${label}.png`,sha256:createHash('sha256').update(image).digest('hex'),status:'captured-unreviewed',camera:after.camera,captureState:after,captureChecks:finalChecks,scope};
+      const reference=baseline.plans[plan].screenshots.find(value=>value.file===item.file);
+      if(reference) {
+        const pose=Object.fromEntries(Object.entries(after.camera).filter(([key])=>Object.hasOwn(reference.camera,key)));
+        assert.deepEqual(pose,reference.camera,`${label}: same camera as original baseline`);
+        for(const key of ['canvas','appearance','glass','cabinOnly'])assert.deepEqual(after[key],reference[key],`${label}: same ${key} as original baseline`);
+        report.baselineComparison.push({file:item.file,baselineSha256:reference.sha256,candidateSha256:item.sha256,sameCamera:true,
+          baselineCounters:reference.rendererCounters,candidateCounters:after.rendererCounters});
+        if(label==='cabin-isolated')assert.ok(after.rendererCounters.calls<reference.rendererCounters.calls,'Batching reduces measured isolated-cabin draw submissions');
+      } else assert.equal(label,'failure','Every planned capture has an original baseline reference');
       report.screenshots.push(item);await stage('page-screenshot-complete',{file:item.file});return item.sha256;
     } catch(error) {
       primaryError=error;
@@ -136,6 +149,14 @@ try {
   report.windowAssignments=await page.evaluate(()=>window.__R35_QA__.getWindowAssignments());assert.equal(report.windowAssignments.length,4);
   report.eyeClearance=await page.evaluate(()=>window.__R35_QA__.inspectEyeClearance());
   for(const eye of report.eyeClearance)assert.equal(eye.nearPlaneClearForAllPanDirections,true,`${eye.camera}: near plane`);
+  const closureFixtures=JSON.parse(await readFile(new URL('./closure-fixtures.json',import.meta.url),'utf8'));
+  report.closureRays=await page.evaluate(fixtures=>window.__R35_QA__.inspectClosureRays(fixtures),closureFixtures);
+  for(const [mode,result] of Object.entries(report.closureRays)) {
+    assert.equal(result.total,14,`${mode}: exact known leak fixtures`);assert.equal(result.closed,14,`${mode}: known leaks closed`);
+    assert.equal(result.apertureSamples,826,`${mode}: exact original glazing fixture count`);assert.equal(result.aperturePreserved,826,`${mode}: genuine windows remain open`);
+    assert.equal(result.passed,true,`${mode}: closure/glazing rays`);
+  }
+  await save();
   await mutate('setGlass',[false]);
   const opaqueHash=await capture('exterior-source-windows');
   await mutate('setGlass',[true]);
@@ -200,10 +221,10 @@ try {
   report.allVisualChecksCompletedAt=new Date().toISOString();await save();
   // Collect every view and recovery assertion before the expensive, explicit performance phase.
   for(const config of [
+    {label:'cabin-isolated',view:'exterior',glass:true,cabinOnly:true},
+    ...['driver','passenger','rear'].flatMap(view=>[{label:`${view}-idle`,view,glass:true},{label:`${view}-panning`,view,glass:true,moving:true}]),
     {label:'exterior-source-windows',view:'exterior',glass:false},
     {label:'exterior-transparent-windows',view:'exterior',glass:true},
-    ...['driver','passenger','rear'].flatMap(view=>[{label:`${view}-idle`,view,glass:true},{label:`${view}-panning`,view,glass:true,moving:true}]),
-    {label:'cabin-isolated',view:'exterior',glass:true,cabinOnly:true},
   ]) {
     await page.evaluate(config=>{const qa=window.__R35_QA__;qa.setCabinOnly(Boolean(config.cabinOnly));qa.setGlass(config.glass);qa.selectView(config.view);},config);
     await sample(config.label,Boolean(config.moving));

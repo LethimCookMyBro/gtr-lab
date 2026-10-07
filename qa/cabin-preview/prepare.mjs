@@ -10,11 +10,11 @@ const directory = dirname(fileURLToPath(import.meta.url)), root = resolve(direct
 const output = join(root, '.qa-cabin-runtime');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const gitHash = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
-const expectedCabin = 'c1ae509893528c3b91e77417382fe7edbce10bc02e65243bf1149b80e884c5eb';
+const expectedCabin = 'c7d87646650c0cc6e825248052e02301c9fb8b03bb950f531d930238932a2ff1';
 const expectedExterior = 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d';
 await mkdir(output, { recursive: true });
 const bytes = gunzipSync(await readFile(join(directory, 'r35-original-cabin-lod0.glb.gz')));
-assert.equal(bytes.length, 13309484); assert.equal(sha256(bytes), expectedCabin);
+assert.equal(bytes.length, 14216316); assert.equal(sha256(bytes), expectedCabin);
 const exterior = await readFile(join(root, 'public/models/ciasny-r35.glb'));
 assert.equal(sha256(exterior), expectedExterior);
 await writeFile(join(output, 'r35-original-cabin-lod0.glb'), bytes);
@@ -53,7 +53,7 @@ await writeFile(join(output, 'app-appearance.json'), JSON.stringify({ materialRo
 const manifest = {
   sourceBaselineCommit: '276be604e8ff22afbeabecb42d6805187a7068cb', qaCommit: process.env.GITHUB_SHA || null, sourceFiles: sourceManifest,
   assets: [
-    { file: 'r35-original-cabin-lod0.glb', bytes: bytes.length, sha256: expectedCabin, origin: 'Original authored cabin; separate inspection candidate' },
+    { file: 'r35-original-cabin-lod0.glb', bytes: bytes.length, sha256: expectedCabin, origin: 'Authored cabin with repaired closures, material retune, static batches and attributed Ciasny steering-badge geometry; separate inspection candidate' },
     { file: 'ciasny-r35.glb', bytes: exterior.length, sha256: expectedExterior, origin: 'Existing accepted Ciasny exterior reused unchanged from repository modeldata' },
   ], scope: 'Separate preview only. No production UI integration, deployment or physical Android performance claim.',
 };

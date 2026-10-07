@@ -40,9 +40,11 @@
     "C1",
     "DASH",
     "CTRL",
-    "REAR_"
+    "REAR_",
+    "C2"
   ],
   "cabinMeshNames": [],
   "sourceExteriorTag": "immutable_source_name",
-  "lampPolicy": "Never override by material-name or Glass substring. Headlamp, LED, front light and tail-lamp meshes keep source materials."
+  "lampPolicy": "Never override by material-name or Glass substring. Headlamp, LED, front light and tail-lamp meshes keep source materials.",
+  "batchingPolicy": "C10_BATCH nodes are rendered static cabin batches; C20-C25 are repaired cabin closures. Detach semantic components before independent mutation. Four exterior window roles stay unchanged."
 }

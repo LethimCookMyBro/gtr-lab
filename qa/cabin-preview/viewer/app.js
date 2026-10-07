@@ -8,6 +8,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { prepareVehicle, applyVehicleAppearance } from './app-source/materialAdapter.js';
 import { summarizeSamples, createFrameSample } from './metrics.js';
 import { inspectEyeClearance } from './camera-clearance.js';
+import { inspectClosureRays } from './closure-rays.mjs';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -487,6 +488,7 @@ async function start() {
       camera.position.copy(orbit.target).add(offset);orbit.update();return getCameraState();
     },
     inspectEyeClearance:()=>inspectEyeClearance(modelRoot,contract.presets,camera.aspect),
+    inspectClosureRays:fixtures=>({geometry:inspectClosureRays(modelRoot,fixtures,{roles}),runtimeSides:inspectClosureRays(modelRoot,fixtures,{roles,sidePolicy:'runtime-with-double-sided-windows'})}),
     sampleFrames,getTimingState:()=>timingSnapshot(),
     isRenderReady:minimumFrames=>hasCurrentRender({ready:qa.ready,loadGeneration,stats:{modelGeneration,renderedFrames:renderFrameCount}},minimumFrames),
     look:(yaw,pitch)=>{applyCabinLook(yaw,pitch);return getCameraState();},

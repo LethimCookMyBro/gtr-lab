@@ -8,6 +8,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import { inspectEyeClearance } from '../viewer/camera-clearance.js';
 import { classifyMesh, WINDOW_ALLOWLIST } from '../viewer/runtime-core.js';
 import { createWindowMaterial } from '../viewer/window-materials.js';
+import { inspectClosureRays } from '../viewer/closure-rays.mjs';
 
 const root=new URL('../../../',import.meta.url);
 function geometryOnlyGlb(input) {
@@ -38,9 +39,9 @@ test('accepted compressed exterior and exact cabin share clear fixed eye points 
   const presets=JSON.parse(await readFile(new URL('../camera-contract.json',import.meta.url),'utf8')).presets;
   const names=[],counts={cabin:0,exterior:0};
   combined.traverse(mesh=>{if(mesh.isMesh){const role=classifyMesh(mesh,roles);counts[role.isCabin?'cabin':'exterior']++;if(role.isWindow)names.push(role.name);}});
-  assert.equal(counts.cabin,515);assert.equal(counts.exterior,82);assert.deepEqual(names.sort(),[...WINDOW_ALLOWLIST].sort());
+  assert.equal(counts.cabin,162);assert.equal(counts.exterior,82);assert.deepEqual(names.sort(),[...WINDOW_ALLOWLIST].sort());
   const results=inspectEyeClearance(combined,presets,1130/1000);
-  for(const result of results){assert.equal(result.nearPlaneClearForAllPanDirections,true,JSON.stringify(result));assert.equal(result.trianglesChecked,1012955);}
+  for(const result of results){assert.equal(result.nearPlaneClearForAllPanDirections,true,JSON.stringify(result));assert.equal(result.trianglesChecked,1053715);}
   console.log(JSON.stringify({scope:'Geometry-only Node decode, not WebGL or original-texture rendering',counts,eyeClearance:results}));
 });
 
@@ -68,4 +69,19 @@ test('actual material adapter and four-window overrides protect cabin, lamps and
   }
   assert.ok(prepared.bindings.some(binding=>binding.role==='paint'));
   for(const record of windows){record.mesh.material=record.baseline;record.override.dispose();assert.equal(record.mesh.material,record.baseline);}
+});
+
+
+test('final loaded candidate closes 14 exact pixel rays and preserves 826 genuine glazing rays',async()=>{
+  const {exterior,cabin,roles}=await loadSource(),root=new Group();root.add(exterior,cabin);
+  const fixtures=JSON.parse(await readFile(new URL('../closure-fixtures.json',import.meta.url),'utf8'));
+  const baseline=JSON.parse(await readFile(new URL('../reference-baseline.json',import.meta.url),'utf8'));
+  for(const capture of fixtures.captures)assert.equal(capture.sha256,baseline.plans.desktop.screenshots.find(value=>value.file===capture.file).sha256);
+  for(const sidePolicy of ['double-sided-geometry','runtime-with-double-sided-windows']) {
+    const result=inspectClosureRays(root,fixtures,{roles,sidePolicy});
+    assert.equal(result.total,14);assert.equal(result.closed,14,JSON.stringify(result.failedFixtures));
+    assert.equal(result.apertureSamples,826);assert.equal(result.aperturePreserved,826,JSON.stringify(result.obstructedApertures));assert.equal(result.passed,true);
+    assert.equal(result.informational.length,1);
+    console.log(JSON.stringify({sidePolicy,closed:result.closed,aperturePreserved:result.aperturePreserved,informational:result.informational}));
+  }
 });
