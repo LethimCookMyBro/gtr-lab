@@ -31,3 +31,22 @@ export function createWindowMaterial(original) {
   material.needsUpdate = true;
   return material;
 }
+
+export function createThinWindowMaterial(original) {
+  // QA-only artistic trial, not a calibrated transmission equivalent. A fresh
+  // Standard material cannot inherit physical transmission or shared textures.
+  const material = new MeshStandardMaterial({
+    name: `${original.name || 'Glass'}__R35_WINDOW_THIN_QA_OVERRIDE`,
+    color: 0xf5f5f5,
+    metalness: 0,
+    roughness: 0.05,
+    transparent: true,
+    opacity: 0.16,
+    depthTest: true,
+    depthWrite: false,
+    side: DoubleSide,
+    forceSinglePass: true,
+  });
+  // envMap stays null so the existing scene.environment supplies reflections.
+  return material;
+}

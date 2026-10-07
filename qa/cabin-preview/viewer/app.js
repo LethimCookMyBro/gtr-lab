@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { classifyMesh, cabinPose, validateContract, withinBounds, hasCurrentRender, createRenderSchedule } from './runtime-core.js';
-import { createWindowMaterial } from './window-materials.js';
+import { createWindowMaterial, createThinWindowMaterial } from './window-materials.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { prepareVehicle, applyVehicleAppearance } from './app-source/materialAdapter.js';
 import { summarizeSamples, createFrameSample } from './metrics.js';
@@ -28,6 +28,7 @@ let observedTransmissionSceneRevision=null;
 const renderSchedule=createRenderSchedule();
 let records=[], helperGroup, currentView='exterior', pan={yaw:0,pitch:0};
 let glassEnabled=params.get('glass')!=='0', cabinOnly=params.get('cabin')==='1';
+let windowMode='physical';
 let lastFrame=0, frameTimes=[], lastStatsUpdate=0;
 let loadStart=0, loadMilliseconds=0, renderFrameCount=0, modelGeneration=0;
 const materials = value => Array.isArray(value) ? value : [value];
@@ -82,6 +83,37 @@ function getTransmissionDiagnostics() {
     observedSceneRevision:observedTransmissionSceneRevision};
 }
 
+function getWindowPolicyDiagnostics() {
+  const windowRecords=records.filter(record=>record.isWindow);
+  const describe=material=>({uuid:material.uuid,name:material.name,activeType:material.type,
+    transmission:material.transmission || 0,transparent:material.transparent,opacity:material.opacity,
+    roughness:material.roughness,metalness:material.metalness,color:material.color?.getHexString(),
+    depthWrite:material.depthWrite,depthTest:material.depthTest,side:material.side,forceSinglePass:material.forceSinglePass,
+    usesSceneEnvironment:material.isMeshStandardMaterial===true && material.envMap===null,envMapIntensity:material.envMapIntensity});
+  const activeTransmission=new Map();
+  // Inspect every visible scene branch, including anything outside modelRoot.
+  // This is conservative: no frustum/occlusion assumptions hide a material.
+  scene.traverseVisible(object=>{
+    if(!object.material) return;
+    materials(object.material).forEach(material=>{
+      if(material.visible===false || !(material.transmission>0)) return;
+      if(!activeTransmission.has(material)) activeTransmission.set(material,{...describe(material),meshNames:[]});
+      activeTransmission.get(material).meshNames.push(object.name);
+    });
+  });
+  const activeTransmissionMaterials=[...activeTransmission.values()];
+  return {model:qa.model,windowMode,glass:glassEnabled,activePolicy:glassEnabled?windowMode:'source',
+    calibration:'Single initial artistic trial; not calibrated',environmentAvailable:Boolean(scene.environment),
+    windowCount:windowRecords.length,expectedWindowNames:(roles.windowMeshes || []).filter(role=>role.confirmed).map(role=>role.name),
+    windows:windowRecords.map(record=>({...describe(materials(record.mesh.material)[0]),name:record.name,role:record.role,
+      sourceRestored:record.mesh.material===record.baseline,materials:materials(record.mesh.material).map(describe)})),
+    activeTransmissionMaterials,activeTransmissionMaterialCount:activeTransmissionMaterials.length,
+    activeTransmissionMaterialNames:activeTransmissionMaterials.map(material=>material.name),
+    sourceMaterialsUnchanged:records.every(record=>materials(record.baseline).every((material,index)=>materialSignature(material)===record.signatures[index])),
+    sourceMaterialReferencesRestored:windowRecords.every(record=>record.mesh.material===record.baseline),
+    nonWindowMaterialReferencesUntouched:records.filter(record=>!record.isWindow).every(record=>record.mesh.material===record.baseline)};
+}
+
 function fail(error) {
   if(activeSample){activeSample.reject(error);activeSample=null;}
   qa.ready=false; qa.error=error?.message || String(error);
@@ -106,7 +138,7 @@ function disposeModel(root, oldRecords=[]) {
     if (object.geometry) geometry.add(object.geometry);
     if (object.material) materials(object.material).forEach(m=>materialSet.add(m));
   });
-  oldRecords.forEach(record=>[...materials(record.baseline),...materials(record.override || [])].forEach(m=>materialSet.add(m)));
+  oldRecords.forEach(record=>[...materials(record.baseline),...materials(record.override || []),...materials(record.thinOverride || [])].forEach(m=>materialSet.add(m)));
   materialSet.forEach(material=>Object.values(material).forEach(value=>{if(value?.isTexture) textures.add(value);}));
   geometry.forEach(item=>item.dispose()); materialSet.forEach(item=>item.dispose()); textures.forEach(item=>item.dispose());
 }
@@ -120,11 +152,19 @@ function applyVisibility() {
 function setCabinOnly(value) { cabinOnly=Boolean(value); applyVisibility(); return cabinOnly; }
 function setGlass(value) {
   glassEnabled=Boolean(value);
-  records.filter(record=>record.isWindow).forEach(record=>{record.mesh.material=glassEnabled ? record.override : record.baseline;});
+  records.filter(record=>record.isWindow).forEach(record=>{record.mesh.material=glassEnabled ? (windowMode==='thin' ? record.thinOverride : record.override) : record.baseline;});
   $('glass').checked=glassEnabled;
   invalidateScene();
   updateChecks();
   return glassEnabled;
+}
+
+function setWindowMode(value) {
+  if(value!=='physical' && value!=='thin') throw new RangeError('Window mode must be physical or thin');
+  if(capturePaused || activeSample) throw new Error('Cannot change window mode during capture or timing');
+  windowMode=value;
+  setGlass(glassEnabled);
+  return windowMode;
 }
 
 function setAppearance(paint, lights) {
@@ -269,6 +309,7 @@ function getCaptureState() {
     renderMode:capturePaused?'capture':activeSample?activeSample.phase:'demand',
     renderedFrames:renderFrameCount,camera:getCameraState(),viewLabel:$('view-label').textContent,selectedView:document.querySelector('[data-view][aria-pressed="true"]')?.dataset.view,glass:glassEnabled,cabinOnly,appearance:{...appearance},
     canvas:{width:renderer.domElement.width,height:renderer.domElement.height,pixelRatio:renderer.getPixelRatio()},bounds:{x,y,width,height},transmission:getTransmissionDiagnostics(),
+    windowMode,windowPolicy:getWindowPolicyDiagnostics(),
     rendererCounters:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles}};
 }
 
@@ -380,7 +421,9 @@ async function loadModel(key) {
     const baseline=object.material;
     const override=classification.isWindow
       ? (Array.isArray(baseline) ? baseline.map(createWindowMaterial) : createWindowMaterial(baseline)) : null;
-    records.push({mesh:object,...classification,baseline,override,baselineVisible:object.visible,
+    const thinOverride=classification.isWindow
+      ? (Array.isArray(baseline) ? baseline.map(createThinWindowMaterial) : createThinWindowMaterial(baseline)) : null;
+    records.push({mesh:object,...classification,baseline,override,thinOverride,baselineVisible:object.visible,
       signatures:materials(baseline).map(materialSignature)});
   });
   scene.add(modelRoot); modelRoot.updateMatrixWorld(true);
@@ -468,7 +511,7 @@ function animate(now) {
 function timingSnapshot(sample=activeSample) {
   if(!sample)return null;
   return {...summarizeSamples(sample.samples),phase:sample.phase,view:currentView,glass:glassEnabled,cabinOnly,model:qa.model,appearance:{...appearance},
-    transmission:getTransmissionDiagnostics(),
+    transmission:getTransmissionDiagnostics(),windowMode,windowPolicy:getWindowPolicyDiagnostics(),
     viewport:{width:renderer.domElement.width,height:renderer.domElement.height},priorGpuDrainWallMs:sample.priorGpuDrainWallMs??null,
     submissionWallMs:sample.submissionEnd&&sample.started?sample.submissionEnd-sample.started:null,
     measurementMode:`${sample.count} explicit continuous render submissions; prior work and completion drained separately. Demand-idle time and capture waits are excluded. No physical Android claim.`};
@@ -528,7 +571,7 @@ async function start() {
   new ResizeObserver(resize).observe($('viewport'));resize();
   Object.assign(qa,{
     selectView,setGlass,setCabinOnly,loadModel,getCameraState,setAppearance,getCaptureState,beginCapture,renderCaptureFrame,resumeAfterCapture,
-    setTransmissionResolutionScale,getTransmissionDiagnostics,
+    setTransmissionResolutionScale,getTransmissionDiagnostics,setWindowMode,getWindowPolicyDiagnostics,
     getAppearance:()=>({...appearance}),
     selectExteriorRear:()=>{
       selectView('exterior');

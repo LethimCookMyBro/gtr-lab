@@ -10,8 +10,8 @@ assert.equal(process.env.GITHUB_ACTIONS,'true','Use the separately authorized Gi
 assert.equal(process.env.R35_ALLOW_BROWSER_QA,'1','Explicit CI browser QA gate required');
 const output='cabin-webgl-results';await mkdir(output,{recursive:true});
 const plan=process.env.R35_QA_VIEWPORT || 'desktop';assert.ok(['desktop','mobile'].includes(plan));
-const focus=process.env.R35_QA_FOCUS || 'full';assert.ok(['full','remaining-desktop','transmission-desktop','sealed-visual'].includes(focus));
-if(['remaining-desktop','transmission-desktop'].includes(focus))assert.equal(plan,'desktop');
+const focus=process.env.R35_QA_FOCUS || 'full';assert.ok(['full','remaining-desktop','transmission-desktop','sealed-visual','thin-glass-desktop'].includes(focus));
+if(['remaining-desktop','transmission-desktop','thin-glass-desktop'].includes(focus))assert.equal(plan,'desktop');
 const viewport=plan==='desktop'?{width:1440,height:1000}:{width:390,height:844};
 const baseline=JSON.parse(await readFile(new URL('./reference-baseline.json',import.meta.url),'utf8'));
 assert.equal(baseline.commit,'93d4fda63915c64ff1b3a8d852128fba667873f0');
@@ -28,6 +28,10 @@ if(focus==='transmission-desktop') {
 if(focus==='sealed-visual') {
   report.coverage={fullSpatialVisualSet:false,priorRun:37601107213,priorCommit:'989eac52ed6c130d3f9c22ab76a0b2de92a1d707',skipped:['full 51-view sweep','input bursts','global control renders','all continuous performance samples'],note:'Six targeted scale-1 captures across two viewport jobs; sealed geometry and prior exact diagnostic pair are separate assets'};
   report.performance={status:'not-run',reason:'Visual acceptance only; no repeated SwiftShader performance blocks or production hardware claim'};
+}
+if(focus==='thin-glass-desktop') {
+  report.coverage={fullSpatialVisualSet:false,priorRun:37609970354,priorCommit:'fcda1f252d4eba02e9821a5c12e5cd4441e06b7d',skipped:['full 51-view sweep','input bursts','mobile viewports','all continuous performance samples'],note:'Four physical/thin pairs in the same loaded sealed scene; only the exact four window materials change'};
+  report.performance={status:'not-run',reason:'Per-capture rendering counters only; no continuous benchmark or production hardware claim'};
 }
 const save=()=>writeFile(`${output}/${plan}-report.json`,JSON.stringify(report,null,2));
 const server=spawn('python3',['-m','http.server','8765','--bind','127.0.0.1','--directory','.qa-cabin-runtime'],{stdio:'inherit'});
@@ -99,6 +103,11 @@ try {
         checkTransmission(after,after.transmission.scale);
       }
       for(const [key,passed] of Object.entries(finalChecks))assert.equal(passed,true,`${label}: ${key} after PNG`);
+      if(focus==='thin-glass-desktop') {
+        assert.equal(before.windowMode,after.windowMode,`${label}: window policy stays fixed during capture`);
+        assert.deepEqual(after.windowPolicy,settled.windowPolicy,`${label}: window policy stays fixed through PNG`);
+        checkWindowPolicy(after,after.windowMode);
+      }
       const item={file:`${plan}-${label}.png`,sha256:createHash('sha256').update(image).digest('hex'),status:'captured-unreviewed',camera:after.camera,captureState:after,captureChecks:finalChecks,scope};
       assert.equal(after.viewLabel,after.camera.view==='exterior'?'EXTERIOR ORBIT':`${after.camera.view.toUpperCase()} / FIXED EYE`,`${label}: camera label matches current view`);
       assert.equal(after.selectedView,after.camera.view,`${label}: selected camera matches rendered view`);
@@ -111,7 +120,7 @@ try {
           assert.deepEqual(after[key],expected,`${label}: expected ${key} at original baseline camera`);
         }
         report.baselineComparison.push({file:item.file,baselineFile:reference.file,sameControls:label!=='rear-exterior-source-windows',controlDifference:label==='rear-exterior-source-windows'?{glass:{baseline:reference.glass,candidate:false}}:null,baselineSha256:reference.sha256,candidateSha256:item.sha256,sameCamera:true,
-          sameRenderSettings:focus!=='transmission-desktop' || after.transmission.scale===1,renderSettingDifference:focus==='transmission-desktop' && after.transmission.scale!==1?{transmissionResolutionScale:{baseline:1,candidate:after.transmission.scale}}:null,baselineCounters:reference.rendererCounters,candidateCounters:after.rendererCounters});
+          sameRenderSettings:!(focus==='transmission-desktop'&&after.transmission.scale!==1)&&!(focus==='thin-glass-desktop'&&after.windowMode==='thin'),renderSettingDifference:focus==='thin-glass-desktop'&&after.windowMode==='thin'?{windowPolicy:{baseline:'physical-transmission',candidate:'thin-alpha-environment-reflection'}}:focus==='transmission-desktop' && after.transmission.scale!==1?{transmissionResolutionScale:{baseline:1,candidate:after.transmission.scale}}:null,baselineCounters:reference.rendererCounters,candidateCounters:after.rendererCounters});
         if(baselineLabel==='cabin-isolated')assert.ok(after.rendererCounters.calls<reference.rendererCounters.calls,'Batching reduces measured isolated-cabin draw submissions');
       } else assert.equal(label,'failure','Every planned capture has an original baseline reference');
       report.screenshots.push(item);await stage('page-screenshot-complete',{file:item.file});return item.sha256;
@@ -155,7 +164,7 @@ try {
       await save();throw error;
     }
   };
-  await page.goto(focus==='sealed-visual'?`${base}?model=sealed`:base,{waitUntil:'domcontentloaded',timeout:120000});await waitReady();
+  await page.goto(['sealed-visual','thin-glass-desktop'].includes(focus)?`${base}?model=sealed`:base,{waitUntil:'domcontentloaded',timeout:120000});await waitReady();
   report.renderer=await page.evaluate(()=>window.__R35_QA__.renderer);assert.equal(report.renderer.webgl2,true);
   report.inputs=await page.evaluate(()=>window.__R35_QA__.inputManifest);
   report.initialLoad=await page.evaluate(()=>({assets:window.__R35_QA__.loadMeasurements,firstFrameSubmittedMs:window.__R35_QA__.firstFrameSubmittedMs,exteriorDerivedAppTransform:window.__R35_QA__.exteriorDerivedAppTransform}));
@@ -189,8 +198,60 @@ try {
       }
     }
   };
+  const checkWindowPolicy=(state,mode)=>{
+    const policy=state.windowPolicy;
+    assert.equal(state.windowMode,mode);assert.equal(policy.windowMode,mode);assert.equal(policy.glass,true);
+    assert.equal(policy.windowCount,4);assert.equal(policy.environmentAvailable,true);
+    assert.equal(policy.nonWindowMaterialReferencesUntouched,true);assert.equal(policy.sourceMaterialsUnchanged,true);
+    assert.equal(state.transmission.scale,1);assert.equal(state.transmission.observedSceneRevision,state.sceneRevision);
+    assert.deepEqual(state.transmission.drawingBuffer,{width:state.canvas.width,height:state.canvas.height});
+    assert.deepEqual(policy.windows.map(window=>window.name).sort(),report.windowAssignments.map(window=>window.name).sort());
+    if(mode==='thin') {
+      assert.equal(policy.activeTransmissionMaterialCount,0,'No material anywhere in the scene enters the transmission render list');
+      assert.deepEqual(state.transmission.observedTargets,[],'No intermediate transmission target was observed');
+      for(const window of policy.windows) {
+        assert.equal(window.activeType,'MeshStandardMaterial');assert.equal(window.transmission,0);assert.equal(window.transparent,true);
+        assert.equal(window.opacity,0.16);assert.equal(window.roughness,0.05);assert.equal(window.metalness,0);
+        assert.equal(window.depthWrite,false);assert.equal(window.depthTest,true);assert.equal(window.side,2);assert.equal(window.forceSinglePass,true);
+      }
+    } else {
+      assert.equal(policy.activeTransmissionMaterialCount,4,'Physical control retains only the original four transmissive window bindings');
+      assert.ok(state.transmission.observedTargets.length>0,'Physical control still exercises the actual transmission pass');
+      for(const target of state.transmission.observedTargets) {assert.equal(target.width,state.canvas.width);assert.equal(target.height,state.canvas.height);}
+    }
+  };
   await verify('initial-runtime');
-  if(focus==='sealed-visual') {
+  if(focus==='thin-glass-desktop') {
+    assert.equal(await page.evaluate(()=>window.__R35_QA__.model),'sealed');
+    assert.equal(report.initialLoad.assets.find(asset=>asset.file!=='ciasny-r35.glb').sha256,'3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd');
+    await inspectLoadedGeometry();
+    const seamFixtures=JSON.parse(await readFile(new URL('./seam-fixtures.json',import.meta.url),'utf8'));
+    report.seamRays=await page.evaluate(fixtures=>window.__R35_QA__.inspectClosureRays(fixtures),seamFixtures);
+    for(const result of Object.values(report.seamRays)) {assert.equal(result.total,96);assert.equal(result.closed,96);assert.equal(result.passed,true);}
+    report.windowPairs=[];
+    for(const view of ['driver','passenger','exterior','rear']) {
+      await mutate('selectView',[view]);await mutate('setGlass',[true]);
+      const pair={view};
+      for(const mode of ['physical','thin']) {
+        await mutate('setWindowMode',[mode]);
+        const baselineLabel=view==='exterior'?'exterior-transparent-windows':view;
+        await capture(`glass-${view}-${mode}`,'canvas',baselineLabel);await verify(`glass-${view}-${mode}`);
+        pair[mode]=report.screenshots.at(-1);
+      }
+      assert.deepEqual(pair.thin.camera,pair.physical.camera,'Window comparison keeps the exact camera');
+      for(const field of ['canvas','appearance','glass','cabinOnly','modelGeneration'])assert.deepEqual(pair.thin.captureState[field],pair.physical.captureState[field]);
+      assert.ok(pair.thin.captureState.rendererCounters.calls<pair.physical.captureState.rendererCounters.calls,'Thin glass removes actual repeated scene submissions');
+      assert.ok(pair.thin.captureState.rendererCounters.triangles<pair.physical.captureState.rendererCounters.triangles,'Thin glass removes actual repeated triangle submissions');
+      report.windowPairs.push({view,physicalFile:pair.physical.file,thinFile:pair.thin.file,physicalCounters:pair.physical.captureState.rendererCounters,thinCounters:pair.thin.captureState.rendererCounters});await save();
+    }
+    await mutate('setGlass',[false]);
+    report.windowRestoration=await page.evaluate(()=>window.__R35_QA__.getWindowPolicyDiagnostics());
+    assert.equal(report.windowRestoration.sourceMaterialReferencesRestored,true);assert.equal(report.windowRestoration.nonWindowMaterialReferencesUntouched,true);
+    assert.equal(report.windowRestoration.activeTransmissionMaterialCount,0);assert.ok(report.windowRestoration.windows.every(window=>window.sourceRestored));
+    await verify('thin-source-window-restoration');
+    await mutate('setWindowMode',['physical']);await mutate('setGlass',[true]);await verify('thin-default-physical-restoration');
+    report.allVisualChecksCompletedAt=new Date().toISOString();assert.equal(report.timings.length,0);
+  } else if(focus==='sealed-visual') {
     assert.equal(await page.evaluate(()=>window.__R35_QA__.model),'sealed');
     assert.equal(report.initialLoad.assets.find(asset=>asset.file!=='ciasny-r35.glb').sha256,'3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd');
     assert.equal(await page.evaluate(()=>window.__R35_QA__.getTransmissionDiagnostics().scale),1,'Full-quality transmission retained');
@@ -398,7 +459,7 @@ try {
   }
   report.finalStats=await page.evaluate(()=>window.__R35_QA__.stats);
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.consoleErrors,[]);assert.deepEqual(report.requestFailures,[]);
-  report.status=focus==='sealed-visual'?'sealed-visual-checks-passed-review-pending':focus==='full'?'functional-checks-passed-visual-review-pending':focus==='transmission-desktop'?'transmission-diagnostic-passed-visual-review-pending':'focused-checks-passed-visual-review-pending';
+  report.status=focus==='thin-glass-desktop'?'thin-glass-checks-passed-visual-review-pending':focus==='sealed-visual'?'sealed-visual-checks-passed-review-pending':focus==='full'?'functional-checks-passed-visual-review-pending':focus==='transmission-desktop'?'transmission-diagnostic-passed-visual-review-pending':'focused-checks-passed-visual-review-pending';
 } catch(error) {
   report.status='failed';report.failure=error.stack;process.exitCode=1;
   if(report.performanceIncomplete)report.failureScreenshotError='Skipped because incomplete performance work may still be pending; earlier visual evidence is retained';

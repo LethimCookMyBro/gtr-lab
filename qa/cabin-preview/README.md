@@ -2,6 +2,14 @@
 
 This separate preview is outside application routes and build inputs. It does not deploy a cabin to the live app. Candidate publication and later app integration require separate review.
 
+## Thin-glass comparison: four paired views
+
+The stage-cabin-thin-glass marker runs one desktop-only visual comparison on the unchanged sealed330 asset. Each fixed driver, passenger, exterior-front and rear-seat view is captured with the original scale1 physical transmission and then a proposed thin alpha/environment-reflection material. Only the four allowlisted windows change. Lamps, cowl, paint, cabin materials, lights, cameras and the full drawing buffer remain fixed.
+
+The proposed material uses MeshStandardMaterial with neutral tint, opacity0.16, roughness0.05, metalness0, depth test on, depth writes off, DoubleSide and forceSinglePass. These are initial artistic values, not accepted calibration. There is no refraction or volume absorption, opacity can weaken reflections, and transparent sorting needs direct pixel review. This QA control switch is not a new production quality-mode feature.
+
+Eight images record actual draw/triangle submissions and target observations. Thin captures must contain zero active nonzero-transmission materials across the scene, no observed intermediate transmission target, the unchanged reflection environment, and fewer actual calls/triangles than their matched physical capture. Source material references are restored and checked afterward. No continuous performance samples, timeout changes, physical-device FPS claim or application integration are included.
+
 ## Sealed spatial candidate: six-view visual check
 
 The separately named r35-sealed-spatial.glb.gz adds the repaired door/beltline/dashboard interfaces without replacing the two contained comparison assets below. Its GLB is 14,599,520 bytes, SHA-256 3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd; gzip is 7,774,439 bytes, SHA-256 171fb992e42632d75c87739441c71126e89de3223491a16dc6f0dbb93e1449db. It has 309 primitives, 509,692 triangles, 46 materials and no images or textures. Geometry source is 785cf1c4541df1d83fcc6c6a6a2e837deeb75f489a9b0241c70e07149ab8a070; finished source is b379c1f2f53f61967aa7bf72ba08927256a44f942a050e406d0b65419e9483ca.
