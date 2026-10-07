@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "windowMeshes": [
+    {
+      "name": "Door Window_Glass_0",
+      "role": "left and right front-door glazing",
+      "confirmed": true,
+      "basis": "geometry bounds and source location; see glazing-role-review.png"
+    },
+    {
+      "name": "Doors.002_Glass_0",
+      "role": "front windscreen",
+      "confirmed": true,
+      "basis": "geometry bounds and source location; see glazing-role-review.png"
+    },
+    {
+      "name": "Rear Window_Glass_0",
+      "role": "rear windscreen",
+      "confirmed": true,
+      "basis": "geometry bounds and source location; see glazing-role-review.png"
+    },
+    {
+      "name": "Back Body.001_Glass_0",
+      "role": "left and right rear-quarter glazing",
+      "confirmed": true,
+      "basis": "geometry bounds and source location; see glazing-role-review.png"
+    }
+  ],
+  "excludedWindowMaterialMeshes": [
+    {
+      "name": "Hood.001_Glass_0",
+      "role": "low cowl panel with Window_Glass material; not cabin glazing",
+      "confirmed": true
+    }
+  ],
+  "cabinMeshPrefixes": [
+    "DRIVER",
+    "PASSENGER",
+    "C0",
+    "C1",
+    "DASH",
+    "CTRL",
+    "REAR_"
+  ],
+  "cabinMeshNames": [],
+  "sourceExteriorTag": "immutable_source_name",
+  "lampPolicy": "Never override by material-name or Glass substring. Headlamp, LED, front light and tail-lamp meshes keep source materials."
+}

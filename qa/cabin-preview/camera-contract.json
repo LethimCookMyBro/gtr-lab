@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "coordinateSystem": "three-y-up",
+  "units": "meters",
+  "sourceCoordinates": "Blender +X driver, -Y front, +Z up; glTF/Three +X driver, +Z front, +Y up",
+  "presets": {
+    "exterior": {
+      "position": [
+        3.8,
+        2.6,
+        4.2
+      ],
+      "target": [
+        0,
+        0.7,
+        0
+      ],
+      "fov": 42,
+      "near": 0.05,
+      "far": 100,
+      "minDistance": 3.2,
+      "maxDistance": 8.0
+    },
+    "driver": {
+      "position": [
+        0.42,
+        1.18,
+        -0.235
+      ],
+      "target": [
+        0.15,
+        0.84,
+        0.39
+      ],
+      "fov": 72,
+      "near": 0.015,
+      "far": 50,
+      "pitchBounds": [
+        -70,
+        70
+      ],
+      "yawBounds": [
+        -180,
+        180
+      ],
+      "bounds": {
+        "min": [
+          0.41,
+          1.17,
+          -0.245
+        ],
+        "max": [
+          0.43,
+          1.19,
+          -0.22499999999999998
+        ]
+      },
+      "translationEnabled": false,
+      "sourceSurfaceClearanceM": 0.14079204201698303,
+      "minimumAllowedSurfaceClearanceM": 0.08
+    },
+    "passenger": {
+      "position": [
+        -0.42,
+        1.18,
+        -0.235
+      ],
+      "target": [
+        -0.2,
+        0.9,
+        0.4
+      ],
+      "fov": 72,
+      "near": 0.015,
+      "far": 50,
+      "pitchBounds": [
+        -70,
+        70
+      ],
+      "yawBounds": [
+        -180,
+        180
+      ],
+      "bounds": {
+        "min": [
+          -0.43,
+          1.17,
+          -0.245
+        ],
+        "max": [
+          -0.41,
+          1.19,
+          -0.22499999999999998
+        ]
+      },
+      "translationEnabled": false,
+      "sourceSurfaceClearanceM": 0.14079204201698303,
+      "minimumAllowedSurfaceClearanceM": 0.08
+    },
+    "rear": {
+      "position": [
+        0.4,
+        1.12,
+        -0.91
+      ],
+      "target": [
+        0.25,
+        0.93,
+        0.3
+      ],
+      "fov": 78,
+      "near": 0.015,
+      "far": 50,
+      "pitchBounds": [
+        -70,
+        70
+      ],
+      "yawBounds": [
+        -180,
+        180
+      ],
+      "bounds": {
+        "min": [
+          0.39,
+          1.11,
+          -0.92
+        ],
+        "max": [
+          0.41000000000000003,
+          1.1300000000000001,
+          -0.9
+        ]
+      },
+      "translationEnabled": false,
+      "sourceSurfaceClearanceM": 0.14889556169509888,
+      "minimumAllowedSurfaceClearanceM": 0.08
+    }
+  },
+  "limitations": "Fixed visual inspection camera positions, not manikin eye-point/occupancy certification. Camera sphere clearance is checked against triangles. Translational locomotion disabled."
+}

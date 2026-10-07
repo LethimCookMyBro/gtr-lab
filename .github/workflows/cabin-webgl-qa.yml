@@ -1,0 +1,52 @@
+name: Original cabin WebGL review
+on:
+  push:
+    branches: [main]
+    paths:
+      - qa/cabin-preview/**
+      - .github/workflows/cabin-webgl-qa.yml
+permissions:
+  contents: read
+concurrency:
+  group: cabin-webgl-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  inspect:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/prepare-models.mjs
+      - run: node qa/cabin-preview/prepare.mjs
+      - name: Preserve exact input identity before browser execution
+        run: |
+          mkdir -p cabin-webgl-results
+          cp .qa-cabin-runtime/input-manifest.json cabin-webgl-results/input-manifest.json
+      - run: node --test qa/cabin-preview/test/*.test.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Capture exact cabin and accepted exterior with real WebGL
+        timeout-minutes: 18
+        run: node qa/cabin-preview/run-browser.mjs
+        env:
+          R35_ALLOW_BROWSER_QA: '1'
+          R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: original-cabin-webgl-${{ matrix.viewport }}
+          path: cabin-webgl-results/
+          retention-days: 14
+          if-no-files-found: error

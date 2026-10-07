@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>R35 · Private cabin inspector</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/","three/examples/jsm/":"./vendor/addons/"}}</script>
+</head>
+<body>
+  <main>
+    <aside class="panel">
+      <header><div class="eyebrow">PRIVATE / WORK IN PROGRESS</div><h1>R35 cabin</h1><p>Full 3D runtime inspection</p></header>
+      <div id="status" class="status" role="status" aria-live="polite">Loading viewer…</div>
+      <progress id="progress" aria-label="Model loading progress"></progress>
+      <fieldset id="controls" disabled>
+        <label class="section-label" for="model">ASSEMBLY</label>
+        <select id="model"><option value="runtime">Optimized cabin + retained exterior</option><option value="original">Optimized cabin only / LOD0</option></select>
+        <div class="section-label">CAMERA</div>
+        <div class="presets" role="group" aria-label="Camera presets">
+          <button data-view="exterior" aria-pressed="true">Exterior orbit</button>
+          <button data-view="driver" aria-pressed="false">Driver eye</button>
+          <button data-view="passenger" aria-pressed="false">Passenger eye</button>
+          <button data-view="rear" aria-pressed="false">Rear eye</button>
+        </div>
+        <button id="reset" class="secondary">Reset current camera</button>
+        <div class="section-label">INSPECTION</div>
+        <label class="toggle"><input id="glass" type="checkbox" checked><span>Transparent windows<span class="detail">Four confirmed window roles only</span></span></label>
+        <label class="toggle"><input id="cabin" type="checkbox"><span>Isolate original cabin<span class="detail">Hides exterior meshes for inspection</span></span></label>
+        <label class="toggle"><input id="helpers" type="checkbox"><span>Show cabin eye positions</span></label>
+      </fieldset>
+      <div id="instructions" class="instructions">Drag to orbit · Scroll to dolly · Orbit target is fixed</div>
+      <details open><summary>Runtime counts</summary><dl id="stats"><dt>Status</dt><dd>Waiting for model</dd></dl><p class="tiny">Draw calls include physical transmission passes. Frame timing is local and unbenchmarked.</p></details>
+      <details><summary>Material isolation</summary><div id="roles" class="tiny">Waiting for confirmed roles</div></details>
+      <div class="review-note">Unfinished inspection asset. Browser screenshots, WebGL checks and performance have not been verified in this workspace.</div>
+    </aside>
+    <section id="viewport" aria-label="Interactive 3D vehicle" tabindex="0">
+      <div class="viewport-top"><span id="view-label">EXTERIOR ORBIT</span><span>METRES · Y UP · +Z FRONT</span></div>
+      <div id="error" role="alert" hidden></div>
+      <div class="orientation">+X DRIVER SIDE <span>+Y UP</span> +Z FRONT</div>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
