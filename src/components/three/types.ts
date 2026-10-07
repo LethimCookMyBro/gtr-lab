@@ -1,9 +1,15 @@
+import type { CabinPreviewState } from "./cabinPreview";
+import type { HomeSceneLoadState } from "../home/homeReadiness";
 import type { MaterialRoles, CameraView } from "./sceneHelpers";
 
 export type StudioEnvironment =
   "studio" | "gallery" | "night" | "forest" | "coast";
 export type VehicleSceneProps = {
   url: string;
+  cabin?: CabinPreviewState;
+  onCabinReady?: (request: number) => void;
+  onCabinError?: (request: number, message: string) => void;
+  onCabinProgress?: (request: number, progress: HomeSceneLoadState) => void;
   paint: string;
   environment: StudioEnvironment;
   environmentRequest?: number;

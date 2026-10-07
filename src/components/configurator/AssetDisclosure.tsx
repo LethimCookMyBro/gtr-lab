@@ -85,11 +85,13 @@ export function AssetDisclosure({
         <div>
           <dt>Detailed interior</dt>
           <dd>
-            {model.asset.interior
-              ? study
-                ? "Modeled study cabin"
-                : "Verified"
-              : "Unavailable in this asset"}
+            {model.asset.cabinPreview
+              ? "Original authored preview · work in progress"
+              : model.asset.interior
+                ? study
+                  ? "Modeled study cabin"
+                  : "Verified"
+                : "Unavailable in this asset"}
           </dd>
         </div>
         <div>

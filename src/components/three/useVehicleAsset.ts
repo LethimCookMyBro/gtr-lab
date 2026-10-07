@@ -84,7 +84,7 @@ async function readModel(
 }
 
 export function useVehicleAsset(
-  url: string,
+  url: string | null,
   roles: MaterialRoles,
   onProgress: (value: number) => void,
   onError: (message: string) => void,
@@ -97,6 +97,10 @@ export function useVehicleAsset(
   const rolesKey = JSON.stringify(roles);
   const disabledEmissiveKey = JSON.stringify(disabledEmissive);
   useEffect(() => {
+    if (!url) {
+      setAsset(null);
+      return;
+    }
     let live = true;
     let owned: PreparedVehicle | undefined;
     const abort = new AbortController();

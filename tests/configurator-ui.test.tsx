@@ -131,18 +131,18 @@ describe("configurator honest functional flow", () => {
         .disabled,
     ).toBe(true);
   });
-  it("explains the missing cabin beside the ready exterior camera choices", async () => {
+  it("explains the optional original WIP cabin beside the ready exterior camera choices", async () => {
     setup();
     act(() => useConfigurator.setState({ ready: true }));
     await userEvent
       .setup()
       .click(screen.getByRole("button", { name: "Camera" }));
     expect(screen.getByRole("dialog").textContent).toContain(
-      "A detailed cabin is not included in this asset",
+      "An original authored cabin, still in progress",
     );
-    const interior = screen.getByRole("button", { name: /Interior/ });
+    const interior = screen.getByRole("button", { name: /Cabin preview/ });
     expect(interior.getAttribute("aria-describedby")).toBe(
-      "cabin-availability",
+      "cabin-preview-note",
     );
   });
   it("labels configurator sound as interface cues rather than engine audio", () => {

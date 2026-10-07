@@ -5,7 +5,7 @@ import { compileRearScene } from "../src/components/home/compileRearScene";
 
 // The GPU itself is unavailable in unit tests; browser regression coverage holds
 // the real KHR completion query while the real loaded scene is skipped/unmounted.
-function rendererFixture({ parallel = true } = {}) {
+function rendererFixture({ parallel = true, linked = true } = {}) {
   const complete = new Set<object>();
   let lost = false;
   let queries = 0;
@@ -15,14 +15,15 @@ function rendererFixture({ parallel = true } = {}) {
     compile: () => new Set(),
     info: { programs: [vehicle, studio] },
     getContext: () => ({
+      LINK_STATUS: 0x8b82,
       isContextLost: () => lost,
       getExtension: () => (parallel ? { COMPLETION_STATUS_KHR: 0x91b1 } : null),
       getProgramParameter: (program: object, name: number) => {
         queries++;
-        expect(name).toBe(0x91b1);
+        expect([0x91b1, 0x8b82]).toContain(name);
         if (!renderer.info.programs.some((owner) => owner.program === program))
           throw new Error("Queried a deleted program");
-        return complete.has(program);
+        return name === 0x8b82 ? linked : complete.has(program);
       },
     }),
   };
@@ -131,7 +132,7 @@ it("rejects exceptions from a later completion query without an uncaught timer e
 it("uses the synchronous compile fallback when parallel completion is unavailable", async () => {
   const fixture = rendererFixture({ parallel: false });
   await fixture.start(new AbortController().signal);
-  expect(fixture.queries()).toBe(0);
+  expect(fixture.queries()).toBe(2);
   expect(vi.getTimerCount()).toBe(0);
 });
 
@@ -148,3 +149,15 @@ it("does not start work for an already-aborted scene", async () => {
   expect(fixture.queries()).toBe(0);
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it.each([true, false])(
+  "rejects completed but unlinked shaders with parallel compilation %s",
+  async (parallel) => {
+    const fixture = rendererFixture({ parallel, linked: false });
+    fixture.complete();
+    await expect(fixture.start(new AbortController().signal)).rejects.toThrow(
+      /shader.*link/i,
+    );
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);

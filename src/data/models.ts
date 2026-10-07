@@ -20,6 +20,7 @@ export interface AssetManifest {
   author: string | null;
   materialRoles: MaterialRoles;
   interior: boolean;
+  cabinPreview?: "original-wip";
   lights: boolean;
   disabledEmissive?: string[];
   cameraViews?: Partial<Record<string, CameraView>>;
@@ -115,7 +116,8 @@ const licensedR35: AssetManifest = {
     "The 3D scene is Ciasny’s artist-built R35 with custom aero, not a verified replica of the 2024 Premium. Published specifications describe the catalog model separately.",
   limitations: [
     "Source exterior is a custom-aero R35; exact factory trim and model year are unverified.",
-    "The licensed source has no cabin. Interior view remains unavailable while a fitted cabin is being authored.",
+    "The optional cabin preview is an original authored R35 approximation, still a work in progress. It is not official Nissan/OEM geometry or a verified factory interior; some shapes and materials remain generic.",
+    "Cabin preview uses artistic thin-glass window rendering only while inside. Fixed-seat inspection is available; doors, seats and instruments do not operate. Physical-device performance has not been verified.",
     "Body paint and running lights (front LED strips and rear rings) are independently controlled. Projector bulbs, beams, doors and other parts are not animated.",
   ],
   url: "/models/ciasny-r35.glb",
@@ -142,6 +144,7 @@ const licensedR35: AssetManifest = {
     lampCovers: ["Headlights_Glass_0", "TailightsGlass_Glass_0"],
   },
   interior: false,
+  cabinPreview: "original-wip",
   lights: true,
   disabledEmissive: ["Reverse_Emitter"],
 };

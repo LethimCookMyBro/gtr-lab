@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useCallback } from "react";
+import { lazy, Suspense, useEffect, useCallback, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -19,6 +19,8 @@ import { useReducedMotion } from "../hooks/useReducedMotion";
 import { useAudio } from "../hooks/useAudio";
 import { Brand, SoundButton } from "../components/layout/SiteLayout";
 import { ConfiguratorPanels } from "../components/configurator/ConfiguratorPanels";
+import { CabinPreviewControls } from "../components/configurator/CabinPreviewControls";
+import "../styles/cabin-preview.css";
 const VehicleScene = lazy(() => import("../components/three/VehicleScene"));
 export function ConfiguratorPage() {
   const { model: id = "premium" } = useParams();
@@ -26,12 +28,33 @@ export function ConfiguratorPage() {
   const state = useConfigurator();
   const reduced = useReducedMotion();
   const audio = useAudio();
+  const cameraButton = useRef<HTMLButtonElement>(null);
+  const exitCabin = useCallback(() => {
+    useConfigurator.getState().exitCabin(!reduced);
+    cameraButton.current?.focus({ preventScroll: true });
+  }, [reduced]);
+  useEffect(() => {
+    if (state.cabin.phase === "closed") return;
+    const escape = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        useConfigurator.getState().panel ||
+        document.querySelector('[role="dialog"]')
+      )
+        return;
+      event.preventDefault();
+      exitCabin();
+    };
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [state.cabin.phase, exitCabin]);
+  useEffect(() => () => useConfigurator.getState().exitCabin(false), []);
   useEffect(() => {
     state.selectVariant(id);
   }, [id]);
   useEffect(() => {
     if (reduced) useConfigurator.setState({ autoRotate: false });
-  }, [reduced]);
+  }, [reduced, state.autoRotate]);
   const onReady = useCallback(
     () =>
       useConfigurator.setState({
@@ -43,7 +66,11 @@ export function ConfiguratorPage() {
   );
   const onError = useCallback(
     (message: string) =>
-      useConfigurator.setState({ ready: false, error: message }),
+      useConfigurator.setState({
+        ready: false,
+        error: message,
+        cabin: { phase: "closed" },
+      }),
     [],
   );
   const onProgress = useCallback(
@@ -172,6 +199,10 @@ export function ConfiguratorPage() {
               onManual={onManual}
               onEnvironmentFallback={onEnvironmentFallback}
               onCapabilities={onCapabilities}
+              cabin={model.asset.cabinPreview ? state.cabin : undefined}
+              onCabinReady={state.cabinReady}
+              onCabinError={state.cabinFailed}
+              onCabinProgress={state.cabinProgress}
             />
           </Suspense>
         ) : (
@@ -199,6 +230,7 @@ export function ConfiguratorPage() {
       </div>
       <div className="config-toolbar" aria-label="Scene tools">
         <button
+          ref={cameraButton}
           onClick={() => open("camera")}
           className={state.panel === "camera" ? "active" : ""}
           aria-expanded={state.panel === "camera"}
@@ -236,7 +268,7 @@ export function ConfiguratorPage() {
           <span>Lights {state.lightsEnabled ? "on" : "off"}</span>
         </button>
         <button
-          disabled={!interactive || reduced}
+          disabled={!interactive || reduced || state.cabin.phase === "active"}
           onClick={() => {
             useConfigurator.setState({ autoRotate: !state.autoRotate });
             audio.play();
@@ -259,8 +291,8 @@ export function ConfiguratorPage() {
         </button>
         {interactive ? (
           <p className="interaction-hint">
-            {state.cameraPreset === "interior"
-              ? "Drag to look around the cabin"
+            {state.cabin.phase === "active" || state.cameraPreset === "interior"
+              ? "Drag or use arrow keys to look · Esc to exit"
               : "Drag to orbit · Scroll to zoom"}
           </p>
         ) : (
@@ -295,49 +327,53 @@ export function ConfiguratorPage() {
           </button>
         </div>
       )}
-      <footer className="paint-rail">
-        <div className="paint-label">
-          <span>Exterior / Concept palette</span>
-          <strong>
-            {interactive ? paint.name : "Select your perspective"}
-          </strong>
-          <small>
-            {interactive
-              ? "Illustrative finish, not an official paint catalog"
-              : "Paint controls unlock with the 3D model"}
-          </small>
-        </div>
-        <div
-          className="paint-swatches"
-          role="group"
-          aria-label="Exterior paint"
-        >
-          {paints.map((p) => (
-            <button
-              key={p.id}
-              disabled={!interactive || !state.paintAvailable}
-              onClick={() => {
-                state.setPaint(p.id);
-                audio.play();
-              }}
-              aria-label={p.name}
-              aria-pressed={p.id === paint.id}
-              className={p.id === paint.id ? "selected" : ""}
-              title={p.name}
-            >
-              <span className="swatch" style={{ backgroundColor: p.color }} />
-              <span className="swatch-name">{p.name}</span>
-            </button>
-          ))}
-        </div>
-        <button
-          className="paint-info icon-button"
-          aria-label="Asset information"
-          onClick={() => open("assets")}
-        >
-          <Info size={20} />
-        </button>
-      </footer>
+      {state.cabin.phase !== "closed" ? (
+        <CabinPreviewControls onExit={exitCabin} reducedMotion={reduced} />
+      ) : (
+        <footer className="paint-rail">
+          <div className="paint-label">
+            <span>Exterior / Concept palette</span>
+            <strong>
+              {interactive ? paint.name : "Select your perspective"}
+            </strong>
+            <small>
+              {interactive
+                ? "Illustrative finish, not an official paint catalog"
+                : "Paint controls unlock with the 3D model"}
+            </small>
+          </div>
+          <div
+            className="paint-swatches"
+            role="group"
+            aria-label="Exterior paint"
+          >
+            {paints.map((p) => (
+              <button
+                key={p.id}
+                disabled={!interactive || !state.paintAvailable}
+                onClick={() => {
+                  state.setPaint(p.id);
+                  audio.play();
+                }}
+                aria-label={p.name}
+                aria-pressed={p.id === paint.id}
+                className={p.id === paint.id ? "selected" : ""}
+                title={p.name}
+              >
+                <span className="swatch" style={{ backgroundColor: p.color }} />
+                <span className="swatch-name">{p.name}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            className="paint-info icon-button"
+            aria-label="Asset information"
+            onClick={() => open("assets")}
+          >
+            <Info size={20} />
+          </button>
+        </footer>
+      )}
       <div
         key={state.selectedEnvironment}
         className="environment-transition"

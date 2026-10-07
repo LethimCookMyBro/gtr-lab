@@ -292,7 +292,7 @@ test("licensed production asset loads and all nine paints change rendered pixels
   ).toBe(true);
 });
 
-test("actual exterior cameras render and unsupported cabin remains visibly disabled", async ({
+test("actual exterior cameras render and cabin preview remains an explicit WIP opt-in", async ({
   page,
 }, info) => {
   await openVehicle(page);
@@ -311,10 +311,10 @@ test("actual exterior cameras render and unsupported cabin remains visibly disab
   await page.getByRole("button", { name: "Camera", exact: true }).click();
   const interior = page
     .getByRole("dialog")
-    .getByRole("button", { name: /Interior/ });
-  await expect(interior).toBeDisabled();
-  await expect(interior).toContainText("Detailed cabin required");
-  await capture(page, info, "vehicle-cabin-unavailable");
+    .getByRole("button", { name: /Cabin preview · work in progress/ });
+  await expect(interior).toBeEnabled();
+  await expect(page.locator("#cabin-preview-note")).toContainText("Not a verified factory interior");
+  await capture(page, info, "vehicle-cabin-opt-in");
 });
 
 test("separate lamps and real environments affect the licensed vehicle", async ({

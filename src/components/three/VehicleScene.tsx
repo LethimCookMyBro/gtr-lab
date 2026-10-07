@@ -1,7 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { AdaptiveDpr } from "@react-three/drei/core/AdaptiveDpr";
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
+import { CABIN_URL, cabinCameraView } from "./cabinPreview";
+import { CabinAttachment } from "./CabinAttachment";
 import { CameraRig } from "./CameraRig";
 import { RecoverableEnvironment } from "./RecoverableEnvironment";
 import { setViewerAccessibility } from "./keyboardControls";
@@ -92,6 +94,24 @@ export default function VehicleScene(props: VehicleSceneProps) {
     props.onError,
     props.disabledEmissive,
   );
+  const cabinRequested =
+    props.cabin?.phase === "loading" || props.cabin?.phase === "active";
+  const cabinRequest =
+    props.cabin && props.cabin.phase !== "closed" ? props.cabin.request : 0;
+  const cabinAsset = useVehicleAsset(
+    cabinRequested ? CABIN_URL : null,
+    { paint: [], headlights: [], taillights: [] },
+    () => {},
+    (message) => props.onCabinError?.(cabinRequest, message),
+    [],
+    (progress) => props.onCabinProgress?.(cabinRequest, progress),
+  );
+  const seat = props.cabin?.phase === "active" ? props.cabin.seat : null;
+  const cabinView = useMemo(
+    () =>
+      seat && asset && cabinAsset ? cabinCameraView(seat, asset) : undefined,
+    [seat, asset, cabinAsset],
+  );
   const readiness = useSceneReadiness(
     props.url,
     `${props.environment}:${props.environmentRequest ?? 0}`,
@@ -143,6 +163,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
           preset={props.preset}
           requestId={props.cameraRequest}
           cameraViews={props.cameraViews}
+          cabinView={cabinView}
           autoRotate={props.autoRotate}
           reducedMotion={props.reducedMotion}
           onManual={props.onManual}
@@ -156,6 +177,19 @@ export default function VehicleScene(props: VehicleSceneProps) {
               onFallback={props.onEnvironmentFallback}
               onReady={readiness.onEnvironmentRendered}
             />
+            {cabinAsset && cabinRequested && (
+              <CabinAttachment
+                key={cabinRequest}
+                asset={cabinAsset}
+                exterior={asset}
+                active={props.cabin?.phase === "active"}
+                request={cabinRequest}
+                onReady={(request) => props.onCabinReady?.(request)}
+                onError={(request, message) =>
+                  props.onCabinError?.(request, message)
+                }
+              />
+            )}
             <Vehicle
               key={asset.scene.uuid}
               asset={asset}

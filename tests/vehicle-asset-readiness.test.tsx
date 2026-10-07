@@ -110,3 +110,20 @@ it.each([
     stream.close();
   },
 );
+
+it("does not fetch or initialize loading for a disabled optional asset", () => {
+  const fetch = vi.fn();
+  vi.stubGlobal("fetch", fetch);
+  const progress = vi.fn();
+  const { result } = renderHook(() =>
+    useVehicleAsset(
+      null,
+      { paint: [], headlights: [], taillights: [] },
+      progress,
+      () => {},
+    ),
+  );
+  expect(result.current).toBeNull();
+  expect(fetch).not.toHaveBeenCalled();
+  expect(progress).not.toHaveBeenCalled();
+});

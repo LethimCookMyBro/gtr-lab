@@ -1,0 +1,131 @@
+/* Cabin controls occupy the existing rail; the canvas and exterior layout stay intact. */
+.paint-rail.cabin-preview-controls {
+  color: #f2f3f3;
+  background: #0b0e10;
+  gap: 24px;
+}
+.cabin-preview-copy {
+  max-width: 350px;
+  min-width: 0;
+}
+.cabin-preview-copy strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+}
+.cabin-preview-copy p {
+  color: #bfc5c8;
+  font-size: 14px;
+  line-height: 1.45;
+  margin-top: 8px;
+}
+.cabin-seat-choices {
+  display: flex;
+  gap: 8px;
+}
+.cabin-seat-choices button {
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 1px solid #444d53;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.cabin-seat-choices button[aria-pressed="true"] {
+  background: #f0f1f1;
+  color: #111416;
+  border-color: #f0f1f1;
+}
+.cabin-seat-choices button:hover {
+  border-color: #dce0e2;
+}
+.cabin-preview-controls .text-link {
+  min-height: 44px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.cabin-load-status {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 220px;
+  font-size: 14px;
+}
+.cabin-load-status small {
+  font-variant-numeric: tabular-nums;
+  color: #c9ced1;
+  font-size: 14px;
+}
+.cabin-load-status progress {
+  width: 100%;
+  height: 4px;
+  accent-color: #dce0e2;
+}
+.cabin-load-indeterminate {
+  height: 2px;
+  background: #5b656c;
+}
+.cabin-load-error {
+  max-width: 420px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cabin-recovery {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.cabin-preview-controls button:focus-visible {
+  outline: 2px solid #f6f7f7;
+  outline-offset: 4px;
+}
+@media (max-width: 760px) {
+  .paint-rail.cabin-preview-controls {
+    padding: 12px 20px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-content: center;
+    gap: 8px 12px;
+  }
+  .cabin-preview-copy {
+    grid-column: 1/-1;
+    max-width: none;
+  }
+  .cabin-preview-copy strong {
+    font-size: 14px;
+  }
+  .cabin-preview-copy p {
+    font-size: 14px;
+    line-height: 1.35;
+    margin-top: 3px;
+  }
+  .cabin-seat-choices {
+    gap: 5px;
+  }
+  .cabin-seat-choices button {
+    font-size: 14px;
+    padding: 8px;
+  }
+  .cabin-preview-controls .text-link {
+    font-size: 14px;
+    gap: 6px;
+  }
+  .cabin-exit svg {
+    display: none;
+  }
+  .cabin-load-status {
+    min-width: 0;
+    gap: 4px;
+    font-size: 14px;
+  }
+  .cabin-load-status small {
+    font-size: 14px;
+  }
+  .cabin-load-error {
+    font-size: 14px;
+    grid-column: 1/-1;
+  }
+  .cabin-recovery {
+    grid-column: 1/-1;
+    gap: 20px;
+  }
+}

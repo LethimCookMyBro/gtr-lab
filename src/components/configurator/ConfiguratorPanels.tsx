@@ -83,10 +83,19 @@ export function ConfiguratorPanels({
               available.
             </p>
           )}
-          {interactive && !model.asset.interior && (
-            <p className="availability-note" id="cabin-availability">
-              Exterior-only model. A detailed cabin is not included in this
-              asset, so Interior is unavailable.
+          {interactive &&
+            !model.asset.interior &&
+            !model.asset.cabinPreview && (
+              <p className="availability-note" id="cabin-availability">
+                Exterior-only model. A detailed cabin is not included in this
+                asset, so Interior is unavailable.
+              </p>
+            )}
+          {model.asset.cabinPreview && (
+            <p className="availability-note" id="cabin-preview-note">
+              An original authored cabin, still in progress. Choosing the
+              preview downloads a separate 14.6 MB model. Not a verified factory
+              interior.
             </p>
           )}
           <div className="camera-choices">
@@ -94,22 +103,46 @@ export function ConfiguratorPanels({
               <button
                 key={p.id}
                 disabled={
-                  !interactive || (p.id === "interior" && !model.asset.interior)
+                  !interactive ||
+                  (p.id === "interior" &&
+                    ((!model.asset.interior && !model.asset.cabinPreview) ||
+                      state.cabin.phase === "loading"))
                 }
                 aria-describedby={
-                  p.id === "interior" && interactive && !model.asset.interior
-                    ? "cabin-availability"
-                    : undefined
+                  p.id === "interior" && model.asset.cabinPreview
+                    ? "cabin-preview-note"
+                    : p.id === "interior" &&
+                        interactive &&
+                        !model.asset.interior
+                      ? "cabin-availability"
+                      : undefined
                 }
-                className={state.cameraPreset === p.id ? "selected" : ""}
+                className={
+                  (
+                    p.id === "interior"
+                      ? state.cabin.phase === "active"
+                      : state.cameraPreset === p.id &&
+                        state.cabin.phase !== "active"
+                  )
+                    ? "selected"
+                    : ""
+                }
                 onClick={() => {
-                  state.setCamera(p.id);
+                  if (p.id === "interior" && model.asset.cabinPreview)
+                    state.beginCabin();
+                  else state.setCamera(p.id);
                   audio.play();
                   close();
                 }}
               >
-                <span>{p.name}</span>
-                {p.id === "interior" && !model.asset.interior ? (
+                <span>
+                  {p.id === "interior" && model.asset.cabinPreview
+                    ? "Cabin preview · work in progress"
+                    : p.name}
+                </span>
+                {p.id === "interior" &&
+                !model.asset.interior &&
+                !model.asset.cabinPreview ? (
                   <small>Detailed cabin required</small>
                 ) : state.cameraPreset === p.id ? (
                   <Check size={17} />

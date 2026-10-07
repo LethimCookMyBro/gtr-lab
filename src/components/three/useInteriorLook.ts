@@ -6,13 +6,20 @@ import type { VectorTuple } from "./sceneHelpers";
 
 type Props = {
   enabled: boolean;
+  contractLook?: boolean;
   seat: Vector3;
   target: Vector3;
   onManual: () => void;
 };
 
 /** Drag or arrow keys rotate the view around a fixed driver's eye point. */
-export function useInteriorLook({ enabled, seat, target, onManual }: Props) {
+export function useInteriorLook({
+  enabled,
+  seat,
+  target,
+  onManual,
+  contractLook = false,
+}: Props) {
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera) as PerspectiveCamera;
   const invalidate = useThree((state) => state.invalidate);
@@ -24,6 +31,14 @@ export function useInteriorLook({ enabled, seat, target, onManual }: Props) {
     const direction = target.clone().sub(seat).normalize();
     let yaw = Math.atan2(direction.x, direction.z);
     let pitch = Math.asin(direction.y);
+    const yawMin = contractLook ? yaw - Math.PI : -Math.PI * 0.95;
+    const yawMax = contractLook ? yaw + Math.PI : Math.PI * 0.95;
+    const pitchMin = contractLook
+      ? Math.max((-Math.PI * 89) / 180, pitch - (Math.PI * 70) / 180)
+      : -0.65;
+    const pitchMax = contractLook
+      ? Math.min((Math.PI * 89) / 180, pitch + (Math.PI * 70) / 180)
+      : 0.65;
     let pointer: number | null = null;
     let lastX = 0;
     let lastY = 0;
@@ -51,13 +66,13 @@ export function useInteriorLook({ enabled, seat, target, onManual }: Props) {
       if (event.pointerId !== pointer) return;
       yaw = MathUtils.clamp(
         yaw - (event.clientX - lastX) * 0.004,
-        -Math.PI * 0.95,
-        Math.PI * 0.95,
+        yawMin,
+        yawMax,
       );
       pitch = MathUtils.clamp(
         pitch + (event.clientY - lastY) * 0.003,
-        -0.65,
-        0.65,
+        pitchMin,
+        pitchMax,
       );
       lastX = event.clientX;
       lastY = event.clientY;
@@ -87,8 +102,8 @@ export function useInteriorLook({ enabled, seat, target, onManual }: Props) {
             : event.key === "ArrowRight"
               ? -0.08
               : 0),
-        -Math.PI * 0.95,
-        Math.PI * 0.95,
+        yawMin,
+        yawMax,
       );
       pitch = MathUtils.clamp(
         pitch +
@@ -97,8 +112,8 @@ export function useInteriorLook({ enabled, seat, target, onManual }: Props) {
             : event.key === "ArrowDown"
               ? -0.06
               : 0),
-        -0.65,
-        0.65,
+        pitchMin,
+        pitchMax,
       );
       apply();
     }
@@ -115,7 +130,9 @@ export function useInteriorLook({ enabled, seat, target, onManual }: Props) {
       canvas.removeEventListener("pointercancel", up);
       canvas.removeEventListener("wheel", wheel);
       canvas.removeEventListener("keydown", key);
+      if (pointer !== null && canvas.hasPointerCapture(pointer))
+        canvas.releasePointerCapture(pointer);
       canvas.tabIndex = previousTabIndex;
     };
-  }, [enabled, seat, target, camera, gl, invalidate]);
+  }, [enabled, seat, target, camera, gl, invalidate, contractLook]);
 }

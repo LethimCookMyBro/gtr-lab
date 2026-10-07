@@ -1,4 +1,4 @@
-import type { Camera, Object3D, WebGLRenderer } from "three";
+import type { Camera, Object3D, Scene, WebGLRenderer } from "three";
 
 /**
  * Three's compileAsync owns an uncancellable timer which re-reads material
@@ -10,6 +10,7 @@ export function compileRearScene(
   scene: Object3D,
   camera: Camera,
   signal: AbortSignal,
+  targetScene?: Scene,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -30,7 +31,7 @@ export function compileRearScene(
     }
     signal.addEventListener("abort", abort, { once: true });
     try {
-      renderer.compile(scene, camera);
+      renderer.compile(scene, camera, targetScene);
       const context = renderer.getContext();
       const extension = context.getExtension("KHR_parallel_shader_compile");
       // Include the already-created studio programs as well as the vehicle.
@@ -61,8 +62,13 @@ export function compileRearScene(
                 program,
                 extension.COMPLETION_STATUS_KHR,
               )
-            )
+            ) {
+              // Completion includes failed programs. Only a successful link can
+              // release the preview's loading state into an interactive scene.
+              if (!context.getProgramParameter(program, context.LINK_STATUS))
+                throw new Error("The 3D shaders could not link. Please retry.");
               pending.splice(i, 1);
+            }
           }
           if (pending.length === 0) finish();
           else timer = setTimeout(check, 10);

@@ -10,6 +10,8 @@ import {
   interpolationAlpha,
   type CameraView,
 } from "./sceneHelpers";
+import type { CabinCameraView } from "./cabinPreview";
+import type { VectorTuple } from "./sceneHelpers";
 import { useInteriorLook } from "./useInteriorLook";
 import {
   connectExteriorKeyboard,
@@ -18,6 +20,7 @@ import {
 
 type Props = {
   preset: string;
+  cabinView?: CabinCameraView;
   requestId?: number;
   autoRotate: boolean;
   reducedMotion: boolean;
@@ -26,13 +29,23 @@ type Props = {
 };
 
 export function CameraRig({
-  preset,
+  preset: exteriorPreset,
+  cabinView,
   requestId = 0,
   autoRotate,
   reducedMotion,
   onManual,
   cameraViews,
 }: Props) {
+  const preset = cabinView ? "interior" : exteriorPreset;
+  const wasPreview = useRef(false);
+  const exteriorSnapshot = useRef<{
+    preset: string;
+    request: number;
+    view: CameraView;
+    near: number;
+    far: number;
+  } | null>(null);
   const camera = useThree((state) => state.camera) as PerspectiveCamera;
   const size = useThree((state) => state.size);
   const invalidate = useThree((state) => state.invalidate);
@@ -50,10 +63,16 @@ export function CameraRig({
     }),
     [],
   );
-  const view = cameraView(preset, cameraViews);
+  const saved = exteriorSnapshot.current;
+  const restoring =
+    !cabinView &&
+    saved?.preset === exteriorPreset &&
+    saved.request === requestId;
+  const view =
+    cabinView ?? (restoring ? saved.view : cameraView(preset, cameraViews));
   const aspect = size.width / Math.max(1, size.height);
   const targetFov =
-    preset === "wheel" || preset === "interior"
+    restoring || preset === "wheel" || preset === "interior"
       ? view.fov
       : view.fov * Math.min(1.25, Math.max(1, 1 / aspect));
   const destination = useMemo(() => {
@@ -61,7 +80,7 @@ export function CameraRig({
     const position = new Vector3(...view.position);
     // Preserve whole-car framing in the mobile viewport; detail views remain close.
     const distanceScale =
-      preset === "wheel" || preset === "interior"
+      restoring || preset === "wheel" || preset === "interior"
         ? 1
         : exteriorDistanceScale(
             Math.min(1.25, Math.max(1, 1 / aspect)),
@@ -77,9 +96,50 @@ export function CameraRig({
         view.maxDistance * distanceScale,
       ),
     };
-  }, [aspect, preset, view, size.width]);
+  }, [aspect, preset, view, size.width, restoring]);
 
   useLayoutEffect(() => {
+    const orbit = controls.current;
+    if (cabinView && !wasPreview.current && orbit) {
+      const tuple = (vector: Vector3): VectorTuple => [
+        vector.x,
+        vector.y,
+        vector.z,
+      ];
+      exteriorSnapshot.current = {
+        preset: exteriorPreset,
+        request: requestId,
+        near: camera.near,
+        far: camera.far,
+        view: {
+          position: tuple(camera.position),
+          target: tuple(orbit.target),
+          fov: camera.fov,
+          minDistance: orbit.minDistance,
+          maxDistance: orbit.maxDistance,
+        },
+      };
+    }
+    if (cabinView) {
+      // Drain the previous exterior damping delta before fixing the new eye.
+      // The snapshot above retains the exact pre-drain exterior pose.
+      if (orbit && !wasPreview.current) {
+        orbit.autoRotate = false;
+        orbit.enableDamping = false;
+        orbit.update();
+      }
+      camera.near = cabinView.near;
+      camera.far = cabinView.far;
+      // Seat changes never translate the eye through the console or seatbacks.
+      // The fixed eye changes once; orientation/FOV settle smoothly below.
+      const direction = camera.getWorldDirection(new Vector3());
+      camera.position.copy(destination.position);
+      orbit?.target.copy(direction.add(camera.position));
+    } else if (wasPreview.current && exteriorSnapshot.current) {
+      camera.near = exteriorSnapshot.current.near;
+      camera.far = exteriorSnapshot.current.far;
+    }
+    wasPreview.current = Boolean(cabinView);
     moving.current = true;
     manuallyStopped.current = false;
     leavingInterior.current = wasInterior.current && preset !== "interior";
@@ -107,7 +167,16 @@ export function CameraRig({
     }
     wasInterior.current = preset === "interior";
     invalidate();
-  }, [destination, targetFov, invalidate, camera, preset, requestId]);
+  }, [
+    destination,
+    targetFov,
+    invalidate,
+    camera,
+    preset,
+    requestId,
+    cabinView,
+    exteriorPreset,
+  ]);
 
   useEffect(() => {
     // User can deliberately enable rotation again after a drag cancelled it.
@@ -214,6 +283,7 @@ export function CameraRig({
     seat: destination.position,
     target: destination.target,
     onManual: stopForManualInput,
+    contractLook: Boolean(cabinView),
   });
 
   return (

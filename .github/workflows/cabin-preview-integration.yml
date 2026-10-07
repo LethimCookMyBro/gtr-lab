@@ -1,0 +1,63 @@
+name: Production cabin preview integration
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/capture-cabin-preview.mjs'
+      - 'scripts/prepare-cabin.mjs'
+      - 'scripts/prepare-models.mjs'
+      - 'qa/cabin-preview/r35-sealed-spatial.glb.gz'
+      - 'modeldata/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'server.mjs'
+      - '.github/workflows/cabin-preview-integration.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cabin-integration-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  production-cabin:
+    # The stage marker is added only after source/backup review and explicit go.
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-cabin-integration]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Preserve source identity even if setup or build fails
+        run: |
+          mkdir -p cabin-integration-results
+          printf '%s\n' '${{ github.sha }}' > cabin-integration-results/source-sha.txt
+      - run: npm ci
+      - name: Build the actual production app and exact assets
+        run: npm run build
+        timeout-minutes: 8
+      - run: node --check scripts/capture-cabin-preview.mjs
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Exercise cabin opt-in, recovery, seats and teardown
+        run: node scripts/capture-cabin-preview.mjs
+        timeout-minutes: 16
+        env:
+          R35_ALLOW_CABIN_INTEGRATION: '1'
+          R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-cabin-integration-${{ matrix.viewport }}
+          path: cabin-integration-results/
+          retention-days: 14
+          if-no-files-found: warn

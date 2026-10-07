@@ -35,4 +35,14 @@ The validator reports informational notices for optional unused attributes and i
 
 The licensed source contains an exterior shell and wheels, with no dashboard, steering wheel, instruments, center console, seats, door cards, cabin floor or roof lining. Its opaque-looking glazing hides that empty shell.
 
-Any cabin added to this experience must be credited and described separately as an authored, reference-guided study fitted to this licensed exterior. It must not be represented as original Ciasny cabin geometry or a factory-accurate scan. Interior controls remain disabled until the added cabin is rendered and checked.
+Any cabin added to this experience must be credited and described separately as an authored, reference-guided study fitted to this licensed exterior. It must not be represented as original Ciasny cabin geometry or a factory-accurate scan. The separate opt-in preview described below is an interim work in progress. It does not make the underlying exterior a verified complete Premium replica.
+
+## Optional original authored cabin preview
+
+The Premium configurator offers a separately loaded, original authored R35 cabin study. It is not Ciasny cabin geometry, official Nissan/OEM data, or a certified factory interior. Dashboard, console controls, steering assembly, seats, door cards and enclosed cabin surfaces have been authored as an approximation; some forms and material response remain generic. The other five variants remain photographic references without fake shared cabins.
+
+The sealed spatial cabin contains 309 primitives and 509,692 triangles. Its exact GLB is 14,599,520 bytes, SHA-256 `3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd`. The repository retains its pinned gzip at `qa/cabin-preview/r35-sealed-spatial.glb.gz`; offline build preparation verifies both compressed and expanded hashes. The cabin uses the existing exterior-derived normalization, including its camera eye points.
+
+Only four reviewed window meshes receive temporary artistic thin-glass materials while the preview is active. On exit, cancellation, error or model change, the accepted opaque exterior window references are restored. Lamps, cowl, paint and other materials are outside that policy. Weak reflections and no physical refraction are known limitations of this thin-glass treatment. Doors, seats and instruments are not operational.
+
+Driver, passenger and rear views have fixed eye points, clamped look controls and no translational navigation. The source camera contract is a visual-inspection contract, not occupant/ergonomic certification. Hardware performance, mobile frame rate, factory accuracy and completion of all six models are not claimed.

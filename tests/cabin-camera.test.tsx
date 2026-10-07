@@ -131,7 +131,9 @@ describe("camera motion and fixed-seat controls", () => {
     frame();
     const canonical = host.state.camera.position.clone();
     key("ArrowLeft", 5);
-    expect(host.state.camera.position.distanceTo(canonical)).toBeGreaterThan(0.1);
+    expect(host.state.camera.position.distanceTo(canonical)).toBeGreaterThan(
+      0.1,
+    );
     result.rerender(
       <CameraRig
         preset="hero"
@@ -142,7 +144,9 @@ describe("camera motion and fixed-seat controls", () => {
       />,
     );
     frame();
-    expect(host.state.camera.position.distanceTo(canonical)).toBeLessThan(0.00001);
+    expect(host.state.camera.position.distanceTo(canonical)).toBeLessThan(
+      0.00001,
+    );
   });
   it.each([
     [1440, 744],
@@ -335,4 +339,139 @@ describe("camera motion and fixed-seat controls", () => {
     );
     expect(onManual).toHaveBeenCalled();
   });
+});
+
+describe("bounded preview camera", () => {
+  const preview = { ...driver, near: 0.015, far: 50 };
+  it("restores the exact manually orbited exterior pose and lens after a preview", () => {
+    const result = render(
+      <CameraRig
+        preset="hero"
+        autoRotate={false}
+        reducedMotion
+        onManual={() => {}}
+      />,
+    );
+    frame();
+    key("ArrowLeft", 8);
+    const position = host.state.camera.position.clone();
+    const quaternion = host.state.camera.quaternion.clone();
+    const fov = host.state.camera.fov;
+    result.rerender(
+      <CameraRig
+        preset="hero"
+        cabinView={preview}
+        autoRotate={false}
+        reducedMotion
+        onManual={() => {}}
+      />,
+    );
+    frame();
+    expect(
+      host.state.camera.position.distanceTo(new Vector3(...driver.position)),
+    ).toBeLessThan(1e-8);
+    expect(host.state.camera.near).toBe(0.015);
+    key("ArrowRight", 20);
+    result.rerender(
+      <CameraRig
+        preset="hero"
+        autoRotate={false}
+        reducedMotion
+        onManual={() => {}}
+      />,
+    );
+    frame();
+    expect(host.state.camera.position.distanceTo(position)).toBeLessThan(1e-8);
+    expect(host.state.camera.quaternion.angleTo(quaternion)).toBeLessThan(1e-7);
+    expect(host.state.camera.fov).toBe(fov);
+    expect(host.state.camera.near).toBe(0.02);
+  });
+  it("changes fixed seats without enabling orbital translation and keeps demand frames bounded", () => {
+    const result = render(
+      <CameraRig
+        preset="hero"
+        cabinView={preview}
+        autoRotate={true}
+        reducedMotion
+        onManual={() => {}}
+      />,
+    );
+    frame();
+    const passenger = {
+      ...preview,
+      position: [-0.42, 1.18, -0.235] as [number, number, number],
+    };
+    result.rerender(
+      <CameraRig
+        preset="hero"
+        cabinView={passenger}
+        autoRotate={true}
+        reducedMotion
+        onManual={() => {}}
+      />,
+    );
+    frame();
+    key("ArrowLeft", 120);
+    expect(host.controls!.enabled).toBe(false);
+    expect(host.controls!.autoRotate).toBe(false);
+    expect(
+      host.state.camera.position.distanceTo(new Vector3(...passenger.position)),
+    ).toBeLessThan(1e-8);
+  });
+});
+
+it("keeps the eye fixed on every non-reduced entry frame after exterior rotation and damping", () => {
+  const props = {
+    preset: "hero",
+    autoRotate: true,
+    reducedMotion: false,
+    onManual: () => {},
+  };
+  const result = render(<CameraRig {...props} />);
+  for (let i = 0; i < 240; i++) frame();
+  expect(host.controls!.autoRotate).toBe(true);
+  expect(host.controls!.enableDamping).toBe(true);
+  const preview = { ...driver, near: 0.015, far: 50 };
+  result.rerender(
+    <CameraRig {...props} autoRotate={false} cabinView={preview} />,
+  );
+  for (let i = 0; i < 120; i++) {
+    frame();
+    expect(
+      host.state.camera.position.distanceTo(new Vector3(...preview.position)),
+    ).toBeLessThan(1e-8);
+  }
+});
+
+it("starts a seat change from the actual manually turned cabin orientation", () => {
+  const preview = { ...driver, near: 0.015, far: 50 };
+  const result = render(
+    <CameraRig
+      preset="hero"
+      cabinView={preview}
+      autoRotate={false}
+      reducedMotion
+      onManual={() => {}}
+    />,
+  );
+  frame();
+  key("ArrowRight", 12);
+  key("ArrowUp", 8);
+  const rotation = host.state.camera.quaternion.clone();
+  const passenger = {
+    ...preview,
+    position: [-0.42, 1.18, -0.235] as [number, number, number],
+  };
+  result.rerender(
+    <CameraRig
+      preset="hero"
+      cabinView={passenger}
+      autoRotate={false}
+      reducedMotion={false}
+      onManual={() => {}}
+    />,
+  );
+  expect(host.state.camera.quaternion.angleTo(rotation)).toBeLessThan(1e-7);
+  frame(0.001);
+  expect(host.state.camera.quaternion.angleTo(rotation)).toBeLessThan(0.05);
 });
