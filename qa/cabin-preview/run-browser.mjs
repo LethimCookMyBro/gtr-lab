@@ -10,12 +10,14 @@ assert.equal(process.env.GITHUB_ACTIONS,'true','Use the separately authorized Gi
 assert.equal(process.env.R35_ALLOW_BROWSER_QA,'1','Explicit CI browser QA gate required');
 const output='cabin-webgl-results';await mkdir(output,{recursive:true});
 const plan=process.env.R35_QA_VIEWPORT || 'desktop';assert.ok(['desktop','mobile'].includes(plan));
+const focus=process.env.R35_QA_FOCUS || 'full';assert.ok(['full','remaining-desktop'].includes(focus));
+if(focus==='remaining-desktop')assert.equal(plan,'desktop');
 const viewport=plan==='desktop'?{width:1440,height:1000}:{width:390,height:844};
 const baseline=JSON.parse(await readFile(new URL('./reference-baseline.json',import.meta.url),'utf8'));
 assert.equal(baseline.commit,'93d4fda63915c64ff1b3a8d852128fba667873f0');
 assert.equal(createHash('sha256').update(await readFile(new URL('./camera-contract.json',import.meta.url))).digest('hex'),baseline.cameraContractSha256,'Camera contract remains identical to the measured baseline');
 assert.deepEqual(viewport,baseline.plans[plan].viewport);
-const report={baselineCommit:baseline.commit,baselineComparison:[],status:'running',qaCommit:process.env.GITHUB_SHA,startedAt:new Date().toISOString(),viewport,plan,
+const report={focus,coverage:{fullSpatialVisualSet:focus==='full',priorRun:37595560874,priorCommit:'91ae99c74791d7b459dd8a624cbc031009789908',skipped:focus==='full'?[]:['completed driver/front views','drag/wheel/key input bursts','passenger sweeps','rear-down view','spatial full-page capture','cabin separate-file capture','paint/lamp-toggle cases','reload/overlap cases'],note:focus==='full'?'Full original visual sequence':'Targeted continuation; preserves the earlier failed run and does not claim the omitted checks were rerun'},baselineCommit:baseline.commit,baselineComparison:[],status:'running',qaCommit:process.env.GITHUB_SHA,startedAt:new Date().toISOString(),viewport,plan,
   scope:'Separate Three.js inspector using exact new cabin and unchanged accepted exterior. Production app integration is not under test.',
   limitations:['SwiftShader is a software renderer. A 390px emulated viewport is not a physical Android test.','Screenshots require visual review. Functional success is not visual acceptance.','Render CPU times exclude asynchronous GPU completion.'],
   screenshots:[],captureStages:[],dirtyChecks:[],checks:[],timings:[],appearanceChecks:[],errors:[],consoleErrors:[],requestFailures:[]};
@@ -90,8 +92,11 @@ try {
       if(reference) {
         const pose=Object.fromEntries(Object.entries(after.camera).filter(([key])=>Object.hasOwn(reference.camera,key)));
         assert.deepEqual(pose,reference.camera,`${label}: same camera as original baseline`);
-        for(const key of ['canvas','appearance','glass','cabinOnly'])assert.deepEqual(after[key],reference[key],`${label}: same ${key} as original baseline`);
-        report.baselineComparison.push({file:item.file,baselineFile:reference.file,baselineSha256:reference.sha256,candidateSha256:item.sha256,sameCamera:true,
+        for(const key of ['canvas','appearance','glass','cabinOnly']) {
+          const expected=key==='glass' && label==='rear-exterior-source-windows'?false:reference[key];
+          assert.deepEqual(after[key],expected,`${label}: expected ${key} at original baseline camera`);
+        }
+        report.baselineComparison.push({file:item.file,baselineFile:reference.file,sameControls:label!=='rear-exterior-source-windows',controlDifference:label==='rear-exterior-source-windows'?{glass:{baseline:reference.glass,candidate:false}}:null,baselineSha256:reference.sha256,candidateSha256:item.sha256,sameCamera:true,
           baselineCounters:reference.rendererCounters,candidateCounters:after.rendererCounters});
         if(baselineLabel==='cabin-isolated')assert.ok(after.rendererCounters.calls<reference.rendererCounters.calls,'Batching reduces measured isolated-cabin draw submissions');
       } else assert.equal(label,'failure','Every planned capture has an original baseline reference');
@@ -131,7 +136,21 @@ try {
   report.renderer=await page.evaluate(()=>window.__R35_QA__.renderer);assert.equal(report.renderer.webgl2,true);
   report.inputs=await page.evaluate(()=>window.__R35_QA__.inputManifest);
   report.initialLoad=await page.evaluate(()=>({assets:window.__R35_QA__.loadMeasurements,firstFrameSubmittedMs:window.__R35_QA__.firstFrameSubmittedMs,exteriorDerivedAppTransform:window.__R35_QA__.exteriorDerivedAppTransform}));
+  const inspectLoadedGeometry=async()=>{
+  report.windowAssignments=await page.evaluate(()=>window.__R35_QA__.getWindowAssignments());assert.equal(report.windowAssignments.length,4);
+  report.eyeClearance=await page.evaluate(()=>window.__R35_QA__.inspectEyeClearance());
+  for(const eye of report.eyeClearance)assert.equal(eye.nearPlaneClearForAllPanDirections,true,`${eye.camera}: near plane`);
+  const closureFixtures=JSON.parse(await readFile(new URL('./closure-fixtures.json',import.meta.url),'utf8'));
+  report.closureRays=await page.evaluate(fixtures=>window.__R35_QA__.inspectClosureRays(fixtures),closureFixtures);
+  for(const [mode,result] of Object.entries(report.closureRays)) {
+    assert.equal(result.total,14,`${mode}: exact known leak fixtures`);assert.equal(result.closed,14,`${mode}: known leaks closed`);
+    assert.equal(result.apertureSamples,826,`${mode}: exact original glazing fixture count`);assert.equal(result.aperturePreserved,826,`${mode}: genuine windows remain open`);
+    assert.equal(result.passed,true,`${mode}: closure/glazing rays`);
+  }
+  await save();
+  };
   await verify('initial-runtime');
+  if(focus==='full') {
   // Preserve first actual pixels before longer input/measurement sequences.
   await capture('initial-runtime');
   const originalExteriorCamera=await page.evaluate(()=>window.__R35_QA__.getCameraState());
@@ -148,17 +167,7 @@ try {
   await page.waitForFunction(()=>{const state=window.__R35_QA__.getCameraState();return Math.abs(state.orbitDistance-state.orbitMaxDistance)<1e-7;});
   assert.deepEqual((await page.evaluate(()=>window.__R35_QA__.getCameraState())).orbitTarget,originalExteriorCamera.orbitTarget,'Exterior panning remains disabled');
   await verify('exterior-input-bounds');await page.getByRole('button',{name:'Exterior orbit',exact:true}).click();
-  report.windowAssignments=await page.evaluate(()=>window.__R35_QA__.getWindowAssignments());assert.equal(report.windowAssignments.length,4);
-  report.eyeClearance=await page.evaluate(()=>window.__R35_QA__.inspectEyeClearance());
-  for(const eye of report.eyeClearance)assert.equal(eye.nearPlaneClearForAllPanDirections,true,`${eye.camera}: near plane`);
-  const closureFixtures=JSON.parse(await readFile(new URL('./closure-fixtures.json',import.meta.url),'utf8'));
-  report.closureRays=await page.evaluate(fixtures=>window.__R35_QA__.inspectClosureRays(fixtures),closureFixtures);
-  for(const [mode,result] of Object.entries(report.closureRays)) {
-    assert.equal(result.total,14,`${mode}: exact known leak fixtures`);assert.equal(result.closed,14,`${mode}: known leaks closed`);
-    assert.equal(result.apertureSamples,826,`${mode}: exact original glazing fixture count`);assert.equal(result.aperturePreserved,826,`${mode}: genuine windows remain open`);
-    assert.equal(result.passed,true,`${mode}: closure/glazing rays`);
-  }
-  await save();
+  await inspectLoadedGeometry();
   await mutate('setGlass',[false]);
   const opaqueHash=await capture('exterior-source-windows');
   await mutate('setGlass',[true]);
@@ -221,6 +230,23 @@ try {
   assert.equal(await page.evaluate(()=>window.__R35_QA__.model),'runtime');await verify('overlapping-load-latest-wins');
   await mutate('selectView',['driver']);
   await capture('page','viewport');
+  } else {
+    await inspectLoadedGeometry();
+    await mutate('setGlass',[true]);await mutate('selectView',['rear']);
+    await capture('rear');await verify('focused-rear');
+    for(const [label,yaw,pitch] of [['left',90,0],['right',-90,0],['behind',180,0],['up',0,60]]) {
+      await mutate('look',[yaw,pitch]);await capture(`rear-${label}`);
+    }
+    await page.evaluate(()=>window.__R35_QA__.selectExteriorRear());
+    const rearPhysicalHash=await capture('rear-exterior-lamps-off');
+    await mutate('setGlass',[false]);
+    await capture('rear-exterior-source-windows','canvas','rear-exterior-lamps-off');
+    await verify('focused-rear-source-windows');
+    await mutate('setGlass',[true]);
+    assert.equal(await capture('rear-exterior-windows-restored','canvas','rear-exterior-lamps-off'),rearPhysicalHash,'Focused rear window restoration returns exact pixels');
+    await mutate('setCabinOnly',[true]);await mutate('selectView',['exterior']);
+    await capture('cabin-isolated');await verify('focused-spatial-isolated');
+  }
   report.spatialVisualChecksCompletedAt=new Date().toISOString();await save();
   // A matched control is loaded only after the complete spatial visual set.
   await mutate('setCabinOnly',[true]);await mutate('selectView',['exterior']);
@@ -257,7 +283,7 @@ try {
   }
   report.finalStats=await page.evaluate(()=>window.__R35_QA__.stats);
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.consoleErrors,[]);assert.deepEqual(report.requestFailures,[]);
-  report.status='functional-checks-passed-visual-review-pending';
+  report.status=focus==='full'?'functional-checks-passed-visual-review-pending':'focused-checks-passed-visual-review-pending';
 } catch(error) {
   report.status='failed';report.failure=error.stack;process.exitCode=1;
   if(report.performanceIncomplete)report.failureScreenshotError='Skipped because incomplete performance work may still be pending; earlier visual evidence is retained';
