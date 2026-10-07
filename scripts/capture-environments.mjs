@@ -18,6 +18,7 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { chromium, expect } from "@playwright/test";
+import { waitForFullResolutionFrames } from "./environment-capture-readiness.mjs";
 
 import {
   canvasPixelHash,
@@ -271,31 +272,20 @@ async function runViewport(name, viewport) {
         ".scene-loading, .scene-notice, .render-error, vite-error-overlay",
       ),
     ).toHaveCount(0);
-    // OrbitControls temporarily lowers AdaptiveDpr. Never compare that temporary
-    // render to a canonical full-resolution frame.
-    await page.waitForFunction(
-      () => {
-        const c = document.querySelector(".scene-stage canvas");
-        return (
-          c &&
-          c.clientWidth > 0 &&
-          Math.abs(c.width / c.clientWidth - Math.min(devicePixelRatio, 1.75)) <
-            0.02
-        );
-      },
-      {},
+    // Check every concluding frame: Home can queue an OrbitControls change
+    // that lowers AdaptiveDpr after the old full-resolution canvas was observed.
+    const stable = await page.waitForFunction(
+      waitForFullResolutionFrames,
+      { timeoutMs: 15000 },
       { timeout: 15000 },
     );
-    await page.evaluate(
-      () =>
-        new Promise((resolve) => {
-          let frames = 3;
-          const next = () =>
-            --frames ? requestAnimationFrame(next) : resolve();
-          requestAnimationFrame(next);
-        }),
-    );
+    try {
+      return await stable.jsonValue();
+    } finally {
+      await stable.dispose();
+    }
   }
+
   async function graphicsHealth() {
     const health = await canvas.evaluate((element) => {
       const gl = element.getContext("webgl2") || element.getContext("webgl");
@@ -379,7 +369,7 @@ async function runViewport(name, viewport) {
   ) {
     currentStep = `${item.id}/${shot}`;
     const captureStarted = performance.now();
-    await settled();
+    const resolution = await settled();
     const settledAt = performance.now();
     assert(
       await canvas.evaluate(
@@ -500,6 +490,7 @@ async function runViewport(name, viewport) {
       viewport,
       canvasBounds: bounds,
       selectedEnvironment: item.id,
+      resolution,
       sha256: createHash("sha256").update(bytes).digest("hex"),
       canvasSha256: comparison.sha256,
       comparisonBounds: comparison.bounds,
@@ -519,6 +510,12 @@ async function runViewport(name, viewport) {
     comparisonsByHash.set(image.canvasSha256, image);
     collection.push(image);
     item.webgl = await graphicsHealth();
+    image.webgl = item.webgl;
+    assert.deepEqual(
+      image.webgl.drawingBuffer,
+      resolution.drawingBuffer,
+      "Canvas resolution changed during the screenshot",
+    );
     await writeFile(
       join(directory, item.id, "report.json"),
       JSON.stringify(item, null, 2),

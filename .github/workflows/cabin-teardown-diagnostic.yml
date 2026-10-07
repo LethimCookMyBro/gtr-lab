@@ -1,0 +1,56 @@
+name: Diagnose production cabin teardown
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cabin-teardown-probe.mjs'
+      - 'scripts/diagnose-cabin-teardown.mjs'
+      - 'tests/cabin-teardown-probe.test.mjs'
+      - '.github/workflows/cabin-teardown-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cabin-teardown-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  diagnose:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[probe-cabin-teardown]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Preserve checked source identity
+        run: |
+          mkdir -p cabin-teardown-results
+          printf '%s\n' '${{ github.sha }}' > cabin-teardown-results/source-sha.txt
+      - run: npm ci
+      - name: Check the instrumentation without starting a browser
+        run: |
+          node --check scripts/cabin-teardown-probe.mjs
+          node --check scripts/diagnose-cabin-teardown.mjs
+          npx vitest run tests/cabin-teardown-probe.test.mjs --pool=threads --maxWorkers=1 --minWorkers=1
+      - name: Build the unchanged production application
+        run: npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Compare paired fresh processes with trace screenshots on and off
+        run: node scripts/diagnose-cabin-teardown.mjs
+        timeout-minutes: 14
+        env:
+          R35_ALLOW_CABIN_TEARDOWN_DIAGNOSTIC: '1'
+          R35_EXPECTED_APP_TREE: 'ee6efef7629a63fb726a9dedf638d830d72ddbb3991daaacc0757d943a1868f2'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-cabin-teardown-diagnostic
+          path: cabin-teardown-results/
+          retention-days: 14
+          if-no-files-found: warn
