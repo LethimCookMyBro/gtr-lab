@@ -43,7 +43,7 @@ jobs:
         env:
           R35_ALLOW_BROWSER_QA: '1'
           R35_QA_VIEWPORT: ${{ matrix.viewport }}
-          R35_QA_FOCUS: ${{ contains(github.event.head_commit.message, '[stage-cabin-transmission-desktop]') && 'transmission-desktop' || contains(github.event.head_commit.message, '[stage-cabin-focused-desktop]') && 'remaining-desktop' || 'full' }}
+          R35_QA_FOCUS: ${{ contains(github.event.head_commit.message, '[stage-cabin-sealed-visual]') && 'sealed-visual' || contains(github.event.head_commit.message, '[stage-cabin-transmission-desktop]') && 'transmission-desktop' || contains(github.event.head_commit.message, '[stage-cabin-focused-desktop]') && 'remaining-desktop' || 'full' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

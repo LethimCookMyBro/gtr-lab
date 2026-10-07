@@ -22,3 +22,7 @@ The preview reuses the already published exterior file without changing its byte
 The exterior has custom aero and is not a verified stock 2024 Premium body. No endorsement by Nissan or Ciasny is implied. The exterior's CC BY license does not purport to license Nissan trademarks or the separately authored cabin.
 
 Three.js 0.180.0 is used under its MIT license. Preparation retains the Three.js license beside generated viewer dependencies. No source photographs are included or redistributed.
+
+## Separate sealed spatial revision
+
+The additional sealed QA asset retains the same attribution, material recipe and component semantics. Six originally authored C26/C27/C28 interface panels join the door trim, window beltline and dashboard/end-cap regions. No accepted exterior mesh, texture, real window aperture, pivot or original semantic name is replaced. The earlier spatial/global pair remains archived as separate inputs; no same-source timing comparison is claimed between that older pair and this revision. Source-opaque front/rear silhouettes and the actual driver/passenger side images must still pass review.

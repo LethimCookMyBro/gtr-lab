@@ -71,7 +71,7 @@ test('prepared manifest pins both frozen inputs, common source lineage, exterior
   assert.equal(manifest.geometrySourceSha256, 'bf38f51d0386e80b2fbbba9b7acda936aba0f5fbaf0ec183f5a96b646933af7f');
   assert.equal(manifest.finishedSourceSha256, 'f69ea1e852811e0c2ca022c43e689d2e864904d02c7199b999ab66c751335781');
   assert.equal(manifest.sourceBaselineCommit, '276be604e8ff22afbeabecb42d6805187a7068cb');
-  assert.equal(manifest.assets.length, 3);
+  assert.equal(manifest.assets.length, 4);
   for (const model of models) {
     const asset = manifest.assets.find(value => value.file === model.file);
     assert.ok(asset, model.file);
@@ -110,4 +110,44 @@ test('baseline evidence retains the original model identity and identical camera
     assert.equal(cabin.rendererCounters.calls, 515);
     assert.equal(cabin.rendererCounters.triangles, 446480);
   }
+});
+
+const sealedModel = {
+  variant: 'sealed', file: 'r35-sealed-spatial.glb', bytes: 14599520,
+  sha256: '3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd',
+  gzip: { file: 'r35-sealed-spatial.glb.gz', bytes: 7774439, sha256: '171fb992e42632d75c87739441c71126e89de3223491a16dc6f0dbb93e1449db' },
+  loadedPrimitives: 309,
+};
+
+test('sealed spatial is an exact fourth input with its separate repaired source lineage', async () => {
+  const { compressed, bytes, json } = await readModel(sealedModel);
+  assert.equal(compressed.length, sealedModel.gzip.bytes);
+  assert.equal(sha256(compressed), sealedModel.gzip.sha256);
+  assert.equal(bytes.length, sealedModel.bytes);
+  assert.equal(sha256(bytes), sealedModel.sha256);
+  const manifest = JSON.parse(await readFile(new URL('.qa-cabin-runtime/input-manifest.json', root), 'utf8'));
+  const asset = manifest.assets[3];
+  assert.ok(asset, 'Sealed spatial must be an additional fourth asset');
+  for (const key of ['variant', 'file', 'bytes', 'sha256', 'loadedPrimitives']) assert.equal(asset[key], sealedModel[key]);
+  assert.deepEqual(asset.gzip, sealedModel.gzip);
+  assert.equal(asset.geometrySourceSha256, '785cf1c4541df1d83fcc6c6a6a2e837deeb75f489a9b0241c70e07149ab8a070');
+  assert.equal(asset.finishedSourceSha256, 'b379c1f2f53f61967aa7bf72ba08927256a44f942a050e406d0b65419e9483ca');
+  assert.notEqual(asset.geometrySourceSha256, manifest.geometrySourceSha256);
+  assert.notEqual(asset.finishedSourceSha256, manifest.finishedSourceSha256);
+  const prepared = await readFile(new URL(`.qa-cabin-runtime/${sealedModel.file}`, root));
+  assert.equal(prepared.length, sealedModel.bytes);
+  assert.equal(sha256(prepared), sealedModel.sha256);
+  assert.equal(asset.triangles, 509692);
+  assert.equal(asset.materials, 46);
+  assert.equal(asset.images, 0);
+  assert.equal(asset.textures, 0);
+  assert.deepEqual(json.materials, (await readModel(models[0])).json.materials, 'Sealing retains the calibrated material definitions');
+  assert.equal(json.materials.length, 46);
+  assert.equal((json.images || []).length, 0);
+  assert.equal((json.textures || []).length, 0);
+  const definition = triangleDefinition(json);
+  assert.equal(definition.triangles, 509692);
+  assert.equal(definition.primitives, 309);
+  assert.equal(json.nodes.filter(node => Number.isInteger(node.mesh)).length, 284);
+  assert.deepEqual(manifest.assets.slice(0, 3).map(value => value.file), [...models.map(model => model.file), 'ciasny-r35.glb']);
 });

@@ -2,6 +2,18 @@
 
 This separate preview is outside application routes and build inputs. It does not deploy a cabin to the live app. Candidate publication and later app integration require separate review.
 
+## Sealed spatial candidate: six-view visual check
+
+The separately named r35-sealed-spatial.glb.gz adds the repaired door/beltline/dashboard interfaces without replacing the two contained comparison assets below. Its GLB is 14,599,520 bytes, SHA-256 3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd; gzip is 7,774,439 bytes, SHA-256 171fb992e42632d75c87739441c71126e89de3223491a16dc6f0dbb93e1449db. It has 309 primitives, 509,692 triangles, 46 materials and no images or textures. Geometry source is 785cf1c4541df1d83fcc6c6a6a2e837deeb75f489a9b0241c70e07149ab8a070; finished source is b379c1f2f53f61967aa7bf72ba08927256a44f942a050e406d0b65419e9483ca.
+
+Only the stage-cabin-sealed-visual commit marker selects the bounded sealed route. It captures four desktop views (driver-left, passenger-right, source-opaque front roof, source-opaque rear glass) and two mobile-size views (driver and rear). Existing fixed-camera contracts are unchanged. Transmission resolution stays at 1: the prior scale-0.5 diagnostic visibly softened through-window cabin details. There are no continuous timing blocks in this visual-only route and no physical-device performance claim.
+
+Checks retain exact input identities, four-window/material isolation, fixed eye clearance, fourteen closure rays and 826 original window rays. An additional 96 deterministic seam rays, sampled across both sides from documented pre-repair failures, are checked in geometry and runtime-side modes. Tests must reproduce the failure on the retained 111457de model and pass on the sealed model. This bounded sample does not replace the author package's dense offline sweep or claim every possible cavity is closed.
+
+Paint/lamp, window restoration and bounded fixed-eye controls are exercised in one synchronous mutation batch, then original appearance is restored before capture. This avoids a redundant GPU input queue; it does not relax capture completion or freshness checks. Six PNGs need actual review against the preserved baseline and contained-candidate evidence before any application integration.
+
+The remaining sections describe the retained historical full comparison route, not extra coverage claimed by the sealed six-view run. The transmission diagnostic remains pinned to the older 111457de scene and the existing global control is not relabelled as a sealed-model control.
+
 ## Exact inputs
 
 - Contained spatial cabin: 14,187,168 bytes, SHA-256 111457de471188208c934e982cbcb076b37417f302560cfbab4b8d88ed092be8

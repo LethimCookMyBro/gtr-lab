@@ -12,7 +12,7 @@ import { inspectClosureRays } from './closure-rays.mjs';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const MODELS = Object.freeze({ runtime: ['../ciasny-r35.glb', '../r35-original-cabin-lod0.glb'], original: ['../r35-original-cabin-lod0.glb'], global: ['../ciasny-r35.glb', '../r35-contained-global-control.glb'] });
+const MODELS = Object.freeze({ runtime: ['../ciasny-r35.glb', '../r35-original-cabin-lod0.glb'], original: ['../r35-original-cabin-lod0.glb'], global: ['../ciasny-r35.glb', '../r35-contained-global-control.glb'], sealed: ['../ciasny-r35.glb', '../r35-sealed-spatial.glb'] });
 const expectedScreenshots = ['exterior-baseline.png','exterior-windows.png','driver.png','passenger.png','rear.png','cabin-isolated.png','original-cabin.png'];
 const qa = window.__R35_QA__ = {
   ready: false, error: null, version: 1, threeRevision: THREE.REVISION,
@@ -547,6 +547,6 @@ async function start() {
   });
   if(Object.hasOwn(contract.presets,params.get('view'))) currentView=params.get('view');
   requestAnimationFrame(animate);
-  await loadModel(params.get('model')==='original'?'original':'runtime');
+  await loadModel(params.get('model')==='sealed'?'sealed':params.get('model')==='original'?'original':'runtime');
 }
 start().catch(fail);

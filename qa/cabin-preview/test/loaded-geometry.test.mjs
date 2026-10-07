@@ -6,14 +6,15 @@ import { Group } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { inspectEyeClearance } from '../viewer/camera-clearance.js';
-import { classifyMesh, WINDOW_ALLOWLIST } from '../viewer/runtime-core.js';
+import { classifyMesh, WINDOW_ALLOWLIST, withinBounds } from '../viewer/runtime-core.js';
 import { createWindowMaterial } from '../viewer/window-materials.js';
 import { inspectClosureRays } from '../viewer/closure-rays.mjs';
 
 const root=new URL('../../../',import.meta.url);
 const models = [
-  { variant: 'spatial', file: 'r35-original-cabin-lod0.glb.gz', primitives: 303 },
-  { variant: 'global', file: 'r35-contained-global-control.glb.gz', primitives: 162 },
+  { variant: 'spatial', file: 'r35-original-cabin-lod0.glb.gz', primitives: 303, triangles: 487228 },
+  { variant: 'global', file: 'r35-contained-global-control.glb.gz', primitives: 162, triangles: 487228 },
+  { variant: 'sealed', file: 'r35-sealed-spatial.glb.gz', primitives: 309, triangles: 509692 },
 ];
 const originalPivots = [
   'PIVOT_steering_axis', 'PIVOT_fixed_column_reference', 'PIVOT_selector_base',
@@ -58,10 +59,10 @@ test(`${model.variant}: accepted exterior and exact cabin share clear fixed eye 
   const names=[],counts={cabin:0,exterior:0};
   combined.traverse(mesh=>{if(mesh.isMesh){const role=classifyMesh(mesh,roles);counts[role.isCabin?'cabin':'exterior']++;if(role.isWindow)names.push(role.name);}});
   assert.equal(counts.cabin,model.primitives);assert.equal(counts.exterior,82);
-  assert.deepEqual(countGeometry(cabin),{meshes:model.primitives,triangles:487228});
+  assert.deepEqual(countGeometry(cabin),{meshes:model.primitives,triangles:model.triangles});
   assert.deepEqual(countGeometry(exterior),{meshes:82,triangles:566475});assert.deepEqual(names.sort(),[...WINDOW_ALLOWLIST].sort());
   const results=inspectEyeClearance(combined,presets,1130/1000);
-  for(const result of results){assert.equal(result.nearPlaneClearForAllPanDirections,true,JSON.stringify(result));assert.equal(result.trianglesChecked,1053703);}
+  for(const result of results){assert.equal(withinBounds(result.position,presets[result.camera].bounds),true);assert.equal(result.nearPlaneClearForAllPanDirections,true,JSON.stringify(result));assert.equal(result.trianglesChecked,model.triangles+566475);}
   console.log(JSON.stringify({variant:model.variant,scope:'Geometry-only Node decode, not WebGL or original-texture rendering',counts,eyeClearance:results}));
 });
 
@@ -135,6 +136,6 @@ test(`${model.variant}: all eight original pivots survive loading and steering r
   assert.notDeepEqual(batch.matrixWorld.elements, batchBefore.elements);
   assert.deepEqual(seat.matrixWorld.elements, seatBefore.elements);
   assert.deepEqual(fixed.matrixWorld.elements, fixedBefore.elements);
-  assert.deepEqual(countGeometry(cabin), { meshes: model.primitives, triangles: 487228 });
+  assert.deepEqual(countGeometry(cabin), { meshes: model.primitives, triangles: model.triangles });
 });
 }

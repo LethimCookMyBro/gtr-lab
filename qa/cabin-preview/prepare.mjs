@@ -24,13 +24,23 @@ const cabinModels = [
     loadedPrimitives: 162,
   },
 ];
+const sealedModel = {
+  variant: 'sealed', file: 'r35-sealed-spatial.glb', bytes: 14599520,
+  sha256: '3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd',
+  gzip: { file: 'r35-sealed-spatial.glb.gz', bytes: 7774439, sha256: '171fb992e42632d75c87739441c71126e89de3223491a16dc6f0dbb93e1449db' },
+  loadedPrimitives: 309, triangles: 509692, materials: 46, images: 0, textures: 0,
+  // Separate sealed lineage from SEALED_HANDOFF.json. The old pair stays frozen.
+  geometrySourceSha256: '785cf1c4541df1d83fcc6c6a6a2e837deeb75f489a9b0241c70e07149ab8a070',
+  finishedSourceSha256: 'b379c1f2f53f61967aa7bf72ba08927256a44f942a050e406d0b65419e9483ca',
+  origin: 'Frozen seam-repaired spatial cabin; separate inspection candidate',
+};
 // Frozen lineage from gtr-cabin-spatial-batching-20261007/FINAL_HANDOFF.json.
 const geometrySourceSha256 = 'bf38f51d0386e80b2fbbba9b7acda936aba0f5fbaf0ec183f5a96b646933af7f';
 const finishedSourceSha256 = 'f69ea1e852811e0c2ca022c43e689d2e864904d02c7199b999ab66c751335781';
 const expectedExterior = 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d';
 await mkdir(output, { recursive: true });
 const validatedModels = [];
-for (const model of cabinModels) {
+for (const model of [...cabinModels, sealedModel]) {
   const compressed = await readFile(join(directory, model.gzip.file));
   assert.equal(compressed.length, model.gzip.bytes, `${model.variant} gzip byte length`);
   assert.equal(sha256(compressed), model.gzip.sha256, `${model.variant} gzip SHA-256`);
@@ -82,6 +92,7 @@ const manifest = {
     ...cabinModels.map(model => ({ ...model, triangles: 487228, materials: 46, images: 0, textures: 0,
       origin: `Frozen contained ${model.variant} batches from the identical finished cabin source; separate inspection candidate` })),
     { file: 'ciasny-r35.glb', bytes: exterior.length, sha256: expectedExterior, loadedPrimitives: 82, triangles: 566475, origin: 'Existing accepted Ciasny exterior reused unchanged from repository modeldata' },
+    sealedModel,
   ], scope: 'Separate preview only. No production UI integration, deployment or physical Android performance claim.',
 };
 await writeFile(join(output, 'input-manifest.json'), JSON.stringify(manifest, null, 2));
