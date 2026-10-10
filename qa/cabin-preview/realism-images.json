@@ -1,0 +1,66 @@
+{
+  "assetSha256": "0b72bab4a297a9ac736e6fd65333de51e376f5364d6581ef1024423f6f146d83",
+  "assetBytes": 18848516,
+  "images": [
+    {
+      "name": "leather-normal",
+      "bytes": 366955,
+      "mimeType": "image/png",
+      "sha256": "1e420d96e2cf4af993ca150c3d3996477925aa18eec8cd0e2d92f985d637a8b6"
+    },
+    {
+      "name": "leather-orm",
+      "bytes": 182806,
+      "mimeType": "image/png",
+      "sha256": "53035c97fd410af47d89847c320f5095dad9d71878c851a43733edad5ff94d12"
+    },
+    {
+      "name": "console-twill-color",
+      "bytes": 6786,
+      "mimeType": "image/png",
+      "sha256": "033909891e23687fce57cfdb30cce7984fb2a78d20b0954bf4358f83916b42e2"
+    },
+    {
+      "name": "console-twill-normal",
+      "bytes": 9946,
+      "mimeType": "image/png",
+      "sha256": "6c9bda19f4b809c62e32b7b3a45503ecacbc68953ed1b78d541c3a1d6f309741"
+    },
+    {
+      "name": "console-twill-orm",
+      "bytes": 5718,
+      "mimeType": "image/png",
+      "sha256": "864f57ae239671fb98d322d3a0e6f12d293e71050d8740bf7030635eea0c3bee"
+    },
+    {
+      "name": "fabric-normal",
+      "bytes": 341461,
+      "mimeType": "image/png",
+      "sha256": "8ac98729b7ac3d61dcdd3709b0d2fd0fb0fed6b2139a87995d312dffb422b494"
+    },
+    {
+      "name": "fabric-orm",
+      "bytes": 189775,
+      "mimeType": "image/png",
+      "sha256": "123c310ea9b13ef42be6be34eba2b2ea7af328cf8b140d0e985fa362b59f2f1b"
+    },
+    {
+      "name": "control-fascia-markings",
+      "bytes": 15716,
+      "mimeType": "image/png",
+      "sha256": "2902307372ce50768de7cf6946202aac58d0cca63d1afff8f492d81789095410"
+    },
+    {
+      "name": "control-fascia-orm",
+      "bytes": 1824,
+      "mimeType": "image/png",
+      "sha256": "929e11da3d8e8bbc9a83ea09352abcb3e461488b76dedd99d8fe8d9dde30e749"
+    },
+    {
+      "name": "rim-continuous-seam",
+      "bytes": 4518,
+      "mimeType": "image/png",
+      "sha256": "7445f0aca2d0527e181c680002c09b243f0e0989a274adab846bbf432c70e717"
+    }
+  ]
+}

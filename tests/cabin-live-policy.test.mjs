@@ -4,7 +4,7 @@ import { gunzipSync } from 'node:zlib';
 import * as driver from '../scripts/capture-cabin-preview.mjs';
 
 const origin = 'https://gtr-lab-production.up.railway.app';
-const cabinUrl = `${origin}/models/r35-cabin-sealed-spatial.glb`;
+const cabinUrl = `${origin}/models/r35-cabin-realism-0b72bab4.glb`;
 const environment = {
   GITHUB_ACTIONS: 'true', R35_ALLOW_CABIN_INTEGRATION: '1', R35_QA_VIEWPORT: 'desktop',
 };
@@ -102,7 +102,7 @@ describe('public cabin fault adapter without sockets', () => {
     expect(fault.closed).toBeUndefined(); await f.adapter.dispose();
   });
   it('rejects another origin before installing any browser effect', () => {
-    expect(() => api('createLiveCabinFaults')({ cabinUrl: 'https://other.test/models/r35-cabin-sealed-spatial.glb' })).toThrow();
+    expect(() => api('createLiveCabinFaults')({ cabinUrl: 'https://other.test/models/r35-cabin-realism-0b72bab4.glb' })).toThrow();
   });
 });
 
@@ -114,23 +114,23 @@ describe('exact public model preflight', () => {
       const path = new URL(url).pathname;
       const manifest = JSON.parse(await readFile('modeldata/manifest.json', 'utf8'));
       const bytes = path.includes('cabin')
-        ? gunzipSync(await readFile('qa/cabin-preview/r35-sealed-spatial.glb.gz'))
+        ? gunzipSync(await readFile('qa/cabin-preview/r35-cabin-realism.glb.gz'))
         : Buffer.concat(await Promise.all(manifest[0].chunks.map(chunk => readFile(`modeldata/${chunk.path}`))));
       return new Response(bytes, { status: 200, headers: { 'content-type': 'model/gltf-binary', 'content-length': String(bytes.length) } });
     };
     const report = await api('verifyPublicCabinModels')({ fetchImpl });
     expect(report).toHaveLength(2);
-    expect(report[0]).toMatchObject({ path: '/models/r35-cabin-sealed-spatial.glb', bytes: 14599520, sha256: '3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd' });
+    expect(report[0]).toMatchObject({ path: '/models/r35-cabin-realism-0b72bab4.glb', bytes: 18848516, sha256: '0b72bab4a297a9ac736e6fd65333de51e376f5364d6581ef1024423f6f146d83' });
     expect(report[1]).toMatchObject({ path: '/models/ciasny-r35.glb', bytes: 8296356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' });
     expect(calls.every(({url, options}) => url.startsWith(`${origin}/models/`) && options.redirect === 'error' && options.signal instanceof AbortSignal)).toBe(true);
   });
   it('rejects a same-length cabin with one changed byte', async () => {
-    const bytes = gunzipSync(await readFile('qa/cabin-preview/r35-sealed-spatial.glb.gz'));
+    const bytes = gunzipSync(await readFile('qa/cabin-preview/r35-cabin-realism.glb.gz'));
     bytes[bytes.length - 1] ^= 1;
     await expect(api('verifyPublicCabinModels')({ fetchImpl: async () => new Response(bytes, { headers: { 'content-type': 'model/gltf-binary' } }) })).rejects.toThrow(/reviewed identity/);
   });
   it('bounds streamed bytes without a Content-Length header', async () => {
-    await expect(api('verifyPublicCabinModels')({ fetchImpl: async () => new Response(Buffer.alloc(14_599_521), { headers: { 'content-type': 'model/gltf-binary' } }) })).rejects.toThrow(/byte limit/);
+    await expect(api('verifyPublicCabinModels')({ fetchImpl: async () => new Response(Buffer.alloc(18_848_517), { headers: { 'content-type': 'model/gltf-binary' } }) })).rejects.toThrow(/byte limit/);
   });
   it.each([
     ['changed bytes', () => new Response('different bytes', { headers: { 'content-type': 'model/gltf-binary' } })],
@@ -146,7 +146,7 @@ describe('exact public model preflight', () => {
 
 describe('strict public fault and warning accounting', () => {
   const phase = 'Delayed download cancel and stale response ignored';
-  const path = '/models/r35-cabin-sealed-spatial.glb';
+  const path = '/models/r35-cabin-realism-0b72bab4.glb';
   const record = { requestId: 4, path, phase, status: 200, injectedFault: 'throttled-stream', bodyError: 'Protocol error: No data found for resource' };
   const failure = { requestId: 4, path, phase, failure: 'net::ERR_ABORTED' };
   it('permits an interrupted body only with the exact injected and aborted request', () => {

@@ -28,7 +28,7 @@ export async function auditCabinPreviewAvailability({ page, open, close, cabinRe
     text = (await dialog.locator('#cabin-preview-note').innerText()).replace(/\s+/g, ' ');
     assert.match(text, /original authored cabin/i);
     assert.match(text, /still in progress/i);
-    assert.match(text, /separate 14\.6 MB model/i);
+    assert.match(text, /separate 18\.8 MB model/i);
     assert.match(text, /not a verified factory interior/i);
     assert.equal(cabinRequests.length, 0, 'Opening Camera must not download the opt-in cabin');
     await page.screenshot({ path: screenshotPath });
@@ -67,7 +67,7 @@ try {
     page.on('request', request => {
       const path = new URL(request.url()).pathname;
       if (/^\/environments\/.*\.hdr$/.test(path)) hdrRequests.push(path);
-      if (path === '/models/r35-cabin-sealed-spatial.glb') cabinRequests.push(path);
+      if (path === '/models/r35-cabin-realism-0b72bab4.glb') cabinRequests.push(path);
     });
     const canvas = page.locator('.scene-stage canvas');
     const shot = async label => {

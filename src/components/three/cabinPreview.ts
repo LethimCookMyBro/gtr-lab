@@ -2,7 +2,7 @@ import { DoubleSide, Mesh, MeshStandardMaterial, type Object3D } from "three";
 import type { CameraView, VectorTuple } from "./sceneHelpers";
 import type { HomeSceneLoadState } from "../home/homeReadiness";
 
-export const CABIN_URL = "/models/r35-cabin-sealed-spatial.glb";
+export const CABIN_URL = "/models/r35-cabin-realism-0b72bab4.glb";
 export const CABIN_SEATS = ["driver", "passenger", "rear"] as const;
 export type CabinSeat = (typeof CABIN_SEATS)[number];
 export type CabinPreviewState =

@@ -9,6 +9,8 @@ import { pathToFileURL } from 'node:url';
 import { createAppServer } from '../server.mjs';
 
 import { verifyReleaseAssets } from './verify-release-assets.mjs';
+import { installCabinResourceObserver } from './cabin-resource-observer.mjs';
+import { cabinResourceCohort, assertCabinResourcesReleased } from './cabin-resource-assertions.mjs';
 import {
   cabinModels, networkFaultHeader, resolveCabinTarget, verifyPublicCabinModels,
   createLiveCabinFaults, isExpectedCabinRequestFailure, isExpectedCabinBodyError, isExpectedCabinWarning, correlateCabinConsole404,
@@ -27,6 +29,10 @@ const [cabinModel, exteriorModel] = cabinModels;
 const cabinPath = cabinModel.path, exteriorPath = exteriorModel.path;
 const cabinSha256 = cabinModel.sha256, exteriorSha256 = exteriorModel.sha256;
 const cabinBytes = cabinModel.bytes;
+const imageManifest = JSON.parse(await readFile('qa/cabin-preview/realism-images.json', 'utf8'));
+assert.equal(imageManifest.assetSha256, cabinSha256);
+assert.equal(imageManifest.assetBytes, cabinBytes);
+const expectedImages = imageManifest.images;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const report = {
@@ -35,7 +41,7 @@ const report = {
   scope: live ? 'Actual public Railway app after exact HTML/JS/CSS and GLB preflight. A single request-scoped 404 is intercepted; partial downloads use real public bytes under CDP throttling. No local server or application test hooks.' : 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; no application test hooks or alternate scene.',
   renderer: 'Chromium ANGLE SwiftShader software WebGL; no physical-device FPS or performance claim',
   expectedAssets: { cabin: { path: cabinPath, sha256: cabinSha256, bytes: cabinBytes }, exterior: { path: exteriorPath, sha256: exteriorSha256 } },
-  checks: [], frames: [], requests: [], responses: [], requestFailures: [], console: [], pageErrors: [], runtimeAssetErrors: [], errors: [], networkFaults: [], networkConsole: [], networkResponses: [],
+  resourceEvidence: [], checks: [], frames: [], requests: [], responses: [], requestFailures: [], console: [], pageErrors: [], runtimeAssetErrors: [], errors: [], networkFaults: [], networkConsole: [], networkResponses: [],
   remaining: ['Physical-device performance, Safari/WebKit and Android device behavior are not measured', 'Late GPU/decoder callbacks are covered by production unit tests; browser faults specifically exercise aborted streaming responses and route teardown'],
 };
 await mkdir(output, { recursive: true });
@@ -43,6 +49,7 @@ const save = () => writeFile(`${output}/report.json`, JSON.stringify(report, nul
 let browser, server, page, observer, originalCanvas, liveFaults;
 let nextFault = null;
 let phase = 'setup';
+let cabinAttemptMark;
 const pendingBodies = [];
 const pendingGates = new Set();
 const requestIds = new WeakMap();
@@ -112,6 +119,7 @@ try {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block',
     ...(selectedViewport === 'mobile' ? { isMobile: true, hasTouch: true } : {}),
   });
+  await context.addInitScript(installCabinResourceObserver, { expectedImages });
   await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
   page = await context.newPage();
   page.setDefaultTimeout(15_000);
@@ -164,6 +172,25 @@ try {
       report.runtimeAssetErrors.push(record);
     }));
   });
+  const resourceSnapshot = async () => page.evaluate(async () => {
+    await globalThis.__cabinResourceObserver.settleIdentities();
+    return globalThis.__cabinResourceObserver.snapshot();
+  });
+  const activeResources = async label => {
+    const snapshot = await resourceSnapshot();
+    const cohort = cabinResourceCohort(cabinAttemptMark, snapshot, expectedImages);
+    report.resourceEvidence.push({ label, cohort, snapshot });
+    return cohort;
+  };
+  const releasedResources = async (cohort, label) => {
+    let snapshot, details;
+    await expect.poll(async () => {
+      snapshot = await resourceSnapshot();
+      try { details = assertCabinResourcesReleased(cohort, snapshot); return true; }
+      catch (error) { return String(error); }
+    }, { timeout: 5_000, message: label }).toBe(true);
+    report.resourceEvidence.push({ label, details, snapshot });
+  };
   const canvas = page.locator('.scene-stage canvas');
   const controls = page.locator('footer[aria-label="Cabin preview controls"]');
   const cameraButton = page.getByRole('button', { name: 'Camera', exact: true });
@@ -262,6 +289,7 @@ try {
   };
   const stopObserver = async () => { await observer?.evaluate(state => state.stop()); await observer?.dispose(); observer = null; };
   const openCabin = async () => {
+    cabinAttemptMark = await page.evaluate(() => globalThis.__cabinResourceObserver.mark('cabin-attempt'));
     await cameraButton.click();
     await page.getByRole('dialog').getByRole('button', { name: 'Cabin preview · work in progress', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -290,10 +318,10 @@ try {
       const fault = report.networkFaults.findLast(item => item.kind === 'throttled-stream');
       assert.ok(Number.isSafeInteger(fault?.requestId), 'Partial progress belongs to the armed public request');
       fault.observedPartialBytes = bytes;
-      await expect(controls.getByRole('status')).toContainText('/ 14.6 MB');
+      await expect(controls.getByRole('status')).toContainText('/ 18.8 MB');
     } else {
       await expect(progress).toHaveAttribute('value', '1048576');
-      await expect(controls.getByRole('status')).toContainText('1.0 MB / 14.6 MB');
+      await expect(controls.getByRole('status')).toContainText('1.0 MB / 18.8 MB');
     }
   };
   const releaseAborted = async fault => {
@@ -317,7 +345,7 @@ try {
     });
     assert.ok(report.webgl, 'An actual live WebGL context exists');
     await cameraButton.click();
-    await expect(page.getByRole('dialog')).toContainText('14.6 MB');
+    await expect(page.getByRole('dialog')).toContainText('18.8 MB');
     assert.equal(assetCounts().cabin, 0, 'Opening Camera does not fetch the cabin');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -356,6 +384,7 @@ try {
   await check('Three production seat views and keyboard/touch look', async () => {
     const seatFrames = [];
     for (const seat of ['Driver', 'Passenger', 'Rear seat']) {
+      await page.evaluate(label => globalThis.__cabinResourceObserver.mark(label), `seat-${seat}`);
       await controls.getByRole('button', { name: seat, exact: true }).click();
       await expect(controls.getByRole('button', { name: seat, exact: true })).toHaveAttribute('aria-pressed', 'true');
       seatFrames.push(hash(await capture(`seat-${seat.toLowerCase().replaceAll(' ', '-')}`)));
@@ -364,6 +393,7 @@ try {
     await controls.getByRole('button', { name: 'Driver', exact: true }).click();
     const before = await capture('driver-before-look');
     await canvas.focus();
+    await page.evaluate(() => globalThis.__cabinResourceObserver.mark('driver-arrow-look'));
     await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowUp');
     const arrow = await capture('driver-arrow-look');
     assert.notEqual(hash(arrow), hash(before), 'Arrow keys change actual rendered cabin pixels');
@@ -371,6 +401,7 @@ try {
     if (selectedViewport === 'mobile') {
       const box = await canvas.boundingBox(); assert.ok(box);
       const x = Math.round(box.x + box.width * .5), y = Math.round(box.y + box.height * .4);
+      await page.evaluate(() => globalThis.__cabinResourceObserver.mark('driver-touch-look'));
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
       for (let step = 1; step <= 5; step++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + step * 12, y: y + step * 4 }] });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
@@ -382,11 +413,14 @@ try {
   });
 
   await check('Back and foreground-modal Escape restore exact exterior', async () => {
+    const backCohort = await activeResources('all-seats-active');
     await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();
     await expect(controls).toHaveCount(0); await expect(cameraButton).toBeFocused();
     await sameExterior(1);
+    await releasedResources(backCohort, 'Back closes all candidate bitmaps and deletes uploaded textures');
     await comparePixels(exteriorBefore, await capture('exterior-after-back'), 'Back restores exterior pixels');
-    await openCabin(); await activeCabin();
+    await openCabin(); await activeCabin(); await frames();
+    const escapeCohort = await activeResources('second-entry-active');
     await page.getByRole('button', { name: 'Model detail', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
@@ -395,6 +429,7 @@ try {
     await page.keyboard.press('Escape');
     await expect(controls).toHaveCount(0); await expect(cameraButton).toBeFocused();
     await sameExterior(1);
+    await releasedResources(escapeCohort, 'Escape releases the second candidate load without retained resources');
     await comparePixels(exteriorBefore, await capture('exterior-after-escape'), 'Escape restores exterior pixels');
     return { requestsBeforeIntentionalRemounts: assetCounts(), canvasRemounts: 0 };
   });
@@ -458,11 +493,15 @@ try {
     await switchModel('premium'); await readyExterior();
     assert.equal(assetCounts().exterior, 2, 'Returning to Premium intentionally mounts one fresh exterior');
     await comparePixels(exteriorBefore, await capture('exterior-after-route-return'), 'Route return has no stale cabin materials');
-    await startObserver(); await openCabin(); await activeCabin(); await sameExterior(2); await stopObserver();
-    await switchModel('nismo'); await photoOnly(); await watchNoResurrection();
+    await startObserver(); await openCabin(); await activeCabin(); await sameExterior(2); await frames();
+    const routeCohort = await activeResources('route-exit-active'); await stopObserver();
+    await switchModel('nismo'); await photoOnly();
+    await releasedResources(routeCohort, 'Active route exit releases every candidate bitmap and GPU texture');
+    await watchNoResurrection();
   });
   await check('Real WebGL context loss and explicit viewer retry', async () => {
-    await switchModel('premium'); await readyExterior(); await openCabin(); await activeCabin();
+    await switchModel('premium'); await readyExterior(); await openCabin(); await activeCabin(); await frames();
+    const contextCohort = await activeResources('context-loss-active');
     const before = assetCounts();
     const supported = await canvas.evaluate(element => {
       const gl = element.getContext('webgl2') || element.getContext('webgl');
@@ -473,6 +512,9 @@ try {
     await expect(page.locator('.render-error')).toContainText('graphics connection was lost');
     await expect(canvas).toHaveCount(0, { timeout: 5_000 });
     await expect(controls).toHaveCount(0);
+    const contextSnapshot = await resourceSnapshot();
+    for (const id of contextCohort.bitmapIds) assert.equal(contextSnapshot.bitmaps.find(item => item.id === id)?.closeCalls, 1, 'Context-loss cleanup closes each candidate bitmap');
+    report.resourceEvidence.push({ label: 'Context-loss cleanup, GPU context invalidated separately from live-context deletion', cohort: contextCohort, snapshot: contextSnapshot });
     await page.screenshot({ path: `${output}/${selectedViewport}-context-lost-page.png`, fullPage: true, animations: 'disabled', timeout: 30_000 });
     await page.getByRole('button', { name: 'Try again', exact: true }).click(); await readyExterior();
     assert.equal(assetCounts().exterior, before.exterior + 1, 'Explicit recovery downloads exactly one exterior');
@@ -482,6 +524,13 @@ try {
 
   await check('Runtime asset identity and error hygiene', async () => {
     await Promise.all(pendingBodies);
+    const finalResources = await resourceSnapshot();
+    assert.deepEqual(finalResources.issues, [], 'Resource observer has no coverage gaps');
+    assert.equal(finalResources.pendingBitmapDecodes, 0);
+    assert.equal(finalResources.pendingIdentities, 0);
+    const candidateHashes = new Set(expectedImages.map(image => image.sha256));
+    for (const bitmap of finalResources.bitmaps.filter(item => candidateHashes.has(item.sourceSha256))) assert.equal(bitmap.closeCalls, 1, 'Every completed candidate load remains closed exactly once at final hygiene');
+    await writeFile(`${output}/resource-observation.json`, JSON.stringify(finalResources, null, 2));
     assert.ok(report.responses.some(item => item.path === cabinPath && item.sha256 === cabinSha256), 'A successful real cabin response was inspected');
     assert.ok(report.responses.some(item => item.path === exteriorPath && item.sha256 === exteriorSha256), 'A successful real exterior response was inspected');
     const missingResponses = report.responses.filter(item => item.status === 404);
@@ -501,6 +550,7 @@ try {
   report.result = 'passed';
 } catch (error) {
   report.result = 'failed'; report.errors.push({ phase, message: String(error), stack: error.stack }); process.exitCode = 1;
+  if (page && !page.isClosed()) report.resourceFailure = await page.evaluate(() => globalThis.__cabinResourceObserver?.snapshot()).catch(() => null);
   if (page && !page.isClosed()) await page.screenshot({ path: `${output}/${selectedViewport}-failure-page.png`, fullPage: true, timeout: 15_000 }).catch(() => {});
 } finally {
   await liveFaults?.dispose().catch(error => { report.result = 'failed'; process.exitCode = 1; report.errors.push({ phase: 'restore-public-network', message: String(error) }); });

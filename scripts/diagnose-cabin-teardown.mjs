@@ -10,8 +10,8 @@ import { createAppServer } from '../server.mjs';
 import { installCabinTeardownProbe, summarizeCabinTeardown } from './cabin-teardown-probe.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const cabinPath = '/models/r35-cabin-sealed-spatial.glb';
-const expectedCabin = '3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd';
+const cabinPath = '/models/r35-cabin-realism-0b72bab4.glb';
+const expectedCabin = '0b72bab4a297a9ac736e6fd65333de51e376f5364d6581ef1024423f6f146d83';
 const expectedExterior = 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d';
 export function validateDiagnosticEnvironment(env) {
   assert.equal(env.GITHUB_ACTIONS, 'true', 'This diagnostic is CI-only');

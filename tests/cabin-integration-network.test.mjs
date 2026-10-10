@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isExpectedCabinRequestFailure } from '../scripts/capture-cabin-preview.mjs';
 
-const path = '/models/r35-cabin-sealed-spatial.glb';
+const path = '/models/r35-cabin-realism-0b72bab4.glb';
 const phase = 'Missing cabin preserves exterior and Retry loads real asset';
 const missing = { requestId: 3, path, status: 404, injectedFault: 'missing' };
 const retry = { requestId: 4, path, status: 200 };

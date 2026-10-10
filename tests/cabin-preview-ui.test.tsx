@@ -37,6 +37,7 @@ it("opts in from the camera drawer, shows real bytes and offers cancel and retry
   act(() => useConfigurator.setState({ ready: true }));
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Camera" }));
+  expect(screen.getByRole("dialog").textContent).toContain("18.8 MB");
   await user.click(
     screen.getByRole("button", { name: /Cabin preview · work in progress/ }),
   );
@@ -46,10 +47,10 @@ it("opts in from the camera drawer, shows real bytes and offers cancel and retry
     state().cabinProgress(request, {
       phase: "downloading",
       loadedBytes: 4000000,
-      totalBytes: 14599520,
+      totalBytes: 18848516,
     }),
   );
-  expect(screen.getByText("4.0 MB / 14.6 MB")).toBeTruthy();
+  expect(screen.getByText("4.0 MB / 18.8 MB")).toBeTruthy();
   await user.click(
     screen.getByRole("button", { name: "Cancel cabin loading" }),
   );

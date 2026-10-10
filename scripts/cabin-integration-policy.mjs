@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 
 export const cabinOrigin = 'https://gtr-lab-production.up.railway.app';
 export const cabinModels = Object.freeze([
-  { path: '/models/r35-cabin-sealed-spatial.glb', bytes: 14_599_520, sha256: '3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd' },
+  { path: '/models/r35-cabin-realism-0b72bab4.glb', bytes: 18_848_516, sha256: '0b72bab4a297a9ac736e6fd65333de51e376f5364d6581ef1024423f6f146d83' },
   { path: '/models/ciasny-r35.glb', bytes: 8_296_356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' },
 ]);
 const cabinPath = cabinModels[0].path;
@@ -134,7 +134,7 @@ export function createLiveCabinFaults({ page, cdp, cabinUrl, requestId, faults }
         await page.route(cabinUrl, handler, { times: 1 });
       } else {
         // Only transport is slowed. The body and headers still come from Railway.
-        // 64 KiB/s keeps 14.6 MB in flight through screenshot and cancellation.
+        // 64 KiB/s keeps 18.8 MB in flight through screenshot and cancellation.
         throttled = true;
         await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: 65_536, uploadThroughput: -1 });
         fault.release = async () => {

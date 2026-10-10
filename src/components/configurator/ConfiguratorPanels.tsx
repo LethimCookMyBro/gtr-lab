@@ -94,7 +94,7 @@ export function ConfiguratorPanels({
           {model.asset.cabinPreview && (
             <p className="availability-note" id="cabin-preview-note">
               An original authored cabin, still in progress. Choosing the
-              preview downloads a separate 14.6 MB model. Not a verified factory
+              preview downloads a separate 18.8 MB model. Not a verified factory
               interior.
             </p>
           )}

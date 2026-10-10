@@ -4,6 +4,7 @@ import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createHash } from "node:crypto";
 import manifest from "../modeldata/manifest.json";
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { Blob as NodeBlob } from "node:buffer";
 import { URL as NodeURL } from "node:url";
 import { useVehicleAsset } from "../src/components/three/useVehicleAsset";
@@ -30,36 +31,43 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
-it("rejects the real published model if its embedded textures fail decoding even when GLTFLoader returns geometry", async () => {
-  const originalFetch = globalThis.fetch;
-  vi.stubGlobal("URL", NodeURL);
-  vi.stubGlobal("Blob", NodeBlob);
-  vi.stubGlobal("createImageBitmap", () =>
-    Promise.reject(new Error("Texture decode failed")),
-  );
-  vi.stubGlobal("fetch", (url: string, options?: RequestInit) =>
-    url === "/car.glb"
-      ? Promise.resolve(new Response(bytes))
-      : originalFetch(url, options),
-  );
-  vi.spyOn(console, "error").mockImplementation(() => {});
-  const errors: string[] = [];
-  const states: HomeSceneLoadState[] = [];
-  const { result } = renderHook(() =>
-    useVehicleAsset(
-      "/car.glb",
-      { paint: [], headlights: [], taillights: [] },
-      () => {},
-      (message) => errors.push(message),
-      [],
-      (state) => states.push(state),
-    ),
-  );
-  await waitFor(() => expect(errors.length).toBe(1));
-  expect(errors[0]).toMatch(/texture/i);
-  expect(result.current).toBeNull();
-  expect(states.some((state) => state.phase === "preparing")).toBe(false);
-});
+it.each(["exterior", "cabin"])(
+  "rejects the real %s model if its embedded textures fail decoding even when GLTFLoader returns geometry",
+  async (asset) => {
+    const fixture =
+      asset === "cabin"
+        ? gunzipSync(readFileSync("qa/cabin-preview/r35-cabin-realism.glb.gz"))
+        : bytes;
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("URL", NodeURL);
+    vi.stubGlobal("Blob", NodeBlob);
+    vi.stubGlobal("createImageBitmap", () =>
+      Promise.reject(new Error("Texture decode failed")),
+    );
+    vi.stubGlobal("fetch", (url: string, options?: RequestInit) =>
+      url === "/car.glb"
+        ? Promise.resolve(new Response(fixture))
+        : originalFetch(url, options),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const errors: string[] = [];
+    const states: HomeSceneLoadState[] = [];
+    const { result } = renderHook(() =>
+      useVehicleAsset(
+        "/car.glb",
+        { paint: [], headlights: [], taillights: [] },
+        () => {},
+        (message) => errors.push(message),
+        [],
+        (state) => states.push(state),
+      ),
+    );
+    await waitFor(() => expect(errors.length).toBe(1));
+    expect(errors[0]).toMatch(/texture/i);
+    expect(result.current).toBeNull();
+    expect(states.some((state) => state.phase === "preparing")).toBe(false);
+  },
+);
 
 it.each([
   [{ "content-length": "100" }, 100],

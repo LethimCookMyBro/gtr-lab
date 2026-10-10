@@ -2,7 +2,7 @@
 
 ## Scope and fidelity
 
-This is interim progress on the complete six-model experience. Only Premium has an explicitly selected original authored cabin preview. All five unavailable variant meshes remain unavailable; no shared cabin is relabeled. The cabin is a work in progress, not official Nissan geometry, an OEM scan, or a verified factory trim. See MODEL_PROVENANCE.md and qa/cabin-preview/PROVENANCE.md.
+This is interim progress on the complete six-model experience. Only Premium has an explicitly selected original authored cabin preview. All five unavailable variant meshes remain unavailable; no shared cabin is relabeled. The cabin is a work in progress, not official Nissan geometry, an OEM scan, or a verified factory trim. See MODEL_PROVENANCE.md, qa/cabin-preview/PROVENANCE.md and qa/cabin-preview/REALISM_PROVENANCE.md.
 
 ## Runtime ownership
 
@@ -21,7 +21,7 @@ This is interim progress on the complete six-model experience. Only Premium has 
 
 ## Reproduction
 
-Run npm test, npm run typecheck, and npm run build for Node/unit/type/build checks. prepare:assets verifies and expands the existing pinned sealed gzip into /models/r35-cabin-sealed-spatial.glb.
+Run npm test, npm run typecheck, and npm run build for Node/unit/type/build checks. prepare:assets verifies and expands qa/cabin-preview/r35-cabin-realism.glb.gz into /models/r35-cabin-realism-0b72bab4.glb. The hash-versioned URL avoids reusing the older cabin cached by a browser. The previous untextured sealed QA asset remains frozen.
 
 Actual rendered review is separate: use the main-only cabin-preview-integration GitHub Actions workflow after explicit source-publication approval. It exercises the actual built app at desktop/mobile sizes, rather than the standalone asset inspector. Do not use local browser or socket execution in an environment where that was denied.
 

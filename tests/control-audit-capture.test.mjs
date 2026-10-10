@@ -113,7 +113,7 @@ describe("bounded control audit screenshot recovery", () => {
 });
 
 const cabinPreviewLabel = 'Cabin preview · work in progress';
-const cabinDisclosure = 'An original authored cabin, still in progress. Choosing the preview downloads a separate 14.6 MB model. Not a verified factory interior.';
+const cabinDisclosure = 'An original authored cabin, still in progress. Choosing the preview downloads a separate 18.8 MB model. Not a verified factory interior.';
 
 function cabinDrawerFixture({ disabled = false, disclosure = cabinDisclosure, eagerDownload = false, lateDownload = false, screenshotError } = {}) {
   const cabinRequests = [];
@@ -141,12 +141,12 @@ function cabinDrawerFixture({ disabled = false, disclosure = cabinDisclosure, ea
     },
     screenshot: vi.fn(async () => {
       if (screenshotError) throw screenshotError;
-      if (lateDownload) cabinRequests.push('/models/r35-cabin-sealed-spatial.glb');
+      if (lateDownload) cabinRequests.push('/models/r35-cabin-realism-0b72bab4.glb');
     }),
   };
   const open = vi.fn(async label => {
     expect(label).toBe('Camera'); state.open = true;
-    if (eagerDownload) cabinRequests.push('/models/r35-cabin-sealed-spatial.glb');
+    if (eagerDownload) cabinRequests.push('/models/r35-cabin-realism-0b72bab4.glb');
   });
   const close = vi.fn(async () => { state.open = false; });
   return { page, open, close, cabinRequests, screenshotPath: 'cabin-preview-available.png', state, preview };
@@ -166,7 +166,7 @@ describe('production control audit cabin availability', () => {
 
   it.each([
     ['disabled opt-in', { disabled: true }],
-    ['missing factory limitation', { disclosure: 'Original authored cabin, still in progress. Separate 14.6 MB model.' }],
+    ['missing factory limitation', { disclosure: 'Original authored cabin, still in progress. Separate 18.8 MB model.' }],
     ['eager cabin request when Camera opens', { eagerDownload: true }],
     ['cabin request while the availability screenshot is captured', { lateDownload: true }],
   ])('rejects %s and still closes the drawer', async (_label, options) => {
