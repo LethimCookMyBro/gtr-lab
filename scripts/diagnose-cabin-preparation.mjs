@@ -1,6 +1,6 @@
 /** Exact-source staged or explicitly released public proof. Historical verdicts remain untouched. */
 import assert from 'node:assert/strict';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -10,6 +10,8 @@ import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { collectDistAssets } from './raster-cost-evidence.mjs';
 import { budgets, requiredCases, models, cabinWire, cabinResourcePlan, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages, preparationOrigin, preparationReleaseMarker, validatePreparationReleaseMarker,
   assertCurrentGeometry, assertDesktopFeatureGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertMobileContainment, assertPreparationErrorLayout, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
+import { createRuntimeBodyLedger } from './cabin-runtime-body-ledger.mjs';
+import { boundedOperation, createCheckpointRecorder } from './cabin-preparation-checkpoint.mjs';
 import { installCabinNetworkCapture } from './cabin-preparation-network.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from './cabin-preparation-observer.mjs';
 import { buildPreparationReadiness } from './build-cabin-preparation-readiness.mjs';
@@ -103,6 +105,7 @@ export async function main(env = process.env) {
   }
   await buildPreparationReadiness(harness);
   const assets = await collectDistAssets(resolve(root, 'dist'));
+  const intendedBytes = new Map(await Promise.all([...assets.keys()].map(async path => [path, (await stat(resolve(root, 'dist' + path))).size])));
   const bodies = await Promise.all(models.map(async model => { const body = await readFile(resolve(root, 'dist' + model.path)); assert.equal(body.length, model.bytes); assert.equal(sha256(body), model.sha256); return body; }));
   const images = acceptedCabinImages(bodies[0]), transform = independentExteriorTransform(bodies[1]);
   const output = resolve(target.mode === 'live' ? 'cabin-live-results' : 'cabin-preparation-results', target.name + '-' + target.lane + (target.quality === 'reduced' ? '-reduced' : '')); await mkdir(output, { recursive: true });
@@ -124,43 +127,58 @@ export async function main(env = process.env) {
   let server, browser;
   const runCase = async (name, action, options = {}) => {
     const row = { name, result: 'running', fixtures: options, startedAt: Date.now(), steps: [], captures: [], layouts: [], runtimeBodies: [], modelBodies: [], browserModelRequests: [], network: [], expectedCancellations: [], expectedFailures: [], errors: [], pageErrors: [], requestFailures: [] }; report.cases.push(row); await save();
+    let bodyLedgerSnapshot; const checkpoint = createCheckpointRecorder({ row, save: async () => { if (bodyLedgerSnapshot) row.runtimeBodyLedger = bodyLedgerSnapshot(); await save(); } });
     const context = await browser.newContext({ viewport: target.viewport, deviceScaleFactor: target.deviceScaleFactor, isMobile: Boolean(target.isMobile), hasTouch: Boolean(target.hasTouch), reducedMotion: 'no-preference', serviceWorkers: 'block' });
     const init = `(${installCabinResourceObserver.toString()})(${JSON.stringify({ expectedImages: images })});(${installDprMotionObserver.toString()})({maxRecords:32768,observeContextCreation:true});(${installRenderBackpressureLifecycleFixture.toString()})();(${installFunctionalCaptureObserver.toString()})();(${installPreparationObserver.toString()})(${JSON.stringify({ modelPath: models[0].path, modelJson: bodies[0].subarray(20, 20 + bodies[0].readUInt32LE(12)).toString('utf8') })});(${installPreparationDecodeFixture.toString()})(${JSON.stringify({ images })});`;
     await context.addInitScript({ content: init + (options.saveData ? 'Object.defineProperty(navigator.connection,"saveData",{configurable:true,get:()=>true});' : '') });
     const page = await context.newPage(); page.setDefaultTimeout(15_000); page.setDefaultNavigationTimeout(45_000);
     const cdp = await context.newCDPSession(page);
-    const pendingBodies = [], requestIds = new WeakMap(); let nextRequestId = 0, phase = name, quality = 'standard';
+    const requestIds = new WeakMap(), requestGenerations = new WeakMap(); let nextRequestId = 0, documentGeneration = 0, phase = name, quality = 'standard';
+    const bodyLedger = createRuntimeBodyLedger({ intendedAssets: assets, intendedBytes }); bodyLedgerSnapshot = bodyLedger.snapshot;
+    const pinnedPath = pathname => pathname.startsWith('/configurator/') || pathname === '/' ? '/index.html' : pathname;
     const identifyRequest = request => { if (!requestIds.has(request)) requestIds.set(request, ++nextRequestId); return requestIds.get(request); };
-    page.on('request', request => { const id = identifyRequest(request); if (new URL(request.url()).pathname === models[0].path) row.browserModelRequests.push({ requestId: id, url: request.url(), phase }); });
+    page.on('request', request => {
+      try {
+        const id = identifyRequest(request), url = new URL(request.url());
+        if (url.protocol === 'blob:' && url.origin === target.baseUrl) return;
+        assert.equal(url.origin, target.baseUrl, 'Unpinned request origin');
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) bodyLedger.beginDocument(++documentGeneration);
+        requestGenerations.set(request, documentGeneration);
+        if (url.pathname === models[0].path) row.browserModelRequests.push({ requestId: id, url: request.url(), phase });
+        else row.runtimeBodies.push(bodyLedger.issue({ requestId: id, generation: documentGeneration, url: request.url(), path: pinnedPath(url.pathname), phase, startedAt: request.timing().startTime }));
+      } catch (error) { row.errors.push(String(error)); }
+    });
     const modelNetwork = await installCabinNetworkCapture(cdp, row, { baseUrl: target.baseUrl, mode: target.mode, phase: () => phase });
     page.on('response', response => {
-      const url = new URL(response.url());
-      if (url.protocol === 'blob:' && url.origin === target.baseUrl) return;
-      if (url.origin !== target.baseUrl) { row.errors.push('Unpinned response origin ' + response.url()); return; }
-      if (url.pathname === models[0].path) { const record = row.browserModelRequests.find(r => r.requestId === identifyRequest(response.request())); if (!record) { row.errors.push('Missing Playwright cabin request'); return; } record.status = response.status(); return; }
-      const path = url.pathname.startsWith('/configurator/') || url.pathname === '/' ? '/index.html' : url.pathname;
-      const receipt = { phase, path, status: response.status(), requestId: identifyRequest(response.request()), startedAt: response.request().timing().startTime }; row.runtimeBodies.push(receipt);
-      pendingBodies.push((async () => {
-        assert.ok(assets.has(path), 'Unpinned served asset ' + path); const body = await response.body(); receipt.bytes = body.length; receipt.sha256 = sha256(body); assert.equal(response.status(), 200); assert.equal(receipt.sha256, assets.get(path));
-      })().catch(error => { receipt.error = String(error); }));
+      try {
+        const url = new URL(response.url()), request = response.request();
+        if (url.protocol === 'blob:' && url.origin === target.baseUrl) return;
+        assert.equal(url.origin, target.baseUrl, 'Unpinned response origin');
+        if (url.pathname === models[0].path) { const record = row.browserModelRequests.find(r => r.requestId === identifyRequest(request)); assert.ok(record, 'Missing Playwright cabin request'); record.status = response.status(); return; }
+        bodyLedger.receive({ requestId: identifyRequest(request), generation: requestGenerations.get(request), url: response.url(), status: response.status(), body: () => response.body() });
+      } catch (error) { row.errors.push(String(error)); }
     });
     page.on('pageerror', error => row.pageErrors.push({ phase, message: error.message }));
     page.on('requestfailed', request => { const receipt = { phase, requestId: identifyRequest(request), path: new URL(request.url()).pathname, error: request.failure()?.errorText };
-      if (receipt.path === models[0].path) { const model = row.browserModelRequests.find(r => r.requestId === receipt.requestId); if (!model) { row.errors.push('Missing failed Playwright cabin request'); return; } model.failed = receipt.error; } else row.requestFailures.push(receipt); });
-    const tap = locator => target.hasTouch ? locator.tap() : locator.click();
-    const snapshot = () => page.evaluate(() => globalThis.__r35Preparation.snapshot());
-    const resources = async () => { await page.evaluate(() => globalThis.__cabinResourceObserver.settleIdentities()); return page.evaluate(() => globalThis.__cabinResourceObserver.snapshot()); };
-    const fixture = () => page.evaluate(() => globalThis.__r35RenderBackpressureLifecycle.snapshot());
+      if (receipt.path === models[0].path) { const model = row.browserModelRequests.find(r => r.requestId === receipt.requestId); if (!model) { row.errors.push('Missing failed Playwright cabin request'); return; } model.failed = receipt.error; } else { row.requestFailures.push(receipt); try { bodyLedger.fail({ requestId: receipt.requestId, generation: requestGenerations.get(request), error: receipt.error }); } catch (error) { row.errors.push(String(error)); } } });
+    const tap = (locator, window = readinessWindow(15_000)) => boundedOperation(window, 'trusted input', () => target.hasTouch ? locator.tap({ timeout: remainingBudget(window) }) : locator.click({ timeout: remainingBudget(window) }));
+    const snapshot = (window = readinessWindow(15_000)) => boundedOperation(window, 'preparation snapshot', () => page.evaluate(() => globalThis.__r35Preparation.snapshot()));
+    const resources = async (window = readinessWindow(budgets.lifecycle)) => { await boundedOperation(window, 'resource identities', () => page.evaluate(() => globalThis.__cabinResourceObserver.settleIdentities())); return boundedOperation(window, 'resource snapshot', () => page.evaluate(() => globalThis.__cabinResourceObserver.snapshot())); };
+    const fixture = (window = readinessWindow(budgets.lifecycle)) => boundedOperation(window, 'native fixture snapshot', () => page.evaluate(() => globalThis.__r35RenderBackpressureLifecycle.snapshot()));
     const mark = async label => { phase = label; row.steps.push({ label, at: Date.now() }); await page.evaluate(label => { globalThis.__r35Preparation.mark(label); globalThis.__cabinResourceObserver.mark(label); globalThis.__r35RenderBackpressureLifecycle.mark(label); globalThis.__r35DprMotion.mark(label); }, label); };
     const canvas = page.locator('.scene-stage canvas'), dialog = page.getByRole('dialog');
-    const sampleDrawer = () => page.evaluate(() => { const layer = document.querySelector('.drawer-layer'), drawer = document.querySelector('.drawer'), r = drawer?.getBoundingClientRect(); return { phase: drawer?.dataset.phase, bounds: r && { x: r.x, y: r.y, width: r.width, height: r.height }, animations: layer?.getAnimations({ subtree: true }).map(a => ({ state: a.playState, progress: a.effect?.getComputedTiming().progress })) ?? [] }; });
-    const open = async label => {
-      const deadline = readinessWindow(15_000); await tap(page.getByRole('button', { name: label, exact: true })); const before = await sampleDrawer();
-      await page.waitForFunction(() => { const layer = document.querySelector('.drawer-layer'), drawer = document.querySelector('.drawer'); return drawer?.dataset.phase === 'open' && layer?.getAnimations({ subtree: true }).every(a => ['finished', 'idle'].includes(a.playState)); }, null, { timeout: remainingBudget(deadline), polling: 16 });
-      const after = await sampleDrawer(); row.layouts.push({ label, before, after }); assert.equal(after.phase, 'open'); assert.ok(after.animations.every(a => ['finished', 'idle'].includes(a.state)));
+    const sampleDrawer = window => boundedOperation(window, 'drawer sample', () => page.evaluate(() => { const layer = document.querySelector('.drawer-layer'), drawer = document.querySelector('.drawer'), r = drawer?.getBoundingClientRect(); return { phase: drawer?.dataset.phase, bounds: r && { x: r.x, y: r.y, width: r.width, height: r.height }, animations: layer?.getAnimations({ subtree: true }).map(a => ({ state: a.playState, progress: a.effect?.getComputedTiming().progress })) ?? [] }; }));
+    const open = async (label, deadline = readinessWindow(15_000)) => {
+      await tap(page.getByRole('button', { name: label, exact: true }), deadline); const before = await sampleDrawer(deadline);
+      await boundedOperation(deadline, 'drawer terminal animation', () => page.waitForFunction(() => { const layer = document.querySelector('.drawer-layer'), drawer = document.querySelector('.drawer'); return drawer?.dataset.phase === 'open' && layer?.getAnimations({ subtree: true }).every(a => ['finished', 'idle'].includes(a.playState)); }, null, { timeout: remainingBudget(deadline), polling: 16 }));
+      const after = await sampleDrawer(deadline); remainingBudget(deadline); row.layouts.push({ label, before, after }); assert.equal(after.phase, 'open'); assert.ok(after.animations.every(a => ['finished', 'idle'].includes(a.state)));
     };
     const close = async () => { await tap(dialog.getByRole('button', { name: 'Close panel', exact: true })); await expect(dialog).toHaveCount(0, { timeout: 5_000 }); };
-    const switchModel = async id => { await open('Switch model'); await tap(dialog.getByRole('button', { name: id === 'premium' ? /^Premium / : /^NISMO / })); await expect(page).toHaveURL(new RegExp('/configurator/' + id + '$')); await expect(dialog).toHaveCount(0); };
+    const switchModel = async (id, window = readinessWindow(15_000)) => {
+      await open('Switch model', window); await tap(dialog.getByRole('button', { name: id === 'premium' ? /^Premium / : /^NISMO / }), window);
+      await boundedOperation(window, 'model URL acknowledgement', () => expect(page).toHaveURL(new RegExp('/configurator/' + id + '$'), { timeout: remainingBudget(window) }));
+      await boundedOperation(window, 'model drawer dismissal', () => expect(dialog).toHaveCount(0, { timeout: remainingBudget(window) }));
+    };
     const ready = async deadline => { const left = () => remainingBudget(deadline); await page.waitForFunction(() => globalThis.__r35Preparation?.status().ui.preparation?.phase === 'ready', null, { timeout: left(), polling: 50 }); await expect(page.locator('.scene-loading, .cabin-preparation-error, .render-error')).toHaveCount(0, { timeout: left() }); };
     const containment = () => page.evaluate(() => {
       const rect = element => { const r = element?.getBoundingClientRect(); return r && { x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height, visible: element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) }; };
@@ -195,21 +213,34 @@ export async function main(env = process.env) {
         items: [...rail.querySelectorAll('button')].map(button => { const r = button.getBoundingClientRect(); return { text: button.textContent.trim(), visible: button.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }), x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height, fontSize: parseFloat(getComputedStyle(button).fontSize), scrollWidth: button.scrollWidth, clientWidth: button.clientWidth }; }) }));
       assertReadableControls(value); row.layouts.push({ label, value });
     };
-    const retire = async owner => {
-      const before = await snapshot(), order = before.events.filter(e => e.kind === 'attach').map(e => e.owner);
-      const nativeFenceContext = (await fixture()).contexts.filter(c => c.sceneOwner)[order.indexOf(owner)]; assert.ok(nativeFenceContext, 'Exact retired scene-owner ordinal required');
-      await expect.poll(async () => { try { assertRetiredFenceContext(await fixture(), nativeFenceContext.id); return true; } catch { return false; } }, { timeout: budgets.lifecycle }).toBe(true);
-      const observation = await snapshot(); const native = observation.contexts.find(c => c.owner === owner); assert.ok(native && !native.connected);
+    const retire = async (owner, window = readinessWindow(budgets.lifecycle)) => {
+      const before = await snapshot(window), order = before.events.filter(e => e.kind === 'attach').map(e => e.owner);
+      const nativeFenceContext = (await fixture(window)).contexts.filter(c => c.sceneOwner)[order.indexOf(owner)]; assert.ok(nativeFenceContext, 'Exact retired scene-owner ordinal required');
+      await expect.poll(async () => { try { assertRetiredFenceContext(await fixture(window), nativeFenceContext.id); return true; } catch { return false; } }, { timeout: remainingBudget(window) }).toBe(true);
+      const observation = await snapshot(window); const native = observation.contexts.find(c => c.owner === owner); assert.ok(native && !native.connected);
       for (const resource of observation.resources.filter(r => r.contextId === native.id)) { assert.equal(resource.deleted, 1, `${resource.kind} ${resource.id} retired once`); assert.equal(resource.deletedLive, true); }
     };
-    try { await action({ page, context, row, tap, snapshot, resources, fixture, mark, open, close, dialog, canvas, switchModel, ready, capture, layout, retire, modelNetwork, setQuality: value => { quality = value; } }); row.result = 'collected'; }
-    catch (error) { row.result = 'failed'; row.errors.push(String(error)); throw error; }
+    try { await action({ page, context, row, tap, snapshot, resources, fixture, mark, open, close, dialog, canvas, switchModel, ready, capture, layout, retire, checkpoint, bodyLedger, drainDocument: window => bodyLedger.drainAndSeal({ generation: documentGeneration, window }), modelNetwork, setQuality: value => { quality = value; } }); row.result = 'collected'; }
+    catch (error) { row.result = 'failed'; row.errors.push(String(error)); await save(); throw error; }
     finally {
-      try { row.observation = await snapshot(); row.resources = await resources(); row.fixture = await fixture(); row.dpr = await page.evaluate(() => globalThis.__r35DprMotion.snapshot()); assert.deepEqual(row.observation.issues, []); assert.deepEqual(row.resources.issues, []); assert.deepEqual(row.dpr.issues, []); assertFenceObservationHealthy(row.fixture); await Promise.all(pendingBodies); await modelNetwork.settle(); await modelNetwork.close();
+      const cleanupWindow = readinessWindow(budgets.lifecycle);
+      try {
+        row.observation = await checkpoint('cleanup.preparation-snapshot', cleanupWindow, () => snapshot(cleanupWindow), { cleanup: true });
+        row.resources = await checkpoint('cleanup.resource-identities-and-snapshot', cleanupWindow, () => resources(cleanupWindow), { cleanup: true });
+        row.fixture = await checkpoint('cleanup.native-fixture', cleanupWindow, () => fixture(cleanupWindow), { cleanup: true });
+        row.dpr = await checkpoint('cleanup.dpr-snapshot', cleanupWindow, () => page.evaluate(() => globalThis.__r35DprMotion.snapshot()), { cleanup: true });
+        assert.deepEqual(row.observation.issues, []); assert.deepEqual(row.resources.issues, []); assert.deepEqual(row.dpr.issues, []); assertFenceObservationHealthy(row.fixture);
+        await checkpoint('cleanup.runtime-bodies', cleanupWindow, () => bodyLedger.finish({ window: cleanupWindow }), { cleanup: true });
+        await checkpoint('cleanup.model-network', cleanupWindow, async () => { await boundedOperation(cleanupWindow, 'native body receipts', () => modelNetwork.settle()); await boundedOperation(cleanupWindow, 'native network close', () => modelNetwork.close()); }, { cleanup: true });
         for (const c of row.dpr.contexts.filter(c => c.sceneCanvas)) { assert.equal(c.creation.contextType, 'webgl2'); assert.equal(c.creation.requestedAntialias, true); assert.equal(c.creation.antialias, true); assert.ok(c.creation.samples >= 2 && c.creation.sampleBuffers >= 1); }
         row.sourceClosure = assertCaseSourceClosure(row, report.transport.find(r => r.acceptEncoding === 'gzip'), target.mode);
-      } catch (error) { row.errors.push(String(error)); row.result = 'failed'; }
-      row.elapsedMs = Date.now() - row.startedAt; await save(); await context.close();
+      } catch (error) { row.errors.push(String(error)); row.result = 'failed'; await save(); }
+      row.runtimeBodyLedger = bodyLedger.snapshot(); row.elapsedMs = Date.now() - row.startedAt; await save();
+      try {
+        await checkpoint('cleanup.context-close', cleanupWindow, () => context.close(), { cleanup: true });
+        row.runtimeBodyLedger = bodyLedger.snapshot(); assert.equal(row.runtimeBodyLedger.state, 'finished'); assert.deepEqual(row.runtimeBodyLedger.errors, []); assert.deepEqual(row.errors, []);
+      }
+      catch (error) { row.errors.push(String(error)); row.result = 'failed'; await save(); }
     }
     assert.equal(row.result, 'collected', name + ' evidence must be complete'); row.result = 'passed'; await save();
   };
@@ -290,7 +321,13 @@ export async function main(env = process.env) {
     else await runLifecycleCases({ runCase, target, output, transform, expect, armFunctionalCapture, budgets, models, assertCabinResourcesReleased, cabinResourceCohort, images });
     assert.deepEqual(report.cases.map(c => c.name), requiredCases[target.lane]); assert.ok(report.cases.every(c => c.result === 'passed')); report.result = 'passed';
   } catch (error) { report.result = 'failed'; report.errors.push({ message: String(error), stack: error.stack }); }
-  finally { await save(); await browser?.close(); if (server) await new Promise(done => server.close(done)); }
+  finally {
+    await save(); const shutdownWindow = readinessWindow(budgets.lifecycle);
+    report.shutdown = { status: 'started', window: shutdownWindow }; await save();
+    try { await boundedOperation(shutdownWindow, 'browser shutdown', () => browser?.close()); if (server) await boundedOperation(shutdownWindow, 'server shutdown', () => new Promise(done => server.close(done))); report.shutdown.status = 'completed'; }
+    catch (error) { report.shutdown.status = 'failed'; report.shutdown.error = String(error); report.result = 'failed'; report.errors.push({ message: String(error) }); }
+    await save();
+  }
   assert.equal(report.result, 'passed', 'Preparation evidence failed; inspect the preserved report'); return report;
 }
 
@@ -407,10 +444,15 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
     await h.switchModel('nismo'); await h.retire(2);
   }, { nativePositiveObservationHold: true });
   await runCase('savedata-and-nonpremium-boundaries', async h => {
-    await h.page.goto(target.baseUrl + '/', { waitUntil: 'domcontentloaded' });
-    await expect(h.page.getByRole('button', { name: 'Load 3D view · 8.3 MB', exact: true })).toBeVisible({ timeout: budgets.lifecycle });
-    const home = await h.snapshot(); assert.equal(home.totals.fetches, 0); assert.equal(await h.page.evaluate(() => navigator.connection.saveData), true); h.row.homeBoundary = home.ui;
-    await h.page.goto(target.baseUrl + '/configurator/nismo', { waitUntil: 'domcontentloaded' });
+    const homeWindow = readinessWindow(budgets.lifecycle);
+    await h.checkpoint('savedata.home-document', homeWindow, () => h.page.goto(target.baseUrl + '/', { waitUntil: 'domcontentloaded', timeout: remainingBudget(homeWindow) }));
+    const homeBoundary = await h.checkpoint('savedata.home-boundary', homeWindow, async () => {
+      await expect(h.page.getByRole('button', { name: 'Load 3D view · 8.3 MB', exact: true })).toBeVisible({ timeout: remainingBudget(homeWindow) });
+      const home = await h.snapshot(homeWindow); assert.equal(home.totals.fetches, 0); assert.equal(await h.page.evaluate(() => navigator.connection.saveData), true); return home.ui;
+    }); h.row.homeBoundary = homeBoundary;
+    await h.checkpoint('savedata.home-body-drain', homeWindow, () => h.drainDocument(homeWindow));
+    const navigationWindow = readinessWindow(budgets.lifecycle);
+    await h.checkpoint('savedata.nismo-document', navigationWindow, () => { assert.deepEqual(h.bodyLedger.snapshot().errors, []); return h.page.goto(target.baseUrl + '/configurator/nismo', { waitUntil: 'domcontentloaded', timeout: remainingBudget(navigationWindow) }); });
     await h.open('Camera');
     await expect(h.dialog.getByText('Camera controls activate when this model’s licensed 3D asset is available.', { exact: true })).toBeVisible();
     await expect(h.dialog.getByRole('button', { name: 'Interior Detailed cabin required', exact: true })).toBeDisabled();
@@ -418,9 +460,10 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
     assert.equal((await h.snapshot()).totals.fetches, 0); await expect(h.canvas).toHaveCount(0);
     const deadline = readinessWindow(budgets.initial); await h.switchModel('premium'); await h.ready(deadline);
     await h.capture('explicit-premium-viewer-after-savedata-boundary', deadline);
-    const observed = await h.snapshot(); assert.equal(observed.totals.fetches, 1);
+    const observed = await h.checkpoint('savedata.postcapture-snapshot', readinessWindow(15_000), () => h.snapshot()); assert.equal(observed.totals.fetches, 1);
     const start = observed.events.find(e => e.kind === 'cabin-fetch-start'); assert.ok(start?.snapshot?.vehicle?.exterior, 'Cabin fetch may begin only after the active Premium exterior viewer exists');
-    await h.switchModel('nismo'); await h.retire(1);
+    const switchWindow = readinessWindow(15_000); await h.checkpoint('savedata.final-switch-model', switchWindow, () => h.switchModel('nismo', switchWindow));
+    const retirementWindow = readinessWindow(budgets.lifecycle); await h.checkpoint('savedata.retirement', retirementWindow, () => h.retire(1, retirementWindow));
   }, { saveData: true });
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();

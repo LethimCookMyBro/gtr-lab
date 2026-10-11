@@ -1,0 +1,72 @@
+# One bounded read-only diagnostic; never a release or complete lifecycle verdict.
+name: Fixed-release SaveData final-case diagnostic
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/cabin-savedata-diagnostic-request.json'
+permissions:
+  contents: read
+concurrency:
+  group: cabin-savedata-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  diagnose-savedata:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[diagnose-cabin-savedata]') && !contains(github.event.head_commit.message, '[release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+    defaults:
+      run:
+        working-directory: harness
+    env:
+      R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      R35_ALLOW_SAVEDATA_DIAGNOSTIC: '1'
+      R35_DIAGNOSTIC_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: harness
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: release-app
+          ref: affd86701a2f16060215b4507aa653e5229ee3a3
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: harness/package-lock.json
+      - name: Validate the closed request and pinned adapter before setup
+        run: |
+          node scripts/cabin-savedata-diagnostic.mjs
+          node --check scripts/cabin-savedata-diagnostic.generated.mjs
+      - run: npm ci
+      - name: Socket-free ledger, deadline and exact adapter contracts
+        run: node --test --test-skip-pattern='helper derivation' tests/cabin-preparation-contract.node.mjs tests/cabin-preparation-live.node.mjs tests/cabin-runtime-body-ledger.node.mjs tests/cabin-preparation-checkpoint.node.mjs tests/cabin-savedata-diagnostic.node.mjs
+      - name: Install the untouched fixed release
+        working-directory: release-app
+        run: npm ci
+      - name: Build only the fixed deployed app checkout
+        working-directory: release-app
+        run: npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Diagnose only the final SaveData case on the exact public release
+        run: node scripts/cabin-savedata-diagnostic.generated.mjs
+        timeout-minutes: 20
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: savedata-final-case-diagnostic-${{ matrix.viewport }}-${{ github.sha }}-source-affd86701a2f16060215b4507aa653e5229ee3a3
+          path: harness/cabin-savedata-diagnostic-results/
+          retention-days: 14
+          if-no-files-found: warn

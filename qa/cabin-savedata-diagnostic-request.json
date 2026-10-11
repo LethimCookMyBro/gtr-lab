@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "fixed-affd-cabin-savedata-diagnostic-v1",
+  "case": "savedata-and-nonpremium-boundaries",
+  "sourceCommit": "affd86701a2f16060215b4507aa653e5229ee3a3",
+  "sourceTree": "bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5",
+  "modelSha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452"
+}
