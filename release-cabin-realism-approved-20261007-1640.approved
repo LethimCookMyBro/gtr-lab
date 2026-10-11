@@ -1,27 +1,12 @@
 {
-  "release": "Premium transparent-window and renderer-lifecycle incremental repair · work in progress",
-  "reviewedSource": "183672cc9470600b5ab527facebb0e2d10a39015",
-  "runtimeSourceCommit": "dfdb11f3feb55fcaf5819fc93fe9b269165b4463",
-  "applicationIdentitySha256": "d37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6",
-  "quality": "Preferred fixed 2M backing-pixel cap, DPR cap1.5, MSAA unchanged",
-  "cabinGlbSha256": "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
-  "cabinGlbBytes": 19170816,
-  "proxyGlbSha256": "49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347",
-  "proxyGlbBytes": 956368,
-  "strictIntegrationRun": 38145351390,
-  "qualityRun": 38148217633,
-  "priorRuntimeQualityRun": 38145351417,
-  "controlAuditRun": 38145351428,
-  "vehicleVisualRun": 38145351376,
-  "geometryRun": 38145351442,
-  "causalEndpointRun": 38145351447,
-  "pixelCostDiagnosticRun": 38148217648,
-  "verifiedScope": "Transparent exterior windows with lightweight cabin LOD; single DPR owner; whole-frame submission backpressure; completed cabin entry, exact route/context restoration and resource retirement. Desktop and mobile actual images reviewed.",
-  "remainingLimits": [
-    "Original native-motion run38145351398 remains failed: desktop2/mobile3 sustained-frame/immediate-presentation assertions. Endpoint proof does not establish continuous smoothness.",
-    "Physical run38145351365 passes14/15; desktop1920 night passes22 core views but misses15s completion in later paint evidence.",
-    "Same-runner1M diagnostic reduces observed software command-prefix latency but still takes seconds and softens fine detail. Preferred production remains2M; no hardware FPS or complete lag-fix claim.",
-    "Premium authored approximate cabin has blank display; five other requested variants and full realism remain unfinished."
-  ],
-  "releaseVerification": "Release-only live desktop/mobile exact-byte, window, route/context and lifecycle proof must pass before restoring baseline deployment watches."
+  "version": 1,
+  "allow": true,
+  "release": "[release-cabin-preparation-ao-static-faces]",
+  "stagedSource": "2f660090d3ae04549e705e0411dd7083f0626a95",
+  "sourceTree": "bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5",
+  "contract": "premium-unified-cabin-preparation-ao-static-faces-v1",
+  "modelSha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+  "modelBytes": 20195752,
+  "modelGzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
+  "modelGzipBytes": 10194084
 }

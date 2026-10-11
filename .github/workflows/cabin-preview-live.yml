@@ -1,41 +1,71 @@
-name: Public cabin preview verification
+# Public read-only verification only. The separate release marker is never written here.
+name: Public exact AO cabin preparation proof
 on:
   push:
     branches: [main]
-    # Source and QA-only staging pushes cannot start this release-only proof.
     paths:
-      - 'release-cabin-preview-approved-20261007-1202.approved'
+      - 'release-cabin-realism-approved-20261007-1640.approved'
 permissions:
   contents: read
 concurrency:
   group: cabin-live-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   public-cabin:
-    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[stage-cabin-integration]')
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-cabin-preparation-ao-static-faces]') && !contains(github.event.head_commit.message, '[stage-')
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
         viewport: [desktop, mobile]
+        lane: [feature, lifecycle]
+        quality: [standard]
+        include:
+          - viewport: desktop
+            lane: feature
+            quality: reduced
+    env:
+      R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      R35_PREPARATION_LANE: ${{ matrix.lane }}
+      R35_PREPARATION_QUALITY: ${{ matrix.quality }}
+      R35_PREPARATION_MODE: live
+      R35_ALLOW_LIVE_PREPARATION: '1'
+      R35_PREPARATION_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 2
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - name: Preserve exact release identity and require the approved marker
+      - name: Validate separate release marker, closed request and exact runtime before setup
         run: |
-          mkdir -p cabin-live-results
-          printf '%s\n' '${{ github.sha }}' > cabin-live-results/source-sha.txt
-          test -f release-cabin-preview-approved-20261007-1202.approved
-          test "$(git rev-parse HEAD)" = '${{ github.sha }}'
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFile,appendFile} from 'node:fs/promises';
+          import {execFileSync} from 'node:child_process';
+          import {resolvePreparationRequest,validatePreparationReleaseMarker,preparationReleaseMarker} from './scripts/cabin-preparation-policy.mjs';
+          import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs';
+          const request=JSON.parse(await readFile('qa/cabin-preparation-request.json','utf8'));
+          const values=resolvePreparationRequest(request,process.env);
+          validatePreparationReleaseMarker(JSON.parse(await readFile(preparationReleaseMarker,'utf8')),request,{...process.env,...values});
+          const frozen=JSON.parse(await readFile('qa/fixtures/cabin-preparation-identity.json','utf8'));
+          assert.deepEqual(await applicationIdentity('.'),frozen);
+          assert.equal(frozen.sha256,values.R35_EXPECTED_APP_TREE);
+          assert.equal(execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),process.env.GITHUB_SHA);
+          assert.ok(execFileSync('git',['diff-tree','--no-commit-id','--name-only','-r','HEAD'],{encoding:'utf8'}).trim().split('\n').includes(preparationReleaseMarker));
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          NODE
+          node scripts/build-cabin-preparation-readiness.mjs
+          node --check scripts/diagnose-cabin-preparation.mjs
+          node --check scripts/cabin-preparation-network.mjs
+          node --test tests/cabin-preparation-contract.node.mjs tests/cabin-preparation-live.node.mjs
       - run: npm ci
-      - name: Build the exact release for public byte comparison
+      - name: Build this exact release for public byte comparison
         run: npm run build
         timeout-minutes: 8
       - name: Wait for this exact Railway revision
@@ -43,21 +73,13 @@ jobs:
         timeout-minutes: 6
       - run: npx playwright install --with-deps chromium
         timeout-minutes: 5
-      - name: Verify public HTML, all JS/CSS and exact models before shared browser flows
-        # The driver calls verifyReleaseAssets before Chromium launch and never
-        # creates a local server in live mode. Both matrix jobs fail closed.
-        run: node scripts/capture-cabin-preview.mjs
-        timeout-minutes: 16
-        env:
-          R35_ALLOW_CABIN_INTEGRATION: '1'
-          R35_ALLOW_LIVE_CABIN: '1'
-          R35_CABIN_MODE: live
-          R35_CABIN_BASE_URL: https://gtr-lab-production.up.railway.app
-          R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      - name: Verify exact public bytes and shared preparation gates without a local server
+        run: node scripts/diagnose-cabin-preparation.mjs
+        timeout-minutes: 20
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: public-cabin-preview-${{ matrix.viewport }}
+          name: public-cabin-preparation-ao-static-faces-${{ matrix.viewport }}-${{ matrix.lane }}-${{ matrix.quality }}-${{ github.sha }}
           path: cabin-live-results/
           retention-days: 14
           if-no-files-found: warn

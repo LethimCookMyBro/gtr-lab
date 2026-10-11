@@ -1,6 +1,13 @@
 /** Closed, exact-source preparation/residency acceptance. No browser or socket side effects. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+export const preparationReleaseToken = '[release-cabin-preparation-ao-static-faces]';
+export const preparationReleaseMarker = 'release-cabin-realism-approved-20261007-1640.approved';
+export const preparationApprovedSource = '2f660090d3ae04549e705e0411dd7083f0626a95';
+export function preparationOrigin(mode = 'staged') {
+  assert.ok(['staged', 'live'].includes(mode), 'Unknown preparation verification mode');
+  return mode === 'live' ? 'https://gtr-lab-production.up.railway.app' : 'http://127.0.0.1:4178';
+}
 export const preparationContract = 'premium-unified-cabin-preparation-ao-static-faces-v1';
 // Exact independently reviewed runtime, including the route accessibility and transport layers.
 export const preparationTree = 'bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5';
@@ -39,13 +46,23 @@ export function validatePreparationEnvironment(env) {
   assert.equal(env.GITHUB_REF, 'refs/heads/main'); assert.equal(env.GITHUB_EVENT_NAME, 'push');
   assert.match(env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/); assert.equal(env.R35_SOURCE_SHA, env.GITHUB_SHA);
   assert.equal(env.R35_EXPECTED_APP_TREE, preparationTree); assert.equal(env.R35_PREPARATION_CONTRACT, preparationContract);
-  for (const marker of ['[stage-cabin-preparation]', '[stage-cabin-integration]']) assert.ok((env.R35_PREPARATION_COMMIT_MESSAGE ?? '').includes(marker), marker);
-  for (const name of ['R35_DPR_BASE_URL', 'R35_BASE_URL', 'R35_CABIN_URL', 'R35_MODEL_URL', 'R35_CAPTURE_TIMEOUT', 'R35_MAX_BUFFER_PIXELS']) assert.equal(env[name], undefined, `Unreviewed override ${name}`);
+  const mode = env.R35_PREPARATION_MODE ?? 'staged', baseUrl = preparationOrigin(mode), message = env.R35_PREPARATION_COMMIT_MESSAGE ?? '';
+  if (mode === 'live') {
+    assert.match(preparationApprovedSource ?? '', /^[a-f0-9]{40}$/, 'Exact previously staged approval must be frozen');
+    assert.equal(env.R35_ALLOW_LIVE_PREPARATION, '1', 'Separate explicit public-live permission required');
+    assert.ok(message.includes(preparationReleaseToken), 'Exact public release message token required');
+    assert.equal(message.includes('[stage-'), false, 'A staging push cannot authorize public proof');
+    assert.equal(env.R35_PREPARATION_APP_ROOT, undefined, 'Public proof requires the exact checked-out release');
+  } else {
+    assert.equal(env.R35_ALLOW_LIVE_PREPARATION, undefined, 'Staged proof cannot inherit public permission');
+    for (const marker of ['[stage-cabin-preparation]', '[stage-cabin-integration]']) assert.ok(message.includes(marker), marker);
+  }
+  for (const name of ['R35_DPR_BASE_URL', 'R35_BASE_URL', 'R35_CABIN_URL', 'R35_MODEL_URL', 'R35_CAPTURE_TIMEOUT', 'R35_MAX_BUFFER_PIXELS', 'R35_PREPARATION_BASE_URL', 'R35_CABIN_BASE_URL', 'R35_ALLOW_LIVE_CABIN', 'R35_CABIN_MODE']) assert.equal(env[name], undefined, `Unreviewed override ${name}`);
   assert.ok(['desktop', 'mobile'].includes(env.R35_QA_VIEWPORT));
   assert.ok(['feature', 'lifecycle'].includes(env.R35_PREPARATION_LANE));
   const quality = env.R35_PREPARATION_QUALITY ?? 'standard'; assert.ok(['standard', 'reduced'].includes(quality));
   assert.ok(quality === 'standard' || (env.R35_QA_VIEWPORT === 'desktop' && env.R35_PREPARATION_LANE === 'feature'), 'Reduced comparison is one independent desktop feature cell');
-  return { name: env.R35_QA_VIEWPORT, lane: env.R35_PREPARATION_LANE, quality, baseUrl: 'http://127.0.0.1:4178',
+  return { mode, name: env.R35_QA_VIEWPORT, lane: env.R35_PREPARATION_LANE, quality, baseUrl,
     ...(env.R35_QA_VIEWPORT === 'desktop' ? { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 } :
       { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }) };
 }
@@ -56,6 +73,16 @@ export function resolvePreparationRequest(request, env) {
   assert.equal(request.modelSha256, models[0].sha256, 'Only the exact accepted 8645956f AO/static-face model is admitted');
   const values = { R35_SOURCE_SHA: env.GITHUB_SHA, R35_EXPECTED_APP_TREE: preparationTree, R35_PREPARATION_CONTRACT: preparationContract };
   validatePreparationEnvironment({ ...env, ...values }); return values;
+}
+// The future release SHA is GITHUB_SHA; the marker binds a prior reviewed source,
+// avoiding a circular requirement to put a commit's own hash inside its bytes.
+export function validatePreparationReleaseMarker(marker, request, env) {
+  const values = resolvePreparationRequest(request, env);
+  assert.equal(validatePreparationEnvironment({ ...env, ...values }).mode, 'live');
+  const expected = { version: 1, allow: true, release: preparationReleaseToken, stagedSource: preparationApprovedSource, sourceTree: preparationTree, contract: preparationContract,
+    modelSha256: models[0].sha256, modelBytes: models[0].bytes, modelGzipSha256: cabinWire.sha256, modelGzipBytes: cabinWire.bytes };
+  ownKeys(marker, Object.keys(expected)); assert.deepEqual(marker, expected, 'Release marker must bind this exact approved staged source and model');
+  return marker;
 }
 /** Derive image provenance only after full accepted parent GLB verification. */
 export function acceptedCabinImages(bytes) {
@@ -261,7 +288,8 @@ export function assertPreparationErrorLayout(layout, certificate, viewport) {
 }
 
 /** Fail closed. Cabin bodies and fixtures share the browser's native CDP request ID. */
-export function assertCaseSourceClosure(row, wire) {
+export function assertCaseSourceClosure(row, wire, mode = 'staged') {
+  const baseUrl = preparationOrigin(mode);
   assert.deepEqual(row.errors, [], 'Any source/observation error invalidates the case');
   assert.deepEqual(row.pageErrors, []); assert.deepEqual(row.requestFailures, [], 'Non-model request failures are never deliberate fixtures');
   const cancellations = row.expectedCancellations, failures = row.expectedFailures;
@@ -275,7 +303,7 @@ export function assertCaseSourceClosure(row, wire) {
   assert.equal(row.browserModelRequests.length, sequence.length, 'Playwright must observe the same model fetch count');
   assert.deepEqual(row.browserModelRequests.map(r => r.failed ? 'aborted' : r.status), sequence);
   assert.equal(new Set(row.browserModelRequests.map(r => r.requestId)).size, sequence.length);
-  for (const r of row.browserModelRequests) { assert.equal(r.url, 'http://127.0.0.1:4178' + models[0].path); if (r.failed) assert.equal(r.failed, 'net::ERR_ABORTED'); }
+  for (const r of row.browserModelRequests) { assert.equal(r.url, baseUrl + models[0].path); if (r.failed) assert.equal(r.failed, 'net::ERR_ABORTED'); }
   assert.equal(cancellations.length, sequence.filter(v => v === 'aborted').length);
   assert.equal(failures.length, sequence.filter(v => v === 503).length);
   assert.equal(wire.wireEntityBytes, cabinWire.bytes); assert.equal(wire.wireEntitySha256, cabinWire.sha256);
@@ -291,7 +319,7 @@ export function assertCaseSourceClosure(row, wire) {
   const used = new Set();
   for (const network of row.network) {
     assert.ok(typeof network.requestId === 'string' && network.requestId.length > 0); assert.equal(network.sent, true); assert.ok(Number.isFinite(network.wallTime));
-    assert.equal(network.url, 'http://127.0.0.1:4178' + models[0].path);
+    assert.equal(network.url, baseUrl + models[0].path);
     const bodies = row.modelBodies.filter(b => b.requestId === network.requestId);
     const cancellation = cancellations.find(c => c.requestId === network.requestId), failure = failures.find(f => f.requestId === network.requestId);
     if (cancellation || failure) {

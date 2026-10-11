@@ -1,4 +1,4 @@
-/** New staged feature contract. Historical collectors and their failure verdicts remain untouched. */
+/** Exact-source staged or explicitly released public proof. Historical verdicts remain untouched. */
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
@@ -8,7 +8,7 @@ import { createRequire } from 'node:module';
 import { gunzipSync } from 'node:zlib';
 import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { collectDistAssets } from './raster-cost-evidence.mjs';
-import { budgets, requiredCases, models, cabinWire, cabinResourcePlan, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages,
+import { budgets, requiredCases, models, cabinWire, cabinResourcePlan, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages, preparationOrigin, preparationReleaseMarker, validatePreparationReleaseMarker,
   assertCurrentGeometry, assertDesktopFeatureGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertMobileContainment, assertPreparationErrorLayout, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
 import { installCabinNetworkCapture } from './cabin-preparation-network.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from './cabin-preparation-observer.mjs';
@@ -40,11 +40,11 @@ export function observePreparationErrorLayout() {
 }
 
 /** A raw same-origin transport receipt is separate from Playwright's decoded response body. */
-export async function readModelRepresentation(baseUrl, encoding) {
-  assert.equal(baseUrl, 'http://127.0.0.1:4178'); assert.ok(['gzip', 'identity', 'gzip;q=0'].includes(encoding));
-  const { get } = await import('node:http');
+export async function readModelRepresentation(baseUrl, encoding, mode = 'staged') {
+  assert.equal(baseUrl, preparationOrigin(mode)); assert.ok(['gzip', 'identity', 'gzip;q=0'].includes(encoding));
+  const { get } = await import(mode === 'live' ? 'node:https' : 'node:http');
   return new Promise((done, reject) => {
-    const request = get(baseUrl + models[0].path, { headers: { 'Accept-Encoding': encoding } }, response => {
+    const request = get(baseUrl + models[0].path, { headers: { 'Accept-Encoding': encoding, 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(budgets.lifecycle) }, response => {
       const chunks = []; let length = 0;
       response.on('data', chunk => { length += chunk.length; if (length > models[0].bytes) response.destroy(new Error('Oversized model representation')); else chunks.push(chunk); });
       response.on('error', reject);
@@ -64,29 +64,55 @@ export function assertModelRepresentation(receipt, encoding) {
   return { acceptEncoding: encoding, status: receipt.status, contentEncoding: receipt.headers['content-encoding'] ?? 'identity', vary: receipt.headers.vary,
     wireEntityBytes: receipt.body.length, wireEntitySha256: sha256(receipt.body), decodedBytes: decoded.length, decodedSha256: sha256(decoded) };
 }
+/** Independent pre-browser identity GETs; no response-provided URL is followed. */
+export async function verifyPublicPreparationModels({ fetchImpl = fetch } = {}) {
+  const verified = [], deadline = AbortSignal.timeout(120_000), origin = preparationOrigin('live');
+  for (const model of models) {
+    const url = origin + model.path;
+    const response = await fetchImpl(url, { method: 'GET', redirect: 'error', headers: { 'Accept-Encoding': 'identity', 'Cache-Control': 'no-cache' }, signal: AbortSignal.any([deadline, AbortSignal.timeout(budgets.lifecycle)]) });
+    try {
+      assert.equal(response.status, 200); assert.ok(!response.redirected && (!response.url || response.url === url), 'Public model cannot redirect');
+      assert.ok(['model/gltf-binary', 'application/octet-stream'].includes((response.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase()));
+      assert.equal(response.headers.get('content-encoding') ?? 'identity', 'identity');
+      const declared = response.headers.get('content-length'); assert.ok(declared === null || /^\d+$/.test(declared) && Number(declared) === model.bytes);
+      assert.ok(response.body); const chunks = []; let length = 0;
+      for await (const chunk of response.body) { length += chunk.byteLength; assert.ok(length <= model.bytes, 'Public model exceeds exact byte limit'); chunks.push(Buffer.from(chunk)); }
+      assert.equal(length, model.bytes); assert.equal(sha256(Buffer.concat(chunks, length)), model.sha256, 'Exact reviewed public model identity');
+      verified.push({ ...model, url });
+    } finally { if (response.body && !response.body.locked) await response.body.cancel().catch(() => {}); }
+  }
+  return verified;
+}
 export async function main(env = process.env) {
   // This gate precedes filesystem traversal, browser/server imports and all sockets.
   const target = validatePreparationEnvironment(env);
   const harness = resolve(dirname(fileURLToPath(import.meta.url)), '..'), root = resolve(env.R35_PREPARATION_APP_ROOT ?? '.');
   const request = JSON.parse(await readFile(resolve(harness, 'qa/cabin-preparation-request.json')));
   for (const [key, value] of Object.entries(resolvePreparationRequest(request, env))) assert.equal(env[key], value);
+  const release = target.mode === 'live' ? validatePreparationReleaseMarker(JSON.parse(await readFile(resolve(root, preparationReleaseMarker))), request, env) : null;
   const source = await applicationIdentity(root), frozen = JSON.parse(await readFile(resolve(harness, 'qa/fixtures/cabin-preparation-identity.json')));
   assert.deepEqual(source, frozen); assert.equal(source.sha256, env.R35_EXPECTED_APP_TREE);
   const commit = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); assert.equal(commit, env.GITHUB_SHA);
   assert.equal(execFileSync('git', ['-C', root, 'status', '--porcelain', '--', 'src', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'server.mjs'], { encoding: 'utf8' }).trim(), '');
+  if (target.mode === 'live') {
+    assert.equal(root, harness, 'Live proof and release source must be the same checkout');
+    assert.equal(execFileSync('git', ['-C', root, 'log', '-1', '--format=%B'], { encoding: 'utf8' }).trim(), env.R35_PREPARATION_COMMIT_MESSAGE.trim());
+    const changed = execFileSync('git', ['-C', root, 'diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD'], { encoding: 'utf8' }).trim().split('\n');
+    assert.ok(changed.includes(preparationReleaseMarker), 'This release commit must change its explicit marker');
+    assert.equal(execFileSync('git', ['-C', root, 'status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' }).trim(), '', 'Public proof requires clean tracked release source');
+  }
   await buildPreparationReadiness(harness);
   const assets = await collectDistAssets(resolve(root, 'dist'));
   const bodies = await Promise.all(models.map(async model => { const body = await readFile(resolve(root, 'dist' + model.path)); assert.equal(body.length, model.bytes); assert.equal(sha256(body), model.sha256); return body; }));
   const images = acceptedCabinImages(bodies[0]), transform = independentExteriorTransform(bodies[1]);
-  const output = resolve('cabin-preparation-results', target.name + '-' + target.lane + (target.quality === 'reduced' ? '-reduced' : '')); await mkdir(output, { recursive: true });
-  const report = { result: 'running', sourceCommit: commit, sourceTree: source.sha256, contract: request.contract, viewport: target.name, lane: target.lane, requestedQuality: target.quality,
+  const output = resolve(target.mode === 'live' ? 'cabin-live-results' : 'cabin-preparation-results', target.name + '-' + target.lane + (target.quality === 'reduced' ? '-reduced' : '')); await mkdir(output, { recursive: true });
+  const report = { result: 'running', mode: target.mode, release, sourceCommit: commit, sourceTree: source.sha256, contract: request.contract, viewport: target.name, lane: target.lane, requestedQuality: target.quality,
     budgets, models, images, resourcePlan: cabinResourcePlan, transport: [], cases: [], errors: [],
     scope: 'Bounded functional preparation/residency proof on the actual built bundle and native-positive main completion. No historical causal/raster qualification is transferred.',
     limitations: ['SwiftShader timings describe this CI runner, not physical desktop/mobile speed.', 'DOM and native-event sampling plus bounded screenshots do not prove the absence of subframe compositor flicker.', 'Fetch/decode/native-positive-observation holds are explicit lifecycle fixtures, excluded from loading-speed claims.', 'Residency is checked for repeated entry in the same environment/quality. Environment changes can require legitimate preparation.'] };
   const save = () => writeFile(resolve(output, 'report.json'), JSON.stringify(report, null, 2));
-  await writeFile(resolve(output, 'identity.json'), JSON.stringify({ source, commit, request, assets: Object.fromEntries(assets), models, images, transform }, null, 2)); await save();
+  await writeFile(resolve(output, 'identity.json'), JSON.stringify({ source, commit, request, release, assets: Object.fromEntries(assets), models, images, transform }, null, 2)); await save();
   const { chromium, expect } = await import('@playwright/test');
-  const { createAppServer } = await import(pathToFileURL(resolve(root, 'server.mjs')));
   const { installFunctionalCaptureObserver, armFunctionalCapture, waitForFunctionalCapture, verifyFunctionalCapture } = await import('./cabin-preparation-readiness.generated.mjs');
   const { installCabinResourceObserver } = await import('./cabin-resource-observer.mjs');
   const { installDprMotionObserver } = await import('./dpr-motion-observer.mjs');
@@ -106,7 +132,7 @@ export async function main(env = process.env) {
     const pendingBodies = [], requestIds = new WeakMap(); let nextRequestId = 0, phase = name, quality = 'standard';
     const identifyRequest = request => { if (!requestIds.has(request)) requestIds.set(request, ++nextRequestId); return requestIds.get(request); };
     page.on('request', request => { const id = identifyRequest(request); if (new URL(request.url()).pathname === models[0].path) row.browserModelRequests.push({ requestId: id, url: request.url(), phase }); });
-    const modelNetwork = await installCabinNetworkCapture(cdp, row, { baseUrl: target.baseUrl, phase: () => phase });
+    const modelNetwork = await installCabinNetworkCapture(cdp, row, { baseUrl: target.baseUrl, mode: target.mode, phase: () => phase });
     page.on('response', response => {
       const url = new URL(response.url());
       if (url.protocol === 'blob:' && url.origin === target.baseUrl) return;
@@ -181,15 +207,22 @@ export async function main(env = process.env) {
     finally {
       try { row.observation = await snapshot(); row.resources = await resources(); row.fixture = await fixture(); row.dpr = await page.evaluate(() => globalThis.__r35DprMotion.snapshot()); assert.deepEqual(row.observation.issues, []); assert.deepEqual(row.resources.issues, []); assert.deepEqual(row.dpr.issues, []); assertFenceObservationHealthy(row.fixture); await Promise.all(pendingBodies); await modelNetwork.settle(); await modelNetwork.close();
         for (const c of row.dpr.contexts.filter(c => c.sceneCanvas)) { assert.equal(c.creation.contextType, 'webgl2'); assert.equal(c.creation.requestedAntialias, true); assert.equal(c.creation.antialias, true); assert.ok(c.creation.samples >= 2 && c.creation.sampleBuffers >= 1); }
-        row.sourceClosure = assertCaseSourceClosure(row, report.transport.find(r => r.acceptEncoding === 'gzip'));
+        row.sourceClosure = assertCaseSourceClosure(row, report.transport.find(r => r.acceptEncoding === 'gzip'), target.mode);
       } catch (error) { row.errors.push(String(error)); row.result = 'failed'; }
       row.elapsedMs = Date.now() - row.startedAt; await save(); await context.close();
     }
     assert.equal(row.result, 'collected', name + ' evidence must be complete'); row.result = 'passed'; await save();
   };
   try {
-    server = createAppServer(resolve(root, 'dist')); await new Promise((done, reject) => { server.once('error', reject); server.listen(4178, '127.0.0.1', done); });
-    for (const encoding of ['gzip', 'identity', 'gzip;q=0']) report.transport.push(assertModelRepresentation(await readModelRepresentation(target.baseUrl, encoding), encoding));
+    if (target.mode === 'staged') {
+      const { createAppServer } = await import(pathToFileURL(resolve(root, 'server.mjs')));
+      server = createAppServer(resolve(root, 'dist')); await new Promise((done, reject) => { server.once('error', reject); server.listen(4178, '127.0.0.1', done); });
+    } else {
+      const { verifyReleaseAssets } = await import('./verify-release-assets.mjs');
+      report.publicAssets = await verifyReleaseAssets({ directory: resolve(root, 'dist'), commit });
+      report.publicModels = await verifyPublicPreparationModels(); await save();
+    }
+    for (const encoding of ['gzip', 'identity', 'gzip;q=0']) report.transport.push(assertModelRepresentation(await readModelRepresentation(target.baseUrl, encoding, target.mode), encoding));
     assert.equal(report.transport.find(r => r.acceptEncoding === 'gzip').wireEntitySha256, assets.get(models[0].path + '.gz'), 'Negotiated wire bytes must match the built gzip sidecar exactly');
     browser = await chromium.launch({ timeout: 30_000, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
     if (target.lane === 'feature') await runCase('direct-entry-residency', async h => {

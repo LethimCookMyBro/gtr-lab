@@ -1,10 +1,10 @@
 /** CI-only cabin transport observer. Native request IDs own bodies and fault fixtures. */
 import assert from 'node:assert/strict';
-import { budgets, models, sha256, remainingBudget } from './cabin-preparation-policy.mjs';
+import { budgets, models, sha256, remainingBudget, preparationOrigin } from './cabin-preparation-policy.mjs';
 export const networkBuffers = Object.freeze({ maxResourceBufferSize: 32 * 1024 * 1024, maxTotalBufferSize: 128 * 1024 * 1024 });
 export const failureBody = 'Explicit CI one-shot preparation transport failure';
-export async function installCabinNetworkCapture(cdp, row, { baseUrl, phase }) {
-  assert.equal(baseUrl, 'http://127.0.0.1:4178');
+export async function installCabinNetworkCapture(cdp, row, { baseUrl, phase, mode = 'staged' }) {
+  assert.equal(baseUrl, preparationOrigin(mode));
   const url = baseUrl + models[0].path, requests = new Map(), pending = [];
   let fixture = null, interceptionEnabled = false, sequence = 0;
   row.networkObserver = { buffers: { ...networkBuffers }, fetchEnableCount: 0, fetchDisableCount: 0, closed: false };
