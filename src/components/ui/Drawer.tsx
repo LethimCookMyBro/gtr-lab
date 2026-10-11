@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { isolateModal } from "./modalIsolation";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 export function Drawer({
@@ -16,6 +17,8 @@ export function Drawer({
   wide?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   const reduced = useReducedMotion();
   const [present, setPresent] = useState(open);
   const close = useRef(onClose);
@@ -34,10 +37,14 @@ export function Drawer({
   }, [open, reduced]);
   useLayoutEffect(() => {
     if (!present) return;
-    const before = document.activeElement as HTMLElement | null;
     const element = ref.current;
-    element?.focus();
+    const layer = layerRef.current;
+    if (!element || !layer) return;
+    const document = element.ownerDocument;
+    const isolation = isolateModal(layer, element);
+    element.focus({ preventScroll: true });
     const key = (event: KeyboardEvent) => {
+      if (!isolation.isTop()) return;
       if (event.key === "Escape") {
         event.preventDefault();
         close.current();
@@ -91,12 +98,16 @@ export function Drawer({
     document.addEventListener("keydown", key);
     return () => {
       document.removeEventListener("keydown", key);
-      if (before?.isConnected) before.focus({ preventScroll: true });
+      isolation.release();
     };
   }, [present]);
   if (!present) return null;
   return (
-    <div className="drawer-layer" data-phase={open ? "open" : "closing"}>
+    <div
+      ref={layerRef}
+      className="drawer-layer"
+      data-phase={open ? "open" : "closing"}
+    >
       <button
         className="drawer-backdrop"
         onClick={onClose}
@@ -110,10 +121,10 @@ export function Drawer({
         data-phase={open ? "open" : "closing"}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="drawer-title"
+        aria-labelledby={titleId}
       >
         <header>
-          <h2 id="drawer-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <button
             className="icon-button"
             onClick={onClose}

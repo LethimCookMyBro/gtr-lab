@@ -72,6 +72,23 @@ export function useHomeMotion(
         ".home-archive-chapter",
       ) ?? []),
     ];
+    // Story nodes are stable for this effect's lifetime; only their geometry changes.
+    // Keep layout measurements live for resize, font/image reflow and reverse scroll.
+    const heroActions = new Map(
+      sections.map((section) => [
+        section,
+        section.querySelector<HTMLAnchorElement>(".home-hero-support a"),
+      ]),
+    );
+    const chapterStages = new Map(
+      chapters.map((chapter) => [
+        chapter,
+        chapter.querySelector<HTMLElement>(".home-r32-stage"),
+      ]),
+    );
+    const archiveRail = root.current?.querySelector<HTMLElement>(
+      ".home-archive-stage",
+    );
     if (reduced) {
       const properties = [
         "--timeline-opacity",
@@ -164,7 +181,7 @@ export function useHomeMotion(
         };
       });
       const chapterMeasurements = chapters.map((element, index) => {
-        const stage = element.querySelector<HTMLElement>(".home-r32-stage");
+        const stage = chapterStages.get(element);
         const style = stage ? getComputedStyle(stage) : undefined;
         return {
           element,
@@ -177,9 +194,6 @@ export function useHomeMotion(
               : undefined,
         };
       });
-      const archiveRail = root.current?.querySelector<HTMLElement>(
-        ".home-archive-stage",
-      );
       // Read inside the visible chapter rather than on the navigation landing
       // boundary. Small late layout shifts must not resurrect the previous era.
       const readingLine = Math.max(
@@ -218,15 +232,12 @@ export function useHomeMotion(
               String(1 - clamp01((progress - 0.3) / 0.6)),
             );
             element.toggleAttribute("data-copy-inactive", progress >= 0.9);
-            const action = element.querySelector<HTMLAnchorElement>(
-              ".home-hero-support a",
-            );
+            const action = heroActions.get(element);
             if (action) action.tabIndex = progress >= 0.9 ? -1 : 0;
           }
           if (kind === "expanding") {
             const bounds = expansionAt(progress);
             write(element, "--film-width", `${bounds.width}%`);
-            write(element, "--film-height", `${bounds.height}svh`);
             write(element, "--film-radius", `${bounds.radius}px`);
             write(
               element,
@@ -262,7 +273,6 @@ export function useHomeMotion(
               viewport,
           );
           write(element, "--timeline-opacity", timeline.opacity.toFixed(5));
-          write(element, "--timeline-blur", `${timeline.blur.toFixed(3)}px`);
           write(element, "--timeline-scale", timeline.scale.toFixed(5));
           if (pinnedTop !== undefined) {
             const progress = clamp01(

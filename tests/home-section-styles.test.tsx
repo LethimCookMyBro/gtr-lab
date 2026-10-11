@@ -59,7 +59,7 @@ it("uses the same opacity and translation channels for each independent editoria
     container.querySelector(".home-timeline-image")!,
   );
   expect(image.opacity).toBe("var(--timeline-opacity, 1)");
-  expect(image.filter).toBe("blur(var(--timeline-blur, 0px))");
+  expect(image.filter).toBe("none");
   expect(image.transform).toContain("--timeline-scale");
 });
 

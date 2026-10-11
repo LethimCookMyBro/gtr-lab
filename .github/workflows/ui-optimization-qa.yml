@@ -1,0 +1,87 @@
+# Closed staged-only browser evidence. This workflow does not change a release marker.
+name: Staged exact UI optimization comparison
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/ui-optimization-request.json'
+      - 'scripts/ui-optimization-*.mjs'
+      - 'tests/ui-optimization-*.node.mjs'
+      - '.github/workflows/ui-optimization-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ui-optimization-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  exact-ui:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-ui-optimization]') && !contains(github.event.head_commit.message, '[release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile, short, narrow, reduced]
+    defaults:
+      run:
+        working-directory: candidate-app
+    env:
+      R35_ALLOW_UI_OPTIMIZATION_QA: '1'
+      R35_UI_VIEWPORT: ${{ matrix.viewport }}
+      R35_UI_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: candidate-app
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: baseline-app
+          ref: 38f9f8c5e90619b961e70315d1683618cec92b88
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: candidate-app/package-lock.json
+      - name: Validate closed request, exact baseline and exact candidate before setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {resolve} from 'node:path';
+          import {validateRequest} from './scripts/ui-optimization-policy.mjs';
+          import {verifyCheckout} from './scripts/ui-optimization-browser.mjs';
+          const request=JSON.parse(await readFile('qa/ui-optimization-request.json','utf8'));
+          validateRequest(request,process.env);
+          await verifyCheckout(resolve('../baseline-app'),'baseline',request,process.env);
+          await verifyCheckout(resolve('.'),'candidate',request,process.env);
+          NODE
+          node --check scripts/ui-optimization-browser.mjs
+          node --test tests/ui-optimization-contract.node.mjs
+      - run: npm ci
+      - name: Install exact baseline dependencies
+        working-directory: baseline-app
+        run: npm ci
+      - name: Focused ownership and reversible motion regressions
+        run: node node_modules/vitest/vitest.mjs run tests/drawer-isolation.test.tsx tests/configurator-panel-presence.test.tsx tests/render-quality-ui.test.tsx tests/home-motion-costs.test.tsx tests/home-motion-reset.test.tsx tests/home-section-styles.test.tsx tests/home-section-choreography.test.ts tests/home-hero-exit.test.tsx --pool=threads --maxWorkers=1 --minWorkers=1
+      - run: node node_modules/typescript/bin/tsc --noEmit
+      - name: Build exact baseline production app and assets
+        working-directory: baseline-app
+        run: npm run build
+        timeout-minutes: 8
+      - name: Build exact candidate production app and assets
+        run: npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Matched native-scroll metrics and actual Drawer ownership
+        run: node scripts/ui-optimization-browser.mjs
+        timeout-minutes: 16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-optimization-${{ matrix.viewport }}-${{ github.sha }}
+          path: candidate-app/ui-optimization-results/
+          retention-days: 14
+          if-no-files-found: warn

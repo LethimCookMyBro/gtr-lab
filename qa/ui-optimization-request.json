@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "ui-optimization-native-choreography-v1",
+  "baselineCommit": "38f9f8c5e90619b961e70315d1683618cec92b88",
+  "baselineTree": "bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5",
+  "candidateTree": "3cc14885944d21ec3c934a0c36d468b064225f0c24ade0870f24566dedb0507b"
+}

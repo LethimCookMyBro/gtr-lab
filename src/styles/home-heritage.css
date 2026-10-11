@@ -107,7 +107,8 @@
   background: #15181a;
   box-shadow: 0 20px 46px #0005;
   opacity: var(--timeline-opacity, 1);
-  filter: blur(var(--timeline-blur, 0px));
+  /* Large photographs recede through opacity and scale, without per-scroll blur. */
+  filter: none;
   transform: rotate(var(--timeline-tilt)) scale(var(--timeline-scale, 1));
   transform-origin: 50% 50%;
 }
