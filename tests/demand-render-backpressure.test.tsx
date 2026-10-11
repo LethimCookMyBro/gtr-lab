@@ -660,3 +660,50 @@ it("preserves elapsed clock time while exposing the existing camera and paint in
   // 17.5s of synthetic wall time has not become 17.5s of interpolation. This
   // documents the unchanged caller behavior; the gate must not alter it covertly.
 });
+
+it.each([false, true])(
+  "a clamped keyboard action avoids fresh work and preserves existing demand: pending=%s",
+  async (pending) => {
+    const f = await fixture();
+    const camera = f.state.camera as import("three").PerspectiveCamera;
+    camera.position.set(4.275, 1.8675, 5.1);
+    const controls = new OrbitControls(camera);
+    controls.target.set(0, 0.72, 0);
+    controls.minDistance = 2.7;
+    controls.maxDistance = 12;
+    controls.update();
+    controls.addEventListener("change", () => f.state.invalidate());
+    const disconnect = connectExteriorKeyboard({
+      canvas: f.renderer.domElement,
+      camera,
+      controls,
+      onManual() {},
+      onReset() {},
+      invalidate: f.state.invalidate,
+    });
+    releases.push(() => {
+      disconnect();
+      controls.dispose();
+    });
+    const key = () =>
+      f.renderer.domElement.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "+", cancelable: true }),
+      );
+    for (let index = 0; index < 40; index++) key();
+    f.complete();
+    await frame();
+    f.complete();
+    await act(async () => vi.advanceTimersByTimeAsync(16));
+    await frame();
+    expect(f.state.internal.frames).toBe(0);
+    const count = f.draws.length;
+    const baseline = camera.position.toArray();
+    if (pending) f.input(42);
+    key();
+    key();
+    await frame();
+    expect(camera.position.toArray()).toEqual(baseline);
+    expect(f.draws).toHaveLength(count + (pending ? 1 : 0));
+    if (pending) expect(f.draws.at(-1)).toBe(42);
+  },
+);

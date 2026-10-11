@@ -130,6 +130,7 @@ test('the same staged source push schedules functional proof and preserves histo
 test('lifecycle source differs from the reviewed two-defect correction only in explicit contract selection and reporting', async () => {
   const source = String(await read('scripts/diagnose-render-backpressure-lifecycle.mjs'));
   const historicalGate = source
+    .replace(", 'contact-shadow-clamp-stability-2m-msaa-v1'", '')
     .replace(", 'cabin-entry-functional-2m-msaa-v1'", '')
     .replace("const contracts = Object.freeze(['render-backpressure-2m-msaa-v1', 'render-repair-readiness-2m-msaa-v1']);", "const contract = 'render-backpressure-2m-msaa-v1';")
     .replace("  assert.ok(contracts.includes(target.geometryContract), 'Lifecycle proof requires an exact reviewed render-backpressure or repair contract');\n  assert.equal(request.geometryContract, target.geometryContract, 'Lifecycle request must match its exact reviewed contract');", "  assert.equal(target.geometryContract, contract, 'Lifecycle proof requires exact render-backpressure contract');\n  assert.equal(request.geometryContract, contract, 'Lifecycle request must be the reviewed render-backpressure request');")

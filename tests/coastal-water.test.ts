@@ -17,7 +17,10 @@ import {
   createCoastalWater,
   createCoastalWaterNormals,
 } from "../src/components/three/CoastalWater";
-import { configureStageLayers } from "../src/components/three/stageLayers";
+import {
+  configureCabinLayers,
+  configureStageLayers,
+} from "../src/components/three/stageLayers";
 
 describe("reflective coastal water", () => {
   it("defaults to a bounded 256-pixel reflection while retaining an explicit 512 option", () => {
@@ -161,6 +164,8 @@ describe("reflective coastal water", () => {
       camera.lookAt(0, 0, 0);
       camera.updateMatrixWorld();
       configureStageLayers(stage, camera);
+      // Both cabin representations remain visible to the reflected main view.
+      configureCabinLayers(new Group(), camera);
       scene.updateMatrixWorld(true);
       const originalTarget = new WebGLRenderTarget(16, 16);
       let currentTarget: WebGLRenderTarget | null = originalTarget;
@@ -178,7 +183,7 @@ describe("reflective coastal water", () => {
           reflections++;
           expect(reflectedScene).toBe(scene);
           expect(reflectedCamera.layers.mask).toBe(camera.layers.mask);
-          expect(reflectedCamera.layers.mask).toBe(5);
+          expect(reflectedCamera.layers.mask).toBe(13);
           expect(water.visible).toBe(false);
           expect(currentTarget).toBe(water.getRenderTarget());
           water.onBeforeRender(

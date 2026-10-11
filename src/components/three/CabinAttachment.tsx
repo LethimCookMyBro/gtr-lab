@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 import { compileRearScene } from "../home/compileRearScene";
 import { createCabinWindowOwner, type CabinWindowStatus } from "./cabinPreview";
 import { invalidateSceneShadows } from "./staticShadowPolicy";
+import { configureCabinLayers } from "./stageLayers";
 import {
   registerVehicleRestoration,
   type PreparedVehicle,
@@ -46,6 +47,8 @@ function useCabinCompilation(
     // scene references as well as cancelling its native compilation/resources.
     setCompiled(null);
     if (!asset) return;
+    // Establish main-view/contact-depth ownership before compilation or mount.
+    configureCabinLayers(asset.scene, camera);
     let live = true;
     const abort = new AbortController();
     // Explicitly preserve the reviewed no-shadow policy before compilation.

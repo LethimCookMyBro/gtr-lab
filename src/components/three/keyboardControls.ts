@@ -1,4 +1,10 @@
-import { MathUtils, PerspectiveCamera, Spherical, Vector3 } from "three";
+import {
+  MathUtils,
+  PerspectiveCamera,
+  Quaternion,
+  Spherical,
+  Vector3,
+} from "three";
 import type { OrbitControls } from "three-stdlib";
 
 export function setViewerAccessibility(
@@ -42,6 +48,8 @@ export function connectExteriorKeyboard({
 }: Options) {
   const offset = new Vector3();
   const spherical = new Spherical();
+  const beforePosition = new Vector3();
+  const beforeQuaternion = new Quaternion();
   function keydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (
@@ -59,6 +67,8 @@ export function connectExteriorKeyboard({
     )
       return;
     event.preventDefault();
+    beforePosition.copy(camera.position);
+    beforeQuaternion.copy(camera.quaternion);
     onManual();
     controls.autoRotate = false;
     if (event.key === "Home") {
@@ -95,7 +105,14 @@ export function connectExteriorKeyboard({
     camera.lookAt(controls.target);
     controls.update();
     controls.enableDamping = damping;
-    invalidate();
+    // A clamped key can leave the exact rendered pose unchanged. Preserve all
+    // native updates and their change events, but do not invent another demand
+    // frame for a no-op. Existing scene demand is never consumed or cleared.
+    if (
+      !camera.position.equals(beforePosition) ||
+      !camera.quaternion.equals(beforeQuaternion)
+    )
+      invalidate();
   }
   canvas.addEventListener("keydown", keydown);
   return () => canvas.removeEventListener("keydown", keydown);

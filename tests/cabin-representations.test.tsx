@@ -34,13 +34,15 @@ vi.mock("../src/components/home/compileRearScene", () => ({
   compileRearScene: (
     _gl: unknown,
     scene: Group,
-    _camera: unknown,
+    camera: PerspectiveCamera,
     signal: AbortSignal,
   ) => {
     scene.traverse((object) => {
       if (object instanceof Mesh) {
         expect(object.castShadow).toBe(false);
         expect(object.receiveShadow).toBe(false);
+        expect(object.layers.mask).toBe(1 << 3);
+        expect(camera.layers.test(object.layers)).toBe(true);
       }
     });
     host.compile(scene);
