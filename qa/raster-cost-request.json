@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "r35-same-runner-pixel-cost-abba-v1",
+  "baseline": {
+    "sha": "f18e7b0ff04d2dc6f67b4f4184c65a1a9ae2fbe0",
+    "tree": "d37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6"
+  },
+  "candidate": {
+    "sha": "da9ca630b359a2733c41505c64d9f14a45faa013",
+    "tree": "4d062f978565df292bbed256c30211966304a3df48a65261b09402c3fd20e7fc"
+  }
+}

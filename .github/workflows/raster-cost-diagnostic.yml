@@ -1,0 +1,110 @@
+# Reviewed exact-source comparison. Preferred production runtime remains 2M/MSAA.
+name: Staged same-runner pixel-cost ABBA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/*raster-cost*.mjs'
+      - 'scripts/verify-raster-sources.mjs'
+      - 'tests/raster-cost-*.node.mjs'
+      - 'qa/raster-cost-*.json'
+      - '.github/workflows/raster-cost-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: raster-cost-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  measure:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-raster-cost]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    env:
+      R35_RASTER_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve reviewed immutable pair before setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,appendFile,mkdir,writeFile} from 'node:fs/promises';
+          import {resolveRasterRequest} from './scripts/raster-cost-policy.mjs';
+          const request=JSON.parse(await readFile('qa/raster-cost-request.json','utf8'));
+          const values=resolveRasterRequest(request);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          await mkdir('raster-cost-results',{recursive:true});
+          await writeFile('raster-cost-results/request.json',JSON.stringify({request,resolved:values,harnessSha:process.env.GITHUB_SHA},null,2));
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_RASTER_BASELINE_SHA }}
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_RASTER_CANDIDATE_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify source-only treatment and socket-free harness tests
+        run: |
+          test "$(git -C baseline rev-parse HEAD)" = "$R35_RASTER_BASELINE_SHA"
+          test "$(git -C candidate rev-parse HEAD)" = "$R35_RASTER_CANDIDATE_SHA"
+          node scripts/verify-raster-sources.mjs baseline candidate > raster-cost-results/source-pair.json
+          node scripts/build-raster-cost-driver.mjs
+          node --check scripts/diagnose-raster-cost-trial.mjs
+          node --test tests/raster-cost-policy.node.mjs tests/raster-cost-state-observer.node.mjs tests/raster-cost-bookkeeping.node.mjs tests/drained-key-observer.node.mjs tests/drained-key-gates.node.mjs
+      - run: npm ci
+      - name: Build baseline before any measurement
+        working-directory: baseline
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - name: Build candidate before any measurement
+        working-directory: candidate
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Four fixed fresh-process trials, without retries
+        run: |
+          set +e
+          for trial in 1 2 3 4; do
+            export R35_RASTER_TRIAL="$trial"
+            if [[ "$trial" = 1 || "$trial" = 4 ]]; then
+              export R35_RASTER_LANE=A R35_DRAINED_KEY_APP_ROOT=baseline
+              export R35_DRAINED_KEY_SOURCE_SHA="$R35_RASTER_BASELINE_SHA"
+              export R35_DRAINED_KEY_SOURCE_TREE=d37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6
+            else
+              export R35_RASTER_LANE=B R35_DRAINED_KEY_APP_ROOT=candidate
+              export R35_DRAINED_KEY_SOURCE_SHA="$R35_RASTER_CANDIDATE_SHA"
+              export R35_DRAINED_KEY_SOURCE_TREE=4d062f978565df292bbed256c30211966304a3df48a65261b09402c3fd20e7fc
+            fi
+            timeout --signal=TERM --kill-after=10s 360s node scripts/diagnose-raster-cost-trial.mjs
+            status=$?
+            printf '%s %s %s\n' "$trial" "$R35_RASTER_LANE" "$status" >> raster-cost-results/process-status.txt
+            # A timed-out, missing, or unclean shutdown cannot be followed by another trial.
+            node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
+          const e=process.env;
+          const report=JSON.parse(await readFile(`raster-cost-results/trial-${e.R35_RASTER_TRIAL}-${e.R35_RASTER_LANE}/report.json`,'utf8'));
+          assert.equal(report.cleanupConfirmed,true,'Abort remaining trials: cleanup is not verified');
+          NODE
+            cleanup=$?
+            if [[ "$status" = 124 || "$status" = 137 || "$cleanup" != 0 ]]; then exit 1; fi
+          done
+        timeout-minutes: 25
+      - name: Describe all four trials, retaining every failed/censored result
+        if: always()
+        run: node scripts/compare-raster-cost.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: raster-cost-abba-${{ github.sha }}
+          path: raster-cost-results/
+          retention-days: 14
+          if-no-files-found: warn
