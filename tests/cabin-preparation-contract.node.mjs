@@ -497,16 +497,39 @@ test('error layout requires complete visible text, enabled hit targets and separ
     const layout = { width, height: 844, documentHeight: 1000, scrollY: 0, documentOverflowY: 'visible', bodyOverflowY: 'visible', overflow: false, count: 1, phase: 'error', role: 'alert',
       main: rect(0, 0, width, 1000), card: text(18, 450, width - 36, 130), message: { ...text(34, 466, width - 68, 32), text: 'Interior preparation couldn’t finish. The model could not be loaded (HTTP 503).', lines: [{ ...rect(34, 466, width - 68, 16), hit: true }, { ...rect(34, 482, 180, 16), hit: true }] },
       retry: { ...text(34, 520, width - 68, 44), text: 'Retry interior preparation', enabled: true, hits: [true, true, true, true, true] },
-      stage: rect(0, 230, width, 200), canvas: rect(0, 230, width, 200), backingWidth: width * 1.5, backingHeight: 300,
+      stage: rect(0, 230, width, 200), canvas: rect(0, 230, width, 200), backingWidth: width * 1.5, backingHeight: 300, canvasClientWidth: width, canvasClientHeight: 200,
       blockers: [{ name: 'Switch model', ...rect(16, 600, 111, 44) }, { name: 'Interaction hint', ...rect(140, 607, width - 156, 30) }, { name: 'Scene tools', ...rect(0, 660, width, 73) }],
       headerControls: ['Back to models', 'GT-R LAB home', 'Model detail'].map((name, i) => ({ name, ...rect(10 + i * 100, 20, 90, 30), hit: true })),
-      paint: { rail: rect(0, 750, width, 240), group: { ...rect(10, 920, width - 20, 60), scrollWidth: 450, clientWidth: width - 20, scrollLeft: 0 }, overflowX: 'auto',
+      paint: { rail: rect(0, 750, width, 240), group: { ...rect(10, 920, width - 20, 60), scrollWidth: Math.max(450, width - 20), clientWidth: width - 20, scrollLeft: 0 }, overflowX: 'auto',
         labels: ['Exterior / Concept palette', 'Ultimate Silver', 'Illustrative finish, not an official paint catalog'].map((label, i) => ({ ...text(10, 760 + i * 50, width - 20, 45), text: label, lines: [rect(10, 760 + i * 50, width - 20, 15)] })),
         controls: ['Ultimate Silver', 'Gun Metallic', 'Pearl White', 'Jet Black', 'Vibrant Red', 'Deep Blue', 'Stealth Gray', 'Midnight Violet', 'Dark Metal Gray'].map((name, i) => ({ ...rect(12 + i * 50, 926, 44, 44), name, enabled: true, complete: 56 + i * 50 <= width - 10, hit: null })) } };
     const certificate = { nativeStatus: 0x911c, reusedUnchanged: false, snapshot: { dimensions: { cssWidth: width, cssHeight: 200, renderWidth: width, renderHeight: 200, width: width * 1.5, height: 300 } } };
     return { layout, certificate, viewport: { width, height: 844 } };
   };
   for (const width of [390, 320]) { const e = fixture(width); assertPreparationErrorLayout(e.layout, e.certificate, e.viewport); }
+  // Derived numeric geometry from run38169665802, commit7e34924474e57a5b62a828419214cbd41c2de31d.
+  // Mobile archive fc90532c915ebc362a55a85e675db931418d76b7eeeb52bf5c96abe7b6e92dc6;
+  // report214ff7e7f34cd56134c43787439c3aa480591de3dacc8104d84dfdd5138e181c; PNGc43ac8441cded6fd45be24364adb2e855c36023d0ade319f923feb66795490f9.
+  // Desktop archive8b34b94c35b0ede3a551ede5c7ffc08d28b76405853736f84c87c2e0ad9f32e4;
+  // report911b55bd8dffe9e7efd9ceaf31a34660d5a358f03908ef7bc9d7f0cd3ecb2cc3; PNG26417e7f6839e31cbe848e59ef4218b7533573fe0b39136c4cb840f3a5484c2f.
+  // Only geometry is transcribed; other layout fields use the synthetic fixture above. Raw failures remain failed.
+  for (const observed of [
+    { width: 390, viewportHeight: 844, y: 230, rectHeight: 197.40625, clientHeight: 197, backingHeight: 296 },
+    { width: 1440, viewportHeight: 900, y: 0, rectHeight: 432.40625, clientHeight: 432, backingHeight: 648 },
+  ]) {
+    const fractional = fixture(observed.width); fractional.layout.height = fractional.viewport.height = observed.viewportHeight;
+    for (const key of ['stage', 'canvas']) Object.assign(fractional.layout[key], { y: observed.y, height: observed.rectHeight, bottom: observed.y + observed.rectHeight });
+    fractional.layout.canvasClientHeight = observed.clientHeight; fractional.layout.backingHeight = observed.backingHeight;
+    Object.assign(fractional.certificate.snapshot.dimensions, { cssHeight: observed.clientHeight, renderHeight: observed.rectHeight, height: observed.backingHeight });
+    assertPreparationErrorLayout(fractional.layout, fractional.certificate, fractional.viewport);
+    for (const mutate of [
+      e => { delete e.layout.canvasClientHeight; }, e => { e.layout.canvasClientWidth = undefined; }, e => { e.layout.canvasClientHeight = NaN; },
+      e => { e.layout.canvasClientHeight = observed.rectHeight; }, e => { e.layout.canvasClientWidth = String(observed.width); }, e => { e.layout.canvasClientHeight = 0; },
+      e => { e.layout.canvasClientHeight++; }, e => { e.certificate.snapshot.dimensions.cssHeight++; },
+      e => { e.certificate.snapshot.dimensions.renderHeight = observed.clientHeight; }, e => { e.certificate.snapshot.dimensions.renderHeight += 1 / 64; },
+      e => { e.layout.backingHeight--; }, e => { e.layout.canvas.height = observed.clientHeight; e.layout.canvas.bottom = observed.y + observed.clientHeight; },
+    ]) { const e = structuredClone(fractional); mutate(e); assert.throws(() => assertPreparationErrorLayout(e.layout, e.certificate, e.viewport)); }
+  }
   const overlap = fixture(390); Object.assign(overlap.layout.blockers[0], { y: 541, bottom: 585 }); assert.throws(() => assertPreparationErrorLayout(overlap.layout, overlap.certificate, overlap.viewport), /overlaps Switch model/);
   for (const mutate of [
     e => { delete e.layout.card; }, e => { e.layout.card.x = NaN; }, e => { e.layout.documentHeight = NaN; }, e => { e.layout.scrollY = 1; }, e => { e.layout.bodyOverflowY = 'hidden'; }, e => { e.layout.count = 0; }, e => { e.layout.phase = 'ready'; }, e => { e.layout.role = 'status'; },
@@ -546,4 +569,13 @@ test('prior AO run remains historical source metadata with its open error-layout
   assert.equal(old.model.sha256, models[0].sha256); assert.equal(old.evidence.runId, 38167159928); assert.equal(old.evidence.archives.length, 5);
   assert.equal(old.evidence.verdict, 'five-terminal-CI-passes-with-mobile503-error-layout-visual-release-hold'); assert.equal(old.evidence.visualFinding.screenshotIncluded, false);
   assert.throws(() => resolvePreparationRequest(old.request, env));
+});
+
+
+test('error geometry compares native integer client metrics separately from exact fractional render bounds', async () => {
+  const producer = String(await read('src/components/three/functionalRenderObservation.ts'));
+  assert.match(producer, /cssWidth: canvas.clientWidth/); assert.match(producer, /cssHeight: canvas.clientHeight/);
+  assert.match(producer, /renderWidth: size.x/); assert.match(producer, /renderHeight: size.y/);
+  const driver = String(await read('scripts/diagnose-cabin-preparation.mjs'));
+  assert.ok(driver.includes('canvasClientWidth: canvas?.clientWidth')); assert.ok(driver.includes('canvasClientHeight: canvas?.clientHeight'));
 });

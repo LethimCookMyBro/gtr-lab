@@ -252,7 +252,10 @@ export function assertPreparationErrorLayout(layout, certificate, viewport) {
   for (let i = 0; i < paint.controls.length; i++) for (let j = i + 1; j < paint.controls.length; j++) assert.ok(apart(paint.controls[i], paint.controls[j]), 'Paint controls overlap');
   const d = certificate.snapshot.dimensions;
   for (const key of ['x', 'y', 'right', 'bottom', 'width', 'height']) assert.equal(layout.canvas[key], layout.stage[key]);
-  assert.equal(d.cssWidth, layout.canvas.width); assert.equal(d.cssHeight, layout.canvas.height); assert.equal(d.renderWidth, layout.canvas.width); assert.equal(d.renderHeight, layout.canvas.height);
+  // Native css* comes from integer canvas.client*, while gl.getSize/render* and DOMRect preserve fractional grid tracks.
+  for (const key of ['canvasClientWidth', 'canvasClientHeight']) assert.ok(Number.isSafeInteger(layout[key]) && layout[key] > 0, `Missing canvas client metric ${key}`);
+  assert.equal(d.cssWidth, layout.canvasClientWidth); assert.equal(d.cssHeight, layout.canvasClientHeight);
+  assert.equal(d.renderWidth, layout.canvas.width); assert.equal(d.renderHeight, layout.canvas.height);
   assert.equal(layout.backingWidth, d.width); assert.equal(layout.backingHeight, d.height);
   assert.ok([0x911a, 0x911c].includes(certificate.nativeStatus)); assert.equal(certificate.reusedUnchanged, false);
 }
