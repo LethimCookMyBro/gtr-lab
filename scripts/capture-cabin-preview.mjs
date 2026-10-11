@@ -10,6 +10,7 @@ import { createAppServer } from '../server.mjs';
 
 import { verifyReleaseAssets } from './verify-release-assets.mjs';
 import { waitForCabinWindowReady } from './cabin-capture-readiness.mjs';
+import { installFunctionalCaptureObserver, armFunctionalCapture, waitForFunctionalCapture, verifyFunctionalCapture } from './functional-capture-readiness.mjs';
 import { measureCabinWindowLayout, assertCabinWindowLayout } from './cabin-window-layout.mjs';
 import { installCabinResourceObserver } from './cabin-resource-observer.mjs';
 import { installCabinLoadLifecycle, observeCabinLoadNetwork, observeCabinFaultResponse, cabinLoadTime, correlateCabinLoadRequests } from './cabin-load-lifecycle.mjs';
@@ -41,7 +42,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const report = {
   commit: process.env.GITHUB_SHA, viewport: { name: selectedViewport, ...viewport }, result: 'running',
   mode: target.mode,
-  scope: live ? 'Actual public Railway app after exact HTML/JS/CSS and GLB preflight. One request-scoped 404 per optional cabin/proxy is intercepted; partial downloads use real public bytes under CDP throttling. No local server or application test hooks.' : 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; no application test hooks or alternate scene.',
+  scope: live ? 'Actual public Railway app after exact HTML/JS/CSS and GLB preflight. One request-scoped 404 per optional cabin/proxy is intercepted; partial downloads use real public bytes under CDP throttling. No local server; explicitly opted-in read-only functional rendering observation.' : 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; explicitly opted-in read-only functional rendering observation; no alternate scene.',
+  functionalObservation: 'Explicit opt-in read-only production main-draw and native-batch completion seam; not native-motion acceptance',
   renderer: 'Chromium ANGLE SwiftShader software WebGL; no physical-device FPS or performance claim',
   expectedAssets: { cabin: { path: cabinPath, sha256: cabinSha256, bytes: cabinBytes }, exterior: { path: exteriorPath, sha256: exteriorSha256, bytes: exteriorModel.bytes }, proxy: { ...proxyModel } },
   loadLifecycle: { browser: null, network: { requests: [], issues: [] }, correlations: [], issues: [] },
@@ -142,6 +144,7 @@ try {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block',
     ...(selectedViewport === 'mobile' ? { isMobile: true, hasTouch: true } : {}),
   });
+  await context.addInitScript(installFunctionalCaptureObserver);
   await context.addInitScript(installCabinResourceObserver, { expectedImages });
   await context.addInitScript(installCabinLoadLifecycle, { urls: cabinModels.map(model => baseUrl + model.path) });
   await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
@@ -228,6 +231,7 @@ try {
     assertCabinWindowLayout(windowStatus);
     return { ...measurements, windowStatus };
   };
+  let expectedPreset = 'hero';
   const capture = async label => {
     // Verify focus at the call site first, then remove focus-visible styling
     // from overlapping production controls so the pixel proof measures the
@@ -236,14 +240,11 @@ try {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     });
     await page.mouse.move(0, 0);
-    await frames();
-    await page.waitForFunction(() => {
-      const element = document.querySelector('.scene-stage canvas');
-      return element && Math.abs(element.width / element.clientWidth - Math.min(devicePixelRatio, 1.5, Math.sqrt(2_000_000 / Math.max(1, element.clientWidth * element.clientHeight)))) < .02;
-    }, null, { timeout: 20_000 });
+    await waitForFunctionalCapture(page, { preset: expectedPreset, timeout: 20_000 });
     const png = await canvas.screenshot({ path: `${output}/${selectedViewport}-${label}-canvas.png`, animations: 'disabled', timeout: 45_000 });
     await page.screenshot({ path: `${output}/${selectedViewport}-${label}-page.png`, fullPage: true, animations: 'disabled', scale: 'css', timeout: 45_000 });
-    report.frames.push({ label, canvasSha256: hash(png), layout: await assertLayout() });
+    const readiness = await verifyFunctionalCapture(page);
+    report.frames.push({ label, readiness, canvasSha256: hash(png), layout: await assertLayout() });
     await save();
     return png;
   };
@@ -307,6 +308,7 @@ try {
   };
   const stopObserver = async () => { await observer?.evaluate(state => state.stop()); await observer?.dispose(); observer = null; };
   const openCabin = async () => {
+    await armFunctionalCapture(page, { allowUnchanged: true });
     cabinAttemptMark = await page.evaluate(() => globalThis.__cabinResourceObserver.mark('cabin-attempt'));
     await cameraButton.click();
     await page.getByRole('dialog').getByRole('button', { name: 'Cabin preview · work in progress', exact: true }).click();
@@ -396,6 +398,8 @@ try {
     const views = [];
     for (const [preset, label] of [['Front ¾', 'window-front-side'], ['Rear ¾', 'window-rear-side'], ['Side', 'window-opposite-side']]) {
       await cameraButton.click();
+      await armFunctionalCapture(page, { cameraRequest: true });
+      expectedPreset = ({ 'Front ¾': 'hero', 'Rear ¾': 'rear-quarter', Side: 'side' })[preset];
       await page.getByRole('dialog').getByRole('button', { name: preset, exact: true }).click();
       await expect(page.getByRole('dialog')).toHaveCount(0);
       await waitForCabinWindowReady(page); await frames();
@@ -409,6 +413,7 @@ try {
     assert.equal(new Set(views).size, 3, 'The outside-window evidence includes three different actual views');
     assert.deepEqual(assetCounts(), before, 'Exterior inspection reuses one proxy without fetching the full cabin');
     await cameraButton.click();
+    await armFunctionalCapture(page, { cameraRequest: true }); expectedPreset = 'hero';
     await page.getByRole('dialog').getByRole('button', { name: 'Front ¾', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await sameExterior(1);
@@ -420,6 +425,7 @@ try {
     await openCabin(); await assertPartialDownload();
     await capture('loading-partial-bytes');
     await sameExterior(1);
+    await armFunctionalCapture(page, { allowUnchanged: true });
     await controls.getByRole('button', { name: 'Cancel cabin loading', exact: true }).click();
     await expect(controls).toHaveCount(0);
     await expect(cameraButton).toBeFocused();
@@ -447,15 +453,18 @@ try {
     const seatFrames = [];
     for (const seat of ['Driver', 'Passenger', 'Rear seat']) {
       await page.evaluate(label => globalThis.__cabinResourceObserver.mark(label), `seat-${seat}`);
+      await armFunctionalCapture(page, { allowUnchanged: seat === 'Driver' });
       await controls.getByRole('button', { name: seat, exact: true }).click();
       await expect(controls.getByRole('button', { name: seat, exact: true })).toHaveAttribute('aria-pressed', 'true');
       seatFrames.push(hash(await capture(`seat-${seat.toLowerCase().replaceAll(' ', '-')}`)));
     }
     assert.equal(new Set(seatFrames).size, 3, 'All three actual seat views differ');
+    await armFunctionalCapture(page);
     await controls.getByRole('button', { name: 'Driver', exact: true }).click();
     const before = await capture('driver-before-look');
     await canvas.focus();
     await page.evaluate(() => globalThis.__cabinResourceObserver.mark('driver-arrow-look'));
+    await armFunctionalCapture(page);
     await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowUp');
     const arrow = await capture('driver-arrow-look');
     assert.notEqual(hash(arrow), hash(before), 'Arrow keys change actual rendered cabin pixels');
@@ -464,6 +473,7 @@ try {
       const box = await canvas.boundingBox(); assert.ok(box);
       const x = Math.round(box.x + box.width * .5), y = Math.round(box.y + box.height * .4);
       await page.evaluate(() => globalThis.__cabinResourceObserver.mark('driver-touch-look'));
+      await armFunctionalCapture(page);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
       for (let step = 1; step <= 5; step++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + step * 12, y: y + step * 4 }] });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
@@ -476,6 +486,7 @@ try {
 
   await check('Back and foreground-modal Escape restore exact exterior', async () => {
     const backCohort = await activeResources('all-seats-active');
+    await armFunctionalCapture(page);
     await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();
     await expect(controls).toHaveCount(0); await expect(cameraButton).toBeFocused();
     await sameExterior(1);
@@ -488,6 +499,7 @@ try {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await activeCabin();
+    await armFunctionalCapture(page);
     await page.keyboard.press('Escape');
     await expect(controls).toHaveCount(0); await expect(cameraButton).toBeFocused();
     await sameExterior(1);
@@ -498,6 +510,7 @@ try {
   await stopObserver();
 
   const switchModel = async id => {
+    await armFunctionalCapture(page, { replacement: true }); expectedPreset = 'hero';
     const names = { premium: /^Premium /, nismo: /^NISMO /, tspec: /^T-spec /, gtr50: /^GT-R50 /, gt3: /^GT3 /, gt500: /^GT500 / };
     await page.getByRole('button', { name: 'Switch model', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: names[id] }).click();
@@ -579,6 +592,7 @@ try {
     for (const id of contextCohort.bitmapIds) assert.equal(contextSnapshot.bitmaps.find(item => item.id === id)?.closeCalls, 1, 'Context-loss cleanup closes each candidate bitmap');
     report.resourceEvidence.push({ label: 'Context-loss cleanup, GPU context invalidated separately from live-context deletion', cohort: contextCohort, snapshot: contextSnapshot });
     await page.screenshot({ path: `${output}/${selectedViewport}-context-lost-page.png`, fullPage: true, animations: 'disabled', timeout: 30_000 });
+    await armFunctionalCapture(page, { replacement: true });
     await page.getByRole('button', { name: 'Try again', exact: true }).click(); await readyExterior();
     assert.equal(assetCounts().exterior, before.exterior + 1, 'Explicit recovery downloads exactly one exterior');
     assert.equal(assetCounts().cabin, before.cabin, 'Recovery does not silently opt into the cabin');
@@ -601,6 +615,7 @@ try {
     const unavailableExterior = await capture('window-proxy-unavailable');
     await openCabin(); await activeCabin(); await capture('full-cabin-with-proxy-unavailable');
     const cohort = await activeResources('full-cabin-independent-of-proxy-failure');
+    await armFunctionalCapture(page);
     await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();
     await expect(controls).toHaveCount(0);
     await releasedResources(cohort, 'Proxy failure does not weaken full-cabin resource teardown');
@@ -639,7 +654,8 @@ try {
       await expect(canvas).toHaveCount(0, { timeout: 5_000 });
       await expect(controls).toHaveCount(0);
       await releaseAborted(fault);
-      await page.getByRole('button', { name: 'Try again', exact: true }).click(); await readyExterior();
+      await armFunctionalCapture(page, { replacement: true });
+    await page.getByRole('button', { name: 'Try again', exact: true }).click(); await readyExterior();
       assert.equal(assetCounts().exterior, before.exterior + 1, 'Explicit recovery starts one new exterior');
       assert.equal(assetCounts().proxy, before.proxy + 1, 'Explicit recovery starts one fresh proxy attempt');
       assert.equal(assetCounts().cabin, before.cabin, 'Pending-proxy recovery does not opt into the full cabin');
@@ -656,11 +672,13 @@ try {
       const cohort = await activeResources('full-before-late-proxy');
       await expect(page.locator('.cabin-window-status')).toHaveText('Loading window view…');
       await expect(page.locator('.cabin-window-status')).toBeHidden();
+      await armFunctionalCapture(page, { allowUnchanged: true });
       await fault.release(); await waitForCabinWindowReady(page); await activeCabin();
       await expect(page.locator('.cabin-window-status')).toBeHidden();
       await comparePixels(fullBefore, await capture('full-after-late-proxy'), 'Late proxy does not leak through the active full cabin');
       assert.equal(assetCounts().proxy, before.proxy, 'Detailed-cabin entry does not restart the pending proxy');
-      await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();
+      await armFunctionalCapture(page);
+    await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();
       await expect(controls).toHaveCount(0);
       await releasedResources(cohort, 'Out-of-order full-cabin teardown still closes every bitmap and texture');
       await waitForCabinWindowReady(page);
@@ -678,7 +696,8 @@ try {
       await proxyFault.release(); await waitForCabinWindowReady(page);
       await assertPartialDownload();
       await capture('proxy-ready-full-still-loading');
-      await controls.getByRole('button', { name: 'Cancel cabin loading', exact: true }).click();
+      await armFunctionalCapture(page, { allowUnchanged: true });
+    await controls.getByRole('button', { name: 'Cancel cabin loading', exact: true }).click();
       await expect(controls).toHaveCount(0); await expect(cameraButton).toBeFocused();
       await releaseAborted(fullFault);
       await waitForCabinWindowReady(page);
@@ -725,6 +744,7 @@ try {
 } catch (error) {
   report.result = 'failed'; report.errors.push({ phase, message: String(error), stack: error.stack }); process.exitCode = 1;
   await snapshotLoadLifecycle('failure-before-cleanup');
+  if (page && !page.isClosed()) report.functionalReadinessFailure = await page.evaluate(() => globalThis.__gtrFunctionalCapture?.snapshot()).catch(() => null);
   if (page && !page.isClosed()) report.resourceFailure = await page.evaluate(() => globalThis.__cabinResourceObserver?.snapshot()).catch(() => null);
   if (page && !page.isClosed()) await page.screenshot({ path: `${output}/${selectedViewport}-failure-page.png`, fullPage: true, timeout: 15_000 }).catch(() => {});
 } finally {

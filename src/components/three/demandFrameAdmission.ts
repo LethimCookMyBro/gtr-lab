@@ -1,5 +1,6 @@
 import { addAfterEffect, addEffect } from "@react-three/fiber";
 import type { RootState } from "@react-three/fiber";
+import { createFunctionalRenderObservation } from "./functionalRenderObservation";
 
 const POLL_MS = 16;
 // Feedback threshold only: never a completion or failure deadline.
@@ -47,6 +48,7 @@ export function installDemandRenderBackpressure(
     return () => {};
   }
   let context: WebGL2RenderingContext = initialContext;
+  const observation = createFunctionalRenderObservation(get);
   let stopped = false;
   let lost = context.isContextLost();
   let failed = false;
@@ -66,18 +68,22 @@ export function installDemandRenderBackpressure(
     pendingNotice = value;
     onPendingChange(value);
   }
-  function retireFence() {
+  function retireFence(reason = "retired") {
     clearTimeout(timer);
     timer = undefined;
     const owned = sync;
     sync = null;
     pendingSince = undefined;
     setPendingNotice(false);
-    if (owned) context.deleteSync(owned);
+    if (owned) {
+      observation?.retire(owned, reason);
+      context.deleteSync(owned);
+    }
   }
   function fail() {
     if (stopped || failed || lost) return;
     failed = true;
+    observation?.invalid("native failure");
     try {
       retireFence();
     } finally {
@@ -106,11 +112,12 @@ export function installDemandRenderBackpressure(
         return false;
       }
       const status = context.clientWaitSync(sync, 0, 0);
+      observation?.wait(sync, status);
       if (
         status === context.ALREADY_SIGNALED ||
         status === context.CONDITION_SATISFIED
       ) {
-        retireFence();
+        retireFence("signaled");
         if (shouldWake) wake();
         return true;
       }
@@ -154,8 +161,12 @@ export function installDemandRenderBackpressure(
       }
       const previous = sync;
       sync = next;
+      observation?.fence(next, previous);
       pendingSince ??= performance.now();
-      if (previous) context.deleteSync(previous);
+      if (previous) {
+        observation?.retire(previous, "superseded");
+        context.deleteSync(previous);
+      }
       context.flush();
       schedulePoll();
     } catch {
@@ -225,8 +236,14 @@ export function installDemandRenderBackpressure(
     this: typeof renderer,
     ...args
   ) {
+    const snapshot = observation?.begin(args[0], args[1]);
     try {
-      return render.apply(this, args);
+      const result = render.apply(this, args);
+      observation?.main(snapshot);
+      return result;
+    } catch (error) {
+      observation?.invalid("render failed");
+      throw error;
     } finally {
       if (!stopped && !failed && !lost) {
         if (windowOpen) observedWork = true;
@@ -245,6 +262,7 @@ export function installDemandRenderBackpressure(
   renderer.render = observedRender;
   function onLost() {
     lost = true;
+    observation?.invalid("context lost");
     batchGeneration++;
     queuedBatch = false;
     closeWindow(false);
@@ -275,6 +293,7 @@ export function installDemandRenderBackpressure(
   return () => {
     if (stopped) return;
     stopped = true;
+    observation?.stop();
     batchGeneration++;
     closeWindow(false);
     before();

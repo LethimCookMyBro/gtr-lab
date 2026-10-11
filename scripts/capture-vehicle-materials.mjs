@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { installFunctionalCaptureObserver, armFunctionalCapture, waitForFunctionalCapture, verifyFunctionalCapture } from './functional-capture-readiness.mjs';
 
 const output = 'vehicle-material-results';
 const baseUrl = process.env.PREVIEW_BASE_URL || 'http://127.0.0.1:4176';
@@ -12,6 +13,7 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const report = {
   commit: process.env.GITHUB_SHA,
   baseUrl,
+  functionalObservation: 'Explicit opt-in read-only production main-draw and native-batch completion seam; not native-motion acceptance',
   scope: 'Actual built configurator; existing unchanged licensed GLB; production camera and lamp controls. No cabin or six-model completion claim.',
   expectedModelHash,
   result: 'running',
@@ -43,6 +45,7 @@ try {
       viewport, deviceScaleFactor: 1, reducedMotion: 'reduce',
       ...(name === 'mobile' ? { isMobile: true, hasTouch: true } : {}),
     });
+    await context.addInitScript(installFunctionalCaptureObserver);
     const page = await context.newPage();
     page.setDefaultTimeout(20_000);
     const view = { name, viewport, frames: [], errors: [], warnings: [] };
@@ -71,7 +74,10 @@ try {
       assert.ok(view.webgl, 'An actual live WebGL context exists');
       const lights = page.getByRole('button', { name: 'Lights', exact: true });
       await expect(lights).toHaveAttribute('aria-pressed', 'false');
+      let expectedPreset = 'hero';
       const selectCamera = async preset => {
+        await armFunctionalCapture(page, { cameraRequest: true });
+        expectedPreset = ({ Rear: 'rear', 'Wheel detail': 'wheel', 'Front ¾': 'hero', 'Rear ¾': 'rear-quarter' })[preset];
         await page.getByRole('button', { name: 'Camera', exact: true }).click();
         await page.getByRole('dialog').getByRole('button', { name: preset, exact: true }).click();
         await page.getByRole('dialog').waitFor({ state: 'hidden' });
@@ -81,25 +87,20 @@ try {
         // so an OFF comparison cannot measure a hovered Lights button instead.
         await page.mouse.move(0, 0);
         await expect(lights).toHaveAttribute('aria-pressed', String(lamps));
-        await page.waitForFunction(() => {
-          const element = document.querySelector('.scene-stage canvas');
-          return element && Math.abs(element.width / element.clientWidth - Math.min(devicePixelRatio, 1.5, Math.sqrt(2_000_000 / Math.max(1, element.clientWidth * element.clientHeight)))) < .02;
-        }, {}, { timeout: 30_000 });
-        await page.evaluate(() => new Promise(resolve => {
-          let count = 8;
-          const frame = () => --count ? requestAnimationFrame(frame) : resolve();
-          requestAnimationFrame(frame);
-        }));
+        await waitForFunctionalCapture(page, { preset: expectedPreset, timeout: 30_000 });
         const png = await canvas.screenshot({ path: `${output}/${name}-${label}-canvas.png`, animations: 'disabled', timeout: 60_000 });
         await page.screenshot({ path: `${output}/${name}-${label}-page.png`, animations: 'disabled', scale: 'css', timeout: 60_000 });
-        const frame = { label, lamps, canvasSha256: hash(png), canvas: await canvas.evaluate(element => ({ width: element.width, height: element.height, cssWidth: element.clientWidth, cssHeight: element.clientHeight })) };
+        const readiness = await verifyFunctionalCapture(page);
+        const frame = { label, lamps, readiness, canvasSha256: hash(png), canvas: await canvas.evaluate(element => ({ width: element.width, height: element.height, cssWidth: element.clientWidth, cssHeight: element.clientHeight })) };
         view.frames.push(frame); await save();
         return frame;
       };
       await selectCamera('Rear');
       const off = await capture('rear-off', false);
+      await armFunctionalCapture(page);
       await lights.click();
       const on = await capture('rear-on', true);
+      await armFunctionalCapture(page);
       await lights.click();
       const restored = await capture('rear-off-restored', false);
       assert.notEqual(on.canvasSha256, off.canvasSha256, 'Lamp toggle changes the actual rear pixels');
@@ -115,7 +116,7 @@ try {
       }
       assert.deepEqual(view.errors, [], 'No console or page errors');
       view.result = 'passed';
-    } catch (error) { view.result = 'failed'; view.errors.push(String(error)); }
+    } catch (error) { view.result = 'failed'; view.errors.push(String(error)); view.functionalReadinessFailure = await page.evaluate(() => globalThis.__gtrFunctionalCapture?.snapshot()).catch(() => null); }
     await save();
     console.log(`[materials] ${name}: ${view.result}; ${view.frames.length} frames`);
     await context.close();

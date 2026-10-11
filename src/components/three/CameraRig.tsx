@@ -7,11 +7,12 @@ import {
   cameraView,
   exteriorDistanceScale,
   VENUE_CAMERA_RADIUS,
-  interpolationAlpha,
   type CameraView,
 } from "./sceneHelpers";
 import type { CabinCameraView } from "./cabinPreview";
 import type { VectorTuple } from "./sceneHelpers";
+import { createTargetTransitionClock } from "./targetTransition";
+import { registerFunctionalState } from "./functionalRenderObservation";
 import { useInteriorLook } from "./useInteriorLook";
 import { useReleasedOrbitDamping } from "./useReleasedOrbitDamping";
 import {
@@ -53,6 +54,7 @@ export function CameraRig({
   const gl = useThree((state) => state.gl);
   const controls = useRef<OrbitControlsImpl>(null);
   const moving = useRef(true);
+  const transitionClock = useMemo(() => createTargetTransitionClock(), []);
   const manuallyStopped = useRef(false);
   const wasInterior = useRef(preset === "interior");
   const leavingInterior = useRef(false);
@@ -141,6 +143,7 @@ export function CameraRig({
       camera.far = exteriorSnapshot.current.far;
     }
     wasPreview.current = Boolean(cabinView);
+    transitionClock.reset();
     moving.current = true;
     manuallyStopped.current = false;
     leavingInterior.current = wasInterior.current && preset !== "interior";
@@ -177,7 +180,22 @@ export function CameraRig({
     requestId,
     cabinView,
     exteriorPreset,
+    transitionClock,
   ]);
+
+  useLayoutEffect(
+    () =>
+      registerFunctionalState(gl, "camera", () => ({
+        preset,
+        requestId,
+        cabin: Boolean(cabinView),
+        target: destination.target.toArray(),
+        destination: destination.position.toArray(),
+        targetFov,
+        settled: !moving.current,
+      })),
+    [gl, preset, requestId, cabinView, destination, targetFov],
+  );
 
   useEffect(() => {
     // User can deliberately enable rotation again after a drag cancelled it.
@@ -195,11 +213,11 @@ export function CameraRig({
     requestId,
   });
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     const orbit = controls.current;
     if (!orbit) return;
     if (moving.current) {
-      const alpha = interpolationAlpha(delta, reducedMotion);
+      const alpha = transitionClock.sampleAlpha(reducedMotion);
       const lookDistance = camera.position.distanceTo(orbit.target);
       camera.position.lerp(destination.position, alpha);
       if (leavingInterior.current) {
@@ -279,6 +297,7 @@ export function CameraRig({
       onManual: () => manualHandler.current(),
       invalidate,
       onReset: () => {
+        transitionClock.reset();
         moving.current = true;
         if (controls.current) {
           controls.current.enableDamping = false;
@@ -287,7 +306,7 @@ export function CameraRig({
         }
       },
     });
-  }, [gl, camera, preset, invalidate]);
+  }, [gl, camera, preset, invalidate, transitionClock]);
 
   useInteriorLook({
     enabled: preset === "interior",

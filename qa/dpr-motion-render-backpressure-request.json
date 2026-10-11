@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "allow": true,
+  "mode": "fixed",
+  "sourceSha": "current",
+  "sourceTree": "c3e6b02d198bbcdad46d403101706bbe859390d72729c6391adb01751ba0c3ca",
+  "geometryContract": "render-backpressure-2m-msaa-v1"
+}

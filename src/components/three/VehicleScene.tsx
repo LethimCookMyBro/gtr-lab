@@ -8,14 +8,16 @@ import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
 import { CABIN_URL, CABIN_PROXY_URL, cabinCameraView } from "./cabinPreview";
 import { prepareAsyncRendererDisposal } from "./asyncRendererDisposal";
 import { CabinAttachment } from "./CabinAttachment";
+import { createTargetTransitionClock } from "./targetTransition";
 import { CameraRig } from "./CameraRig";
 import { DemandRenderBackpressure } from "./DemandRenderBackpressure";
+import { registerFunctionalState } from "./functionalRenderObservation";
 import { RecoverableEnvironment } from "./RecoverableEnvironment";
 import { setViewerAccessibility } from "./keyboardControls";
 import { SceneBoundary, CanvasFallback } from "./SceneBoundary";
 import {
   applyVehicleAppearance,
-  stepVehicleAppearance,
+  blendVehicleAppearance,
   vehicleCapabilities,
 } from "./materialAdapter";
 import { useVehicleAsset } from "./useVehicleAsset";
@@ -52,21 +54,24 @@ function Vehicle({
   const renderedFrames = useRef(0);
   const ready = useRef(false);
   const initializedAppearance = useRef(false);
-  useEffect(() => {
+  const transitionClock = useMemo(() => createTargetTransitionClock(), []);
+  useLayoutEffect(() => {
+    transitionClock.reset();
+  }, [asset, paint, transitionClock]);
+  useLayoutEffect(() => {
     if (!initializedAppearance.current || reducedMotion) {
       applyVehicleAppearance(asset.bindings, paint, lights);
       initializedAppearance.current = true;
     }
     invalidate();
   }, [asset, paint, lights, reducedMotion, invalidate]);
-  useFrame((_, delta) => {
+  useFrame(() => {
     if (
-      !stepVehicleAppearance(
+      !blendVehicleAppearance(
         asset.bindings,
         paint,
         lights,
-        delta,
-        reducedMotion,
+        transitionClock.sampleAlpha(reducedMotion),
       )
     )
       invalidate();
@@ -82,6 +87,56 @@ function Vehicle({
       <primitive object={asset.scene} dispose={null} />
     </group>
   );
+}
+
+function FunctionalSceneState({
+  asset,
+  cabinAsset,
+  proxyAsset,
+  props,
+}: {
+  asset: PreparedVehicle | null;
+  cabinAsset: PreparedVehicle | null;
+  proxyAsset: PreparedVehicle | null;
+  props: VehicleSceneProps;
+}) {
+  const gl = useThree((state) => state.gl),
+    scene = useThree((state) => state.scene);
+  useLayoutEffect(
+    () =>
+      registerFunctionalState(gl, "vehicle", () => {
+        const attached = (value: PreparedVehicle | null) => {
+          let node = value?.scene;
+          while (node) {
+            if (!node.visible) return false;
+            if (node === scene) return true;
+            node = node.parent ?? undefined;
+          }
+          return false;
+        };
+        return {
+          url: props.url,
+          lights: props.lights,
+          paint: props.paint,
+          environment: props.environment,
+          environmentRequest: props.environmentRequest ?? 0,
+          cabinSeat: props.cabin?.phase === "active" ? props.cabin.seat : null,
+          exterior: attached(asset),
+          full: attached(cabinAsset),
+          proxy: attached(proxyAsset),
+          lamps:
+            asset?.bindings
+              .filter((binding) => binding.role !== "paint")
+              .map(({ role, material }) => ({
+                role,
+                emissive: material.emissive.toArray(),
+                intensity: material.emissiveIntensity,
+              })) ?? [],
+        };
+      }),
+    [gl, scene, asset, cabinAsset, proxyAsset, props],
+  );
+  return null;
 }
 
 function ContextHealth({ onError }: { onError: (message: string) => void }) {
@@ -204,6 +259,12 @@ export default function VehicleScene(props: VehicleSceneProps) {
           onPendingChange={props.onRenderPending}
         />
         <ContextHealth onError={props.onError} />
+        <FunctionalSceneState
+          asset={asset}
+          cabinAsset={cabinAsset}
+          proxyAsset={proxyAsset}
+          props={props}
+        />
         <VehiclePixelDensity onChange={setDpr} />
         <CameraRig
           preset={props.preset}

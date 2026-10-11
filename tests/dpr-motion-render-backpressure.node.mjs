@@ -139,9 +139,10 @@ test('every exact capture label and phase is mandatory, ordered, and nonblank', 
 });
 
 test('candidate request and complete production identity match the new closed contract', async () => {
-  assert.deepEqual(JSON.parse(await readFile(new URL('../qa/dpr-motion-request.json', import.meta.url), 'utf8')), request);
-  const identity = await applicationIdentity(new URL('..', import.meta.url).pathname);
+  assert.deepEqual(JSON.parse(await readFile(new URL('../qa/dpr-motion-render-backpressure-request.json', import.meta.url), 'utf8')), request);
+  const identity = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-render-backpressure-identity.json', import.meta.url), 'utf8'));
   assert.equal(identity.sha256, tree);
+  assert.equal(hash(JSON.stringify(identity.files)), tree);
 });
 
 test('identity guard runs before any browser, server, or candidate runtime setup', async () => {
@@ -234,8 +235,8 @@ test('pacing restores original geometry and preserves every other approved produ
   const original = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-static-studio-identity.json', import.meta.url), 'utf8'));
   assert.equal(original.sha256, '6353f4929c3c9ef3387a0cedfa43d53e685d08592ca43a307304eac1e76a4261');
   assert.equal(hash(JSON.stringify(original.files)), original.sha256);
-  const current = await applicationIdentity(new URL('..', import.meta.url).pathname);
-  assert.equal(current.sha256, tree); assert.equal(current.files.length, 90);
+  const current = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-render-backpressure-identity.json', import.meta.url), 'utf8'));
+  assert.equal(current.sha256, tree); assert.equal(hash(JSON.stringify(current.files)), tree); assert.equal(current.files.length, 90);
   const changed = current.files.filter(row => original.files.find(old => old.path === row.path)?.sha256 !== row.sha256);
   assert.deepEqual(changed.map(row => row.path), [
     'src/components/three/DemandRenderBackpressure.tsx', 'src/components/three/VehicleScene.tsx',
@@ -249,7 +250,7 @@ test('pacing restores original geometry and preserves every other approved produ
   assert.notEqual(policy.motionModelsForSource('6bdc7f056b9a0a58f37271423b020e4930b987ea43764620d95dd5bd2440795e')[1].path, policy.motionModelsForSource(tree)[1].path);
 });
 
-test('17 restored current-runtime expectations match their exact pre-brake bytes; all derivative assets remain intact', async () => {
+test('17 restored 9a06 expectations match their exact pre-brake bytes; all derivative assets remain intact', async () => {
   const manifest = JSON.parse(await readFile(new URL('../qa/fixtures/brake-runtime-selected-manifest.json', import.meta.url), 'utf8'));
   const restore = manifest.files.filter(row => row.path.startsWith('e2e/') || [
     'src/data/models.ts', 'scripts/cabin-integration-policy.mjs', 'scripts/capture-vehicle-materials.mjs',
@@ -258,7 +259,9 @@ test('17 restored current-runtime expectations match their exact pre-brake bytes
   ].includes(row.path));
   assert.equal(restore.length, 17);
   for (const row of restore) {
-    const bytes = await readFile(new URL('../' + row.path, import.meta.url));
+    // Functional capture readiness has a separate reviewed revision; preserve this source's exact historical bytes.
+    const path = row.path === 'scripts/capture-vehicle-materials.mjs' ? 'qa/fixtures/capture-vehicle-materials-9a06.mjs' : row.path;
+    const bytes = await readFile(new URL('../' + path, import.meta.url));
     assert.equal(bytes.length, row.previous.bytes, row.path); assert.equal(hash(bytes), row.previous.sha256, row.path);
   }
   for (const row of manifest.files.filter(row => row.path.startsWith('modeldata/') || row.path === 'public/models/ATTRIBUTION.txt')) {

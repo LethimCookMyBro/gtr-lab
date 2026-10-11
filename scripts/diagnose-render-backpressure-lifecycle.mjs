@@ -10,14 +10,14 @@ import { validateMotionEnvironment, resolveMotionRequest, motionModelsForSource,
 import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { installRenderBackpressureLifecycleFixture } from './render-backpressure-lifecycle-fixture.mjs';
 
-const contract = 'render-backpressure-2m-msaa-v1';
+const contracts = Object.freeze(['render-backpressure-2m-msaa-v1', 'render-repair-readiness-2m-msaa-v1']);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export function validateBackpressureLifecycleEnvironment(env, request) {
   const target = validateMotionEnvironment(env);
   assert.equal(env.GITHUB_EVENT_NAME, 'push', 'Lifecycle proof requires reviewed main push');
   for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]']) assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Lifecycle proof requires ${marker}`);
-  assert.equal(target.geometryContract, contract, 'Lifecycle proof requires exact render-backpressure contract');
-  assert.equal(request.geometryContract, contract, 'Lifecycle request must be the reviewed render-backpressure request');
+  assert.ok(contracts.includes(target.geometryContract), 'Lifecycle proof requires an exact reviewed render-backpressure or repair contract');
+  assert.equal(request.geometryContract, target.geometryContract, 'Lifecycle request must match its exact reviewed contract');
   assert.equal(request.version, 2); assert.equal(request.mode, 'fixed');
   const resolved = resolveMotionRequest(request, env);
   for (const [key, value] of Object.entries(resolved)) assert.equal(env[key], value, `Lifecycle environment differs from exact reviewed request: ${key}`);
@@ -58,6 +58,42 @@ export function assertRetiredFenceContext(snapshot, id) {
   return { contextId: id, fenceIds: fences.map(f => f.id), lostSequence: context.lostSequence };
 }
 
+/** A new owner may truthfully show feedback while its own native work is pending. */
+export function assessReplacementNotices(snapshot, { afterSequence, retiredContextId, activeContextId }) {
+  assertFenceObservationHealthy(snapshot);
+  assert.notEqual(activeContextId, retiredContextId, 'Replacement status must use a fresh context generation');
+  const owner = snapshot.contexts.find(c => c.id === activeContextId);
+  assert.ok(owner?.sceneOwner, 'Replacement has an observed native scene owner');
+  assert.equal(owner.connected, true, 'Replacement remains mounted during status completion proof');
+  assert.equal(owner.lostEvents, 0); assert.equal(owner.restoredEvents, 0);
+  let checked = 0, awaitingCompletion = 0, awaitingClear = 0;
+  for (const notice of snapshot.notices.filter(n => n.pending && n.sequence > afterSequence)) {
+    checked++;
+    assert.deepEqual(notice.connectedContextIds, [activeContextId], 'Pending status belongs only to the live replacement, never the retired owner');
+    assert.equal(notice.count, 1); assert.equal(notice.role, 'status');
+    assert.ok(owner.sequence < notice.sequence && (owner.lostSequence === null || owner.lostSequence > notice.sequence), 'Notice belongs to a live context generation');
+    const pending = snapshot.fences.filter(f => f.contextId === activeContextId && f.sequence < notice.sequence &&
+      (f.deletedSequence === null || f.deletedSequence > notice.sequence)).filter(f => {
+      const last = snapshot.polls.findLast(p => p.fenceId === f.id && p.sequence < notice.sequence);
+      return last?.contextId === activeContextId && last.nativeResult === 0x911b && last.returnedResult === 0x911b &&
+        !last.nativePositive && !last.contextLost && !last.substituted && notice.time - f.pendingPrefixTime >= 5_000;
+    });
+    assert.ok(pending.length, 'A replacement notice requires its own live, native-pending fence and five-second prefix');
+    const clear = snapshot.notices.find(n => !n.pending && n.sequence > notice.sequence);
+    const completion = snapshot.polls.find(p => p.contextId === activeContextId && p.sequence > notice.sequence &&
+      (!clear || p.sequence < clear.sequence) && [0x911a, 0x911c].includes(p.nativeResult) && p.nativePositive && !p.substituted && !p.contextLost &&
+      snapshot.fences.some(f => f.id === p.fenceId && f.contextId === activeContextId && f.sequence < p.sequence &&
+        (f.deletedSequence === null || f.deletedSequence > p.sequence) && pending.some(prior => prior.pendingPrefixTime === f.pendingPrefixTime)));
+    if (clear) {
+      assert.deepEqual(clear.connectedContextIds, [activeContextId], 'Completion clears status without replacing or retiring its owner');
+      assert.ok(completion, 'Replacement notice clears only after its own real native completion');
+      assert.ok(clear.time >= completion.time && clear.time - completion.time <= 5_000, 'Completion clears the notice within the existing five-second UI bound');
+    } else if (completion) awaitingClear++;
+    else awaitingCompletion++;
+  }
+  return { checked, awaitingCompletion, awaitingClear };
+}
+
 export async function main(env = process.env) {
   // First operation: no file lookup, dynamic browser/server import or socket before the CI gate.
   validateMotionEnvironment(env);
@@ -82,7 +118,7 @@ export async function main(env = process.env) {
   const bundles = new Map([['/index.html', hash(await readFile(resolve(root, 'dist/index.html')))]]);
   for (const name of await readdir(resolve(root, 'dist/assets'))) if (/\.(?:js|css)$/.test(name)) bundles.set(`/assets/${name}`, hash(await readFile(resolve(root, 'dist/assets', name))));
   const output = resolve(`render-backpressure-lifecycle-results/${target.name}`); await mkdir(output, { recursive: true });
-  const report = { result: 'running', sourceCommit, harnessCommit: env.GITHUB_SHA, sourceTree: source.sha256, geometryContract: contract, viewport: target.name,
+  const report = { result: 'running', sourceCommit, harnessCommit: env.GITHUB_SHA, sourceTree: source.sha256, geometryContract: target.geometryContract, viewport: target.name,
     scope: 'Actual production app with CI-only positive-fence-observation delay on its first current WebGL2 context. This injected ownership/notice/retry lane is separate from unchanged normal-motion acceptance.',
     renderer: 'Chromium ANGLE SwiftShader software WebGL only', reducedMotion: 'no-preference',
     limitations: ['This does not simulate an actually slow GPU or establish motion, physical-device FPS, performance or flicker improvements.', 'A scalar DOM transition trace plus native fence/resource lifecycles proves the observed generations; callbacks inside React are not intercepted.'],
@@ -187,8 +223,10 @@ export async function main(env = process.env) {
       report.resourceEvidence.push({ label, details, snapshot });
     };
     const waitRetired = async id => {
+      // Observe the existing production asyncRendererDisposal drain contract.
+      // Detachment/UI and texture/bitmap assertions keep their separate 5s bounds.
       let state, retired;
-      await expect.poll(async () => { state = await fixture(); try { retired = assertRetiredFenceContext(state, id); return true; } catch (error) { return String(error); } }, { timeout: 5_000 }).toBe(true);
+      await expect.poll(async () => { state = await fixture(); try { retired = assertRetiredFenceContext(state, id); return true; } catch (error) { return String(error); } }, { timeout: 30_000 }).toBe(true);
       return retired;
     };
     const armAndShowNotice = async label => {
@@ -264,8 +302,23 @@ export async function main(env = process.env) {
       const rs = await settleResources(), current = rs.contexts.filter(c => c.sceneCanvas && c.canvasConnected);
       assert.equal(current.length, 1); assert.notEqual(current[0].id, firstCohort.contextIds[0], 'Resource observer independently proves a distinct context generation');
       const boundary = state.sequence; await page.waitForTimeout(5_000);
-      const quiet = await checkpoint('retry-no-stale-notice-or-poll'); assertRetiredFenceContext(quiet, firstContext);
-      assert.equal(quiet.notices.some(n => n.pending && n.sequence > boundary), false, 'No old-owner delayed notice reappears after new readiness');
+      const noticeScope = { afterSequence: boundary, retiredContextId: firstContext, activeContextId: secondContext };
+      let quiet, freshStatus;
+      // Genuine new-owner work may exceed the feedback threshold. Await its real
+      // completion under the existing 30s completion-observation budget, then
+      // retain the independent 5s UI-clearing bound. Old-owner proof stays strict.
+      await expect.poll(async () => {
+        quiet = await fixture(); assertRetiredFenceContext(quiet, firstContext);
+        freshStatus = assessReplacementNotices(quiet, noticeScope);
+        return freshStatus.awaitingCompletion;
+      }, { timeout: 30_000 }).toBe(0);
+      await expect.poll(async () => {
+        quiet = await fixture(); assertRetiredFenceContext(quiet, firstContext);
+        freshStatus = assessReplacementNotices(quiet, noticeScope);
+        return freshStatus.awaitingCompletion + freshStatus.awaitingClear;
+      }, { timeout: 5_000 }).toBe(0);
+      await expect(notice).toHaveCount(0, { timeout: 5_000 });
+      report.checkpoints.push({ label: 'retry-no-stale-notice-or-poll', state: quiet, freshStatus });
       assert.deepEqual(counts(), [1, 2, 2]);
     });
     await step('Native warm route navigation owns fresh resources and tears down cleanly', async () => {

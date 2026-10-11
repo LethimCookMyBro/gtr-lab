@@ -206,8 +206,22 @@ export function stepVehicleAppearance(
   delta: number,
   reducedMotion: boolean,
 ) {
+  return blendVehicleAppearance(
+    bindings,
+    paint,
+    lights,
+    interpolationAlpha(delta, reducedMotion),
+  );
+}
+
+/** Apply one target-relative blend while retaining the exact material endpoints. */
+export function blendVehicleAppearance(
+  bindings: Binding[],
+  paint: string,
+  lights: boolean,
+  alpha: number,
+) {
   targetPaintColor.set(paint);
-  const alpha = interpolationAlpha(delta, reducedMotion);
   let settled = true;
   const hasRearLenses = bindings.some(
     (binding) => binding.role === "taillight-lens",

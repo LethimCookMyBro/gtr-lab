@@ -136,7 +136,7 @@ test('gate rejects local execution before file lookup or any runtime setup', asy
 test('gate requires the exact render-backpressure request, source, both markers, and unchanged viewport contract', async () => {
   assert.ok(driverModule, 'The strict CI-only actual-browser lifecycle driver must exist');
   const { request, env } = await reviewedEnvironment();
-  assert.equal(request.geometryContract, 'render-backpressure-2m-msaa-v1', 'Parent integration must pin the reviewed backpressure contract');
+  assert.equal(request.geometryContract, 'render-repair-readiness-2m-msaa-v1', 'Parent integration must pin the reviewed repair contract');
   const target = driverModule.validateBackpressureLifecycleEnvironment(env, request);
   assert.equal(target.geometry.sourceTree, request.sourceTree); assert.equal(target.geometry.maxBufferPixels, 2_000_000); assert.equal(target.geometry.maxDpr, 1.5);
   assert.deepEqual(target.geometry.contextCreation, { requestedAntialias: true, antialias: true, multisampled: true });
@@ -171,4 +171,69 @@ test('fixture tracks the uninterrupted pending prefix through native fence repla
   const s = h.fixture.snapshot(); assert.equal(s.fences[1].time, 4_000); assert.equal(s.fences[1].pendingPrefixTime, 0);
   assert.deepEqual(copy(s.fences[1].overlappedFenceIds), [s.fences[0].id]);
   assert.equal(s.notices.at(-1).time - s.fences[1].pendingPrefixTime, 5_000);
+});
+
+
+function replacementNoticeEvidence() {
+  const poll = (sequence, time, status) => ({ contextId: 2, fenceId: 2, flags: 0, timeout: 0, sequence, time, nativeResult: status, returnedResult: status, nativePositive: status === 0x911a, contextLost: false, substituted: false });
+  return {
+    firstSceneContextId: 1, issues: [], events: [],
+    contexts: [{ id: 1, sceneOwner: true, connected: false, lostEvents: 1, restoredEvents: 0, lostSequence: 90, sequence: 1 }, { id: 2, sceneOwner: true, connected: true, lostEvents: 0, restoredEvents: 0, lostSequence: null, sequence: 100 }],
+    fences: [{ id: 2, contextId: 2, sequence: 101, time: 100, pendingPrefixTime: 100, deletedSequence: 210, deleteCalls: 1, pollsAfterDelete: 0 }],
+    polls: [poll(199, 5100, 0x911b), poll(209, 7000, 0x911a)],
+    notices: [{ pending: true, count: 1, role: 'status', connectedContextIds: [2], sequence: 200, time: 5101 }, { pending: false, count: 0, connectedContextIds: [2], sequence: 211, time: 7001 }],
+  };
+}
+const replacementScope = { afterSequence: 150, retiredContextId: 1, activeContextId: 2 };
+test('fresh-owner notice is valid only with its own live pending fence and real-completion clear', () => {
+  assert.equal(typeof driverModule.assessReplacementNotices, 'function');
+  assert.deepEqual(driverModule.assessReplacementNotices(replacementNoticeEvidence(), replacementScope), { checked: 1, awaitingCompletion: 0, awaitingClear: 0 });
+  const pending = replacementNoticeEvidence(); pending.notices.pop(); pending.polls.pop(); pending.fences[0].deletedSequence = null; pending.fences[0].deleteCalls = 0;
+  assert.deepEqual(driverModule.assessReplacementNotices(pending, replacementScope), { checked: 1, awaitingCompletion: 1, awaitingClear: 0 });
+  const awaitingClear = replacementNoticeEvidence(); awaitingClear.notices.pop();
+  assert.deepEqual(driverModule.assessReplacementNotices(awaitingClear, replacementScope), { checked: 1, awaitingCompletion: 0, awaitingClear: 1 });
+});
+test('replacement status rejects stale ownership, nonexistent/live-mismatched fences and unproven clearing', () => {
+  assert.equal(typeof driverModule.assessReplacementNotices, 'function');
+  const changes = [
+    s => { s.notices[0].connectedContextIds = [1]; },
+    s => { s.notices[0].connectedContextIds = []; },
+    s => { s.notices[0].connectedContextIds = [1, 2]; },
+    s => { s.notices[0].role = 'alert'; },
+    s => { s.contexts[1].connected = false; },
+    s => { s.contexts[1].restoredEvents = 1; },
+    s => { s.notices[1].time = 12001; },
+    s => { s.fences = []; },
+    s => { s.fences[0].contextId = 1; },
+    s => { s.fences[0].deletedSequence = 198; },
+    s => { s.polls[0].nativeResult = s.polls[0].returnedResult = 0x911a; s.polls[0].nativePositive = true; },
+    s => { s.polls[0].contextLost = true; },
+    s => { s.polls[0].substituted = true; },
+    s => { s.contexts[1].lostSequence = 190; },
+    s => { s.notices[1].sequence = 208; },
+    s => { s.notices[1].connectedContextIds = []; },
+    s => { s.polls[1].substituted = true; },
+    s => { s.polls[1].contextId = 1; },
+  ];
+  for (const change of changes) { const snapshot = replacementNoticeEvidence(); change(snapshot); assert.throws(() => driverModule.assessReplacementNotices(snapshot, replacementScope)); }
+});
+test('only native disposal observation uses the existing30s production drain bound', async () => {
+  const source = await readFile(new URL('../scripts/diagnose-render-backpressure-lifecycle.mjs', import.meta.url), 'utf8');
+  const disposal = await readFile(new URL('../src/components/three/asyncRendererDisposal.ts', import.meta.url), 'utf8');
+  assert.match(disposal, /const DRAIN_LIMIT_MS = 30_000/);
+  const block = source.slice(source.indexOf('    const waitRetired ='), source.indexOf('    const armAndShowNotice ='));
+  assert.match(block, /timeout: 30_000/);
+  assert.doesNotMatch(block, /timeout: 5_000/);
+  assert.match(source, /timeout: 45_000, scale: 'css'/);
+  assert.match(source, /timeout: 90_000/); assert.match(source, /timeout: 15_000/);
+});
+
+test('fresh-owner completion may replace its fence only within the same observed pending prefix', () => {
+  const s = replacementNoticeEvidence();
+  s.fences[0].deletedSequence = 205;
+  s.fences.push({ ...s.fences[0], id: 3, sequence: 204, time: 6000, deletedSequence: 210 });
+  s.polls[1].fenceId = 3;
+  assert.deepEqual(driverModule.assessReplacementNotices(s, replacementScope), { checked: 1, awaitingCompletion: 0, awaitingClear: 0 });
+  s.fences[1].pendingPrefixTime = 6000;
+  assert.throws(() => driverModule.assessReplacementNotices(s, replacementScope), /real native completion/);
 });

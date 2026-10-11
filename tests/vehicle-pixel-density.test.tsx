@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { act as domAct, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, createRoot, extend, _roots } from "@react-three/fiber";
-import type { WebGLRenderer } from "three";
+import type { Vector2, WebGLRenderer } from "three";
 import VehicleScene from "../src/components/three/VehicleScene";
 import {
   initialVehiclePixelRatio,
@@ -29,6 +29,17 @@ vi.mock("../src/components/three/CameraRig", () => ({ CameraRig: () => null }));
 const THREE: typeof import("three") = createRequire(import.meta.url)("three");
 extend({ Color: THREE.Color });
 const roots: ReturnType<typeof createRoot>[] = [];
+let rafs: Map<number, FrameRequestCallback>;
+let nextRaf: number;
+async function frame() {
+  // Let the fake device complete its submitted prefix before the real RAF loop.
+  await act(async () => vi.advanceTimersByTimeAsync(0));
+  await act(async () => {
+    const callbacks = [...rafs.values()];
+    rafs.clear();
+    callbacks.forEach((callback) => callback(performance.now()));
+  });
+}
 const props: VehicleSceneProps = {
   url: "/exterior.glb",
   paint: "#aaaaaa",
@@ -46,6 +57,13 @@ const props: VehicleSceneProps = {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  rafs = new Map();
+  nextRaf = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    rafs.set(++nextRaf, callback);
+    return nextRaf;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => rafs.delete(id));
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("devicePixelRatio", 2);
   vi.stubGlobal("innerWidth", 1440);
@@ -55,6 +73,7 @@ afterEach(async () => {
   for (const root of roots) await act(async () => root.unmount());
   roots.length = 0;
   cleanup();
+  await frame();
   await vi.runOnlyPendingTimersAsync();
   vi.useRealTimers();
   vi.unstubAllGlobals();
@@ -63,9 +82,53 @@ afterEach(async () => {
 async function setup(width = 1440, height = 900) {
   const view = render(<VehicleScene {...props} />);
   const canvas = document.createElement("canvas");
+  let rendererWidth = canvas.width;
+  let rendererHeight = canvas.height;
+  let pixelRatio = 1;
+  // Keep the real admission owner mounted. Each device fence completes only
+  // after flush returns control to another task, and deleted handles are invalid.
+  const syncs = new Set<{ signaled: boolean }>();
+  const context = {
+    SYNC_GPU_COMMANDS_COMPLETE: 0x9117,
+    ALREADY_SIGNALED: 0x911a,
+    TIMEOUT_EXPIRED: 0x911b,
+    CONDITION_SATISFIED: 0x911c,
+    WAIT_FAILED: 0x911d,
+    fenceSync: vi.fn(() => {
+      const sync = { signaled: false };
+      syncs.add(sync);
+      return sync;
+    }),
+    flush: vi.fn(() => {
+      const submitted = [...syncs];
+      setTimeout(() => {
+        for (const sync of submitted) {
+          if (syncs.has(sync)) sync.signaled = true;
+        }
+      }, 0);
+    }),
+    clientWaitSync: vi.fn((sync: { signaled: boolean }): number =>
+      !syncs.has(sync)
+        ? context.WAIT_FAILED
+        : sync.signaled
+          ? context.ALREADY_SIGNALED
+          : context.TIMEOUT_EXPIRED,
+    ),
+    deleteSync: vi.fn((sync: { signaled: boolean }) => {
+      syncs.delete(sync);
+    }),
+    isContextLost: () => false,
+    get drawingBufferWidth() {
+      return canvas.width;
+    },
+    get drawingBufferHeight() {
+      return canvas.height;
+    },
+  };
   const renderer = {
     isWebGLRenderer: true,
     domElement: canvas,
+    getContext: () => context,
     shadowMap: { enabled: false, type: THREE.PCFSoftShadowMap },
     xr: {
       enabled: false,
@@ -73,12 +136,50 @@ async function setup(width = 1440, height = 900) {
       addEventListener() {},
       removeEventListener() {},
     },
-    setPixelRatio: vi.fn(),
-    setSize: vi.fn(),
+    getSize: (target: Vector2) => target.set(rendererWidth, rendererHeight),
+    getPixelRatio: () => pixelRatio,
+    getDrawingBufferSize: (target: Vector2) =>
+      target
+        .set(rendererWidth * pixelRatio, rendererHeight * pixelRatio)
+        .floor(),
+    // Match Three's nested DPR resize and independent atomic buffer setter.
+    setPixelRatio: vi.fn((value: number | undefined): void => {
+      if (value === undefined) return;
+      pixelRatio = value;
+      renderer.setSize(rendererWidth, rendererHeight, false);
+    }),
+    setSize: vi.fn(
+      (nextWidth: number, nextHeight: number, updateStyle = true): void => {
+        if (renderer.xr.isPresenting) return;
+        rendererWidth = nextWidth;
+        rendererHeight = nextHeight;
+        canvas.width = Math.floor(nextWidth * pixelRatio);
+        canvas.height = Math.floor(nextHeight * pixelRatio);
+        if (updateStyle) {
+          canvas.style.width = `${nextWidth}px`;
+          canvas.style.height = `${nextHeight}px`;
+        }
+      },
+    ),
+    setDrawingBufferSize: vi.fn(
+      (nextWidth: number, nextHeight: number, nextPixelRatio: number): void => {
+        rendererWidth = nextWidth;
+        rendererHeight = nextHeight;
+        pixelRatio = nextPixelRatio;
+        canvas.width = Math.floor(nextWidth * pixelRatio);
+        canvas.height = Math.floor(nextHeight * pixelRatio);
+      },
+    ),
     render() {},
     renderLists: { dispose() {} },
     forceContextLoss() {},
     dispose() {},
+  };
+  // Keep the actual native sizing spies after production wraps the requests.
+  const deviceSizing = {
+    setPixelRatio: renderer.setPixelRatio,
+    setSize: renderer.setSize,
+    setDrawingBufferSize: renderer.setDrawingBufferSize,
   };
   const root = createRoot(canvas);
   roots.push(root);
@@ -89,7 +190,7 @@ async function setup(width = 1440, height = 900) {
       ...host.canvas,
       onCreated: undefined,
       gl: renderer as unknown as WebGLRenderer,
-      frameloop: "never",
+      frameloop: "demand",
       size: { width, height, top: 0, left: 0 },
     });
   };
@@ -98,7 +199,8 @@ async function setup(width = 1440, height = 900) {
   await act(async () => root.render(host.canvas.children));
   // A measured scene size can update Canvas's controlled DPR once.
   await configure();
-  return { view, root, store, renderer, configure };
+  await frame();
+  return { view, root, store, renderer, deviceSizing, configure };
 }
 
 it.each([
@@ -108,14 +210,13 @@ it.each([
   "does not resize the %sx%s drawing buffer at native DPR%s on orbit regression, recovery, or unchanged Canvas configure",
   async (width, height, nativeDpr) => {
     vi.stubGlobal("devicePixelRatio", nativeDpr);
-    const { view, root, store, renderer, configure } = await setup(
-      width,
-      height,
-    );
+    const { view, root, store, renderer, deviceSizing, configure } =
+      await setup(width, height);
     const stableDpr = store.getState().viewport.dpr;
     const initialRenderer = store.getState().gl;
-    renderer.setPixelRatio.mockClear();
-    renderer.setSize.mockClear();
+    deviceSizing.setPixelRatio.mockClear();
+    deviceSizing.setSize.mockClear();
+    deviceSizing.setDrawingBufferSize.mockClear();
     for (let step = 0; step < 3; step++) {
       await act(async () => store.getState().performance.regress());
       expect(store.getState().viewport.dpr).toBe(stableDpr);
@@ -131,10 +232,16 @@ it.each([
       await configure();
       await act(async () => root.render(host.canvas.children));
       await act(async () => vi.advanceTimersByTimeAsync(250));
+      await frame();
       expect(store.getState().viewport.dpr).toBe(stableDpr);
     }
-    expect(renderer.setPixelRatio).not.toHaveBeenCalled();
-    expect(renderer.setSize).not.toHaveBeenCalled();
+    expect(deviceSizing.setPixelRatio).not.toHaveBeenCalled();
+    expect(deviceSizing.setSize).not.toHaveBeenCalled();
+    expect(deviceSizing.setDrawingBufferSize).not.toHaveBeenCalled();
+    expect([renderer.domElement.width, renderer.domElement.height]).toEqual([
+      Math.floor(width * stableDpr),
+      Math.floor(height * stableDpr),
+    ]);
     expect(store.getState().gl).toBe(initialRenderer);
   },
 );
@@ -157,8 +264,8 @@ it.each([
 );
 
 it("updates only when the measured viewport or native DPR changes", async () => {
-  const { store, renderer, configure } = await setup();
-  renderer.setPixelRatio.mockClear();
+  const { store, renderer, deviceSizing, configure } = await setup();
+  deviceSizing.setPixelRatio.mockClear();
   await act(async () => store.getState().setSize(390, 844));
   expect(host.canvas.dpr).toBe(1.5);
   // Native DPR can change on zoom or moving between screens without a CSS resize.
@@ -212,10 +319,14 @@ it.each([
   "sets exact %sx%s native DPR%s backing dimensions %sx%s",
   async (width, height, nativeDpr, bufferWidth, bufferHeight) => {
     vi.stubGlobal("devicePixelRatio", nativeDpr);
-    const { store } = await setup(width, height);
+    const { store, renderer } = await setup(width, height);
     const ratio = store.getState().viewport.dpr;
     expect(ratio).toBe(vehiclePixelRatio(width, height, nativeDpr));
     expect([Math.floor(width * ratio), Math.floor(height * ratio)]).toEqual([
+      bufferWidth,
+      bufferHeight,
+    ]);
+    expect([renderer.domElement.width, renderer.domElement.height]).toEqual([
       bufferWidth,
       bufferHeight,
     ]);
@@ -247,11 +358,10 @@ it.each([
     bufferHeight,
   ) => {
     vi.stubGlobal("devicePixelRatio", nativeDpr);
-    const { view, root, store, renderer, configure } = await setup(
-      width,
-      height,
-    );
-    renderer.setSize.mockClear();
+    const { view, root, store, renderer, deviceSizing, configure } =
+      await setup(width, height);
+    deviceSizing.setSize.mockClear();
+    deviceSizing.setDrawingBufferSize.mockClear();
     await act(async () => store.getState().setSize(nextWidth, nextHeight));
     await act(async () => {
       await configure(nextWidth, nextHeight);
@@ -265,9 +375,20 @@ it.each([
     expect([Math.floor(nextWidth * dpr), Math.floor(nextHeight * dpr)]).toEqual(
       [bufferWidth, bufferHeight],
     );
-    expect(renderer.setSize).toHaveBeenCalled();
-    renderer.setSize.mockClear();
-    renderer.setPixelRatio.mockClear();
+    await frame();
+    expect(deviceSizing.setDrawingBufferSize).toHaveBeenCalledExactlyOnceWith(
+      nextWidth,
+      nextHeight,
+      dpr,
+    );
+    expect(deviceSizing.setSize).not.toHaveBeenCalled();
+    expect([renderer.domElement.width, renderer.domElement.height]).toEqual([
+      bufferWidth,
+      bufferHeight,
+    ]);
+    deviceSizing.setDrawingBufferSize.mockClear();
+    deviceSizing.setSize.mockClear();
+    deviceSizing.setPixelRatio.mockClear();
     view.rerender(
       <VehicleScene {...props} paint="#222222" lights autoRotate={false} />,
     );
@@ -280,8 +401,10 @@ it.each([
     await act(async () => {
       await configure();
     });
+    await frame();
     expect(store.getState().viewport.dpr).toBe(dpr);
-    expect(renderer.setPixelRatio).not.toHaveBeenCalled();
-    expect(renderer.setSize).not.toHaveBeenCalled();
+    expect(deviceSizing.setPixelRatio).not.toHaveBeenCalled();
+    expect(deviceSizing.setSize).not.toHaveBeenCalled();
+    expect(deviceSizing.setDrawingBufferSize).not.toHaveBeenCalled();
   },
 );

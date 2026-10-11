@@ -3,6 +3,6 @@
   "allow": true,
   "mode": "fixed",
   "sourceSha": "current",
-  "sourceTree": "c3e6b02d198bbcdad46d403101706bbe859390d72729c6391adb01751ba0c3ca",
-  "geometryContract": "render-backpressure-2m-msaa-v1"
+  "sourceTree": "814ff47e781f112127596422caad0413c176331f892e9dc5697e10a1c36923c1",
+  "geometryContract": "render-repair-readiness-2m-msaa-v1"
 }

@@ -106,6 +106,8 @@ async function fixture(
     setPixelRatio() {},
     setSize() {},
     getPixelRatio: () => 1,
+    getSize: (target: import("three").Vector2) => target.set(100, 100),
+    setDrawingBufferSize() {},
     renderLists: { dispose() {} },
     dispose() {},
     forceContextLoss() {},

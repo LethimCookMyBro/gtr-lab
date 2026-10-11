@@ -87,12 +87,18 @@ const driver: CameraView = {
 };
 const cameraViews = { interior: driver };
 
-function frame(delta = 1 / 60) {
+let now = 0;
+let rigPosition: number[] = [];
+function frame(delta = 1 / 60, elapsed = delta) {
+  now += elapsed * 1000;
   act(() => {
     for (const entry of [...host.frames.values()].sort(
       (a, b) => a.priority - b.priority,
-    ))
+    )) {
       entry.callback(host.state, delta);
+      if (entry.priority === -2)
+        rigPosition = host.state.camera.position.toArray();
+    }
   });
 }
 function key(value: string, times = 1) {
@@ -103,6 +109,8 @@ function key(value: string, times = 1) {
 }
 
 beforeEach(() => {
+  now = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => now);
   host.state = {
     camera: new PerspectiveCamera(38, 1.6, 0.02, 100),
     size: { width: 1440, height: 900 },
@@ -115,6 +123,7 @@ afterEach(() => {
   cleanup();
   host.frames.clear();
   host.controls = null;
+  vi.restoreAllMocks();
 });
 
 describe("camera motion and fixed-seat controls", () => {
@@ -474,4 +483,120 @@ it("starts a seat change from the actual manually turned cabin orientation", () 
   expect(host.state.camera.quaternion.angleTo(rotation)).toBeLessThan(1e-7);
   frame(0.001);
   expect(host.state.camera.quaternion.angleTo(rotation)).toBeLessThan(0.05);
+});
+
+describe("target-relative wall-clock transitions", () => {
+  const props = {
+    preset: "hero",
+    autoRotate: false,
+    reducedMotion: false,
+    onManual() {},
+  };
+
+  it("excludes idle time before a new target while preserving the 60 Hz curve", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    now += 60_000;
+    const start = host.state.camera.position.clone();
+    result.rerender(<CameraRig {...props} preset="side" />);
+    frame(60, 1 / 60);
+    const expected = start.lerp(
+      new Vector3(...CAMERA_VIEWS.side.position),
+      1 - Math.exp(-7 / 60),
+    );
+    expect(host.state.camera.position.distanceTo(expected)).toBeLessThan(1e-10);
+  });
+
+  it("settles position, target and FOV exactly after a sparse 3.5 second sample", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    result.rerender(<CameraRig {...props} preset="side" />);
+    frame(1 / 60);
+    frame(0.1, 3.5);
+    expect(rigPosition).toEqual(CAMERA_VIEWS.side.position);
+    expect(host.controls!.target.toArray()).toEqual(CAMERA_VIEWS.side.target);
+    expect(host.state.camera.fov).toBe(CAMERA_VIEWS.side.fov);
+  });
+
+  it("retargets from the last applied pose without inheriting a pending target's age", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    result.rerender(<CameraRig {...props} preset="side" />);
+    frame(0.05);
+    now += 3500;
+    const start = host.state.camera.position.clone();
+    result.rerender(<CameraRig {...props} preset="rear" />);
+    frame(3.5, 1 / 60);
+    const expected = start.lerp(
+      new Vector3(...CAMERA_VIEWS.rear.position),
+      1 - Math.exp(-7 / 60),
+    );
+    expect(host.state.camera.position.distanceTo(expected)).toBeLessThan(1e-10);
+    frame(0.1, 3.5);
+    expect(rigPosition).toEqual(CAMERA_VIEWS.rear.position);
+  });
+
+  it("settles cabin entry and exit on sparse frames while retaining the fixed eye and exact saved exterior", () => {
+    const preview = { ...driver, near: 0.015, far: 50 };
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    key("ArrowLeft", 8);
+    const position = host.state.camera.position.clone();
+    const target = host.controls!.target.clone();
+    const fov = host.state.camera.fov;
+    now += 60_000;
+    result.rerender(<CameraRig {...props} cabinView={preview} />);
+    frame(60, 1 / 60);
+    expect(
+      host.state.camera.position.distanceTo(new Vector3(...preview.position)),
+    ).toBeLessThan(1e-10);
+    frame(0.1, 3.5);
+    expect(host.controls!.target.toArray()).toEqual(preview.target);
+    expect(host.state.camera.fov).toBe(preview.fov);
+    result.rerender(<CameraRig {...props} />);
+    frame(0.1, 3.5);
+    expect(host.state.camera.position.distanceTo(position)).toBeLessThan(1e-10);
+    expect(host.controls!.target.distanceTo(target)).toBeLessThan(1e-10);
+    expect(host.state.camera.fov).toBe(fov);
+  });
+
+  it("cancels sparse transitions on manual input and starts Home from its own request time", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    result.rerender(<CameraRig {...props} preset="side" />);
+    frame(0.05);
+    key("ArrowLeft");
+    const cancelled = host.state.camera.position.clone();
+    frame(0.1, 3.5);
+    expect(host.state.camera.position.distanceTo(cancelled)).toBeLessThan(
+      1e-10,
+    );
+    now += 60_000;
+    key("Home");
+    const start = host.state.camera.position.clone();
+    frame(60, 1 / 60);
+    const expected = start.lerp(
+      new Vector3(...CAMERA_VIEWS.side.position),
+      1 - Math.exp(-7 / 60),
+    );
+    expect(host.state.camera.position.distanceTo(expected)).toBeLessThan(1e-10);
+    frame(0.1, 3.5);
+    expect(rigPosition).toEqual(CAMERA_VIEWS.side.position);
+  });
+
+  it("gives a remounted rig a fresh transition epoch and leaves no old frame callbacks", () => {
+    const first = render(<CameraRig {...props} />);
+    frame(0.05);
+    first.unmount();
+    expect(host.frames.size).toBe(0);
+    now += 60_000;
+    const start = host.state.camera.position.clone();
+    render(<CameraRig {...props} preset="side" />);
+    frame(60, 1 / 60);
+    const expected = start.lerp(
+      new Vector3(...CAMERA_VIEWS.side.position),
+      1 - Math.exp(-7 / 60),
+    );
+    expect(host.state.camera.position.distanceTo(expected)).toBeLessThan(1e-10);
+  });
 });
