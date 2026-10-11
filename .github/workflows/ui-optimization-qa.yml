@@ -58,7 +58,8 @@ jobs:
           await verifyCheckout(resolve('.'),'candidate',request,process.env);
           NODE
           node --check scripts/ui-optimization-browser.mjs
-          node --test tests/ui-optimization-contract.node.mjs
+          node --check scripts/ui-optimization-receipts.mjs
+          node --test tests/ui-optimization-contract.node.mjs tests/ui-optimization-receipts.node.mjs tests/cabin-runtime-body-ledger.node.mjs
       - run: npm ci
       - name: Install exact baseline dependencies
         working-directory: baseline-app

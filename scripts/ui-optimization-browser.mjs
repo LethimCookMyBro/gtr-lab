@@ -4,6 +4,7 @@ import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { createUiReceipts } from './ui-optimization-receipts.mjs';
 import { baselineCommit, contract, sha256, sourceIdentity, validateRequest, summarizeTrace, compareSnapshots } from './ui-optimization-policy.mjs';
 
 const git=(root,args)=>execFileSync('git',['-C',root,...args],{encoding:'utf8'}).trim();
@@ -87,8 +88,8 @@ async function nativeSeek(page,target) {
   for(let i=0;i<180;i++) {const y=await page.evaluate(()=>scrollY),delta=target-y;if(Math.abs(delta)<2)return;await page.mouse.wheel(0,Math.sign(delta)*Math.min(480,Math.abs(delta)));await page.waitForTimeout(90);}
   throw new Error('Native wheel seek did not reach its bounded target');
 }
-async function exerciseHome({page,context,target,lane,output,row,save,plan,shot,expect,drain}) {
-  await page.goto(target.origin+'/',{waitUntil:'domcontentloaded'});
+async function exerciseHome({page,context,target,lane,output,row,save,plan,shot,expect,drain,navigate}) {
+  await navigate(target.origin+'/');
   const gate=page.locator('.home-loading-gate');await expect(gate).toBeAttached({timeout:15000});
   if(await gate.getAttribute('data-state')!=='resolved') {
     try {await gate.getByRole('button',{name:'Continue without 3D',exact:true}).click({timeout:5000});}
@@ -139,18 +140,33 @@ async function exerciseHome({page,context,target,lane,output,row,save,plan,shot,
   }
   await drain();await save();return plan;
 }
-async function exerciseDrawer({page,target,lane,row,shot,expect,drain,save}) {
+async function exerciseDrawer({page,target,lane,row,shot,expect,drain,save,navigate}) {
   row.drawer=[];
   const check=(entry,label,value)=>{entry.checks.push({label,passed:!!value});};
   async function openAndSettle(name) {
     const trigger=page.getByRole('button',{name,exact:true,includeHidden:true});await trigger.click();
     const dialog=page.locator('.drawer');await expect(dialog).toHaveAttribute('data-phase','open');
-    await expect.poll(()=>dialog.evaluate(element=>element.getAnimations().filter(animation=>animation.playState==='running').length),{timeout:5000}).toBe(0);
-    await expect.poll(()=>dialog.evaluate(element=>getComputedStyle(element).opacity),{timeout:5000}).toBe('1');
+    const started=performance.now();const diagnostics={panel:name,startedAt:started,originalDeadlineMs:5000,samples:[],status:'running'};
+    row.animationDiagnostics??=[];row.animationDiagnostics.push(diagnostics);
+    const inspect=()=>dialog.evaluate(element=>{
+      const r=element.getBoundingClientRect(),style=getComputedStyle(element);
+      return {at:performance.now(),rect:{x:r.x,y:r.y,width:r.width,height:r.height},opacity:style.opacity,transform:style.transform,animationName:style.animationName,animationDuration:style.animationDuration,animationIterationCount:style.animationIterationCount,
+        animations:element.getAnimations().map(animation=>({type:animation.constructor.name,name:animation.animationName||null,playState:animation.playState,currentTime:animation.currentTime,startTime:animation.startTime,playbackRate:animation.playbackRate,pending:animation.pending,timelineTime:animation.timeline?.currentTime??null,target:animation.effect?.target?{tag:animation.effect.target.tagName,className:animation.effect.target.className,id:animation.effect.target.id}:null,timing:animation.effect?.getTiming(),computedTiming:animation.effect?.getComputedTiming()}))};
+    });
+    try {
+      await expect.poll(async()=>{const sample=await inspect();diagnostics.samples.push(sample);await save();return sample.animations.filter(animation=>animation.playState==='running').length;},{timeout:5000}).toBe(0);
+      diagnostics.status='settled';diagnostics.elapsedMs=performance.now()-started;
+      await expect.poll(()=>dialog.evaluate(element=>getComputedStyle(element).opacity),{timeout:5000}).toBe('1');
+    } catch(error) {
+      diagnostics.status='failed';diagnostics.elapsedMs=performance.now()-started;diagnostics.originalError=String(error);await save();
+      try {await shot(`${name.toLowerCase()}-animation-failure-${row.animationDiagnostics.length}`);diagnostics.afterFailureCapture=await inspect();}
+      catch(captureError){diagnostics.captureError=String(captureError);}
+      await save();throw error;
+    }
     return {trigger,dialog};
   }
   for(const model of ['nismo','premium']) {
-    await page.goto(`${target.origin}/configurator/${model}`,{waitUntil:'domcontentloaded'});
+    await navigate(`${target.origin}/configurator/${model}`);
     await expect(page.getByRole('button',{name:'Environment',exact:true})).toBeVisible({timeout:20000});
     if(model==='premium')await expect(page.getByRole('button',{name:'Ultimate Silver',exact:true})).toBeEnabled({timeout:90000});
     await bounded(page.evaluate(()=>document.fonts.ready.then(()=>true)),15000,'Drawer fonts');
@@ -218,11 +234,13 @@ export async function main(env=process.env) {
     const workload=await workloadIdentity(root);
     if(lane==='baseline')baselineWorkload=workload;else assert.deepEqual(workload,baselineWorkload,'Matched exact non-bundle assets and model workload');
     const row={lane,...identity,workload,status:'running',captures:[],pageErrors:[],console:[],runtimeBodies:[],errors:[]};report.lanes.push(row);await save();
-    const bundles=new Map([['/index.html',sha256(await readFile(resolve(root,'dist/index.html')))]]);
-    for(const name of await readdir(resolve(root,'dist/assets')))if(/\.(js|css)$/.test(name))bundles.set('/assets/'+name,sha256(await readFile(resolve(root,'dist/assets',name))));
+    const pin=bytes=>({sha256:sha256(bytes),bytes:bytes.length});
+    const bundles=new Map([['/index.html',pin(await readFile(resolve(root,'dist/index.html')))]]);
+    for(const name of await readdir(resolve(root,'dist/assets')))if(/\.(js|css)$/.test(name))bundles.set('/assets/'+name,pin(await readFile(resolve(root,'dist/assets',name))));
     const {createAppServer}=await import(pathToFileURL(resolve(root, 'server.mjs')));
-    let server,browser,context,page;const bodyTasks=new Set(),bodyErrors=[];
-    const drain=async()=>{await bounded(Promise.all([...bodyTasks]),15000,'Original issued runtime bundle receipts');assert.deepEqual(bodyErrors,[]);};
+    let server,browser,context,page,receiptCollector;
+    const drain=async()=>{try{return await receiptCollector.drain();}finally{row.runtimeLedger=receiptCollector.snapshot();}};
+    const navigate=async url=>{try{return await receiptCollector.navigate(url);}finally{row.runtimeLedger=receiptCollector.snapshot();await save();}};
     try {
       server=createAppServer(resolve(root,'dist'));await new Promise((done,reject)=>{server.once('error',reject);server.listen(4189,'127.0.0.1',done);});
       browser=await chromium.launch({timeout:30000,args:['--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader']});
@@ -230,22 +248,18 @@ export async function main(env=process.env) {
       page=await context.newPage();page.setDefaultTimeout(10000);page.setDefaultNavigationTimeout(45000);
       page.on('pageerror',error=>row.pageErrors.push(String(error)));
       page.on('console',message=>{if(['error','warning'].includes(message.type()))row.console.push({type:message.type(),text:message.text()});});
-      page.on('response',response=>{
-        const url=new URL(response.url()),path=(url.pathname==='/'||url.pathname.startsWith('/configurator/'))?'/index.html':url.pathname;
-        if(url.origin!==target.origin||!bundles.has(path))return;
-        const receipt={url:response.url(),path,status:response.status()};row.runtimeBodies.push(receipt);
-        const task=(async()=>{const bytes=await response.body();receipt.sha256=sha256(bytes);receipt.bytes=bytes.length;assert.equal(receipt.status,200);assert.equal(receipt.sha256,bundles.get(path));})().catch(error=>{receipt.error=String(error);bodyErrors.push(String(error));});
-        bodyTasks.add(task);task.finally(()=>bodyTasks.delete(task));
-      });
+      receiptCollector=createUiReceipts({page,origin:target.origin,pins:bundles,receipts:row.runtimeBodies});
       const shot=async label=>{const file=`${lane}-${label}.png`;assert.ok(row.captures.length<24,'Bounded screenshots');const bytes=await page.screenshot({path:resolve(output,file),timeout:45000,animations:'allow',scale:'css'});row.captures.push({label,file,sha256:sha256(bytes)});await save();};
-      plan=await exerciseHome({page,context,target,lane,output,row,save,plan,shot,expect,drain});
-      await drain();await exerciseDrawer({page,target,lane,row,shot,expect,drain,save});await drain();
+      plan=await exerciseHome({page,context,target,lane,output,row,save,plan,shot,expect,drain,navigate});
+      await drain();await exerciseDrawer({page,target,lane,row,shot,expect,drain,save,navigate});await drain();
+      await receiptCollector.finish();row.runtimeLedger=receiptCollector.snapshot();
       assert.ok(row.runtimeBodies.some(receipt=>receipt.path==='/index.html'));
       assert.ok(row.runtimeBodies.some(receipt=>receipt.path.endsWith('.js')));
       assert.ok(row.runtimeBodies.some(receipt=>receipt.path.endsWith('.css')));
       assert.deepEqual(row.pageErrors,[],'No application/page JavaScript exceptions');row.status='passed';
     } catch(error) {row.status='failed';row.errors.push({message:String(error),stack:error.stack});}
     finally {
+      if(receiptCollector){row.runtimeLedger=receiptCollector.snapshot();receiptCollector.stop();}
       await save();
       if(context)await bounded(context.close(),15000,'Browser context cleanup').catch(error=>{row.status='failed';row.errors.push({message:String(error)});});
       if(browser)await bounded(browser.close(),15000,'Browser cleanup').catch(error=>{row.status='failed';row.errors.push({message:String(error)});});

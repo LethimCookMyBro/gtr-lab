@@ -1,4 +1,5 @@
 import { continueHomeWithout3D } from "./helpers/home-gate";
+import { readTimelineFocus } from "./helpers/timeline-focus";
 import { test, expect } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
 
@@ -1726,38 +1727,24 @@ test("desktop timeline keeps readable captions, native navigation and reversible
       }),
     );
     await settleNativeScroll(page, info, `timeline-focus-before-${width}`);
-    const readFocus = () =>
-      chapter.evaluate((element) => {
-        const style = getComputedStyle(element);
-        const image = getComputedStyle(
-          element.querySelector(".home-timeline-image")!,
-        );
-        return {
-          scrollY,
-          opacity: Number(style.getPropertyValue("--timeline-opacity")),
-          blur: Number.parseFloat(style.getPropertyValue("--timeline-blur")),
-          scale: Number(style.getPropertyValue("--timeline-scale")),
-          renderedOpacity: Number(image.opacity),
-          renderedBlur: Number.parseFloat(image.filter.replace("blur(", "")),
-        };
-      });
+    const readFocus = () => chapter.evaluate(readTimelineFocus);
     const before = await readFocus();
+    expect(before.renderedFilter).toBe("none");
     await page.mouse.move(10, height / 2);
     await page.mouse.wheel(0, height * 0.45);
     await settleNativeScroll(page, info, `timeline-focus-forward-${width}`);
     const forward = await readFocus();
     expect(forward.scrollY).toBeGreaterThan(before.scrollY);
     expect(forward.opacity).toBeGreaterThan(before.opacity);
-    expect(forward.blur).toBeLessThan(before.blur);
+    expect(forward.renderedFilter).toBe("none");
     expect(forward.scale).toBeGreaterThan(before.scale);
     expect(forward.renderedOpacity).toBeCloseTo(forward.opacity, 3);
-    expect(forward.renderedBlur).toBeCloseTo(forward.blur, 2);
     await page.mouse.wheel(0, -height * 0.45);
     await settleNativeScroll(page, info, `timeline-focus-reverse-${width}`);
     const reversed = await readFocus();
     expect(reversed.scrollY).toBeCloseTo(before.scrollY, 0);
     expect(reversed.opacity).toBeCloseTo(before.opacity, 2);
-    expect(reversed.blur).toBeCloseTo(before.blur, 2);
+    expect(reversed.renderedFilter).toBe("none");
     expect(reversed.scale).toBeCloseTo(before.scale, 3);
     await info.attach(`timeline-focus-${width}`, {
       body: JSON.stringify({ before, forward, reversed }, null, 2),
