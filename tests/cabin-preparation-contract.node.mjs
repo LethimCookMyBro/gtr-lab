@@ -334,3 +334,92 @@ test('physical pose comparison rejects sparse/coercible tuples before quaternion
     for (const sign of [1,-1]) assert.throws(() => assertRestoredExteriorPose({ ...valid, quaternion: [0,0,0,sign] }, { ...valid, quaternion: malformed }));
   }
 });
+
+test('cancelled-route return targets the visible Models-list Premium link, not a hidden header CTA', async () => {
+  const driver = String(await read('scripts/diagnose-cabin-preparation.mjs'));
+  const start = driver.indexOf("await runCase('trusted-route-cancels-fetch'");
+  const end = driver.indexOf("await runCase('trusted-model-cancels-native-decode-delivery'", start);
+  const routeCase = driver.slice(start, end);
+  assert.ok(routeCase.includes("const premiumLink = h.page.locator('.models-page .model-bands').getByRole('link', { name: 'Explore GT-R Premium', exact: true });"));
+  assert.ok(routeCase.includes("await expect(premiumLink).toHaveAttribute('href', '/configurator/premium');"));
+  assert.ok(routeCase.includes('await h.tap(premiumLink); await h.ready(returnedDeadline);'));
+  assert.ok(routeCase.indexOf('const returnedDeadline = readinessWindow(budgets.initial)') < routeCase.indexOf('const premiumLink'));
+  assert.doesNotMatch(routeCase, /\.first\(\)|force:\s*true|page\.goto|evaluate\([^\n]*click/);
+});
+
+test('photographic NISMO boundary requires its actual disclosure and disabled Interior without weakening residency checks', async () => {
+  const driver = String(await read('scripts/diagnose-cabin-preparation.mjs'));
+  const boundary = driver.slice(driver.indexOf("await runCase('savedata-and-nonpremium-boundaries'"));
+  assert.ok(boundary.includes("getByText('Camera controls activate when this model’s licensed 3D asset is available.', { exact: true })).toBeVisible()"));
+  assert.ok(boundary.includes("getByRole('button', { name: 'Interior Detailed cabin required', exact: true })).toBeDisabled()"));
+  assert.ok(boundary.includes('assert.equal(home.totals.fetches, 0)'));
+  assert.ok(boundary.includes('navigator.connection.saveData), true)'));
+  assert.ok(boundary.includes('assert.equal((await h.snapshot()).totals.fetches, 0); await expect(h.canvas).toHaveCount(0)'));
+  assert.ok(boundary.includes("const deadline = readinessWindow(budgets.initial); await h.switchModel('premium'); await h.ready(deadline)"));
+  assert.ok(boundary.includes('assert.equal(observed.totals.fetches, 1)'));
+  assert.doesNotMatch(boundary, /Interior is unavailable|timeout:\s*90000|force:\s*true/);
+});
+
+test('mobile containment binds exact viewport, stage and native backing without accepting clipped controls', async () => {
+  const { assertMobileContainment } = await import('../scripts/cabin-preparation-policy.mjs');
+  const fixture = width => {
+    const rect = (x, y, w, h) => ({ x, y, right: x + w, bottom: y + h, width: w, height: h, visible: true });
+    const layout = { width, height: 844, overflow: false, header: rect(0, 0, width, 230), headerRow: rect(0, 0, width, 77), stage: rect(0, 230, width, 302), canvas: rect(0, 230, width, 302), backingWidth: width * 1.5, backingHeight: 453,
+      headerControls: ['Back to models', 'GT-R LAB home', 'Model detail'].map((text, i) => ({ ...rect(10 + i * 100, 20, 90, 30), text, fontSize: 10, scrollWidth: 90, clientWidth: 90 })),
+      items: ['Driver', 'Passenger', 'Rear seat', 'Back to exterior'].map((text, i) => ({ ...rect(8 + (i % 2) * 156, 700 + Math.floor(i / 2) * 48, 148, 44), text, fontSize: 12, scrollWidth: 148, clientWidth: 148 })) };
+    const certificate = { owner: 1, nativeStatus: 0x911c, reusedUnchanged: false, snapshot: { dimensions: { cssWidth: width, cssHeight: 302, renderWidth: width, renderHeight: 302, width: width * 1.5, height: 453 } } };
+    return { layout, certificate, viewport: { width, height: 844 } };
+  };
+  for (const width of [390, 320, 390]) { const { layout, certificate, viewport } = fixture(width); assertMobileContainment(layout, certificate, viewport); }
+  for (const mutate of [
+    r => { r.layout.stage.width = r.layout.stage.right = 390; r.layout.canvas.width = r.layout.canvas.right = 390; },
+    r => { r.layout.header.width = r.layout.header.right = 390; }, r => { r.layout.headerRow.width = r.layout.headerRow.right = 390; },
+    r => { delete r.layout.stage; }, r => { r.layout.canvas.x = NaN; }, r => { r.layout.header.y = '0'; },
+    r => { r.layout.header.visible = false; }, r => { r.layout.canvas.y++; }, r => { r.layout.canvas.height++; },
+    r => { r.layout.backingWidth = 585; }, r => { r.certificate.snapshot.dimensions.renderWidth = 390; },
+    r => { r.certificate.nativeStatus = 0x911b; }, r => { r.certificate.owner = null; }, r => { r.certificate.reusedUnchanged = true; },
+    r => { r.layout.headerControls.pop(); }, r => { r.layout.headerControls[0].text = 'Wrong link'; },
+    r => { r.layout.headerControls[0].scrollWidth = 1000; }, r => { r.layout.headerControls[0].scrollWidth = NaN; },
+    r => { delete r.layout.headerControls[0].scrollWidth; }, r => { r.layout.headerControls[0].fontSize = 0; }, r => { r.layout.headerControls[0].clientWidth = '90'; },
+    r => { r.layout.headerControls[2].right = 350; r.layout.headerControls[2].width = 140; },
+    r => { r.layout.headerControls[1].x = 20; r.layout.headerControls[1].right = 110; },
+    r => { r.layout.headerControls[0].bottom = 100; r.layout.headerControls[0].height = 80; },
+    r => { r.layout.items[0].visible = false; }, r => { r.layout.width = 390; }, r => { r.layout.overflow = true; },
+  ]) { const evidence = fixture(320); mutate(evidence); assert.throws(() => assertMobileContainment(evidence.layout, evidence.certificate, evidence.viewport)); }
+});
+
+test('mobile round trip retains original deadlines, same completed state, owner, residency and exact restored scene', async () => {
+  const source = (await read('scripts/diagnose-cabin-preparation.mjs')).toString();
+  assert.match(source, /for \(const width of \[320, 390\]\) \{[\s\S]*?resizeWindow = readinessWindow\(budgets.functional\);[\s\S]*?await armFunctionalCapture\(page\); await page.setViewportSize\(viewport\)/);
+  assert.match(source, /const layoutBefore = mobileViewport && await containment\(\);[\s\S]*?await page.screenshot[\s\S]*?const layoutAfter = mobileViewport && await containment\(\);[\s\S]*?await verifyFunctionalCapture\(page\)/);
+  for (const expression of ['assert.deepEqual(layoutAfter, layoutBefore', 'assertMobileContainment(layoutAfter, certificate, mobileViewport)', 'assert.equal(resized.certificate.owner, owner)', 'assert.deepEqual(observed.ui.preparation, resident.ui.preparation)', 'assert.deepEqual(observed.contexts, resident.contexts)', 'assert.deepEqual(observed.resources, resident.resources)', 'assertResidentWorkUnchanged(resident.totals, observed.totals)', 'assert.deepEqual(cabinResourceCohort(resourceMark, await resources(), images), residentCohort)', 'assert.deepEqual(resized.scene, repeat.scene)', 'assert.deepEqual(restored.scene, initial.scene)']) assert.ok(source.includes(expression), expression);
+  assert.match(source, /row.captures.length < 12/); assert.match(source, /timeout: budgets.screenshot/);
+});
+
+test('explicit Reduced comparison is isolated to one desktop feature cell and fixed native backing', async () => {
+  const { assertDesktopFeatureGeometry } = await import('../scripts/cabin-preparation-policy.mjs');
+  assert.equal(validatePreparationEnvironment(resolved()).quality, 'standard');
+  assert.equal(validatePreparationEnvironment(resolved({ R35_PREPARATION_QUALITY: 'standard' })).quality, 'standard');
+  assert.equal(validatePreparationEnvironment(resolved({ R35_PREPARATION_QUALITY: 'reduced' })).quality, 'reduced');
+  for (const change of [{ R35_PREPARATION_QUALITY: 'auto' }, { R35_PREPARATION_QUALITY: '' }, { R35_PREPARATION_QUALITY: 'reduced', R35_QA_VIEWPORT: 'mobile' }, { R35_PREPARATION_QUALITY: 'reduced', R35_PREPARATION_LANE: 'lifecycle' }]) assert.throws(() => resolved(change));
+  for (const quality of ['standard', 'reduced']) {
+    const ratio = Math.sqrt((quality === 'standard' ? 2e6 : 1e6) / (1440 * 744));
+    const snapshot = { dimensions: { cssWidth: 1440, cssHeight: 744, renderWidth: 1440, renderHeight: 744, pixelRatio: ratio, width: Math.floor(1440 * ratio), height: Math.floor(744 * ratio) } };
+    assertDesktopFeatureGeometry(snapshot, quality);
+    assert.throws(() => assertDesktopFeatureGeometry(snapshot, quality === 'standard' ? 'reduced' : 'standard'));
+    for (const key of Object.keys(snapshot.dimensions)) { const copy = structuredClone(snapshot); copy.dimensions[key] -= 1; assert.throws(() => assertDesktopFeatureGeometry(copy, quality)); }
+    const smaller = { dimensions: { cssWidth: 1280, renderWidth: 1280, cssHeight: 720, renderHeight: 720, pixelRatio: 1.5, width: 1920, height: 1080 } };
+    assert.throws(() => assertDesktopFeatureGeometry(smaller, quality));
+  }
+});
+
+test('desktop quality comparison selects the same explicit radio step before releasing the original fetch hold', async () => {
+  const source = (await read('scripts/diagnose-cabin-preparation.mjs')).toString(), workflow = (await read('.github/workflows/cabin-preparation-diagnostic.yml')).toString();
+  assert.match(workflow, /fail-fast: false/); assert.match(workflow, /viewport: \[desktop, mobile\]\s+lane: \[feature, lifecycle\]\s+quality: \[standard\]\s+include:\s+- viewport: desktop\s+lane: feature\s+quality: reduced/);
+  assert.match(workflow, /R35_PREPARATION_QUALITY: \$\{\{ matrix.quality \}\}/); assert.match(workflow, /name: cabin-preparation-\$\{\{ matrix.viewport \}\}-\$\{\{ matrix.lane \}\}-\$\{\{ matrix.quality \}\}/);
+  assert.match(source, /if \(target.name === 'desktop'\) \{\s+await open\('Environment'\); const radio = dialog.locator\(`input\[name="render-quality"\]\[value="\$\{target.quality\}"\]`\);\s+await tap\(radio\); await expect\(radio\).toBeChecked\(\); h.setQuality\(target.quality\); await close\(\);/);
+  assert.match(source, /label: 'explicit-quality-before-preparation'[\s\S]*?finally \{ await hold.release\(deadline\); \}[\s\S]*?await h.ready\(deadline\)/);
+  assert.ok(source.includes("target.name + '-' + target.lane + (target.quality === 'reduced' ? '-reduced' : '')"));
+  assert.ok(source.includes('requestedQuality: target.quality')); assert.ok(source.includes('assertDesktopFeatureGeometry(certificate.snapshot, target.quality)'));
+  assert.match(source, /const entryWindow = readinessWindow\(budgets.functional\); await armFunctionalCapture\(page\); await tap/);
+});

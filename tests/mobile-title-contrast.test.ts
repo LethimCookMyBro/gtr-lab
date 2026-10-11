@@ -65,6 +65,12 @@ describe("mobile configurator information header", () => {
     expect(property(inMedia(".configurator"), "grid-template-rows")).toBe(
       "210px minmax(0, 1fr) 242px",
     );
+    // An implicit auto column can retain the previous canvas intrinsic width.
+    expect(property(inMedia(".configurator"), "grid-template-columns")).toBe(
+      "minmax(0, 1fr)",
+    );
+    expect(property(h, "min-width")).toBe("0");
+    expect(property(inMedia(".scene-stage"), "min-width")).toBe("0");
     expect(property(inMedia(".config-header"), "position")).toBe("static");
     expect(property(inMedia(".config-title"), "position")).toBe("static");
     expect(property(inMedia(".scene-stage"), "grid-row")).toBe("2");

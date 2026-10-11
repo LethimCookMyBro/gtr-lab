@@ -1,6 +1,6 @@
 {
   "contract": "r35-production-source-v2-with-index",
-  "sha256": "71e40ce4d1f3158809e00256eefcebf3b0d67d08e7d7b3b9d72aeef098d6e55c",
+  "sha256": "c30deae33d34aa0fa43883878143c3aa602362bf96da35e9092ec6e4d92a68fa",
   "files": [
     {
       "path": "index.html",
@@ -360,7 +360,7 @@
     },
     {
       "path": "src/styles.css",
-      "sha256": "3d4a3f2c9f7e5ffd261d08ced6308c4131045c15f919450ea4048bd5c77b82af"
+      "sha256": "eb8845b1e6b5abcf1ecf9845a7091c96cddc39b5f6778e6676b7e4067df1a608"
     },
     {
       "path": "src/styles/cabin-preview.css",

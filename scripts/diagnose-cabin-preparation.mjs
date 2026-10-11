@@ -9,7 +9,7 @@ import { gunzipSync } from 'node:zlib';
 import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { collectDistAssets } from './raster-cost-evidence.mjs';
 import { budgets, requiredCases, models, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages,
-  assertCurrentGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
+  assertCurrentGeometry, assertDesktopFeatureGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertMobileContainment, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
 import { installCabinNetworkCapture } from './cabin-preparation-network.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from './cabin-preparation-observer.mjs';
 import { buildPreparationReadiness } from './build-cabin-preparation-readiness.mjs';
@@ -56,8 +56,8 @@ export async function main(env = process.env) {
   const assets = await collectDistAssets(resolve(root, 'dist'));
   const bodies = await Promise.all(models.map(async model => { const body = await readFile(resolve(root, 'dist' + model.path)); assert.equal(body.length, model.bytes); assert.equal(sha256(body), model.sha256); return body; }));
   const images = acceptedCabinImages(bodies[0]), transform = independentExteriorTransform(bodies[1]);
-  const output = resolve('cabin-preparation-results', target.name + '-' + target.lane); await mkdir(output, { recursive: true });
-  const report = { result: 'running', sourceCommit: commit, sourceTree: source.sha256, contract: request.contract, viewport: target.name, lane: target.lane,
+  const output = resolve('cabin-preparation-results', target.name + '-' + target.lane + (target.quality === 'reduced' ? '-reduced' : '')); await mkdir(output, { recursive: true });
+  const report = { result: 'running', sourceCommit: commit, sourceTree: source.sha256, contract: request.contract, viewport: target.name, lane: target.lane, requestedQuality: target.quality,
     budgets, models, images, transport: [], cases: [], errors: [],
     scope: 'Bounded functional preparation/residency proof on the actual built bundle and native-positive main completion. No historical causal/raster qualification is transferred.',
     limitations: ['SwiftShader timings describe this CI runner, not physical desktop/mobile speed.', 'DOM and native-event sampling plus bounded screenshots do not prove the absence of subframe compositor flicker.', 'Fetch/decode/native-positive-observation holds are explicit lifecycle fixtures, excluded from loading-speed claims.', 'Residency is checked for repeated entry in the same environment/quality. Environment changes can require legitimate preparation.'] };
@@ -114,7 +114,16 @@ export async function main(env = process.env) {
     const close = async () => { await tap(dialog.getByRole('button', { name: 'Close panel', exact: true })); await expect(dialog).toHaveCount(0, { timeout: 5_000 }); };
     const switchModel = async id => { await open('Switch model'); await tap(dialog.getByRole('button', { name: id === 'premium' ? /^Premium / : /^NISMO / })); await expect(page).toHaveURL(new RegExp('/configurator/' + id + '$')); await expect(dialog).toHaveCount(0); };
     const ready = async deadline => { const left = () => remainingBudget(deadline); await page.waitForFunction(() => globalThis.__r35Preparation?.status().ui.preparation?.phase === 'ready', null, { timeout: left(), polling: 50 }); await expect(page.locator('.scene-loading, .cabin-preparation-error, .render-error')).toHaveCount(0, { timeout: left() }); };
-    const capture = async (label, window) => {
+    const containment = () => page.evaluate(() => {
+      const rect = element => { const r = element?.getBoundingClientRect(); return r && { x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height, visible: element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) }; };
+      const control = element => ({ ...rect(element), text: (element.getAttribute('aria-label') || element.textContent).trim(), fontSize: parseFloat(getComputedStyle(element).fontSize), scrollWidth: element.scrollWidth, clientWidth: element.clientWidth });
+      const canvas = document.querySelector('.scene-stage canvas');
+      return { width: innerWidth, height: innerHeight, overflow: document.documentElement.scrollWidth > innerWidth,
+        header: rect(document.querySelector('.config-information-header')), headerRow: rect(document.querySelector('.config-header')), stage: rect(document.querySelector('.scene-stage')), canvas: rect(canvas), backingWidth: canvas?.width, backingHeight: canvas?.height,
+        headerControls: [...document.querySelectorAll('.config-header a, .config-header button')].map(control),
+        items: [...document.querySelectorAll('footer[aria-label="Cabin preview controls"] button')].map(control) };
+    });
+    const capture = async (label, window, mobileViewport) => {
       const timeout = remainingBudget(window);
       assert.ok(row.captures.length < 12, 'Bounded screenshots per case');
       await waitForFunctionalCapture(page, { preset: 'hero', timeout, quality }); remainingBudget(window);
@@ -122,8 +131,11 @@ export async function main(env = process.env) {
       if (!row.rendererInfo) { row.rendererInfo = await canvas.evaluate(element => { const gl = element.getContext('webgl2'), extension = gl.getExtension('WEBGL_debug_renderer_info'); return { renderer: extension ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER), nativeDpr: devicePixelRatio }; }); assert.match(row.rendererInfo.renderer, /SwiftShader/i); assert.equal(row.rendererInfo.nativeDpr, target.deviceScaleFactor); }
       const bounds = await canvas.boundingBox(); assert.ok(bounds && bounds.width > 200 && bounds.height > 150);
       const overlays = await page.evaluate(observeOverlayRectangles), rail = page.locator('footer[aria-label="Cabin preview controls"]'); if (await rail.count()) overlays.push({ name: 'cabin-rail', ...await rail.boundingBox() });
+      const layoutBefore = mobileViewport && await containment();
       const png = await page.screenshot({ path: resolve(output, `${name}-${label}.png`), timeout: budgets.screenshot, scale: 'css' });
-      const certificate = await verifyFunctionalCapture(page); assert.ok(certificate.readyAt - certificate.armedAt <= window.budget, 'Readiness budget includes the initiating action'); assertCurrentGeometry(certificate.snapshot, quality, target.deviceScaleFactor); assert.equal(certificate.reusedUnchanged, false); assert.deepEqual(await canvas.boundingBox(), bounds);
+      const layoutAfter = mobileViewport && await containment();
+      const certificate = await verifyFunctionalCapture(page); assert.ok(certificate.readyAt - certificate.armedAt <= window.budget, 'Readiness budget includes the initiating action'); assertCurrentGeometry(certificate.snapshot, quality, target.deviceScaleFactor); if (target.name === 'desktop' && target.lane === 'feature') assertDesktopFeatureGeometry(certificate.snapshot, target.quality); assert.equal(certificate.reusedUnchanged, false); assert.deepEqual(await canvas.boundingBox(), bounds);
+      if (mobileViewport) { assert.deepEqual(layoutAfter, layoutBefore, 'Mobile geometry must remain unchanged across the certified screenshot'); assertMobileContainment(layoutAfter, certificate, mobileViewport); row.layouts.push({ label, value: layoutAfter, owner: certificate.owner, mainDrawId: certificate.mainDrawId, fenceId: certificate.fenceId }); }
       const pixels = summarizeScenePixels(PNG.sync.read(png), bounds, overlays); assert.equal(pixels.blank, false);
       const record = { label, quality, readinessWindow: window, screenshotStartedAt, screenshotEndedAt: performance.now(), certificate, pixels, scene: canvasPixelHash(png, bounds, overlays), sha256: sha256(png) }; row.captures.push(record); await save(); return record;
     };
@@ -164,17 +176,23 @@ export async function main(env = process.env) {
       try {
         await open('Switch model'); await expect(dialog.getByRole('button', { name: /^NISMO / })).toBeEnabled(); await close();
         await open('Camera'); await expect(dialog.getByRole('button', { name: 'Interior', exact: true })).toBeDisabled(); await close();
+        if (target.name === 'desktop') {
+          await open('Environment'); const radio = dialog.locator(`input[name="render-quality"][value="${target.quality}"]`);
+          await tap(radio); await expect(radio).toBeChecked(); h.setQuality(target.quality); await close();
+          const selected = await snapshot(); assert.equal(selected.ui.preparation.phase, 'loading'); assert.equal(selected.ui.maskOpaque, true);
+          row.steps.push({ label: 'explicit-quality-before-preparation', quality: target.quality, state: selected.current, ui: selected.ui });
+        }
         const masked = await snapshot(); assert.equal(masked.ui.maskCount, 1); assert.equal(masked.ui.maskOpaque, true); assert.equal(masked.ui.cabinRail, false);
         await page.screenshot({ path: resolve(output, 'initial-opaque-stage-mask.png'), timeout: budgets.screenshot, scale: 'css' });
       } finally { await hold.release(deadline); }
       await h.ready(deadline); const initial = await capture('01-initial-complete', deadline);
       row.initialPreparation = (await snapshot()).measures; assert.ok(row.initialPreparation.some(m => m.name === 'gtr-cabin-preparation-ready' && m.duration >= 0 && m.duration <= budgets.initial));
-      const preparedOracle = createCabinOracle(transform); preparedOracle.reset('driver'); assertPreparationTimeline(await snapshot(), initial.certificate, { quality: 'standard', nativeDpr: target.deviceScaleFactor, driverPose: preparedOracle.expected(initial.certificate.snapshot.dimensions.renderWidth, initial.certificate.snapshot.dimensions.renderHeight).pose });
+      const preparedOracle = createCabinOracle(transform); preparedOracle.reset('driver'); assertPreparationTimeline(await snapshot(), initial.certificate, { quality: target.quality, nativeDpr: target.deviceScaleFactor, driverPose: preparedOracle.expected(initial.certificate.snapshot.dimensions.renderWidth, initial.certificate.snapshot.dimensions.renderHeight).pose });
       const resourceMark = { sequence: 0 }; const cohort = cabinResourceCohort(resourceMark, await resources(), images); row.residentCohort = cohort;
       const initialWork = (await snapshot()).totals; assert.equal(initialWork.fetches, 1); assert.equal(initialWork.gltfParses, 1); const owner = initial.certificate.owner;
-      const enter = async label => {
+      const enter = async (label, mobileViewport) => {
         await h.mark(label); await open('Camera'); const entryWindow = readinessWindow(budgets.functional); await armFunctionalCapture(page); await tap(dialog.getByRole('button', { name: 'Interior', exact: true })); await expect(dialog).toHaveCount(0);
-        const complete = await capture(label, entryWindow); const observed = await snapshot(), click = observed.clicks.findLast(c => c.label === 'Interior');
+        const complete = await capture(label, entryWindow, mobileViewport); const observed = await snapshot(), click = observed.clicks.findLast(c => c.label === 'Interior');
         assert.ok(click?.trusted); assert.equal(complete.certificate.owner, owner); assert.ok(complete.certificate.mainDrawId > click.mainBefore);
         assert.equal(complete.certificate.snapshot.vehicle.cabinSeat, 'driver'); assert.equal(observed.ui.legacyLoading, false);
         const mark = await page.evaluate(() => performance.getEntriesByName('gtr-cabin-entry-request').at(-1)?.startTime);
@@ -190,8 +208,21 @@ export async function main(env = process.env) {
       }
       const exitWindow = readinessWindow(budgets.functional); await armFunctionalCapture(page); await tap(page.getByRole('button', { name: 'Back to exterior', exact: true })); const restored = await capture('04-exterior-restored', exitWindow);
       assertRestoredExteriorPose(restored.certificate.snapshot.pose, initial.certificate.snapshot.pose); assert.deepEqual(restored.scene, initial.scene);
-      const beforeRepeat = (await snapshot()).totals; checkSeat('driver', await enter('05-repeat-entry')); assertResidentWorkUnchanged(beforeRepeat, (await snapshot()).totals);
-      if (target.name === 'mobile') { const resizeWindow = readinessWindow(budgets.functional); await armFunctionalCapture(page); await page.setViewportSize({ width: 320, height: 844 }); await capture('06-layout-320', resizeWindow); await layout('320px-seat-and-back'); }
+      const beforeRepeat = (await snapshot()).totals; const repeat = await enter('05-repeat-entry', target.name === 'mobile' ? target.viewport : undefined); checkSeat('driver', repeat); assertResidentWorkUnchanged(beforeRepeat, (await snapshot()).totals);
+      if (target.name === 'mobile') {
+        const resident = await snapshot(), residentResources = await resources();
+        const residentCohort = cabinResourceCohort(resourceMark, residentResources, images); assert.deepEqual(residentCohort, cohort);
+        for (const width of [320, 390]) {
+          const viewport = { width, height: 844 }, resizeWindow = readinessWindow(budgets.functional);
+          await armFunctionalCapture(page); await page.setViewportSize(viewport);
+          const resized = await capture(width === 320 ? '06-layout-320' : '07-layout-restored-390', resizeWindow, viewport); checkSeat('driver', resized);
+          assert.equal(resized.certificate.owner, owner); const observed = await snapshot();
+          assert.deepEqual(observed.ui.preparation, resident.ui.preparation); assert.deepEqual(observed.contexts, resident.contexts); assert.deepEqual(observed.resources, resident.resources);
+          assertResidentWorkUnchanged(resident.totals, observed.totals);
+          assert.deepEqual(cabinResourceCohort(resourceMark, await resources(), images), residentCohort);
+          if (width === 390) { assertRestoredExteriorPose(resized.certificate.snapshot.pose, repeat.certificate.snapshot.pose); assert.deepEqual(resized.scene, repeat.scene); }
+        }
+      }
       const beforeExit = await resources(); for (const id of cohort.bitmapIds) assert.equal(beforeExit.bitmaps.find(b => b.id === id).closeCalls, 0);
       await switchModel('nismo'); await expect(h.canvas).toHaveCount(0); await retire(1);
       await expect.poll(async () => { try { assertCabinResourcesReleased(cohort, await resources()); return true; } catch { return false; } }, { timeout: budgets.lifecycle }).toBe(true);
@@ -231,7 +262,9 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
     await expect(h.canvas).toHaveCount(0); await h.retire(1);
     const cancelled = await h.snapshot(); assert.equal(cancelled.totals.fetches, 1); assert.equal(cancelled.ui.cabinRail, false);
     await armFunctionalCapture(h.page, { replacement: true }); const returnedDeadline = readinessWindow(budgets.initial);
-    await h.tap(h.page.locator('a[href="/configurator/premium"]').first()); await h.ready(returnedDeadline);
+    const premiumLink = h.page.locator('.models-page .model-bands').getByRole('link', { name: 'Explore GT-R Premium', exact: true });
+    await expect(premiumLink).toHaveAttribute('href', '/configurator/premium');
+    await h.tap(premiumLink); await h.ready(returnedDeadline);
     const returned = await h.capture('fresh-route-return', returnedDeadline); assert.notEqual(returned.certificate.owner, before.events.find(e => e.kind === 'attach').owner);
     assert.equal((await h.snapshot()).totals.fetches, 2); await h.switchModel('nismo'); await h.retire(2);
   }, { cancel: true });
@@ -302,7 +335,10 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
     await expect(h.page.getByRole('button', { name: 'Load 3D view · 8.3 MB', exact: true })).toBeVisible({ timeout: budgets.lifecycle });
     const home = await h.snapshot(); assert.equal(home.totals.fetches, 0); assert.equal(await h.page.evaluate(() => navigator.connection.saveData), true); h.row.homeBoundary = home.ui;
     await h.page.goto(target.baseUrl + '/configurator/nismo', { waitUntil: 'domcontentloaded' });
-    await h.open('Camera'); await expect(h.dialog.getByText(/Interior is unavailable/)).toBeVisible(); await h.close();
+    await h.open('Camera');
+    await expect(h.dialog.getByText('Camera controls activate when this model’s licensed 3D asset is available.', { exact: true })).toBeVisible();
+    await expect(h.dialog.getByRole('button', { name: 'Interior Detailed cabin required', exact: true })).toBeDisabled();
+    await h.close();
     assert.equal((await h.snapshot()).totals.fetches, 0); await expect(h.canvas).toHaveCount(0);
     const deadline = readinessWindow(budgets.initial); await h.switchModel('premium'); await h.ready(deadline);
     await h.capture('explicit-premium-viewer-after-savedata-boundary', deadline);

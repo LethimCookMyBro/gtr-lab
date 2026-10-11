@@ -1,6 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { createHash } from "node:crypto";
 import type { Page, TestInfo } from "@playwright/test";
+// @ts-expect-error Node-only functional capture helpers are deliberately outside the app build.
+import * as geometryBoundary from "../scripts/geometry-capture-boundaries.mjs";
+const {
+  installFunctionalCaptureObserver,
+  armFunctionalCapture,
+  waitForGeometryBoundary,
+  hashCompletedGeometryCanvas,
+  retainGeometryReadinessState,
+} = geometryBoundary;
 
 type ObservedCanvas = HTMLCanvasElement & {
   __qaGraphics?: { draws: number; triangles: number };
@@ -36,7 +45,11 @@ async function frames(page: Page) {
       ),
   );
 }
-async function ready(page: Page, allowFallbackNotice = false) {
+async function ready(
+  page: Page,
+  allowFallbackNotice = false,
+  completedEnvironment?: string,
+) {
   await expect(
     page.getByRole("button", { name: "Ultimate Silver", exact: true }),
   ).toBeEnabled({ timeout: 90000 });
@@ -48,6 +61,12 @@ async function ready(page: Page, allowFallbackNotice = false) {
     ),
   ).toHaveCount(0);
   await expect(page.locator(".scene-stage canvas")).toHaveCount(1);
+  if (completedEnvironment) {
+    // Same 15s budget now covers dimensions AND the genuine completed target.
+    // Two RAF callbacks can run while this viewer's native work is still pending.
+    await waitForGeometryBoundary(page, completedEnvironment);
+    return;
+  }
   await expect
     .poll(
       () =>
@@ -91,12 +110,18 @@ async function pressCameraKey(page: Page, key: string, count = 1) {
     }
   }
 }
-async function canvasHash(page: Page, allowFallbackNotice = false) {
+async function canvasHash(
+  page: Page,
+  allowFallbackNotice = false,
+  completed?: { info: TestInfo; name: string },
+) {
   // The keyboard focus ring is not part of the rendered scene.
   await page
     .locator(".scene-stage canvas")
     .evaluate((element) => (element as HTMLCanvasElement).blur());
   await ready(page, allowFallbackNotice);
+  if (completed)
+    return hashCompletedGeometryCanvas(page, completed.info, completed.name);
   return createHash("sha256")
     .update(await page.locator(".scene-stage canvas").screenshot())
     .digest("hex");
@@ -123,8 +148,13 @@ async function optionalImage(page: Page, info: TestInfo, name: string) {
     scale: "css",
   });
 }
-async function capture(page: Page, info: TestInfo, name: string) {
-  await ready(page);
+async function capture(
+  page: Page,
+  info: TestInfo,
+  name: string,
+  completedEnvironment?: string,
+) {
+  await ready(page, false, completedEnvironment);
   const evidence = await graphicsEvidence(page);
   expect(evidence.contextAvailable).toBe(true);
   expect(evidence.contextLost).toBe(false);
@@ -137,14 +167,16 @@ async function capture(page: Page, info: TestInfo, name: string) {
   });
   await optionalImage(page, info, name);
 }
-async function camera(page: Page, name: string) {
+async function camera(page: Page, name: string, completedEnvironment?: string) {
+  if (completedEnvironment)
+    await armFunctionalCapture(page, { cameraRequest: true });
   await page.getByRole("button", { name: "Camera", exact: true }).click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name, exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await ready(page);
+  await ready(page, false, completedEnvironment);
 }
 async function environment(page: Page, id: string, name: string) {
   // Count real GPU work following each selection, independently of venue topology.
@@ -252,7 +284,10 @@ async function withObservedScene(
   page: Page,
   info: TestInfo,
   exercise: (assets: Map<string, number>) => Promise<void>,
+  completedBoundaries = false,
 ) {
+  if (completedBoundaries)
+    await page.addInitScript(installFunctionalCaptureObserver);
   const diagnostics = await observeScene(page);
   try {
     await openScene(page, diagnostics.assets);
@@ -265,6 +300,7 @@ async function withObservedScene(
       ),
     ).toEqual([]);
   } finally {
+    if (completedBoundaries) await retainGeometryReadinessState(page, info);
     // Preserve all observed resource/runtime errors even if a scene assertion or
     // transport step fails. Shards remain independently diagnosable.
     await info.attach("browser-diagnostics", {
@@ -288,45 +324,54 @@ for (const [id, label] of venues) {
   test(`[${id}] ${label} renders every exterior camera angle, full orbit and zoom`, async ({
     page,
   }, info) => {
-    await withObservedScene(page, info, async (assets) => {
-      if (id !== "studio") await environment(page, id, label);
-      await camera(page, "Front ¾");
-      if (id === "forest" || id === "coast")
-        await expect
-          .poll(() => assets.get(skyPath), { timeout: 90000 })
-          .toBe(200);
-      await capture(page, info, `${id}-hero`);
-      const canonical = await canvasHash(page);
-      for (let quarter = 1; quarter <= 4; quarter++) {
-        await pressCameraKey(page, "Shift+ArrowRight", 10);
-        await capture(page, info, `${id}-azimuth-${quarter}`);
-      }
-      await pressCameraKey(page, "+", 25);
-      await capture(page, info, `${id}-minimum-zoom`);
-      await pressCameraKey(page, "Home");
-      await capture(page, info, `${id}-manual-reset`);
-      expect(
-        await canvasHash(page),
-        `${id} Home restores canonical framing`,
-      ).toBe(canonical);
-      for (const [name, suffix] of [
-        ["Front", "front"],
-        ["Rear ¾", "rear-three-quarter"],
-        ["Rear", "rear"],
-        ["Side", "side"],
-        ["Top detail", "top"],
-        ["Wheel detail", "wheel"],
-      ]) {
-        await camera(page, name);
-        await capture(page, info, `${id}-${suffix}`);
-      }
-      await camera(page, "Front ¾");
-      await pressCameraKey(page, "-", 25);
-      await capture(page, info, `${id}-maximum-zoom`);
-      await pressCameraKey(page, "Home");
-      await pressCameraKey(page, "ArrowDown", 15);
-      await capture(page, info, `${id}-low-orbit`);
-    });
+    await withObservedScene(
+      page,
+      info,
+      async (assets) => {
+        if (id !== "studio") await environment(page, id, label);
+        await camera(page, "Front ¾", id);
+        if (id === "forest" || id === "coast")
+          await expect
+            .poll(() => assets.get(skyPath), { timeout: 90000 })
+            .toBe(200);
+        await capture(page, info, `${id}-hero`);
+        const canonical = await canvasHash(page, false, {
+          info,
+          name: `${id}-canonical`,
+        });
+        for (let quarter = 1; quarter <= 4; quarter++) {
+          await pressCameraKey(page, "Shift+ArrowRight", 10);
+          await capture(page, info, `${id}-azimuth-${quarter}`);
+        }
+        await pressCameraKey(page, "+", 25);
+        await capture(page, info, `${id}-minimum-zoom`);
+        await armFunctionalCapture(page);
+        await pressCameraKey(page, "Home");
+        await capture(page, info, `${id}-manual-reset`, id);
+        expect(
+          await canvasHash(page, false, { info, name: `${id}-manual-reset` }),
+          `${id} Home restores canonical framing`,
+        ).toBe(canonical);
+        for (const [name, suffix] of [
+          ["Front", "front"],
+          ["Rear ¾", "rear-three-quarter"],
+          ["Rear", "rear"],
+          ["Side", "side"],
+          ["Top detail", "top"],
+          ["Wheel detail", "wheel"],
+        ]) {
+          await camera(page, name);
+          await capture(page, info, `${id}-${suffix}`);
+        }
+        await camera(page, "Front ¾");
+        await pressCameraKey(page, "-", 25);
+        await capture(page, info, `${id}-maximum-zoom`);
+        await pressCameraKey(page, "Home");
+        await pressCameraKey(page, "ArrowDown", 15);
+        await capture(page, info, `${id}-low-orbit`);
+      },
+      true,
+    );
   });
 }
 

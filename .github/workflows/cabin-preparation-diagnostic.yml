@@ -26,9 +26,15 @@ jobs:
       matrix:
         viewport: [desktop, mobile]
         lane: [feature, lifecycle]
+        quality: [standard]
+        include:
+          - viewport: desktop
+            lane: feature
+            quality: reduced
     env:
       R35_QA_VIEWPORT: ${{ matrix.viewport }}
       R35_PREPARATION_LANE: ${{ matrix.lane }}
+      R35_PREPARATION_QUALITY: ${{ matrix.quality }}
       R35_PREPARATION_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +78,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cabin-preparation-${{ matrix.viewport }}-${{ matrix.lane }}-${{ github.sha }}
+          name: cabin-preparation-${{ matrix.viewport }}-${{ matrix.lane }}-${{ matrix.quality }}-${{ github.sha }}
           path: cabin-preparation-results/
           retention-days: 14
           if-no-files-found: warn

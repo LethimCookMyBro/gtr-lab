@@ -1805,9 +1805,11 @@ p {
     min-height: 680px;
     height: 100svh;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 210px minmax(0, 1fr) 242px;
   }
   .config-information-header {
+    min-width: 0;
     grid-row: 1;
     position: relative;
     z-index: 15;
@@ -1865,6 +1867,7 @@ p {
     margin-top: 8px;
   }
   .scene-stage {
+    min-width: 0;
     position: relative;
     grid-row: 2;
     inset: auto;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 export const preparationContract = 'premium-unified-cabin-preparation-residency-v1';
 // Exact independently reviewed runtime, including the route accessibility and transport layers.
-export const preparationTree = '71e40ce4d1f3158809e00256eefcebf3b0d67d08e7d7b3b9d72aeef098d6e55c';
+export const preparationTree = 'c30deae33d34aa0fa43883878143c3aa602362bf96da35e9092ec6e4d92a68fa';
 export const budgets = Object.freeze({ initial: 90_000, functional: 20_000, lifecycle: 30_000, screenshot: 45_000 });
 export const requiredCases = Object.freeze({ feature: Object.freeze(['direct-entry-residency']), lifecycle: Object.freeze([
   'resize-quality-during-preparation', 'trusted-route-cancels-fetch', 'trusted-model-cancels-native-decode-delivery',
@@ -40,7 +40,9 @@ export function validatePreparationEnvironment(env) {
   for (const name of ['R35_DPR_BASE_URL', 'R35_BASE_URL', 'R35_CABIN_URL', 'R35_MODEL_URL', 'R35_CAPTURE_TIMEOUT', 'R35_MAX_BUFFER_PIXELS']) assert.equal(env[name], undefined, `Unreviewed override ${name}`);
   assert.ok(['desktop', 'mobile'].includes(env.R35_QA_VIEWPORT));
   assert.ok(['feature', 'lifecycle'].includes(env.R35_PREPARATION_LANE));
-  return { name: env.R35_QA_VIEWPORT, lane: env.R35_PREPARATION_LANE, baseUrl: 'http://127.0.0.1:4178',
+  const quality = env.R35_PREPARATION_QUALITY ?? 'standard'; assert.ok(['standard', 'reduced'].includes(quality));
+  assert.ok(quality === 'standard' || (env.R35_QA_VIEWPORT === 'desktop' && env.R35_PREPARATION_LANE === 'feature'), 'Reduced comparison is one independent desktop feature cell');
+  return { name: env.R35_QA_VIEWPORT, lane: env.R35_PREPARATION_LANE, quality, baseUrl: 'http://127.0.0.1:4178',
     ...(env.R35_QA_VIEWPORT === 'desktop' ? { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 } :
       { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }) };
 }
@@ -80,6 +82,14 @@ export function assertCurrentGeometry(snapshot, quality, nativeDpr) {
   const ratio = Math.min(nativeDpr, 1.5, Math.sqrt((quality === 'reduced' ? 1_000_000 : 2_000_000) / (d.renderWidth * d.renderHeight)));
   assert.equal(d.pixelRatio, ratio); assert.equal(d.width, Math.floor(d.renderWidth * ratio)); assert.equal(d.height, Math.floor(d.renderHeight * ratio));
   assert.ok(Math.abs(d.renderWidth - d.cssWidth) <= 1 && Math.abs(d.renderHeight - d.cssHeight) <= 1);
+}
+/** Fixed same-size desktop comparison; an accidental smaller CSS canvas cannot pass. */
+export function assertDesktopFeatureGeometry(snapshot, quality) {
+  assertCurrentGeometry(snapshot, quality, 2);
+  for (const key of ['cssWidth', 'renderWidth']) assert.equal(snapshot.dimensions[key], 1440);
+  for (const key of ['cssHeight', 'renderHeight']) assert.equal(snapshot.dimensions[key], 744);
+  const backing = quality === 'standard' ? [1967, 1016] : [1391, 718];
+  assert.equal(snapshot.dimensions.width, backing[0]); assert.equal(snapshot.dimensions.height, backing[1]);
 }
 export function assertPreparationTimeline(observation, ready, { quality, nativeDpr, driverPose }) {
   assert.deepEqual(observation.issues, []); assert.equal(ready.reusedUnchanged, false);
@@ -139,6 +149,41 @@ export function assertReadableControls(layout) {
   for (let i = 0; i < layout.items.length; i++) for (let j = i + 1; j < layout.items.length; j++) {
     const a = layout.items[i], b = layout.items[j];
     assert.ok(a.right <= b.x + .5 || b.right <= a.x + .5 || a.bottom <= b.y + .5 || b.bottom <= a.y + .5, 'Seat and Back controls overlap');
+  }
+}
+
+
+/** Same completed frame, exact mobile track width, and visible controls at both widths. */
+export function assertMobileContainment(layout, certificate, viewport) {
+  assert.ok([320, 390].includes(viewport.width)); assert.equal(viewport.height, 844);
+  assert.equal(layout.width, viewport.width); assert.equal(layout.height, viewport.height); assert.equal(layout.overflow, false);
+  assert.ok(Number.isSafeInteger(certificate.owner) && certificate.owner > 0);
+  assert.ok([0x911a, 0x911c].includes(certificate.nativeStatus)); assert.equal(certificate.reusedUnchanged, false);
+  const rect = (value, name) => {
+    for (const key of ['x', 'y', 'right', 'bottom', 'width', 'height']) assert.ok(Number.isFinite(value?.[key]), `Missing ${name} rectangle ${key}`);
+    assert.equal(value.visible, true, `Hidden ${name}`);
+    assert.ok(value.width > 0 && value.height > 0 && value.x >= 0 && value.y >= 0 && value.right <= layout.width && value.bottom <= layout.height, `${name} exceeds viewport`);
+    assert.ok(Math.abs(value.x + value.width - value.right) < 1e-8 && Math.abs(value.y + value.height - value.bottom) < 1e-8, `Inconsistent ${name} rectangle`);
+  };
+  for (const name of ['header', 'headerRow', 'stage', 'canvas']) { rect(layout[name], name); assert.equal(layout[name].x, 0); assert.equal(layout[name].width, layout.width); }
+  assert.ok(layout.headerRow.y >= layout.header.y && layout.headerRow.bottom <= layout.header.bottom);
+  assert.ok(layout.header.bottom <= layout.stage.y, 'Header overlaps the stage');
+  for (const key of ['x', 'y', 'right', 'bottom', 'width', 'height']) assert.equal(layout.canvas[key], layout.stage[key], `Canvas differs from stage ${key}`);
+  const d = certificate.snapshot.dimensions;
+  assert.equal(d.cssWidth, layout.canvas.width); assert.equal(d.cssHeight, layout.canvas.height);
+  assert.equal(d.renderWidth, layout.canvas.width); assert.equal(d.renderHeight, layout.canvas.height);
+  assert.equal(layout.backingWidth, d.width); assert.equal(layout.backingHeight, d.height);
+  assert.ok(Number.isSafeInteger(d.width) && d.width > 0 && Number.isSafeInteger(d.height) && d.height > 0);
+  assertReadableControls(layout);
+  assert.deepEqual(layout.headerControls.map(item => item.text).sort(), ['Back to models', 'GT-R LAB home', 'Model detail'].sort());
+  for (const item of layout.headerControls) {
+    rect(item, item.text); assert.ok(item.y >= layout.headerRow.y && item.bottom <= layout.headerRow.bottom, 'Header control outside its row');
+    for (const key of ['fontSize', 'scrollWidth', 'clientWidth']) assert.ok(Number.isFinite(item[key]) && item[key] > 0, `Missing header typography ${key}`);
+    assert.ok(item.scrollWidth <= item.clientWidth + 1, `Clipped header control ${item.text}`);
+  }
+  const all = [...layout.items, ...layout.headerControls];
+  for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
+    const a = all[i], b = all[j]; assert.ok(a.right <= b.x || b.right <= a.x || a.bottom <= b.y || b.bottom <= a.y, 'Mobile controls overlap');
   }
 }
 
