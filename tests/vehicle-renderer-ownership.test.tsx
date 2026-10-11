@@ -11,6 +11,8 @@ const host = vi.hoisted(() => ({
   onCreated: null as ((state: { gl: unknown }) => void) | null,
   exterior: null as PreparedVehicle | null,
   cabin: null as PreparedVehicle | null,
+  proxy: null as PreparedVehicle | null,
+  urls: [] as (string | null)[],
 }));
 vi.mock("@react-three/fiber", () => ({
   Canvas: (props: { onCreated: typeof host.onCreated }) => {
@@ -21,12 +23,21 @@ vi.mock("@react-three/fiber", () => ({
   useThree: vi.fn(),
 }));
 vi.mock("../src/components/three/useVehicleAsset", () => ({
-  useVehicleAsset: (url: string | null) =>
-    url === "/exterior.glb" ? host.exterior : url ? host.cabin : null,
+  useVehicleAsset: (url: string | null) => {
+    host.urls.push(url);
+    return url === "/exterior.glb"
+      ? host.exterior
+      : url?.includes("exterior-cabin-proxy")
+        ? host.proxy
+        : url
+          ? host.cabin
+          : null;
+  },
 }));
 afterEach(() => {
   cleanup();
-  host.exterior = host.cabin = null;
+  host.exterior = host.cabin = host.proxy = null;
+  host.urls = [];
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -104,6 +115,19 @@ it("releases the latest exterior and cabin textures before renderer caches, then
   // onCreated runs only once, before either asynchronous model load resolves.
   host.onCreated!({ gl: renderer });
   host.exterior = asset();
+  host.proxy = prepareVehicle(
+    new Mesh(new BoxGeometry(), new MeshStandardMaterial()),
+    { paint: [], headlights: [], taillights: [] },
+    [],
+    true,
+  );
+  const proxyGeometry = (host.proxy.scene as Mesh).geometry;
+  const proxyDisposed = vi.spyOn(proxyGeometry, "dispose");
+  const proxyNativeDispose = nativeDispose.getMockImplementation()!;
+  nativeDispose.mockImplementation(() => {
+    expect(proxyDisposed).toHaveBeenCalledTimes(1);
+    proxyNativeDispose();
+  });
   host.cabin = asset();
   result.rerender(view());
   const firstCabin = host.cabin;
@@ -121,10 +145,39 @@ it("releases the latest exterior and cabin textures before renderer caches, then
   // The source loader remains an idempotent owner even if its passive cleanup is later.
   host.exterior.dispose();
   host.cabin.dispose();
+  host.proxy.dispose();
+  expect(proxyDisposed).toHaveBeenCalledTimes(1);
   firstCabin.dispose();
   for (const bitmap of bitmaps) expect(bitmap.close).toHaveBeenCalledTimes(1);
   expect(allocation.deleted).toHaveLength(3);
   await vi.advanceTimersByTimeAsync(16);
   await pending;
   expect(vi.getTimerCount()).toBe(0);
+});
+
+it("automatically requests only the small Premium proxy and keeps the full cabin opt-in", () => {
+  const props = {
+    url: "/exterior.glb",
+    paint: "#aaaaaa",
+    environment: "studio" as const,
+    preset: "hero",
+    autoRotate: false,
+    lights: false,
+    reducedMotion: true,
+    materialRoles: { paint: [], headlights: [], taillights: [] },
+    onReady() {},
+    onError() {},
+    onProgress() {},
+    onManual() {},
+  };
+  const result = render(
+    <VehicleScene {...props} cabin={{ phase: "closed" }} />,
+  );
+  expect(host.urls.filter(Boolean)).toEqual([
+    "/exterior.glb",
+    "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
+  ]);
+  host.urls = [];
+  result.rerender(<VehicleScene {...props} />);
+  expect(host.urls.filter(Boolean)).toEqual(["/exterior.glb"]);
 });

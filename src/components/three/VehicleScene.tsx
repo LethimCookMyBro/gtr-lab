@@ -5,7 +5,7 @@ import {
   VehiclePixelDensity,
 } from "./VehiclePixelDensity";
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
-import { CABIN_URL, cabinCameraView } from "./cabinPreview";
+import { CABIN_URL, CABIN_PROXY_URL, cabinCameraView } from "./cabinPreview";
 import { prepareAsyncRendererDisposal } from "./asyncRendererDisposal";
 import { CabinAttachment } from "./CabinAttachment";
 import { CameraRig } from "./CameraRig";
@@ -113,6 +113,22 @@ export default function VehicleScene(props: VehicleSceneProps) {
     props.cabin?.phase === "loading" || props.cabin?.phase === "active";
   const cabinRequest =
     props.cabin && props.cabin.phase !== "closed" ? props.cabin.request : 0;
+  const [proxyFailed, setProxyFailed] = useState(false);
+  const proxyAsset = useVehicleAsset(
+    props.cabin ? CABIN_PROXY_URL : null,
+    { paint: [], headlights: [], taillights: [] },
+    () => {},
+    () => setProxyFailed(true),
+    [],
+    (progress) => {
+      if (progress.phase === "downloading" && progress.loadedBytes === 0) {
+        setProxyFailed(false);
+        props.onWindowStatus?.("loading");
+      }
+    },
+    true,
+    props.url,
+  );
   const cabinAsset = useVehicleAsset(
     cabinRequested ? CABIN_URL : null,
     { paint: [], headlights: [], taillights: [] },
@@ -120,11 +136,13 @@ export default function VehicleScene(props: VehicleSceneProps) {
     (message) => props.onCabinError?.(cabinRequest, message),
     [],
     (progress) => props.onCabinProgress?.(cabinRequest, progress),
+    true,
+    cabinRequest,
   );
   // Canvas is created before the asynchronous assets arrive. Read the latest
   // owners at final renderer disposal, after its scene children detach/restore.
-  const ownedAssets = useRef({ asset, cabinAsset });
-  ownedAssets.current = { asset, cabinAsset };
+  const ownedAssets = useRef({ asset, cabinAsset, proxyAsset });
+  ownedAssets.current = { asset, cabinAsset, proxyAsset };
   const seat = props.cabin?.phase === "active" ? props.cabin.seat : null;
   const cabinView = useMemo(
     () =>
@@ -167,6 +185,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
         onCreated={({ gl }) => {
           prepareAsyncRendererDisposal(gl, () => {
             ownedAssets.current.cabinAsset?.dispose();
+            ownedAssets.current.proxyAsset?.dispose();
             ownedAssets.current.asset?.dispose();
           });
           // ContactShadows removes scene.background for its depth pass. Clear
@@ -199,10 +218,13 @@ export default function VehicleScene(props: VehicleSceneProps) {
               onFallback={props.onEnvironmentFallback}
               onReady={readiness.onEnvironmentRendered}
             />
-            {cabinAsset && cabinRequested && (
+            {props.cabin && (
               <CabinAttachment
-                key={cabinRequest}
-                asset={cabinAsset}
+                asset={cabinRequested ? cabinAsset : null}
+                proxy={proxyAsset}
+                proxyFailed={proxyFailed}
+                onProxyError={() => setProxyFailed(true)}
+                onWindowStatus={props.onWindowStatus}
                 exterior={asset}
                 active={props.cabin?.phase === "active"}
                 request={cabinRequest}

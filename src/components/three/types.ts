@@ -1,4 +1,4 @@
-import type { CabinPreviewState } from "./cabinPreview";
+import type { CabinPreviewState, CabinWindowStatus } from "./cabinPreview";
 import type { HomeSceneLoadState } from "../home/homeReadiness";
 import type { MaterialRoles, CameraView } from "./sceneHelpers";
 
@@ -7,6 +7,7 @@ export type StudioEnvironment =
 export type VehicleSceneProps = {
   url: string;
   cabin?: CabinPreviewState;
+  onWindowStatus?: (status: CabinWindowStatus) => void;
   onCabinReady?: (request: number) => void;
   onCabinError?: (request: number, message: string) => void;
   onCabinProgress?: (request: number, progress: HomeSceneLoadState) => void;

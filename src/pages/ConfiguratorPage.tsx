@@ -1,4 +1,11 @@
-import { lazy, Suspense, useEffect, useCallback, useRef } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -21,10 +28,24 @@ import { Brand, SoundButton } from "../components/layout/SiteLayout";
 import { ConfiguratorPanels } from "../components/configurator/ConfiguratorPanels";
 import { CabinPreviewControls } from "../components/configurator/CabinPreviewControls";
 import "../styles/cabin-preview.css";
+import type { CabinWindowStatus } from "../components/three/cabinPreview";
 const VehicleScene = lazy(() => import("../components/three/VehicleScene"));
 export function ConfiguratorPage() {
   const { model: id = "premium" } = useParams();
   const model = getModel(id);
+  const currentModel = useRef(id);
+  currentModel.current = id;
+  const [windowView, setWindowView] = useState<{
+    model: string;
+    status: CabinWindowStatus;
+  }>({ model: id, status: "loading" });
+  const onWindowStatus = useCallback(
+    (status: CabinWindowStatus) => {
+      if (currentModel.current === id) setWindowView({ model: id, status });
+    },
+    [id],
+  );
+  const windowStatus = windowView.model === id ? windowView.status : "loading";
   const state = useConfigurator();
   const reduced = useReducedMotion();
   const audio = useAudio();
@@ -153,10 +174,34 @@ export function ConfiguratorPage() {
             </button>
           )}
           {hasAsset && model.asset.kind === "licensed-model" && (
-            <button className="study-disclosure" onClick={() => open("assets")}>
-              <Info size={14} />
-              Model provenance & limitations
-            </button>
+            <div
+              className={
+                model.asset.cabinPreview && !state.error
+                  ? "provenance-with-window-status"
+                  : undefined
+              }
+            >
+              <button
+                className="study-disclosure"
+                onClick={() => open("assets")}
+              >
+                <Info size={14} />
+                Model provenance & limitations
+              </button>
+              {model.asset.cabinPreview && !state.error && (
+                <span
+                  className="cabin-window-status"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {windowStatus === "loading"
+                    ? "Loading window view…"
+                    : windowStatus === "ready"
+                      ? "Window view ready · Simplified cabin"
+                      : "Window view unavailable"}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </header>
@@ -203,6 +248,7 @@ export function ConfiguratorPage() {
               onCabinReady={state.cabinReady}
               onCabinError={state.cabinFailed}
               onCabinProgress={state.cabinProgress}
+              onWindowStatus={onWindowStatus}
             />
           </Suspense>
         ) : (

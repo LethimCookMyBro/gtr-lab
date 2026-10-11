@@ -1,7 +1,15 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, render, waitFor } from "@testing-library/react";
-import { Group, PerspectiveCamera, Scene } from "three";
+import {
+  BoxGeometry,
+  Mesh,
+  MeshStandardMaterial,
+  Group,
+  PerspectiveCamera,
+  Scene,
+} from "three";
+import { CABIN_WINDOW_NAMES } from "../src/components/three/cabinPreview";
 import { CabinAttachment } from "../src/components/three/CabinAttachment";
 import type { PreparedVehicle } from "../src/components/three/materialAdapter";
 const host = vi.hoisted(() => ({
@@ -10,6 +18,7 @@ const host = vi.hoisted(() => ({
       compile: ReturnType<typeof vi.fn>;
       getContext: ReturnType<typeof vi.fn>;
       info: { programs: { program: object }[] };
+      properties: { get: () => { currentProgram: { program: object } } };
     };
     camera: PerspectiveCamera;
     scene: Scene;
@@ -26,7 +35,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 const prepared = (): PreparedVehicle => ({
-  scene: new Group(),
+  scene: (() => {
+    const root = new Group();
+    for (const name of CABIN_WINDOW_NAMES) {
+      const mesh = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+      mesh.userData.name = name;
+      root.add(mesh);
+    }
+    return root;
+  })(),
   bindings: [],
   scale: 1,
   position: [0, 0, 0],
@@ -37,7 +54,13 @@ it("does not enter until its real renderer compile resolves, and ignores a cance
   const parameter = vi.fn(() => finished);
   host.state = {
     gl: {
-      compile: vi.fn(),
+      compile: vi.fn(
+        (root: Group) =>
+          new Set(root.children.map((child) => (child as Mesh).material)),
+      ),
+      properties: {
+        get: () => ({ currentProgram: host.state.gl.info.programs[0] }),
+      },
       getContext: vi.fn(() => ({
         getExtension: () => ({ COMPLETION_STATUS_KHR: 1 }),
         isContextLost: () => false,
@@ -83,8 +106,11 @@ it("reports a compilation failure only to the optional preview", async () => {
       compile: vi.fn(() => {
         throw new Error("GPU compile rejected");
       }),
+      properties: {
+        get: () => ({ currentProgram: host.state.gl.info.programs[0] }),
+      },
       getContext: vi.fn(),
-      info: { programs: [] },
+      info: { programs: [{ program: {} }] },
     },
     camera: new PerspectiveCamera(),
     scene: new Scene(),
@@ -119,12 +145,19 @@ it("preserves the reviewed native cabin shadow policy instead of adding exterior
   cabin.scene.add(mesh);
   host.state = {
     gl: {
-      compile: vi.fn(),
+      compile: vi.fn(
+        (root: Group) =>
+          new Set(root.children.map((child) => (child as Mesh).material)),
+      ),
+      properties: {
+        get: () => ({ currentProgram: host.state.gl.info.programs[0] }),
+      },
       getContext: vi.fn(() => ({
         getExtension: () => null,
         isContextLost: () => false,
+        getProgramParameter: () => true,
       })),
-      info: { programs: [] },
+      info: { programs: [{ program: {} }] },
     },
     camera: new PerspectiveCamera(),
     scene: new Scene(),

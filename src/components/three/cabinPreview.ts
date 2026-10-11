@@ -3,6 +3,8 @@ import type { CameraView, VectorTuple } from "./sceneHelpers";
 import type { HomeSceneLoadState } from "../home/homeReadiness";
 
 export const CABIN_URL = "/models/r35-cabin-dashboard-5c0a9dca.glb";
+export const CABIN_PROXY_URL = "/models/r35-exterior-cabin-proxy-49d7c2ab.glb";
+export type CabinWindowStatus = "loading" | "ready" | "unavailable";
 export const CABIN_SEATS = ["driver", "passenger", "rear"] as const;
 export type CabinSeat = (typeof CABIN_SEATS)[number];
 export type CabinPreviewState =
@@ -68,7 +70,7 @@ function sourceName(object: Object3D): string {
   return object.name;
 }
 /** Owns only four temporary, artistic thin-glass overrides, never shared source textures. */
-export function overrideCabinWindows(root: Object3D): () => void {
+export function createCabinWindowOwner(root: Object3D) {
   const found = new Map<string, Mesh[]>();
   root.traverse((object) => {
     if (!(object instanceof Mesh)) return;
@@ -100,16 +102,33 @@ export function overrideCabinWindows(root: Object3D): () => void {
     const owned = Array.isArray(original)
       ? original.map(make)
       : [make(original)];
-    mesh.material = Array.isArray(original) ? owned : owned[0];
-    return { mesh, original, owned };
+    const thin = Array.isArray(original) ? owned : owned[0];
+    return { mesh, original, owned, thin };
   });
-  let restored = false;
-  return () => {
-    if (restored) return;
-    restored = true;
-    for (const { mesh, original, owned } of bindings) {
-      mesh.material = original;
-      owned.forEach((material) => material.dispose());
-    }
+  let transparent = false;
+  let disposed = false;
+  return {
+    setTransparent(next: boolean) {
+      if (disposed || transparent === next) return false;
+      transparent = next;
+      for (const { mesh, original, thin } of bindings)
+        mesh.material = next ? thin : original;
+      return true;
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      for (const { mesh, original, owned } of bindings) {
+        mesh.material = original;
+        owned.forEach((material) => material.dispose());
+      }
+    },
   };
+}
+
+/** Compatibility helper for one temporary override; runtime uses a persistent owner. */
+export function overrideCabinWindows(root: Object3D): () => void {
+  const owner = createCabinWindowOwner(root);
+  owner.setTransparent(true);
+  return () => owner.dispose();
 }

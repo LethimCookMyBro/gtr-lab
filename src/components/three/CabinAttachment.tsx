@@ -1,39 +1,54 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Mesh } from "three";
 import { useThree } from "@react-three/fiber";
 import { compileRearScene } from "../home/compileRearScene";
-import { overrideCabinWindows } from "./cabinPreview";
+import { createCabinWindowOwner, type CabinWindowStatus } from "./cabinPreview";
 import { invalidateSceneShadows } from "./staticShadowPolicy";
-import type { PreparedVehicle } from "./materialAdapter";
+import {
+  registerVehicleRestoration,
+  type PreparedVehicle,
+} from "./materialAdapter";
 
 type Props = {
-  asset: PreparedVehicle;
+  asset: PreparedVehicle | null;
   exterior: PreparedVehicle;
   active: boolean;
   request: number;
   onReady: (request: number) => void;
   onError: (request: number, message: string) => void;
+  proxy?: PreparedVehicle | null;
+  proxyFailed?: boolean;
+  onProxyError?: () => void;
+  onWindowStatus?: (status: CabinWindowStatus) => void;
 };
-/** Optional cabin owns no canvas, exterior, environment or global loading state. */
-export function CabinAttachment({
-  asset,
-  exterior,
-  active,
-  request,
-  onReady,
-  onError,
-}: Props) {
+
+/** Own a cancellable compile barrier for one exact asset and request. */
+function useCabinCompilation(
+  asset: PreparedVehicle | null,
+  request: number,
+  onReady: (request: number) => void,
+  onError: (request: number, message: string) => void,
+) {
   const gl = useThree((state) => state.gl),
     camera = useThree((state) => state.camera),
-    scene = useThree((state) => state.scene),
-    invalidate = useThree((state) => state.invalidate);
+    scene = useThree((state) => state.scene);
+  const [compiled, setCompiled] = useState<{
+    asset: PreparedVehicle;
+    request: number;
+    gl: typeof gl;
+    camera: typeof camera;
+    scene: typeof scene;
+  } | null>(null);
   const callbacks = useRef({ onReady, onError });
   callbacks.current = { onReady, onError };
   useEffect(() => {
+    // This component persists while the full cabin is closed; drop disposed CPU
+    // scene references as well as cancelling its native compilation/resources.
+    setCompiled(null);
+    if (!asset) return;
     let live = true;
     const abort = new AbortController();
-    // The reviewed native cabin does not add shadow passes. The shared vehicle
-    // loader's exterior adapter enables them; restore this cabin-only policy.
+    // Explicitly preserve the reviewed no-shadow policy before compilation.
     asset.scene.traverse((object) => {
       if (object instanceof Mesh) {
         object.castShadow = false;
@@ -49,11 +64,18 @@ export function CabinAttachment({
         "Cabin rendering took too long. Please retry.",
       );
     }, 30000);
-    // Compile with the real environment/lights without mounting the cabin into
-    // the visible scene. Exterior remains intact throughout download and setup.
-    void compileRearScene(gl, asset.scene, camera, abort.signal, scene)
+    void compileRearScene(
+      gl,
+      asset.scene,
+      camera,
+      abort.signal,
+      scene,
+      "object",
+    )
       .then(() => {
-        if (live) callbacks.current.onReady(request);
+        if (!live) return;
+        setCompiled({ asset, request, gl, camera, scene });
+        callbacks.current.onReady(request);
       })
       .catch((error: unknown) => {
         if (live)
@@ -71,30 +93,103 @@ export function CabinAttachment({
       window.clearTimeout(timer);
     };
   }, [asset, camera, gl, scene, request]);
+  return (
+    !!asset &&
+    compiled?.asset === asset &&
+    compiled.request === request &&
+    compiled.gl === gl &&
+    compiled.camera === camera &&
+    compiled.scene === scene
+  );
+}
+
+/** One persistent glass owner and one cabin representation in each React commit. */
+export function CabinAttachment({
+  asset,
+  exterior,
+  active,
+  request,
+  onReady,
+  onError,
+  proxy = null,
+  proxyFailed = false,
+  onProxyError,
+  onWindowStatus,
+}: Props) {
+  const scene = useThree((state) => state.scene),
+    invalidate = useThree((state) => state.invalidate);
+  const callbacks = useRef({ onError, onProxyError, onWindowStatus });
+  callbacks.current = { onError, onProxyError, onWindowStatus };
+  const owner = useRef<ReturnType<typeof createCabinWindowOwner> | null>(null);
+  const fullReady = useCabinCompilation(
+    asset,
+    request,
+    (readyRequest) => {
+      if (owner.current) onReady(readyRequest);
+      else
+        onError(
+          readyRequest,
+          "The cabin window roles could not be verified. Return to the exterior and retry.",
+        );
+    },
+    onError,
+  );
+  const proxyReady = useCabinCompilation(
+    proxy,
+    0,
+    () => {},
+    () => callbacks.current.onProxyError?.(),
+  );
+  const [windows, setWindows] = useState<PreparedVehicle | null>(null);
   useLayoutEffect(() => {
-    if (!active) return;
     try {
-      const restore = overrideCabinWindows(exterior.scene);
-      invalidateSceneShadows(scene);
-      invalidate();
+      const current = createCabinWindowOwner(exterior.scene);
+      const unregister = registerVehicleRestoration(exterior.scene, () =>
+        current.dispose(),
+      );
+      owner.current = current;
+      setWindows(exterior);
       return () => {
-        restore();
+        current.dispose();
+        unregister();
+        if (owner.current === current) owner.current = null;
         invalidateSceneShadows(scene);
         invalidate();
       };
-    } catch (error) {
-      callbacks.current.onError(
-        request,
-        error instanceof Error
-          ? error.message
-          : "Cabin windows could not be prepared.",
-      );
+    } catch {
+      callbacks.current.onProxyError?.();
     }
-  }, [active, exterior, scene, invalidate, request]);
-  if (!active) return null;
+  }, [exterior, scene, invalidate]);
+  const selected =
+    windows === exterior
+      ? active && fullReady
+        ? asset
+        : proxyReady && !proxyFailed
+          ? proxy
+          : null
+      : null;
+  useLayoutEffect(() => {
+    if (owner.current?.setTransparent(!!selected))
+      invalidateSceneShadows(scene);
+    invalidate();
+  }, [selected, exterior, scene, invalidate]);
+  useEffect(() => {
+    callbacks.current.onWindowStatus?.(
+      proxyFailed
+        ? "unavailable"
+        : proxyReady && windows === exterior
+          ? "ready"
+          : "loading",
+    );
+  }, [proxyReady, proxyFailed, windows, exterior]);
+  if (!selected) return null;
   return (
     <group scale={exterior.scale} position={exterior.position} dispose={null}>
-      <primitive object={asset.scene} dispose={null} />
+      <primitive
+        key={selected.scene.uuid}
+        object={selected.scene}
+        dispose={null}
+      />
     </group>
   );
 }

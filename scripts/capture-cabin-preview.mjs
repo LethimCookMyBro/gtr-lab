@@ -9,10 +9,11 @@ import { pathToFileURL } from 'node:url';
 import { createAppServer } from '../server.mjs';
 
 import { verifyReleaseAssets } from './verify-release-assets.mjs';
+import { waitForCabinWindowReady } from './cabin-capture-readiness.mjs';
 import { installCabinResourceObserver } from './cabin-resource-observer.mjs';
 import { cabinResourceCohort, assertCabinResourcesReleased } from './cabin-resource-assertions.mjs';
 import {
-  cabinModels, networkFaultHeader, resolveCabinTarget, verifyPublicCabinModels, observeCabinRuntimeBodies,
+  cabinModels, assertCabinModelRequests, networkFaultHeader, resolveCabinTarget, verifyPublicCabinModels, observeCabinRuntimeBodies,
   createLiveCabinFaults, isExpectedCabinRequestFailure, isExpectedCabinBodyError, isExpectedCabinWarning, correlateCabinConsole404,
 } from './cabin-integration-policy.mjs';
 export { resolveCabinTarget, verifyPublicCabinModels, createLiveCabinFaults, isExpectedCabinRequestFailure, isExpectedCabinBodyError, isExpectedCabinWarning, correlateCabinConsole404 } from './cabin-integration-policy.mjs';
@@ -25,8 +26,8 @@ const live = target.mode === 'live';
 const selectedViewport = process.env.R35_QA_VIEWPORT;
 const viewport = selectedViewport === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
 const { output, baseUrl } = target;
-const [cabinModel, exteriorModel] = cabinModels;
-const cabinPath = cabinModel.path, exteriorPath = exteriorModel.path;
+const [cabinModel, exteriorModel, proxyModel] = cabinModels;
+const cabinPath = cabinModel.path, exteriorPath = exteriorModel.path, proxyPath = proxyModel.path;
 const cabinSha256 = cabinModel.sha256, exteriorSha256 = exteriorModel.sha256;
 const cabinBytes = cabinModel.bytes;
 const imageManifest = JSON.parse(await readFile('qa/cabin-preview/realism-images.json', 'utf8'));
@@ -38,11 +39,11 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const report = {
   commit: process.env.GITHUB_SHA, viewport: { name: selectedViewport, ...viewport }, result: 'running',
   mode: target.mode,
-  scope: live ? 'Actual public Railway app after exact HTML/JS/CSS and GLB preflight. A single request-scoped 404 is intercepted; partial downloads use real public bytes under CDP throttling. No local server or application test hooks.' : 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; no application test hooks or alternate scene.',
+  scope: live ? 'Actual public Railway app after exact HTML/JS/CSS and GLB preflight. One request-scoped 404 per optional cabin/proxy is intercepted; partial downloads use real public bytes under CDP throttling. No local server or application test hooks.' : 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; no application test hooks or alternate scene.',
   renderer: 'Chromium ANGLE SwiftShader software WebGL; no physical-device FPS or performance claim',
-  expectedAssets: { cabin: { path: cabinPath, sha256: cabinSha256, bytes: cabinBytes }, exterior: { path: exteriorPath, sha256: exteriorSha256 } },
+  expectedAssets: { cabin: { path: cabinPath, sha256: cabinSha256, bytes: cabinBytes }, exterior: { path: exteriorPath, sha256: exteriorSha256, bytes: exteriorModel.bytes }, proxy: { ...proxyModel } },
   resourceEvidence: [], checks: [], frames: [], requests: [], responses: [], requestFailures: [], console: [], pageErrors: [], runtimeAssetErrors: [], errors: [], networkFaults: [], networkConsole: [], networkResponses: [],
-  remaining: ['Physical-device performance, Safari/WebKit and Android device behavior are not measured', 'Late GPU/decoder callbacks are covered by production unit tests; browser faults specifically exercise aborted streaming responses and route teardown'],
+  remaining: ['Physical-device performance, Safari/WebKit and Android device behavior are not measured', 'Late GPU/decoder callbacks are covered by production unit tests; browser faults specifically exercise aborted streaming responses and route teardown', ...(live ? ['Deterministic held-proxy and full/proxy arrival-order faults run only in the local-production CI matrix; public verification does not alter proxy response bodies or globally throttle initial exterior loading'] : [])],
 };
 await mkdir(output, { recursive: true });
 const save = () => writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
@@ -60,6 +61,7 @@ const requestId = request => {
 const assetCounts = () => ({
   exterior: report.requests.filter(item => item.path === exteriorPath).length,
   cabin: report.requests.filter(item => item.path === cabinPath).length,
+  proxy: report.requests.filter(item => item.path === proxyPath).length,
 });
 const check = async (name, run) => {
   phase = name;
@@ -74,18 +76,23 @@ try {
   assert.equal(cabin.length, cabinBytes, 'Built cabin byte length is exact');
   assert.equal(hash(cabin), cabinSha256, 'Built cabin is the reviewed asset');
   assert.equal(hash(await readFile(`dist${exteriorPath}`)), exteriorSha256, 'Built exterior remains unchanged');
+  const proxy = await readFile(`dist${proxyPath}`);
+  assert.equal(proxy.length, proxyModel.bytes, 'Built proxy byte length is exact');
+  assert.equal(hash(proxy), proxyModel.sha256, 'Built proxy has the exact reviewed identity');
+  const proxyJson = JSON.parse(proxy.subarray(20, 20 + proxy.readUInt32LE(12)).toString('utf8').trim());
+  assert.equal(proxyJson.images?.length ?? 0, 0, 'The lightweight proxy adds no image decodes');
   if (live) {
     report.releaseAssets = await verifyReleaseAssets();
     report.publicModels = await verifyPublicCabinModels();
     await save();
   } else {
   // Delegate every ordinary request to the real production server. Only the
-  // next explicitly armed cabin request gets a deterministic network fault.
+  // next explicitly armed optional-model request gets a deterministic network fault.
   const production = createAppServer();
   const productionHandler = production.listeners('request')[0];
   server = createServer((request, response) => {
     const path = new URL(request.url, 'http://localhost').pathname;
-    if (path !== cabinPath || !nextFault) { void productionHandler(request, response); return; }
+    if (path !== nextFault?.path || !nextFault) { void productionHandler(request, response); return; }
     const fault = nextFault; nextFault = null;
     fault.started = true;
     if (fault.kind === 'missing') {
@@ -94,15 +101,17 @@ try {
       fault.finished = true;
       return;
     }
-    response.writeHead(200, { 'Content-Type': 'model/gltf-binary', 'Content-Length': cabin.length, 'Cache-Control': 'no-store', [networkFaultHeader]: fault.kind });
+    const bytes = path === proxyPath ? proxy : cabin;
+    const partialBytes = path === proxyPath ? 65_536 : 1_048_576;
+    response.writeHead(200, { 'Content-Type': 'model/gltf-binary', 'Content-Length': bytes.length, 'Cache-Control': 'no-store', [networkFaultHeader]: fault.kind });
     // These are genuine model bytes, not an invented percentage. Holding the
     // remaining body makes partial byte progress and cancellation deterministic.
-    response.write(cabin.subarray(0, 1_048_576));
-    fault.sentBytes = 1_048_576;
+    response.write(bytes.subarray(0, partialBytes));
+    fault.sentBytes = partialBytes;
     fault.release = () => {
       fault.released = true;
       fault.clientAlreadyClosed = response.destroyed;
-      if (!response.destroyed) response.end(cabin.subarray(1_048_576));
+      if (!response.destroyed) response.end(bytes.subarray(partialBytes));
       pendingGates.delete(fault);
     };
     response.once('close', () => { fault.closed = true; });
@@ -138,7 +147,7 @@ try {
   page.on('request', request => {
     const path = new URL(request.url()).pathname;
     liveFaults?.onRequest(request);
-    if (path.endsWith('.glb')) report.requests.push({ requestId: requestId(request), phase, path, method: request.method() });
+    if (path.endsWith('.glb')) report.requests.push({ requestId: requestId(request), phase, path, url: request.url(), method: request.method() });
   });
   page.on('requestfailed', request => {
     liveFaults?.onFailed(request);
@@ -146,11 +155,11 @@ try {
   });
   page.on('response', response => {
     const path = new URL(response.url()).pathname;
-    if (![cabinPath, exteriorPath].includes(path)) return;
+    if (!cabinModels.some(model => model.path === path)) return;
     const record = { requestId: requestId(response.request()), phase, path, status: response.status(), injectedFault: response.headers()[networkFaultHeader] };
     if (live) record.injectedFault = report.networkFaults.find(fault => fault.requestId === record.requestId)?.kind;
     else if (record.injectedFault) {
-      const fault = report.networkFaults.findLast(item => item.kind === record.injectedFault && item.started && item.requestId === undefined);
+      const fault = report.networkFaults.findLast(item => item.kind === record.injectedFault && item.path === path && item.started && item.requestId === undefined);
       assert.ok(fault, 'Marked local response belongs to an armed fault');
       fault.requestId = record.requestId;
     }
@@ -244,10 +253,14 @@ try {
     report.checks.push({ name: label, result: comparison.dimensionsMatch && comparison.changedPixels === 0 ? 'passed' : 'failed', pixelComparison: comparison });
     assert.ok(comparison.dimensionsMatch && comparison.changedPixels === 0, `${label}: restore exact exterior pixels`);
   };
-  const readyExterior = async () => {
+  const readyExterior = async ({ window = true } = {}) => {
     await expect(page.getByRole('button', { name: 'Ultimate Silver', exact: true })).toBeEnabled({ timeout: 90_000 });
     await expect(page.locator('.scene-loading, .scene-notice, .render-error')).toHaveCount(0);
     await expect(canvas).toHaveCount(1);
+    if (window) {
+      await waitForCabinWindowReady(page);
+      await expect(page.locator('.cabin-window-status')).toBeVisible();
+    }
     await frames();
   };
   const sameExterior = async expectedRequests => {
@@ -287,10 +300,11 @@ try {
     await expect(page.getByRole('button', { name: 'Rotate', exact: true })).toBeDisabled();
     await assertLayout();
   };
-  const armFault = async kind => {
-    if (live) return liveFaults.arm(kind, phase);
+  const armFault = async (kind, path = cabinPath) => {
+    assert.ok([cabinPath, proxyPath].includes(path), 'Faults target only a reviewed optional model');
+    if (live) return liveFaults.arm(kind, phase, path);
     assert.equal(nextFault, null, 'One network fault at a time');
-    const fault = { kind, phase };
+    const fault = { kind, phase, path };
     report.networkFaults.push(fault); nextFault = fault; return fault;
   };
   const assertPartialDownload = async () => {
@@ -317,12 +331,31 @@ try {
     await frames();
   };
 
+  const pendingWindow = async fault => {
+    await expect.poll(() => fault.started === true && fault.sentBytes === 65_536 && Number.isSafeInteger(fault.requestId), { timeout: 15_000, message: 'Actual proxy response is held after exactly 64 KiB' }).toBe(true);
+    await expect(page.locator('.cabin-window-status')).toBeVisible();
+    await expect(page.locator('.cabin-window-status')).toHaveAttribute('role', 'status');
+    await expect(page.locator('.cabin-window-status')).toHaveText('Loading window view…');
+    await expect(page.getByRole('button', { name: 'Ultimate Silver', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Lights', exact: true })).toBeEnabled();
+    await expect(cameraButton).toBeEnabled();
+    await expect(page.locator('.scene-loading, .scene-notice, .render-error')).toHaveCount(0);
+  };
+
   await check('Initial exterior, WebGL and opt-in boundary', async () => {
+    const fault = live ? null : await armFault('held-stream', proxyPath);
     await page.goto(`${baseUrl}/configurator/premium`, { waitUntil: 'domcontentloaded' });
     assert.equal(new URL(page.url()).pathname, '/configurator/premium');
     await expect(page.getByRole('heading', { name: 'GT-R R35', exact: true })).toBeVisible();
-    await readyExterior();
-    assert.deepEqual(assetCounts(), { exterior: 1, cabin: 0 });
+    await readyExterior({ window: !fault });
+    if (fault) {
+      await pendingWindow(fault);
+      assert.equal(assetCounts().cabin, 0, 'An automatic proxy never starts the full cabin');
+      await capture('window-proxy-pending-controls-available');
+      await fault.release();
+      await waitForCabinWindowReady(page);
+    }
+    assert.deepEqual(assetCounts(), { exterior: 1, cabin: 0, proxy: 1 });
     report.webgl = await canvas.evaluate(element => {
       const gl = element.getContext('webgl2') || element.getContext('webgl');
       if (!gl || gl.isContextLost()) return null;
@@ -338,6 +371,30 @@ try {
     await startObserver();
   });
   const exteriorBefore = await capture('exterior-before');
+
+  await check('Ready proxy through front-side rear-side and opposite-side exterior views', async () => {
+    const before = assetCounts();
+    const views = [];
+    for (const [preset, label] of [['Front ¾', 'window-front-side'], ['Rear ¾', 'window-rear-side'], ['Side', 'window-opposite-side']]) {
+      await cameraButton.click();
+      await page.getByRole('dialog').getByRole('button', { name: preset, exact: true }).click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await waitForCabinWindowReady(page); await frames();
+      if (label === 'window-opposite-side') {
+        // Real production keyboard orbit, approximately half a turn from Side.
+        await canvas.focus();
+        for (let step = 0; step < 20; step++) await page.keyboard.press('Shift+ArrowRight');
+      }
+      views.push(hash(await capture(label)));
+    }
+    assert.equal(new Set(views).size, 3, 'The outside-window evidence includes three different actual views');
+    assert.deepEqual(assetCounts(), before, 'Exterior inspection reuses one proxy without fetching the full cabin');
+    await cameraButton.click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Front ¾', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await sameExterior(1);
+    await comparePixels(exteriorBefore, await capture('exterior-after-window-views'), 'Exterior view inspection resets to the exact ready baseline');
+  });
 
   await check('Delayed download cancel and stale response ignored', async () => {
     const fault = await armFault('held-stream');
@@ -433,6 +490,7 @@ try {
     // this focused 5s bound. Do not mask a stale canvas with the 90s model budget.
     await expect(canvas).toHaveCount(0, { timeout: 5_000 });
     await expect(controls).toHaveCount(0);
+    await expect(page.locator('.cabin-window-status')).toHaveCount(0);
     await expect(page.locator('.reference-view img')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Photo reference · 3D asset pending', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Ultimate Silver', exact: true })).toBeDisabled();
@@ -455,7 +513,7 @@ try {
       await release(); await delay(2_000);
       await photoOnly();
       assert.equal(await watch.evaluate(value => value.state.addedCanvases), 0, 'No late callback resurrected a canvas');
-      assert.deepEqual(assetCounts(), before, 'No late callback restarted either asset download');
+      assert.deepEqual(assetCounts(), before, 'No late callback restarted any of the three asset downloads');
     } finally { await watch.evaluate(value => value.stop()); await watch.dispose(); }
   };
   await check('In-flight cabin switch tears down and all other five stay photographic', async () => {
@@ -505,10 +563,111 @@ try {
     await page.getByRole('button', { name: 'Try again', exact: true }).click(); await readyExterior();
     assert.equal(assetCounts().exterior, before.exterior + 1, 'Explicit recovery downloads exactly one exterior');
     assert.equal(assetCounts().cabin, before.cabin, 'Recovery does not silently opt into the cabin');
+    assert.equal(assetCounts().proxy, before.proxy + 1, 'Explicit viewer recovery downloads exactly one fresh window proxy');
     await capture('context-recovered-exterior');
   });
 
+  await check('Missing window proxy is nonblocking and a fresh Premium entry retries it', async () => {
+    await switchModel('nismo'); await photoOnly();
+    const before = assetCounts();
+    await armFault('missing', proxyPath);
+    await switchModel('premium'); await readyExterior({ window: false });
+    await expect(page.locator('.cabin-window-status')).toHaveAttribute('role', 'status');
+    await expect(page.locator('.cabin-window-status')).toHaveText('Window view unavailable');
+    await expect(page.locator('.cabin-window-status')).toBeVisible();
+    await expect(cameraButton).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Lights', exact: true })).toBeEnabled();
+    assert.equal(assetCounts().proxy, before.proxy + 1, 'Failed proxy is attempted once');
+    assert.equal(assetCounts().cabin, before.cabin, 'Proxy failure cannot opt into the detailed cabin');
+    const unavailableExterior = await capture('window-proxy-unavailable');
+    await openCabin(); await activeCabin(); await capture('full-cabin-with-proxy-unavailable');
+    const cohort = await activeResources('full-cabin-independent-of-proxy-failure');
+    await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();
+    await expect(controls).toHaveCount(0);
+    await releasedResources(cohort, 'Proxy failure does not weaken full-cabin resource teardown');
+    await comparePixels(unavailableExterior, await capture('proxy-unavailable-after-back'), 'Failed proxy preserves the same exterior after full-cabin exit');
+    await switchModel('nismo'); await photoOnly();
+    await switchModel('premium'); await readyExterior();
+    assert.equal(assetCounts().proxy, before.proxy + 2, 'Fresh Premium entry retries the unavailable proxy exactly once');
+    await comparePixels(exteriorBefore, await capture('window-proxy-recovered'), 'Fresh proxy recovery restores the ready exterior baseline');
+  });
+
+  if (!live) {
+    await check('In-flight window proxy model switch cancels without late resurrection', async () => {
+      await switchModel('nismo'); await photoOnly();
+      const fault = await armFault('held-stream', proxyPath);
+      await switchModel('premium'); await readyExterior({ window: false }); await pendingWindow(fault);
+      const before = assetCounts();
+      await switchModel('nismo'); await photoOnly();
+      await watchNoResurrection(() => releaseAborted(fault));
+      assert.equal(assetCounts().cabin, before.cabin, 'Proxy cancellation never starts a full-cabin load');
+      await switchModel('premium'); await readyExterior();
+      assert.equal(assetCounts().proxy, before.proxy + 1, 'Route return starts one new proxy after cancelling the prior attempt');
+    });
+
+    await check('In-flight window proxy context-loss cancel and explicit viewer retry', async () => {
+      await switchModel('nismo'); await photoOnly();
+      const fault = await armFault('held-stream', proxyPath);
+      await switchModel('premium'); await readyExterior({ window: false }); await pendingWindow(fault);
+      const before = assetCounts();
+      const supported = await canvas.evaluate(element => {
+        const gl = element.getContext('webgl2') || element.getContext('webgl');
+        const extension = gl?.getExtension('WEBGL_lose_context');
+        if (!extension) return false; extension.loseContext(); return true;
+      });
+      assert.equal(supported, true, 'Standard context-loss extension exists while the proxy is pending');
+      await expect(page.locator('.render-error')).toContainText('graphics connection was lost');
+      await expect(canvas).toHaveCount(0, { timeout: 5_000 });
+      await expect(controls).toHaveCount(0);
+      await releaseAborted(fault);
+      await page.getByRole('button', { name: 'Try again', exact: true }).click(); await readyExterior();
+      assert.equal(assetCounts().exterior, before.exterior + 1, 'Explicit recovery starts one new exterior');
+      assert.equal(assetCounts().proxy, before.proxy + 1, 'Explicit recovery starts one fresh proxy attempt');
+      assert.equal(assetCounts().cabin, before.cabin, 'Pending-proxy recovery does not opt into the full cabin');
+      await comparePixels(exteriorBefore, await capture('pending-proxy-context-recovered'), 'Context retry has no stale proxy state');
+    });
+
+    await check('Full cabin arrives before proxy and late proxy remains hidden', async () => {
+      await switchModel('nismo'); await photoOnly();
+      const fault = await armFault('held-stream', proxyPath);
+      await switchModel('premium'); await readyExterior({ window: false }); await pendingWindow(fault);
+      const before = assetCounts();
+      await openCabin(); await activeCabin();
+      const fullBefore = await capture('full-before-late-proxy');
+      const cohort = await activeResources('full-before-late-proxy');
+      await expect(page.locator('.cabin-window-status')).toHaveText('Loading window view…');
+      await fault.release(); await waitForCabinWindowReady(page); await activeCabin();
+      await comparePixels(fullBefore, await capture('full-after-late-proxy'), 'Late proxy does not leak through the active full cabin');
+      assert.equal(assetCounts().proxy, before.proxy, 'Detailed-cabin entry does not restart the pending proxy');
+      await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();
+      await expect(controls).toHaveCount(0);
+      await releasedResources(cohort, 'Out-of-order full-cabin teardown still closes every bitmap and texture');
+      await waitForCabinWindowReady(page);
+      assert.equal(assetCounts().proxy, before.proxy, 'Full-cabin exit reuses the retained proxy');
+      await comparePixels(exteriorBefore, await capture('late-proxy-exterior-after-back'), 'Late proxy restores the ready exterior on full-cabin exit');
+    });
+
+    await check('Proxy arrives while full cabin is in-flight and cancellation restores it', async () => {
+      await switchModel('nismo'); await photoOnly();
+      const proxyFault = await armFault('held-stream', proxyPath);
+      await switchModel('premium'); await readyExterior({ window: false }); await pendingWindow(proxyFault);
+      const fullFault = await armFault('held-stream');
+      await openCabin(); await assertPartialDownload();
+      const before = assetCounts();
+      await proxyFault.release(); await waitForCabinWindowReady(page);
+      await assertPartialDownload();
+      await capture('proxy-ready-full-still-loading');
+      await controls.getByRole('button', { name: 'Cancel cabin loading', exact: true }).click();
+      await expect(controls).toHaveCount(0); await expect(cameraButton).toBeFocused();
+      await releaseAborted(fullFault);
+      await waitForCabinWindowReady(page);
+      assert.deepEqual(assetCounts(), before, 'Opposite arrival order and cancellation do not restart either optional model');
+      await comparePixels(exteriorBefore, await capture('proxy-ready-after-full-cancel'), 'Full-cabin cancellation preserves the newly ready proxy');
+    });
+  }
+
   await check('Runtime asset identity and error hygiene', async () => {
+    assertCabinModelRequests(report.requests, baseUrl);
     await runtimeBodies.verify(report.responses, report.requestFailures);
     const finalResources = await resourceSnapshot();
     assert.deepEqual(finalResources.issues, [], 'Resource observer has no coverage gaps');
@@ -518,14 +677,18 @@ try {
     for (const bitmap of finalResources.bitmaps.filter(item => candidateHashes.has(item.sourceSha256))) assert.equal(bitmap.closeCalls, 1, 'Every completed candidate load remains closed exactly once at final hygiene');
     await writeFile(`${output}/resource-observation.json`, JSON.stringify(finalResources, null, 2));
     const missingResponses = report.responses.filter(item => item.status === 404);
-    assert.equal(missingResponses.length, 1, 'Exactly one intentional cabin 404');
-    assert.equal(missingResponses[0].injectedFault, 'missing', 'The only 404 is the exact armed request');
-    assert.equal(missingResponses[0].requestId, report.networkFaults.find(item => item.kind === 'missing')?.requestId, 'The 404 belongs to the missing fault');
-    correlateCabinConsole404(report.console, report.networkConsole, report.networkResponses, baseUrl + cabinPath);
+    assert.equal(missingResponses.length, 2, 'Exactly one intentional full-cabin and one proxy 404');
+    for (const path of [cabinPath, proxyPath]) {
+      const missing = missingResponses.filter(item => item.path === path);
+      assert.equal(missing.length, 1, 'Each optional model has exactly one injected 404');
+      assert.equal(missing[0].injectedFault, 'missing', 'Every 404 is an armed request');
+      assert.equal(missing[0].requestId, report.networkFaults.find(item => item.kind === 'missing' && item.path === path)?.requestId, 'The 404 belongs to its exact path and armed request');
+    }
+    correlateCabinConsole404(report.console, report.networkConsole, report.networkResponses, [baseUrl + cabinPath, baseUrl + proxyPath]);
     assert.deepEqual(report.runtimeAssetErrors, [], 'Every completed runtime asset keeps its exact identity');
     assert.deepEqual(report.pageErrors, [], 'No uncaught application errors');
     assert.deepEqual(report.console.filter(item => item.type === 'error' && !item.intentional404), [], 'No unexpected console errors');
-    const unexpectedFailures = report.requestFailures.filter(item => !isExpectedCabinRequestFailure(item, report.responses, cabinPath));
+    const unexpectedFailures = report.requestFailures.filter(item => !isExpectedCabinRequestFailure(item, report.responses));
     assert.deepEqual(unexpectedFailures, [], 'Only correlated, deliberately injected cabin faults may abort');
     assert.equal(live ? liveFaults.pending : nextFault, null, 'Every armed network fault was exercised');
     assert.deepEqual(report.console.filter(item => item.type === 'warning' && !isExpectedCabinWarning(item)), [], 'No disposal fallback or unexpected warnings');

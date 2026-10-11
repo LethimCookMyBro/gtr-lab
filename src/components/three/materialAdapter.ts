@@ -21,8 +21,27 @@ import type { MaterialRole, MaterialRoles, VectorTuple } from "./sceneHelpers";
 type Binding = { material: MeshStandardMaterial; role: MaterialRole };
 export type PreparedVehicle = ReturnType<typeof prepareVehicle>;
 
+// React DOM's loader owner and R3F's scene owner can tear down in either order.
+// Restore temporary bindings before collecting the original owned materials.
+const restorations = new WeakMap<Object3D, Set<() => void>>();
+export function registerVehicleRestoration(
+  root: Object3D,
+  restore: () => void,
+) {
+  const callbacks = restorations.get(root) ?? new Set<() => void>();
+  callbacks.add(restore);
+  restorations.set(root, callbacks);
+  return () => {
+    callbacks.delete(restore);
+    if (!callbacks.size) restorations.delete(root);
+  };
+}
+
 /** Owns this load's geometry/textures. Call once on disposal, not on cached useGLTF assets. */
 export function disposeVehicleObject(root: Object3D) {
+  const callbacks = restorations.get(root);
+  restorations.delete(root);
+  callbacks?.forEach((restore) => restore());
   const geometries = new Set<BufferGeometry>();
   const materials = new Set<Material>();
   const textures = new Set<Texture>();
@@ -61,6 +80,7 @@ export function prepareVehicle(
   source: Object3D,
   roles: MaterialRoles,
   disabledEmissive: string[] = [],
+  nativeCabin = false,
 ) {
   const scene = clone(source);
   const bindings: Binding[] = [];
@@ -68,8 +88,8 @@ export function prepareVehicle(
   const copies = new Map<Material, Map<string, Material>>();
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return;
-    object.castShadow = true;
-    object.receiveShadow = true;
+    object.castShadow = !nativeCabin;
+    object.receiveShadow = !nativeCabin;
     const declaredMesh = (names: string[] = []) =>
       names.some(
         (name) => name === object.name || name === object.userData.name,
@@ -147,11 +167,17 @@ export function prepareVehicle(
       : adapt(object.material);
   });
   scene.updateMatrixWorld(true);
-  const bounds = new Box3().setFromObject(scene);
-  const normalized = normalizeBounds({
-    min: bounds.min.toArray() as VectorTuple,
-    max: bounds.max.toArray() as VectorTuple,
-  });
+  // Cabin geometry already shares the exterior's native metre coordinate frame.
+  // Never derive a second transform from either cabin's own bounds.
+  const normalized = nativeCabin
+    ? { scale: 1, position: [0, 0, 0] as VectorTuple }
+    : (() => {
+        const bounds = new Box3().setFromObject(scene);
+        return normalizeBounds({
+          min: bounds.min.toArray() as VectorTuple,
+          max: bounds.max.toArray() as VectorTuple,
+        });
+      })();
   let disposed = false;
   return {
     scene,

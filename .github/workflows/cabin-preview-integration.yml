@@ -6,6 +6,11 @@ on:
       - 'src/**'
       - 'scripts/capture-cabin-preview.mjs'
       - 'scripts/cabin-integration-policy.mjs'
+      - 'scripts/cabin-capture-readiness.mjs'
+      - 'tests/cabin-capture-readiness.test.mjs'
+      - 'tests/prepare-cabin-proxy.test.mjs'
+      - 'qa/cabin-preview/r35-exterior-cabin-proxy.glb.gz'
+      - 'qa/cabin-preview/exterior-proxy-verification.json'
       - 'scripts/cabin-resource-observer.mjs'
       - 'scripts/cabin-resource-assertions.mjs'
       - 'qa/cabin-preview/realism-images.json'
@@ -60,10 +65,11 @@ jobs:
         run: |
           node --check scripts/capture-cabin-preview.mjs
           node --check scripts/cabin-integration-policy.mjs
-          npx vitest run tests/cabin-integration-network.test.mjs tests/cabin-live-policy.test.mjs tests/verify-release-assets.test.mjs --pool=threads --maxWorkers=2 --minWorkers=1
+          node --check scripts/cabin-capture-readiness.mjs
+          npx vitest run tests/cabin-integration-network.test.mjs tests/cabin-live-policy.test.mjs tests/cabin-capture-readiness.test.mjs tests/verify-release-assets.test.mjs --pool=threads --maxWorkers=1 --minWorkers=1
       - run: npx playwright install --with-deps chromium
         timeout-minutes: 5
-      - name: Exercise cabin opt-in, recovery, seats and teardown
+      - name: Exercise window proxy, cabin opt-in, arrival order, recovery and teardown
         run: node scripts/capture-cabin-preview.mjs
         timeout-minutes: 16
         env:

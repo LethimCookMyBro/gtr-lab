@@ -2,6 +2,8 @@
 
 The application candidate now uses the separately pinned `r35-cabin-dashboard.glb.gz` (expanded SHA-256 `5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326`). See [dashboard geometry provenance](DASHBOARD_GEOMETRY_PROVENANCE.md) for its exact source lineage, bounds and limitations. The material-only `r35-cabin-realism.glb.gz` and all earlier assets below remain unchanged historical inputs. The standalone inspector comparisons described below remain frozen; they are not rendered acceptance of the new app candidate.
 
+The exterior-window-only static proxy is separately pinned in `r35-exterior-cabin-proxy.glb.gz` and prepared as `/models/r35-exterior-cabin-proxy-49d7c2ab.glb`. See [exterior proxy provenance](EXTERIOR_PROXY_PROVENANCE.md) for exact identities, original-source reduction, shared native coordinate frame, shadow/visibility contract and remaining runtime verification. It does not replace or change the full inside-view cabin.
+
 # Contained spatial cabin browser comparison
 
 This separate preview is outside application routes and build inputs. It does not deploy a cabin to the live app. Candidate publication and later app integration require separate review.

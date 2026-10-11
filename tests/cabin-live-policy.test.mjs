@@ -5,6 +5,8 @@ import * as driver from '../scripts/capture-cabin-preview.mjs';
 
 const origin = 'https://gtr-lab-production.up.railway.app';
 const cabinUrl = `${origin}/models/r35-cabin-dashboard-5c0a9dca.glb`;
+const proxyPath = '/models/r35-exterior-cabin-proxy-49d7c2ab.glb';
+const proxyUrl = origin + proxyPath;
 const environment = {
   GITHUB_ACTIONS: 'true', R35_ALLOW_CABIN_INTEGRATION: '1', R35_QA_VIEWPORT: 'desktop',
 };
@@ -113,15 +115,18 @@ describe('exact public model preflight', () => {
       calls.push({ url, options });
       const path = new URL(url).pathname;
       const manifest = JSON.parse(await readFile('modeldata/manifest.json', 'utf8'));
-      const bytes = path.includes('cabin')
+      const bytes = path === proxyPath
+        ? gunzipSync(await readFile('qa/cabin-preview/r35-exterior-cabin-proxy.glb.gz'))
+        : path.includes('cabin')
         ? gunzipSync(await readFile('qa/cabin-preview/r35-cabin-dashboard.glb.gz'))
         : Buffer.concat(await Promise.all(manifest[0].chunks.map(chunk => readFile(`modeldata/${chunk.path}`))));
       return new Response(bytes, { status: 200, headers: { 'content-type': 'model/gltf-binary', 'content-length': String(bytes.length) } });
     };
     const report = await api('verifyPublicCabinModels')({ fetchImpl });
-    expect(report).toHaveLength(2);
+    expect(report).toHaveLength(3);
     expect(report[0]).toMatchObject({ path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19170816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' });
     expect(report[1]).toMatchObject({ path: '/models/ciasny-r35.glb', bytes: 8296356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' });
+    expect(report[2]).toEqual({ path: proxyPath, url: proxyUrl, bytes: 956368, sha256: '49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347' });
     expect(calls.every(({url, options}) => url.startsWith(`${origin}/models/`) && options.redirect === 'error' && options.signal instanceof AbortSignal)).toBe(true);
   });
   it('rejects a same-length cabin with one changed byte', async () => {
@@ -177,5 +182,47 @@ describe('strict public fault and warning accounting', () => {
     const item = { type: 'error', text: 'app says 404', location: { url: cabinUrl } };
     api('correlateCabinConsole404')([item], [], [], cabinUrl);
     expect(item.intentional404).toBe(false);
+  });
+});
+
+
+describe('public proxy faults stay narrowly scoped', () => {
+  it('allows one exact proxy GET 404 without affecting the exterior or detailed cabin', async () => {
+    const f = liveFixture();
+    const fault = await f.adapter.arm('missing', 'Missing window proxy is nonblocking and a fresh Premium entry retries it', proxyPath);
+    expect(f.page.route).toHaveBeenCalledWith(proxyUrl, expect.any(Function), { times: 1 });
+    f.adapter.onRequest(f.request);
+    expect(fault.requestId).toBeUndefined();
+    const handler = f.page.route.mock.calls[0][1];
+    const fulfill = vi.fn();
+    await handler({ request: () => ({ ...f.request, id: 9, url: () => proxyUrl }), fulfill });
+    expect(fault).toMatchObject({ requestId: 9, path: proxyPath, started: true, finished: true });
+    expect(fulfill).toHaveBeenCalledWith(expect.objectContaining({ status: 404 }));
+    expect(f.cdp.send).not.toHaveBeenCalled();
+    await f.adapter.dispose();
+    expect(f.page.unroute).toHaveBeenCalledWith(proxyUrl, handler);
+  });
+  it.each(['/models/ciasny-r35.glb', '/models/unknown.glb', proxyPath + '?other'])('rejects substituted public fault path %s before effects', async path => {
+    const f = liveFixture();
+    await expect(f.adapter.arm('missing', 'missing', path)).rejects.toThrow(/exact cabin or window proxy/);
+    expect(f.page.route).not.toHaveBeenCalled();
+    expect(f.cdp.send).not.toHaveBeenCalled();
+  });
+  it('does not globally throttle a proxy and accidentally block initial exterior loading', async () => {
+    const f = liveFixture();
+    await expect(f.adapter.arm('held-stream', 'pending proxy', proxyPath)).rejects.toThrow(/limited to the detailed cabin/);
+    expect(f.page.route).not.toHaveBeenCalled();
+    expect(f.cdp.send).not.toHaveBeenCalled();
+  });
+  it('correlates full and proxy 404 console entries independently without resetting earlier proof', () => {
+    const text = 'Failed to load resource: the server responded with a status of 404 (Not Found)';
+    const urls = [cabinUrl, proxyUrl];
+    const records = urls.map(url => ({ type: 'error', text, location: { url } }));
+    const entries = urls.map((url, i) => ({ source: 'network', level: 'error', text, url, networkRequestId: `cdp.${i}` }));
+    const responses = urls.map((url, i) => ({ requestId: `cdp.${i}`, url, status: 404, injectedFault: 'missing' }));
+    api('correlateCabinConsole404')(records, entries, responses, urls);
+    expect(records.map(item => item.intentional404)).toEqual([true, true]);
+    api('correlateCabinConsole404')(records, entries, [{ ...responses[0], url: proxyUrl }, { ...responses[1], url: cabinUrl }], urls);
+    expect(records.map(item => item.intentional404)).toEqual([false, false]);
   });
 });

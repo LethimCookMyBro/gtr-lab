@@ -1,0 +1,119 @@
+name: Private fixed-source capture-path discriminator
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose-capture-path.mjs'
+      - 'scripts/capture-path-policy.mjs'
+      - 'tests/capture-path-*.node.mjs'
+      - 'qa/capture-path-request.json'
+      - '.github/workflows/capture-path-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: capture-path-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-capture-path]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+        scale: [css, device]
+    env:
+      R35_CAPTURE_VIEWPORT: ${{ matrix.viewport }}
+      R35_CAPTURE_SCALE: ${{ matrix.scale }}
+      R35_CAPTURE_APP_ROOT: candidate
+      R35_CAPTURE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve exact reviewed opt-in before candidate/browser/server setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile, appendFile, mkdir, writeFile} from 'node:fs/promises';
+          import {resolveCaptureRequest} from './scripts/capture-path-policy.mjs';
+          const request=JSON.parse(await readFile('qa/capture-path-request.json','utf8'));
+          const values=resolveCaptureRequest(request, process.env);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          await mkdir('capture-path-results',{recursive:true});
+          await writeFile(`capture-path-results/request-${process.env.R35_CAPTURE_VIEWPORT}-${process.env.R35_CAPTURE_SCALE}.json`,JSON.stringify({request,resolved:values,harnessSha:process.env.GITHUB_SHA},null,2));
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_CAPTURE_SOURCE_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Preserve exact fixed source; verify without browser or sockets
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "$R35_CAPTURE_SOURCE_SHA"
+          node --input-type=module -e "import assert from 'node:assert/strict'; import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs'; assert.equal((await applicationIdentity('candidate')).sha256,process.env.R35_CAPTURE_SOURCE_TREE)"
+          node --check scripts/diagnose-capture-path.mjs
+          node --check scripts/capture-path-policy.mjs
+          node --test tests/capture-path-*.node.mjs
+      - run: npm ci
+      - name: Build exact fixed candidate
+        working-directory: candidate
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Fresh process capture-scale lane; original deadlines and native pixels retained
+        run: node scripts/diagnose-capture-path.mjs
+        timeout-minutes: 16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capture-path-${{ matrix.viewport }}-${{ matrix.scale }}-${{ github.sha }}
+          path: capture-path-results/
+          retention-days: 14
+          if-no-files-found: warn
+  compare:
+    needs: capture
+    if: always() && github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-capture-path]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: capture-path-*-${{ github.sha }}
+          path: capture-path-results
+          merge-multiple: true
+      - name: Require equal native app buffers across lanes; retain each failure
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,writeFile} from 'node:fs/promises';
+          import {compareCaptureLanes} from './scripts/capture-path-policy.mjs';
+          const reports=[],missing=[];
+          for(const viewport of ['desktop','mobile']) for(const scale of ['css','device']) {
+            const path=`capture-path-results/${viewport}-${scale}/report.json`;
+            try {reports.push(JSON.parse(await readFile(path,'utf8')));} catch(error) {missing.push({path,error:String(error)});}
+          }
+          const summary={...compareCaptureLanes(reports),missing};
+          await writeFile('capture-path-results/comparison.json',JSON.stringify(summary,null,2));
+          console.log(JSON.stringify(summary,null,2));
+          if(missing.length || summary.issues.length || reports.some(r=>r.result!=='observed')) process.exitCode=1;
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capture-path-comparison-${{ github.sha }}
+          path: capture-path-results/comparison.json
+          retention-days: 14
+          if-no-files-found: warn

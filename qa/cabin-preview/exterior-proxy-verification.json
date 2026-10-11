@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "summary": {
+    "mesh_nodes": 8,
+    "mesh_definitions": 8,
+    "triangles": 37749,
+    "primitives": 8,
+    "materials": 8,
+    "textures": 0,
+    "images": 0,
+    "binary_bytes": 921704
+  },
+  "sourceSHA256": "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
+  "sha256": "49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347",
+  "bytes": 956368,
+  "gzipBytes": 616928,
+  "gzipSHA256": "bd14ba078e08d762158fb3fcc225acae6d2369b7d2c1f2ad1a128f404147733e",
+  "sourceUsedVertexBoundsNative": [
+    [-0.810429036617279, 0.19130000472068787, -1.687000036239624],
+    [0.810429036617279, 1.363020896911621, 1.0580003261566162]
+  ],
+  "proxyBoundsNative": [
+    [-0.8105434775352478, 0.1911861002445221, -1.687026858329773],
+    [0.8103712201118469, 1.3625085353851318, 1.0580068826675415]
+  ],
+  "maxBoundsDeltaMetres": 0.0005123615264892578,
+  "nativeFrameBakedNoRecenter": true,
+  "zeroTextureMemory": true,
+  "shadowExtrasOnlyRuntimeEnforcementRequired": true
+}

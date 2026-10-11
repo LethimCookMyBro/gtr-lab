@@ -11,6 +11,7 @@ export function compileRearScene(
   camera: Camera,
   signal: AbortSignal,
   targetScene?: Scene,
+  programScope: "renderer" | "object" = "renderer",
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -31,11 +32,32 @@ export function compileRearScene(
     }
     signal.addEventListener("abort", abort, { once: true });
     try {
-      renderer.compile(scene, camera, targetScene);
+      const materials = renderer.compile(scene, camera, targetScene);
       const context = renderer.getContext();
       const extension = context.getExtension("KHR_parallel_shader_compile");
-      // Include the already-created studio programs as well as the vehicle.
-      const pending = (renderer.info.programs ?? []).map((owner) => ({
+      // Shared renderer readiness includes studio programs. Optional assets own
+      // only the programs compiled for their materials: a concurrent cabin may
+      // be cancelled and disposed while this separate proxy barrier is pending.
+      // Snapshot handles now, never look up disposed material properties later.
+      const programs =
+        programScope === "object"
+          ? [
+              ...new Set(
+                [...materials].map((material) => {
+                  const properties = renderer.properties.get(material) as {
+                    currentProgram?: NonNullable<
+                      WebGLRenderer["info"]["programs"]
+                    >[number];
+                  };
+                  const program = properties.currentProgram;
+                  if (!program)
+                    throw new Error("The 3D preparation program is missing.");
+                  return program;
+                }),
+              ),
+            ]
+          : (renderer.info.programs ?? []);
+      const pending = programs.map((owner) => ({
         owner,
         program: owner.program as WebGLProgram,
       }));

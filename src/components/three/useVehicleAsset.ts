@@ -90,15 +90,27 @@ export function useVehicleAsset(
   onError: (message: string) => void,
   disabledEmissive: string[] = [],
   onLoadState?: (state: HomeSceneLoadState) => void,
+  nativeCabin = false,
+  request: string | number = 0,
 ) {
-  const [asset, setAsset] = useState<PreparedVehicle | null>(null);
+  const identity = JSON.stringify([
+    url,
+    roles,
+    disabledEmissive,
+    nativeCabin,
+    request,
+  ]);
+  const [loaded, setLoaded] = useState<{
+    identity: string;
+    asset: PreparedVehicle;
+  } | null>(null);
   const callbacks = useRef({ onProgress, onError, onLoadState });
   callbacks.current = { onProgress, onError, onLoadState };
   const rolesKey = JSON.stringify(roles);
   const disabledEmissiveKey = JSON.stringify(disabledEmissive);
   useEffect(() => {
     if (!url) {
-      setAsset(null);
+      setLoaded(null);
       return;
     }
     let live = true;
@@ -111,7 +123,7 @@ export function useVehicleAsset(
           "The model took too long to load. Please retry.",
         );
     }, 45000);
-    setAsset(null);
+    setLoaded(null);
     callbacks.current.onProgress(0);
     callbacks.current.onLoadState?.({ phase: "downloading", loadedBytes: 0 });
     // GLTFLoader deliberately catches texture errors and can resolve geometry
@@ -163,10 +175,11 @@ export function useVehicleAsset(
             gltf.scene,
             JSON.parse(rolesKey) as MaterialRoles,
             JSON.parse(disabledEmissiveKey) as string[],
+            nativeCabin,
           );
           callbacks.current.onProgress(99);
           callbacks.current.onLoadState?.({ phase: "preparing" });
-          setAsset(owned);
+          setLoaded({ identity, asset: owned });
         } catch (error) {
           disposeVehicleObject(gltf.scene);
           throw error;
@@ -187,6 +200,7 @@ export function useVehicleAsset(
       window.clearTimeout(timeout);
       owned?.dispose();
     };
-  }, [url, rolesKey, disabledEmissiveKey]);
-  return asset;
+  }, [url, rolesKey, disabledEmissiveKey, nativeCabin, request, identity]);
+  // Never expose a previous route/request between render and effect cleanup.
+  return loaded?.identity === identity ? loaded.asset : null;
 }

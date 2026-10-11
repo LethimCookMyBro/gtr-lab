@@ -6,8 +6,17 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { ConfiguratorPage } from "../src/pages/ConfiguratorPage";
 import { AudioProvider } from "../src/hooks/useAudio";
 import { useConfigurator } from "../src/stores/configurator";
+const viewer = vi.hoisted(() => ({
+  props: null as
+    import("../src/components/three/types").VehicleSceneProps | null,
+}));
 vi.mock("../src/components/three/VehicleScene", () => ({
-  default: () => <div>WebGL verified separately</div>,
+  default: (
+    props: import("../src/components/three/types").VehicleSceneProps,
+  ) => {
+    viewer.props = props;
+    return <div>WebGL verified separately</div>;
+  },
 }));
 const state = () => useConfigurator.getState();
 const setup = (id = "premium") =>
@@ -22,6 +31,7 @@ const setup = (id = "premium") =>
   );
 beforeEach(() => {
   state().reset();
+  viewer.props = null;
   vi.stubGlobal("matchMedia", () => ({
     matches: true,
     addEventListener() {},
@@ -131,3 +141,57 @@ it.each(["loading", "active"] as const)(
     expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
   },
 );
+
+it("announces window readiness without gating exterior controls or changing cabin state", async () => {
+  setup();
+  await waitFor(() => expect(viewer.props).not.toBeNull());
+  act(() =>
+    useConfigurator.setState({
+      ready: true,
+      paintAvailable: true,
+      lightsAvailable: true,
+    }),
+  );
+  expect(screen.getByText("Loading window view…")).toBeTruthy();
+  const lights = screen.getByRole("button", { name: "Lights" });
+  expect(lights.hasAttribute("disabled")).toBe(false);
+  const provenance = screen.getByRole("button", { name: /Model provenance/ });
+  expect(
+    provenance.parentElement
+      ?.querySelector(".cabin-window-status")
+      ?.getAttribute("role"),
+  ).toBe("status");
+  expect(
+    provenance.contains(document.querySelector(".cabin-window-status")),
+  ).toBe(false);
+  expect(
+    screen.getByRole("button", {
+      name: "Model provenance & limitations",
+    }),
+  ).toBe(provenance);
+  act(() => viewer.props!.onWindowStatus!("unavailable"));
+  expect(screen.getByText("Window view unavailable")).toBeTruthy();
+  expect(lights.hasAttribute("disabled")).toBe(false);
+  expect(state().ready).toBe(true);
+  expect(state().error).toBeNull();
+  expect(state().cabin.phase).toBe("closed");
+  act(() => viewer.props!.onWindowStatus!("ready"));
+  expect(screen.getByText("Window view ready · Simplified cabin")).toBeTruthy();
+});
+
+it("hides optional window status on a model switch and ignores the old model callback", async () => {
+  setup();
+  await waitFor(() => expect(viewer.props).not.toBeNull());
+  const oldStatus = viewer.props!.onWindowStatus!;
+  await userEvent
+    .setup()
+    .click(screen.getByRole("button", { name: "Switch model" }));
+  await userEvent
+    .setup()
+    .click(
+      screen.getByRole("button", { name: /NISMO Precision under pressure/ }),
+    );
+  act(() => oldStatus("ready"));
+  expect(document.querySelector(".cabin-window-status")).toBeNull();
+  expect(state().selectedVariant).toBe("nismo");
+});
