@@ -27,7 +27,7 @@ export function installPreparationObserver({ modelPath, modelJson, maxEvents = 1
     return { pathname: location.pathname, maskCount: masks.length,
       maskOpaque: Boolean(mask && stage && rect && ancestorOpaque && backgroundOpaque && rect.x <= stage.x + .5 && rect.y <= stage.y + .5 && rect.right >= stage.right - .5 && rect.bottom >= stage.bottom - .5),
       maskText: mask?.textContent.trim() ?? null, ready: preparation?.phase === 'ready', preparation: preparation ?? null,
-      legacyLoading: Boolean(document.querySelector('.cabin-load-status, .cabin-load-indeterminate')),
+      legacyLoading: [...document.querySelectorAll('.cabin-load-status, .cabin-load-indeterminate')].some(element => element.closest('.scene-loading') !== mask || preparation?.phase !== 'loading' || Boolean(element.closest('footer[aria-label=\"Cabin preview controls\"]'))),
       cabinRail: Boolean(document.querySelector('footer[aria-label="Cabin preview controls"]')),
       seat: document.querySelector('.cabin-seat-choices [aria-pressed="true"]')?.textContent.trim() ?? null,
       dimensions: state?.dimensions ?? null };

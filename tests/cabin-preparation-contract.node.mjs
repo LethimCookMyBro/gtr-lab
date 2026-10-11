@@ -3,6 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { EventEmitter } from 'node:events';
+import { installCabinNetworkCapture, networkBuffers, failureBody } from '../scripts/cabin-preparation-network.mjs';
 import { preparationTree, preparationContract, models, budgets, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment,
   assertResidentWorkUnchanged, assertCurrentGeometry, assertPreparationTimeline, assertReadableControls, assertCaseSourceClosure } from '../scripts/cabin-preparation-policy.mjs';
 import { installFunctionalCaptureObserver } from '../scripts/cabin-preparation-readiness.generated.mjs';
@@ -138,36 +140,52 @@ test('expired deadlines never regain a one-millisecond success window', () => {
   for (const at of [21000, 21001, Infinity, NaN, 999]) assert.throws(() => remainingBudget(window, at));
   assert.throws(() => readinessWindow(180000, 0)); assert.throws(() => { window.deadline++; }, TypeError);
 });
+const modelUrl = 'http://127.0.0.1:4178' + models[0].path;
 const networkEvidence = () => ({
-  row: { name: 'direct-entry-residency', errors: [], pageErrors: [], requestFailures: [], expectedCancellations: [], expectedFailures: [], observation: { totals: { fetches: 1 } },
-    runtimeBodies: [{ path: models[0].path, requestId: 1, startedAt: 1000, status: 200, bytes: models[0].bytes, sha256: models[0].sha256 }],
-    network: [{ requestId: 'native-1', wallTime: 1, status: 200, headers: { 'Content-Encoding': 'gzip', 'Content-Length': '9798606' }, encodedBodyBytes: 9798606, encodedTotalBytes: 9799000, cached: false }] }, wire: { wireEntityBytes: 9798606 },
+  row: { name: 'direct-entry-residency', errors: [], pageErrors: [], requestFailures: [], expectedCancellations: [], expectedFailures: [], observation: { totals: { fetches: 1 } }, runtimeBodies: [], networkObserver: { buffers: { ...networkBuffers }, closed: true, fetchEnableCount: 0, fetchDisableCount: 0 },
+    browserModelRequests: [{ requestId: 1, url: modelUrl, status: 200 }],
+    modelBodies: [{ path: models[0].path, requestId: 'native-1', source: 'CDP.Network.getResponseBody', status: 200, bytes: models[0].bytes, sha256: models[0].sha256 }],
+    network: [{ requestId: 'native-1', sent: true, url: modelUrl, terminal: 'finished', wallTime: 1, status: 200, headers: { 'Content-Encoding': 'gzip', 'Content-Length': '9798606' }, encodedBodyBytes: 9798606, encodedTotalBytes: 9799000, cached: false }] }, wire: { wireEntityBytes: 9798606 },
 });
-test('every successful browser model body requires complete exact one-to-one transport evidence', () => {
+test('every successful model body requires complete exact one-to-one native transport evidence', () => {
   const { row, wire } = networkEvidence(); assert.equal(assertCaseSourceClosure(row, wire).verifiedDecodedBodies, 1);
   for (const mutate of [
     r => r.errors.push('Unpinned response origin https://unreviewed.example'), r => { r.network = []; }, r => { delete r.network[0].encodedTotalBytes; },
     r => { r.network[0].cached = true; }, r => { r.network[0].headers['Content-Encoding'] = 'identity'; }, r => { r.network[0].headers['Content-Length'] = '1'; },
-    r => { r.runtimeBodies[0].sha256 = 'a'.repeat(64); }, r => { r.runtimeBodies[0].error = 'Protocol error: No resource'; },
-    r => { r.runtimeBodies = []; }, r => { r.network.push(structuredClone(r.network[0])); }, r => { r.observation.totals.fetches = 2; },
-    r => { r.runtimeBodies.push({ ...r.runtimeBodies[0], requestId: 2 }); },
+    r => { r.modelBodies[0].sha256 = 'a'.repeat(64); }, r => { r.modelBodies[0].error = 'Protocol error: Request content was evicted'; },
+    r => { r.modelBodies = []; }, r => { r.network.push(structuredClone(r.network[0])); }, r => { r.observation.totals.fetches = 2; },
+    r => { r.modelBodies.push({ ...r.modelBodies[0], requestId: 'native-2' }); }, r => { r.modelBodies[0].requestId = 'orphan'; },
+    r => { delete r.network[0].terminal; }, r => { r.browserModelRequests = []; }, r => { r.expectedFailures.push({ requestId: 'native-1', status: 200 }); },
   ]) { const copy = structuredClone(row); mutate(copy); assert.throws(() => assertCaseSourceClosure(copy, wire)); }
 });
-test('a cancellation exception is confined to its actual aborted request, never a later return', () => {
+test('cancellation applies to its exact native abort, never a later returned body', () => {
   const { row, wire } = networkEvidence(); row.name = 'trusted-route-cancels-fetch'; row.observation.totals.fetches = 2;
-  row.runtimeBodies[0].requestId = 2; row.expectedCancellations = [{ requestId: 1, reason: 'explicit trusted navigation' }];
-  row.requestFailures = [{ requestId: 1, error: 'net::ERR_ABORTED' }]; row.network.unshift({ requestId: 'native-abort', wallTime: .5, failed: { error: 'net::ERR_ABORTED' } });
-  row.runtimeBodies.unshift({ requestId: 1, path: models[0].path, error: 'Protocol error: No resource', status: 200 });
+  row.expectedCancellations = [{ requestId: 'native-abort', fetchId: 'fetch-abort', reason: 'explicit trusted navigation', declaredSequence: 2 }];
+  row.browserModelRequests.unshift({ requestId: 2, url: modelUrl, failed: 'net::ERR_ABORTED' });
+  row.network.unshift({ requestId: 'native-abort', sent: true, url: modelUrl, wallTime: .5, terminalSequence: 3, terminal: 'failed', failed: { error: 'net::ERR_ABORTED', cancelled: true }, interception: { kind: 'hold', pausedSequence: 1, abortObserved: true, requestId: 'native-abort', fetchId: 'fetch-abort', url: modelUrl } });
   assertCaseSourceClosure(row, wire);
-  const later = structuredClone(row); later.runtimeBodies[1].error = 'Protocol error: No resource'; assert.throws(() => assertCaseSourceClosure(later, wire));
-  const unproven = structuredClone(row); unproven.requestFailures = []; assert.throws(() => assertCaseSourceClosure(unproven, wire));
+  for (const mutate of [r => { r.modelBodies[0].error = 'Protocol error: No resource'; }, r => { r.expectedCancellations[0].requestId = 'unrelated'; }, r => { r.network[0].failed.cancelled = false; }, r => { r.network[0].failed.error = 'net::ERR_FAILED'; }, r => { r.network[0].encodedTotalBytes = 0; }]) {
+    const copy = structuredClone(row); mutate(copy); assert.throws(() => assertCaseSourceClosure(copy, wire));
+  }
 });
-function observerHarness(missing) {
+test('identical URLs and timestamps cannot alias native bodies, nor borrow a 503 exemption', () => {
+  const { row, wire } = networkEvidence(); row.name = 'native-viewer-retry-retires-residency'; row.observation.totals.fetches = 2;
+  row.network.push({ ...row.network[0], requestId: 'native-2' }); row.modelBodies.push({ ...row.modelBodies[0], requestId: 'native-2' }); row.browserModelRequests.push({ ...row.browserModelRequests[0], requestId: 2 });
+  assert.equal(assertCaseSourceClosure(row, wire).verifiedDecodedBodies, 2);
+  row.modelBodies[1].requestId = 'native-1'; assert.throws(() => assertCaseSourceClosure(row, wire));
+  row.modelBodies[1].requestId = 'native-2'; row.name = 'network-failure-exterior-and-retry';
+  row.network[0].status = 503; row.network[0].terminalSequence = 3; row.network[0].interception = { kind: 'failure', pausedSequence: 1, requestId: 'native-1', fetchId: 'fetch-1', url: modelUrl, command: { method: 'Fetch.fulfillRequest', fetchId: 'fetch-1', completed: true } };
+  Object.assign(row.modelBodies[0], { status: 503, bytes: Buffer.byteLength(failureBody), sha256: sha256(failureBody) }); row.browserModelRequests[0].status = 503;
+  row.expectedFailures.push({ requestId: 'native-1', fetchId: 'fetch-1', declaredSequence: 2, status: 503, reason: 'explicit-one-shot-503' }); assertCaseSourceClosure(row, wire);
+  row.expectedFailures[0].requestId = 'native-2'; assert.throws(() => assertCaseSourceClosure(row, wire));
+});
+function observerHarness(missing, ui = {}) {
   class GL { constructor() { this.canvas = { isConnected: true, matches: () => true, addEventListener() {} }; } isContextLost() { return false; } }
   const methods = ['compileShader', 'linkProgram', 'bufferData', 'bufferSubData', 'texImage2D', 'texSubImage2D', 'texImage3D', 'texSubImage3D', 'compressedTexImage2D', 'compressedTexSubImage2D', 'createBuffer', 'deleteBuffer', 'createProgram', 'deleteProgram', 'createShader', 'deleteShader'];
   for (const name of methods) if (name !== missing) Object.defineProperty(GL.prototype, name, { configurable: true, writable: true, value: function () { if (name.startsWith('create')) return {}; } });
   const sandbox = { WebGL2RenderingContext: GL, document: { querySelector: () => null, querySelectorAll: () => [], addEventListener() {} }, MutationObserver: class { observe() {} }, location: { href: 'http://127.0.0.1:4178/configurator/premium', pathname: '/configurator/premium' },
     performance: { now: () => 1, getEntriesByType: () => [] }, fetch() { return Promise.resolve(); }, createImageBitmap() { return Promise.resolve(); }, __gtrFunctionalCaptureObserver() {}, __gtrFunctionalCapture: { snapshot: () => ({}) } };
+  Object.assign(sandbox.document, ui.document); if (ui.getComputedStyle) sandbox.getComputedStyle = ui.getComputedStyle;
   vm.createContext(sandbox); vm.runInContext(`(${installPreparationObserver.toString()})({modelPath:'/model.glb',modelJson:'{"asset":"exact"}'})`, sandbox);
   return { GL, sandbox, snapshot: () => JSON.parse(JSON.stringify(sandbox.__r35Preparation.snapshot())) };
 }
@@ -209,4 +227,85 @@ test('new bounded workflow preserves closed staged publication and exact explici
   assert.doesNotMatch(driver, /Math\.max\(1,.*deadline|timeout = budgets\.functional|options\.cancel &&|current\??\.preparation/);
   assert.match(driver, /const entryWindow = readinessWindow\(budgets\.functional\); await armFunctionalCapture\(page\); await tap/);
   assert.match(driver, /assertCaseSourceClosure\(row,/);
+});
+
+async function networkHarness(sendOverride) {
+  const cdp = new EventEmitter(), calls = [], row = { errors: [], network: [], modelBodies: [], expectedCancellations: [], expectedFailures: [] };
+  cdp.send = async (method, parameters) => { calls.push({ method, parameters }); const value = await sendOverride?.(method, parameters, cdp); return value ?? (method === 'Network.getResponseBody' ? { body: Buffer.from('native-body').toString('base64'), base64Encoded: true } : {}); };
+  const api = await installCabinNetworkCapture(cdp, row, { baseUrl: 'http://127.0.0.1:4178', phase: () => 'test' });
+  const request = (id = 'native-1') => cdp.emit('Network.requestWillBeSent', { requestId: id, request: { url: modelUrl, method: 'GET' }, wallTime: 123 });
+  const pause = (id = 'native-1') => cdp.emit('Fetch.requestPaused', { requestId: 'fetch-' + id, networkId: id, request: { url: modelUrl } });
+  const abort = (id = 'native-1', canceled = true, errorText = 'net::ERR_ABORTED') => cdp.emit('Network.loadingFailed', { requestId: id, canceled, errorText });
+  const finish = (id = 'native-1', status = 200) => { cdp.emit('Network.responseReceived', { requestId: id, response: { url: modelUrl, status, headers: {} } }); cdp.emit('Network.loadingFinished', { requestId: id, encodedDataLength: 10 }); };
+  return { cdp, calls, row, api, request, pause, abort, finish };
+}
+test('own CDP buffers and retrieval preserve the exact native body ID without refetching', async () => {
+  const h = await networkHarness(); assert.deepEqual(h.calls[0], { method: 'Network.enable', parameters: networkBuffers });
+  assert.ok(networkBuffers.maxResourceBufferSize > models[0].bytes); assert.ok(networkBuffers.maxTotalBufferSize >= 4 * networkBuffers.maxResourceBufferSize);
+  h.request(); h.finish(); await h.api.settle(); assert.deepEqual(h.row.errors, []);
+  assert.deepEqual(h.calls.filter(c => c.method === 'Network.getResponseBody'), [{ method: 'Network.getResponseBody', parameters: { requestId: 'native-1' } }]);
+  assert.equal(h.row.modelBodies[0].sha256, sha256('native-body'));
+});
+test('either Fetch/Network event order releases once and leaves later real requests unblocked', async () => {
+  for (const order of ['fetch-first', 'network-first']) {
+    const h = await networkHarness(), hold = await h.api.hold();
+    if (order === 'fetch-first') { h.pause(); h.request(); } else { h.request(); h.pause(); }
+    const deadline = readinessWindow(budgets.initial); await hold.wait(deadline); await hold.release(deadline); h.finish(); await h.api.settle();
+    assert.deepEqual(h.row.errors, []); assert.equal(h.row.network[0].interception.requestId, 'native-1');
+    assert.deepEqual(h.calls.filter(c => c.method === 'Fetch.continueRequest'), [{ method: 'Fetch.continueRequest', parameters: { requestId: 'fetch-native-1' } }]);
+    assert.equal(h.calls.some(c => c.method === 'Fetch.disable'), false); await assert.rejects(hold.release(deadline));
+    h.request('native-2'); h.pause('native-2'); h.finish('native-2'); await h.api.settle(); assert.equal(h.calls.filter(c => c.method === 'Fetch.continueRequest').length, 2);
+  }
+});
+test('held cancellation requires its exact terminal abort and never resumes it twice', async () => {
+  const h = await networkHarness(), hold = await h.api.hold(); h.request(); h.pause(); hold.cancel('trusted navigation'); h.abort();
+  await hold.release(readinessWindow(budgets.lifecycle)); await h.api.settle(); assert.equal(h.calls.some(c => c.method === 'Fetch.continueRequest'), false);
+  assert.equal(h.row.expectedCancellations[0].requestId, 'native-1');
+  for (const [canceled, error] of [[false, 'net::ERR_ABORTED'], [true, 'net::ERR_FAILED']]) {
+    const invalid = await networkHarness(), held = await invalid.api.hold(); invalid.request(); invalid.pause(); held.cancel('trusted navigation'); invalid.abort('native-1', canceled, error); await assert.rejects(held.release(readinessWindow(budgets.lifecycle)));
+  }
+});
+test('a rejected continuation is accepted only with the same predeclared native abort', async () => {
+  const h = await networkHarness((method, _parameters, cdp) => { if (method === 'Fetch.continueRequest') { cdp.emit('Network.loadingFailed', { requestId: 'native-1', canceled: true, errorText: 'net::ERR_ABORTED' }); throw new Error('Invalid interception'); } });
+  const hold = await h.api.hold(); h.request(); h.pause(); hold.cancel('trusted navigation'); await hold.release(readinessWindow(budgets.lifecycle)); await h.api.settle(); assert.deepEqual(h.row.errors, []);
+  const bad = await networkHarness(method => { if (method === 'Fetch.continueRequest') throw new Error('Route is already handled'); });
+  const held = await bad.api.hold(); bad.request(); bad.pause(); await assert.rejects(held.release(readinessWindow(budgets.initial)), /already handled/);
+});
+test('body eviction, duplicate terminal events and orphan Fetch identities stay visible failures', async () => {
+  const h = await networkHarness(method => { if (method === 'Network.getResponseBody') throw new Error('Request content was evicted'); }); h.request(); h.finish(); await h.api.settle();
+  assert.match(h.row.modelBodies[0].error, /evicted/); assert.equal(h.row.errors.length, 1);
+  const duplicate = await networkHarness(); duplicate.request(); duplicate.request(); duplicate.finish(); duplicate.finish(); await duplicate.api.settle(); assert.equal(duplicate.row.errors.length, 3);
+  const orphan = await networkHarness(); const hold = await orphan.api.hold(); orphan.pause(); await hold.release(readinessWindow(budgets.initial)); await assert.rejects(orphan.api.settle(), /Network request receipt/);
+});
+test('one-shot fault fulfills only the declared native ID, then continues the retry', async () => {
+  const h = await networkHarness(); await h.api.failOnce(); h.request(); h.pause(); await new Promise(setImmediate); h.finish('native-1', 503); await h.api.settle();
+  assert.deepEqual(h.row.errors, []); assert.equal(h.row.expectedFailures[0].requestId, 'native-1');
+  assert.equal(h.calls.filter(c => c.method === 'Fetch.fulfillRequest').length, 1); h.request('native-2'); h.pause('native-2'); h.finish('native-2'); await h.api.settle();
+  assert.deepEqual(h.calls.filter(c => c.method === 'Fetch.continueRequest').map(c => c.parameters.requestId), ['fetch-native-2']);
+});
+test('legacy strip detection excludes only the indicator owned by the active unified loader', () => {
+  const mask = { textContent: 'Preparing exterior and interior', getBoundingClientRect: () => ({ x: 0, y: 0, right: 100, bottom: 100, width: 100, height: 100 }) };
+  let activePhase = 'loading', inMask = true, inFooter = false;
+  const indicator = { closest: selector => selector === '.scene-loading' ? (inMask ? mask : null) : (inFooter ? {} : null) };
+  const h = observerHarness(undefined, { document: { querySelectorAll: selector => selector === '.scene-loading' ? [mask] : selector === '.cabin-load-status, .cabin-load-indeterminate' ? [indicator] : [], querySelector: selector => selector === 'main[data-cabin-preparation]' ? { getAttribute: name => name === 'data-cabin-preparation' ? activePhase : null } : null }, getComputedStyle: () => ({ display: 'block', visibility: 'visible', opacity: '1', backgroundColor: 'rgb(0, 0, 0)' }) });
+  assert.equal(h.snapshot().ui.legacyLoading, false);
+  inMask = false; assert.equal(h.snapshot().ui.legacyLoading, true);
+  inMask = true; inFooter = true; assert.equal(h.snapshot().ui.legacyLoading, true);
+  inFooter = false; activePhase = 'ready'; assert.equal(h.snapshot().ui.legacyLoading, true);
+});
+
+test('interception disables exactly once only after all declared holds settle', async () => {
+  const h = await networkHarness(), hold = await h.api.hold(); h.request(); h.pause(); await assert.rejects(h.api.close(), /Unreleased/);
+  await hold.release(readinessWindow(budgets.initial)); h.finish(); await h.api.settle(); await h.api.close();
+  assert.equal(h.calls.filter(c => c.method === 'Fetch.disable').length, 1); assert.equal(h.row.networkObserver.closed, true);
+  assert.equal(h.row.network[0].interception.command.completed, true); await assert.rejects(h.api.close());
+});
+
+test('a pre-existing native abort cannot be relabeled as an upcoming trusted cancellation', async () => {
+  const h = await networkHarness(), hold = await h.api.hold(); h.request(); h.pause(); h.abort();
+  assert.throws(() => hold.cancel('trusted navigation'), /before any native terminal/); assert.deepEqual(h.row.expectedCancellations, []);
+  const { row, wire } = networkEvidence(); row.name = 'trusted-route-cancels-fetch'; row.observation.totals.fetches = 2;
+  row.network.unshift({ requestId: 'native-abort', sent: true, url: modelUrl, wallTime: .5, terminalSequence: 2, terminal: 'failed', failed: { error: 'net::ERR_ABORTED', cancelled: true }, interception: { kind: 'hold', pausedSequence: 1, abortObserved: true, requestId: 'native-abort', fetchId: 'fetch-abort', url: modelUrl } });
+  row.expectedCancellations.push({ requestId: 'native-abort', fetchId: 'fetch-abort', declaredSequence: 3 }); row.browserModelRequests.unshift({ requestId: 2, url: modelUrl, failed: 'net::ERR_ABORTED' });
+  assert.throws(() => assertCaseSourceClosure(row, wire), /declaration must precede/);
 });

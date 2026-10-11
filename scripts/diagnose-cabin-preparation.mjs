@@ -10,6 +10,7 @@ import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { collectDistAssets } from './raster-cost-evidence.mjs';
 import { budgets, requiredCases, models, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages,
   assertCurrentGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
+import { installCabinNetworkCapture } from './cabin-preparation-network.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from './cabin-preparation-observer.mjs';
 import { buildPreparationReadiness } from './build-cabin-preparation-readiness.mjs';
 import { independentExteriorTransform } from './causal-motion-preflight.mjs';
@@ -74,35 +75,30 @@ export async function main(env = process.env) {
   const { PNG } = createRequire(import.meta.url)('playwright-core/lib/utilsBundle');
   let server, browser;
   const runCase = async (name, action, options = {}) => {
-    const row = { name, result: 'running', fixtures: options, startedAt: Date.now(), steps: [], captures: [], layouts: [], runtimeBodies: [], network: [], expectedCancellations: [], expectedFailures: [], errors: [], pageErrors: [], requestFailures: [] }; report.cases.push(row); await save();
+    const row = { name, result: 'running', fixtures: options, startedAt: Date.now(), steps: [], captures: [], layouts: [], runtimeBodies: [], modelBodies: [], browserModelRequests: [], network: [], expectedCancellations: [], expectedFailures: [], errors: [], pageErrors: [], requestFailures: [] }; report.cases.push(row); await save();
     const context = await browser.newContext({ viewport: target.viewport, deviceScaleFactor: target.deviceScaleFactor, isMobile: Boolean(target.isMobile), hasTouch: Boolean(target.hasTouch), reducedMotion: 'no-preference', serviceWorkers: 'block' });
     const init = `(${installCabinResourceObserver.toString()})(${JSON.stringify({ expectedImages: images })});(${installDprMotionObserver.toString()})({maxRecords:32768,observeContextCreation:true});(${installRenderBackpressureLifecycleFixture.toString()})();(${installFunctionalCaptureObserver.toString()})();(${installPreparationObserver.toString()})(${JSON.stringify({ modelPath: models[0].path, modelJson: bodies[0].subarray(20, 20 + bodies[0].readUInt32LE(12)).toString('utf8') })});(${installPreparationDecodeFixture.toString()})(${JSON.stringify({ images })});`;
     await context.addInitScript({ content: init + (options.saveData ? 'Object.defineProperty(navigator.connection,"saveData",{configurable:true,get:()=>true});' : '') });
     const page = await context.newPage(); page.setDefaultTimeout(15_000); page.setDefaultNavigationTimeout(45_000);
-    const cdp = await context.newCDPSession(page); await cdp.send('Network.enable'); await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
-    const nativeRequests = new Map(), pendingBodies = [], requestIds = new WeakMap(); let nextRequestId = 0, phase = name, quality = 'standard';
+    const cdp = await context.newCDPSession(page);
+    const pendingBodies = [], requestIds = new WeakMap(); let nextRequestId = 0, phase = name, quality = 'standard';
     const identifyRequest = request => { if (!requestIds.has(request)) requestIds.set(request, ++nextRequestId); return requestIds.get(request); };
-    page.on('request', identifyRequest);
-    const expectCancellation = (request, reason) => { assert.equal(new URL(request.url()).pathname, models[0].path); row.expectedCancellations.push({ requestId: identifyRequest(request), reason, phase }); };
-    const expectFailure = (request, status, reason) => { assert.equal(new URL(request.url()).pathname, models[0].path); row.expectedFailures.push({ requestId: identifyRequest(request), status, reason, phase }); };
-    cdp.on('Network.requestWillBeSent', event => { if (new URL(event.request.url).pathname !== models[0].path) return; const receipt = { requestId: event.requestId, phase, url: event.request.url, wallTime: event.wallTime, encodedBodyBytes: 0 }; nativeRequests.set(event.requestId, receipt); row.network.push(receipt); });
-    cdp.on('Network.responseReceived', event => { const receipt = nativeRequests.get(event.requestId); if (!receipt) return; Object.assign(receipt, { status: event.response.status, headers: event.response.headers, cached: Boolean(event.response.fromDiskCache || event.response.fromServiceWorker) }); });
-    cdp.on('Network.loadingFailed', event => { const receipt = nativeRequests.get(event.requestId); if (receipt) receipt.failed = { error: event.errorText, cancelled: event.canceled ?? false }; });
-    cdp.on('Network.dataReceived', event => { const receipt = nativeRequests.get(event.requestId); if (receipt) receipt.encodedBodyBytes += event.encodedDataLength; });
-    cdp.on('Network.loadingFinished', event => { const receipt = nativeRequests.get(event.requestId); if (receipt) receipt.encodedTotalBytes = event.encodedDataLength; });
+    page.on('request', request => { const id = identifyRequest(request); if (new URL(request.url()).pathname === models[0].path) row.browserModelRequests.push({ requestId: id, url: request.url(), phase }); });
+    const modelNetwork = await installCabinNetworkCapture(cdp, row, { baseUrl: target.baseUrl, phase: () => phase });
     page.on('response', response => {
       const url = new URL(response.url());
       if (url.protocol === 'blob:' && url.origin === target.baseUrl) return;
       if (url.origin !== target.baseUrl) { row.errors.push('Unpinned response origin ' + response.url()); return; }
+      if (url.pathname === models[0].path) { const record = row.browserModelRequests.find(r => r.requestId === identifyRequest(response.request())); if (!record) { row.errors.push('Missing Playwright cabin request'); return; } record.status = response.status(); return; }
       const path = url.pathname.startsWith('/configurator/') || url.pathname === '/' ? '/index.html' : url.pathname;
       const receipt = { phase, path, status: response.status(), requestId: identifyRequest(response.request()), startedAt: response.request().timing().startTime }; row.runtimeBodies.push(receipt);
       pendingBodies.push((async () => {
-        const fixtureFailure = row.expectedFailures.find(f => f.requestId === receipt.requestId && f.status === response.status()); if (fixtureFailure) { receipt.fixture = fixtureFailure.reason; return; }
         assert.ok(assets.has(path), 'Unpinned served asset ' + path); const body = await response.body(); receipt.bytes = body.length; receipt.sha256 = sha256(body); assert.equal(response.status(), 200); assert.equal(receipt.sha256, assets.get(path));
       })().catch(error => { receipt.error = String(error); }));
     });
     page.on('pageerror', error => row.pageErrors.push({ phase, message: error.message }));
-    page.on('requestfailed', r => row.requestFailures.push({ phase, requestId: identifyRequest(r), path: new URL(r.url()).pathname, error: r.failure()?.errorText }));
+    page.on('requestfailed', request => { const receipt = { phase, requestId: identifyRequest(request), path: new URL(request.url()).pathname, error: request.failure()?.errorText };
+      if (receipt.path === models[0].path) { const model = row.browserModelRequests.find(r => r.requestId === receipt.requestId); if (!model) { row.errors.push('Missing failed Playwright cabin request'); return; } model.failed = receipt.error; } else row.requestFailures.push(receipt); });
     const tap = locator => target.hasTouch ? locator.tap() : locator.click();
     const snapshot = () => page.evaluate(() => globalThis.__r35Preparation.snapshot());
     const resources = async () => { await page.evaluate(() => globalThis.__cabinResourceObserver.settleIdentities()); return page.evaluate(() => globalThis.__cabinResourceObserver.snapshot()); };
@@ -143,10 +139,10 @@ export async function main(env = process.env) {
       const observation = await snapshot(); const native = observation.contexts.find(c => c.owner === owner); assert.ok(native && !native.connected);
       for (const resource of observation.resources.filter(r => r.contextId === native.id)) { assert.equal(resource.deleted, 1, `${resource.kind} ${resource.id} retired once`); assert.equal(resource.deletedLive, true); }
     };
-    try { await action({ page, context, row, tap, snapshot, resources, fixture, mark, open, close, dialog, canvas, switchModel, ready, capture, layout, retire, expectCancellation, expectFailure, setQuality: value => { quality = value; } }); row.result = 'collected'; }
+    try { await action({ page, context, row, tap, snapshot, resources, fixture, mark, open, close, dialog, canvas, switchModel, ready, capture, layout, retire, modelNetwork, setQuality: value => { quality = value; } }); row.result = 'collected'; }
     catch (error) { row.result = 'failed'; row.errors.push(String(error)); throw error; }
     finally {
-      try { row.observation = await snapshot(); row.resources = await resources(); row.fixture = await fixture(); row.dpr = await page.evaluate(() => globalThis.__r35DprMotion.snapshot()); assert.deepEqual(row.observation.issues, []); assert.deepEqual(row.resources.issues, []); assert.deepEqual(row.dpr.issues, []); assertFenceObservationHealthy(row.fixture); await Promise.all(pendingBodies);
+      try { row.observation = await snapshot(); row.resources = await resources(); row.fixture = await fixture(); row.dpr = await page.evaluate(() => globalThis.__r35DprMotion.snapshot()); assert.deepEqual(row.observation.issues, []); assert.deepEqual(row.resources.issues, []); assert.deepEqual(row.dpr.issues, []); assertFenceObservationHealthy(row.fixture); await Promise.all(pendingBodies); await modelNetwork.settle(); await modelNetwork.close();
         for (const c of row.dpr.contexts.filter(c => c.sceneCanvas)) { assert.equal(c.creation.contextType, 'webgl2'); assert.equal(c.creation.requestedAntialias, true); assert.equal(c.creation.antialias, true); assert.ok(c.creation.samples >= 2 && c.creation.sampleBuffers >= 1); }
         row.sourceClosure = assertCaseSourceClosure(row, report.transport.find(r => r.acceptEncoding === 'gzip'));
       } catch (error) { row.errors.push(String(error)); row.result = 'failed'; }
@@ -161,17 +157,16 @@ export async function main(env = process.env) {
     browser = await chromium.launch({ timeout: 30_000, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
     if (target.lane === 'feature') await runCase('direct-entry-residency', async h => {
       const { page, tap, row, open, close, dialog, snapshot, resources, capture, layout, switchModel, retire } = h;
-      let release; const hold = new Promise(done => { release = done; }); let seen = false;
-      await page.route('**' + models[0].path, async route => { seen = true; await hold; await route.continue(); });
+      const hold = await h.modelNetwork.hold();
       const deadline = readinessWindow(budgets.initial);
       await page.goto(target.baseUrl + '/configurator/premium', { waitUntil: 'domcontentloaded' });
-      await expect.poll(() => seen, { timeout: remainingBudget(deadline) }).toBe(true);
+      await hold.wait(deadline);
       try {
         await open('Switch model'); await expect(dialog.getByRole('button', { name: /^NISMO / })).toBeEnabled(); await close();
         await open('Camera'); await expect(dialog.getByRole('button', { name: 'Interior', exact: true })).toBeDisabled(); await close();
         const masked = await snapshot(); assert.equal(masked.ui.maskCount, 1); assert.equal(masked.ui.maskOpaque, true); assert.equal(masked.ui.cabinRail, false);
         await page.screenshot({ path: resolve(output, 'initial-opaque-stage-mask.png'), timeout: budgets.screenshot, scale: 'css' });
-      } finally { release(); }
+      } finally { await hold.release(deadline); }
       await h.ready(deadline); const initial = await capture('01-initial-complete', deadline);
       row.initialPreparation = (await snapshot()).measures; assert.ok(row.initialPreparation.some(m => m.name === 'gtr-cabin-preparation-ready' && m.duration >= 0 && m.duration <= budgets.initial));
       const preparedOracle = createCabinOracle(transform); preparedOracle.reset('driver'); assertPreparationTimeline(await snapshot(), initial.certificate, { quality: 'standard', nativeDpr: target.deviceScaleFactor, driverPose: preparedOracle.expected(initial.certificate.snapshot.dimensions.renderWidth, initial.certificate.snapshot.dimensions.renderHeight).pose });
@@ -210,14 +205,7 @@ export async function main(env = process.env) {
 }
 
 async function runLifecycleCases({ runCase, target, output, transform, expect, armFunctionalCapture, budgets, models, assertCabinResourcesReleased, cabinResourceCohort, images }) {
-  const holdModel = async h => {
-    const { page } = h;
-    let held = null;
-    const handler = route => { assert.equal(held, null, 'Only one exact cabin fetch may be held'); held = route; };
-    await page.route('**' + models[0].path, handler);
-    return { cancel: reason => { assert.ok(held); h.expectCancellation(held.request(), reason); }, wait: deadline => expect.poll(() => Boolean(held), { timeout: remainingBudget(deadline) }).toBe(true),
-      async release() { assert.ok(held); await page.unroute('**' + models[0].path, handler); const route = held; held = null; try { await route.continue(); } catch (error) { assert.ok(!page.url().endsWith('/configurator/premium') && /handled|closed|cancel|invalid/i.test(String(error)), String(error)); } } };
-  };
+  const holdModel = h => h.modelNetwork.hold();
   const fresh = async h => { const deadline = readinessWindow(budgets.initial); await h.page.goto(target.baseUrl + '/configurator/premium', { waitUntil: 'domcontentloaded' }); return deadline; };
   await runCase('resize-quality-during-preparation', async h => {
     const hold = await holdModel(h), deadline = await fresh(h); await hold.wait(deadline);
@@ -227,7 +215,7 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
       await h.tap(radio); await expect(radio).toBeChecked(); h.setQuality('reduced'); await h.close();
       const held = await h.snapshot(); assert.equal(held.ui.preparation.phase, 'loading'); assert.equal(held.ui.maskCount, 1); assert.equal(held.ui.maskOpaque, true);
       h.row.steps.push({ label: 'resize-and-quality-committed-while-fetch-held', state: held.current, ui: held.ui });
-    } finally { await hold.release(); }
+    } finally { await hold.release(deadline); }
     await h.ready(deadline); const current = await h.capture('current-resized-reduced', deadline);
     assert.equal(current.quality, 'reduced'); const oracle = createCabinOracle(transform); oracle.reset('driver'); assertPreparationTimeline(await h.snapshot(), current.certificate, { quality: 'reduced', nativeDpr: target.deviceScaleFactor, driverPose: oracle.expected(current.certificate.snapshot.dimensions.renderWidth, current.certificate.snapshot.dimensions.renderHeight).pose });
     const observed = await h.snapshot(); const transition = observed.dom.find(d => d.ready);
@@ -237,9 +225,9 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
   await runCase('trusted-route-cancels-fetch', async h => {
     const hold = await holdModel(h), deadline = await fresh(h); await hold.wait(deadline);
     const before = await h.snapshot(); assert.equal(before.ui.preparation.phase, 'loading');
-    hold.cancel('trusted Back to models cancels this held cabin request');
+    hold.cancel('trusted Back to models cancels this held cabin request'); const cancellationDeadline = readinessWindow(budgets.lifecycle);
     try { await h.tap(h.page.getByRole('link', { name: 'Back to models', exact: true })); await expect(h.page).toHaveURL(/\/models$/); }
-    finally { await hold.release(); }
+    finally { await hold.release(cancellationDeadline); }
     await expect(h.canvas).toHaveCount(0); await h.retire(1);
     const cancelled = await h.snapshot(); assert.equal(cancelled.totals.fetches, 1); assert.equal(cancelled.ui.cabinRail, false);
     await armFunctionalCapture(h.page, { replacement: true }); const returnedDeadline = readinessWindow(budgets.initial);
@@ -268,7 +256,7 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
   await runCase('trusted-model-cancels-gpu-queue', async h => {
     const hold = await holdModel(h), deadline = await fresh(h); await hold.wait(deadline);
     const nativeHold = await h.page.evaluate(() => globalThis.__r35RenderBackpressureLifecycle.armCurrent('completion-clear'));
-    await hold.release();
+    await hold.release(deadline);
     await h.page.waitForFunction(id => {
       const f = globalThis.__r35RenderBackpressureLifecycle.snapshot(), p = globalThis.__r35Preparation.status();
       return f.holds.find(h => h.id === id)?.substitutions > 0 && p.ui.preparation?.progressPhase === 'preparing';
@@ -282,8 +270,7 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
     h.row.queueCancellation = { nativeHold, before: state.current, candidateBitmapIds: candidate.map(b => b.id) };
   }, { cancel: true, nativePositiveObservationHold: true });
   await runCase('network-failure-exterior-and-retry', async h => {
-    let failed = false;
-    await h.page.route('**' + models[0].path, async route => { if (!failed) { failed = true; h.expectFailure(route.request(), 503, 'explicit-one-shot-503'); await route.fulfill({ status: 503, contentType: 'text/plain', body: 'Explicit CI one-shot preparation transport failure' }); } else await route.continue(); });
+    await h.modelNetwork.failOnce();
     const failedDeadline = await fresh(h); await expect(h.page.locator('.cabin-preparation-error')).toBeVisible({ timeout: budgets.initial });
     await expect(h.page.locator('.scene-loading')).toHaveCount(0); await expect(h.page.getByRole('button', { name: 'Retry interior preparation', exact: true })).toBeEnabled();
     await h.capture('failed-interior-usable-exterior', failedDeadline);

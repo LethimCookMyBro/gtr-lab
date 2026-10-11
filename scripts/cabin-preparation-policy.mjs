@@ -134,43 +134,73 @@ export function assertReadableControls(layout) {
   }
 }
 
-/** Fail closed on all origin/body errors and reconcile successful browser model loads. */
+/** Fail closed. Cabin bodies and fixtures share the browser's native CDP request ID. */
 export function assertCaseSourceClosure(row, wire) {
   assert.deepEqual(row.errors, [], 'Any source/observation error invalidates the case');
-  assert.deepEqual(row.pageErrors, []);
-  const cancellations = row.expectedCancellations ?? [], failures = row.expectedFailures ?? [];
+  assert.deepEqual(row.pageErrors, []); assert.deepEqual(row.requestFailures, [], 'Non-model request failures are never deliberate fixtures');
+  const cancellations = row.expectedCancellations, failures = row.expectedFailures;
+  assert.equal(row.networkObserver?.closed, true); assert.ok([0, 1].includes(row.networkObserver.fetchEnableCount)); assert.equal(row.networkObserver.fetchDisableCount, row.networkObserver.fetchEnableCount);
+  assert.deepEqual(row.networkObserver.buffers, { maxResourceBufferSize: 32 * 1024 * 1024, maxTotalBufferSize: 128 * 1024 * 1024 });
+  for (const value of [cancellations, failures, row.network, row.modelBodies, row.browserModelRequests]) assert.ok(Array.isArray(value));
   assert.ok(Object.hasOwn(modelRequestSequences, row.name), 'Unknown browser case');
-  assert.deepEqual(row.network.map(n => n.failed ? 'aborted' : n.status), modelRequestSequences[row.name], 'Exact model request sequence required');
-  assert.equal(row.observation.totals.fetches, modelRequestSequences[row.name].length, 'Model fetch count cannot adopt duplicate loads as baseline');
+  const sequence = modelRequestSequences[row.name];
+  assert.deepEqual(row.network.map(n => n.failed ? 'aborted' : n.status), sequence, 'Exact model request sequence required');
+  assert.equal(row.observation.totals.fetches, sequence.length, 'Model fetch count cannot adopt duplicate loads as baseline');
+  assert.equal(row.browserModelRequests.length, sequence.length, 'Playwright must observe the same model fetch count');
+  assert.deepEqual(row.browserModelRequests.map(r => r.failed ? 'aborted' : r.status), sequence);
+  assert.equal(new Set(row.browserModelRequests.map(r => r.requestId)).size, sequence.length);
+  for (const r of row.browserModelRequests) { assert.equal(r.url, 'http://127.0.0.1:4178' + models[0].path); if (r.failed) assert.equal(r.failed, 'net::ERR_ABORTED'); }
+  assert.equal(cancellations.length, sequence.filter(v => v === 'aborted').length);
+  assert.equal(failures.length, sequence.filter(v => v === 503).length);
   assert.ok(Number.isSafeInteger(wire.wireEntityBytes) && wire.wireEntityBytes > 0 && wire.wireEntityBytes < models[0].bytes);
-  const aborted = id => cancellations.some(c => c.requestId === id) && row.requestFailures.some(f => f.requestId === id && /net::ERR_ABORTED/.test(f.error));
-  for (const failure of row.requestFailures) assert.ok(aborted(failure.requestId), 'Unrequested or unproven request failure');
-  for (const cancellation of cancellations) assert.ok(aborted(cancellation.requestId), 'The exact intended request was not actually cancelled');
+  // All other actual served JS/CSS/assets still require their unchanged Playwright body hashes.
   for (const receipt of row.runtimeBodies) {
     assert.ok(Number.isSafeInteger(receipt.requestId) && receipt.requestId > 0);
-    if (receipt.fixture) {
-      assert.ok(failures.some(f => f.requestId === receipt.requestId && f.status === receipt.status && f.reason === receipt.fixture));
-      assert.equal(receipt.path, models[0].path); continue;
-    }
-    if (receipt.error) { assert.ok(aborted(receipt.requestId), 'A response-body error requires the exact proven cancelled request'); continue; }
+    assert.notEqual(receipt.path, models[0].path); assert.equal(receipt.fixture, undefined); assert.equal(receipt.error, undefined);
     assert.equal(receipt.status, 200); assert.match(receipt.sha256 ?? '', /^[a-f0-9]{64}$/); assert.ok(Number.isSafeInteger(receipt.bytes) && receipt.bytes >= 0);
   }
-  for (const failure of failures) assert.equal(row.runtimeBodies.filter(r => r.requestId === failure.requestId && r.fixture === failure.reason && r.status === failure.status).length, 1);
-  const decoded = row.runtimeBodies.filter(r => r.path === models[0].path && r.status === 200 && !r.error && !r.fixture);
-  assert.ok(decoded.length > 0, 'Every case must complete at least one exact real browser model load');
+  assert.equal(new Set(row.network.map(n => n.requestId)).size, row.network.length, 'Native request IDs must be unique');
+  assert.equal(new Set(row.modelBodies.map(b => b.requestId)).size, row.modelBodies.length, 'Native body IDs must be unique');
   const used = new Set();
-  for (const body of decoded) {
-    assert.equal(body.sha256, models[0].sha256); assert.equal(body.bytes, models[0].bytes); assert.ok(Number.isFinite(body.startedAt));
-    const matches = row.network.filter(n => Number.isFinite(n.wallTime) && Math.abs(n.wallTime * 1000 - body.startedAt) < 1);
-    assert.equal(matches.length, 1, 'Unique actual CDP request by native request start time required');
-    const network = matches[0]; assert.ok(!used.has(network.requestId)); used.add(network.requestId);
-    assert.equal(network.status, 200); assert.equal(network.failed, undefined); assert.equal(network.cached, false);
-    assert.ok(Number.isSafeInteger(network.encodedTotalBytes) && network.encodedTotalBytes >= wire.wireEntityBytes, 'Completed network transport receipt is mandatory');
-    assert.ok(Number.isSafeInteger(network.encodedBodyBytes) && network.encodedBodyBytes >= 0);
+  for (const network of row.network) {
+    assert.ok(typeof network.requestId === 'string' && network.requestId.length > 0); assert.equal(network.sent, true); assert.ok(Number.isFinite(network.wallTime));
+    assert.equal(network.url, 'http://127.0.0.1:4178' + models[0].path);
+    const bodies = row.modelBodies.filter(b => b.requestId === network.requestId);
+    const cancellation = cancellations.find(c => c.requestId === network.requestId), failure = failures.find(f => f.requestId === network.requestId);
+    if (cancellation || failure) {
+      const declaration = cancellation ?? failure;
+      assert.ok(Number.isSafeInteger(declaration.declaredSequence) && declaration.declaredSequence > network.interception?.pausedSequence && declaration.declaredSequence < network.terminalSequence, 'Fault declaration must precede its native terminal event');
+      assert.equal(network.interception?.requestId, network.requestId); assert.equal(network.interception?.fetchId, declaration.fetchId);
+      assert.equal(network.interception?.url, network.url); assert.ok(typeof declaration.fetchId === 'string' && declaration.fetchId.length > 0);
+    }
+    if (network.interception?.command) {
+      assert.equal(network.interception.command.fetchId, network.interception.fetchId);
+      assert.equal(network.interception.command.method, failure ? 'Fetch.fulfillRequest' : 'Fetch.continueRequest');
+      if (!cancellation) { assert.equal(network.interception.command.completed, true); assert.equal(network.interception.command.error, undefined); }
+    }
+    if (network.interception && !cancellation) assert.ok(network.interception.command, 'Paused real/fault request must be explicitly released');
+    if (network.failed) {
+      assert.ok(cancellation && !failure, 'Only the exact predeclared native request may abort'); assert.equal(network.interception.kind, 'hold');
+      assert.equal(network.interception.abortObserved, true); assert.equal(network.terminal, 'failed'); assert.deepEqual(network.failed, { error: 'net::ERR_ABORTED', cancelled: true });
+      assert.equal(network.encodedTotalBytes, undefined); assert.equal(bodies.length, 0); continue;
+    }
+    assert.equal(cancellation, undefined, 'Expected cancellation must actually abort'); assert.equal(network.terminal, 'finished');
+    assert.equal(bodies.length, 1, 'Every completed native request requires exactly one body');
+    const body = bodies[0]; used.add(network.requestId);
+    assert.equal(body.source, 'CDP.Network.getResponseBody'); assert.equal(body.path, models[0].path); assert.equal(body.status, network.status); assert.equal(body.error, undefined);
+    assert.ok(Number.isSafeInteger(network.encodedTotalBytes) && network.encodedTotalBytes >= 0);
+    assert.ok(Number.isSafeInteger(network.encodedBodyBytes) && network.encodedBodyBytes >= 0); assert.equal(network.cached, false);
+    if (failure) {
+      assert.equal(network.interception.kind, 'failure'); assert.equal(failure.reason, 'explicit-one-shot-503'); assert.equal(failure.status, 503); assert.equal(network.status, 503);
+      const expected = Buffer.from('Explicit CI one-shot preparation transport failure'); assert.equal(body.bytes, expected.length); assert.equal(body.sha256, sha256(expected)); continue;
+    }
+    assert.equal(network.status, 200); assert.equal(body.sha256, models[0].sha256); assert.equal(body.bytes, models[0].bytes);
+    assert.ok(network.encodedTotalBytes >= wire.wireEntityBytes, 'Completed network transport receipt is mandatory');
     const headers = Object.fromEntries(Object.entries(network.headers ?? {}).map(([key, value]) => [key.toLowerCase(), value]));
     assert.equal(headers['content-encoding'], 'gzip'); assert.equal(Number(headers['content-length']), wire.wireEntityBytes);
   }
-  const successfulNetwork = row.network.filter(n => n.status === 200 && !n.failed);
-  assert.equal(successfulNetwork.length, used.size, 'No successful model transport may lack a verified decoded body');
-  return { verifiedDecodedBodies: decoded.length, correlatedNativeRequestIds: [...used] };
+  assert.equal(used.size, row.modelBodies.length, 'Orphan native bodies cannot qualify');
+  for (const declaration of [...cancellations, ...failures]) assert.equal(row.network.filter(n => n.requestId === declaration.requestId).length, 1);
+  const decoded = row.modelBodies.filter(b => b.status === 200); assert.ok(decoded.length > 0, 'Every case must complete an exact real browser model load');
+  return { verifiedDecodedBodies: decoded.length, correlatedNativeRequestIds: decoded.map(b => b.requestId) };
 }
