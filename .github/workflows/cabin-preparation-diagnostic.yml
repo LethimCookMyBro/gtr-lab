@@ -1,4 +1,4 @@
-# Private/staged source proof only. No publication, deployment or write permissions.
+# Staged source proof: both stage-cabin-preparation and stage-cabin-integration commit tokens are required.
 name: Staged exact AO cabin preparation proof
 on:
   push:
