@@ -1,0 +1,72 @@
+name: Private drained native-key discriminator
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose-drained-key.mjs'
+      - 'scripts/drained-key-*.mjs'
+      - 'tests/drained-key-*.node.mjs'
+      - 'qa/drained-key-request.json'
+      - '.github/workflows/drained-key-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: drained-keys-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  measure:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-drained-key]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      R35_DRAINED_KEY_APP_ROOT: candidate
+      R35_DRAINED_KEY_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve exact reviewed opt-in before setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,appendFile,mkdir,writeFile} from 'node:fs/promises';
+          import {resolveDrainedKeyRequest} from './scripts/drained-key-policy.mjs';
+          const request=JSON.parse(await readFile('qa/drained-key-request.json','utf8'));
+          const values=resolveDrainedKeyRequest(request,process.env);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          await mkdir('drained-key-results',{recursive:true});
+          await writeFile('drained-key-results/request.json',JSON.stringify({request,resolved:values,harnessSha:process.env.GITHUB_SHA},null,2));
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_DRAINED_KEY_SOURCE_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify source pin and socket-free diagnostic tests
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "$R35_DRAINED_KEY_SOURCE_SHA"
+          node --input-type=module -e "import assert from 'node:assert/strict'; import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs'; assert.equal((await applicationIdentity('candidate')).sha256,process.env.R35_DRAINED_KEY_SOURCE_TREE)"
+          node --check scripts/diagnose-drained-key.mjs
+          node --check scripts/drained-key-observer.mjs
+          node --test tests/drained-key-policy.node.mjs tests/drained-key-observer.node.mjs tests/drained-key-gates.node.mjs
+      - run: npm ci
+      - name: Build exact immutable candidate
+        working-directory: candidate
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Three gated native keys then one unchanged 45s screenshot
+        run: timeout --signal=TERM --kill-after=10s 360s node scripts/diagnose-drained-key.mjs
+        timeout-minutes: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drained-keys-${{ github.sha }}
+          path: drained-key-results/
+          retention-days: 14
+          if-no-files-found: warn
