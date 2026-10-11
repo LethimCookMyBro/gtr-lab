@@ -3,6 +3,7 @@ import { Mesh } from "three";
 import { useThree } from "@react-three/fiber";
 import { compileRearScene } from "../home/compileRearScene";
 import { overrideCabinWindows } from "./cabinPreview";
+import { invalidateSceneShadows } from "./staticShadowPolicy";
 import type { PreparedVehicle } from "./materialAdapter";
 
 type Props = {
@@ -74,9 +75,11 @@ export function CabinAttachment({
     if (!active) return;
     try {
       const restore = overrideCabinWindows(exterior.scene);
+      invalidateSceneShadows(scene);
       invalidate();
       return () => {
         restore();
+        invalidateSceneShadows(scene);
         invalidate();
       };
     } catch (error) {
@@ -87,7 +90,7 @@ export function CabinAttachment({
           : "Cabin windows could not be prepared.",
       );
     }
-  }, [active, exterior, invalidate, request]);
+  }, [active, exterior, scene, invalidate, request]);
   if (!active) return null;
   return (
     <group scale={exterior.scale} position={exterior.position} dispose={null}>

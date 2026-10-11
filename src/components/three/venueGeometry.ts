@@ -192,11 +192,12 @@ export function setVenueInspectionCutaway(group: Group, cameraHeight: number) {
     inspectionOverheads.set(group, entry);
   }
   const cut = cameraHeight > 3.8;
-  if (entry.cut === cut) return;
+  if (entry.cut === cut) return false;
   entry.cut = cut;
   entry.meshes.forEach((mesh) => {
     mesh.visible = !cut;
   });
+  return true;
 }
 
 /** Original metre-scaled architecture; asset maps remain cached and are never mutated. */

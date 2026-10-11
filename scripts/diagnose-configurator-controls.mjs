@@ -75,7 +75,7 @@ try {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.waitForFunction(() => {
         const canvas = document.querySelector('.scene-stage canvas');
-        return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.75)) < 0.02;
+        return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.5, Math.sqrt(2_000_000 / Math.max(1, canvas.clientWidth * canvas.clientHeight)))) < 0.02;
       }, {}, { timeout: 15000 });
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const bounds = await canvas.boundingBox();

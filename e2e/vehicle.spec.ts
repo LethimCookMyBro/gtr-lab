@@ -119,7 +119,14 @@ async function stableResolution(page: Page) {
           const canvas = element as HTMLCanvasElement;
           return Math.abs(
             canvas.width / canvas.clientWidth -
-              Math.min(devicePixelRatio, 1.75),
+              Math.min(
+                devicePixelRatio,
+                1.5,
+                Math.sqrt(
+                  2_000_000 /
+                    Math.max(1, canvas.clientWidth * canvas.clientHeight),
+                ),
+              ),
           );
         }),
       { timeout: resolutionRecoveryTimeout },

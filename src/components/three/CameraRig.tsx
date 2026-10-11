@@ -291,7 +291,6 @@ export function CameraRig({
       enabled={preset !== "interior"}
       ref={controls}
       makeDefault
-      regress
       enablePan={false}
       enableDamping={!reducedMotion}
       dampingFactor={0.09}

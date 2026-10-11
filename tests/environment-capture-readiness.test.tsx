@@ -95,7 +95,7 @@ async function fixture() {
   return { canvas, store, frame, recover, renders };
 }
 
-it("settled does not release the late AdaptiveDpr regression triggered by Home", async () => {
+it("settled does not release a late AdaptiveDpr regression after Home", async () => {
   const f = await fixture();
   const key = (key: string) =>
     act(async () =>
@@ -103,8 +103,9 @@ it("settled does not release the late AdaptiveDpr regression triggered by Home",
         new KeyboardEvent("keydown", { key, cancelable: true }),
       ),
     );
-  // A previous completed zoom capture is at full DPR. Home queues reset work;
-  // its first renderer frame, rather than the key event itself, fires change.
+  // A previous completed zoom capture is at full DPR. Home queues reset work.
+  // Production CameraRig no longer regresses DPR; inject a real store regression
+  // on the next frame so the independent capture gate retains this coverage.
   for (let n = 0; n < 12; n++) await key("-");
   await f.recover();
   await f.frame();
@@ -114,9 +115,14 @@ it("settled does not release the late AdaptiveDpr regression triggered by Home",
   expect(f.canvas.width).toBe(390);
   const observations: unknown[] = [];
   let scheduled = Promise.resolve();
+  let regressionQueued = true;
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
     scheduled = scheduled.then(async () => {
       await act(async () => vi.advanceTimersByTimeAsync(16));
+      if (regressionQueued) {
+        regressionQueued = false;
+        await act(async () => f.store.getState().performance.regress());
+      }
       await f.frame();
       observations.push({
         phase: "raf",
@@ -178,7 +184,7 @@ it("settled does not release the late AdaptiveDpr regression triggered by Home",
   expect(result).toMatchObject({ drawingBuffer: [390, 392], fullFrames: 3 });
   expect(result.regressedFrames).toBeGreaterThan(0);
   console.log("REAL_DPR_TRACE", JSON.stringify(observations));
-  // The same real Home regression is now withheld until recovery is stable.
+  // The real AdaptiveDpr regression is withheld until recovery is stable.
   expect(
     f.canvas.width,
     "settled() released a 60% DPR canvas after accepting full DPR",

@@ -211,7 +211,7 @@ try {
     await frames();
     await page.waitForFunction(() => {
       const element = document.querySelector('.scene-stage canvas');
-      return element && Math.abs(element.width / element.clientWidth - Math.min(devicePixelRatio, 1.75)) < .02;
+      return element && Math.abs(element.width / element.clientWidth - Math.min(devicePixelRatio, 1.5, Math.sqrt(2_000_000 / Math.max(1, element.clientWidth * element.clientHeight)))) < .02;
     }, null, { timeout: 20_000 });
     const png = await canvas.screenshot({ path: `${output}/${selectedViewport}-${label}-canvas.png`, animations: 'disabled', timeout: 45_000 });
     await page.screenshot({ path: `${output}/${selectedViewport}-${label}-page.png`, fullPage: true, animations: 'disabled', scale: 'css', timeout: 45_000 });

@@ -126,16 +126,35 @@ describe("bounded full-resolution frame gate", () => {
     expect(outcome.message).toMatch(/within 15000ms/);
     expect(vi.getTimerCount()).toBe(0);
   });
-  it("honors the existing 1.75 DPR cap without accepting undersized buffers", async () => {
+  it("honors the stable 1.5 DPR cap without accepting undersized buffers", async () => {
     vi.stubGlobal("devicePixelRatio", 2);
-    canvas.width = Math.floor(390 * 1.75);
-    canvas.height = 392 * 1.75;
-    const waiting = waitForFullResolutionFrames();
+    canvas.width = 390 * 1.5;
+    canvas.height = 392 * 1.5;
+    let result;
+    const waiting = waitForFullResolutionFrames().then((value) => {
+      result = value;
+    });
     await vi.advanceTimersByTimeAsync(48);
-    expect(await waiting).toMatchObject({
-      expectedDpr: 1.75,
-      drawingBuffer: [682, 686],
+    expect(result).toMatchObject({
+      expectedDpr: 1.5,
+      drawingBuffer: [585, 588],
       sampledFrames: 3,
     });
+    await waiting;
+  });
+  it("accepts a large viewport at the two-million-pixel budget", async () => {
+    vi.stubGlobal("devicePixelRatio", 2);
+    canvas.clientWidth = 3840;
+    canvas.clientHeight = 2160;
+    const expectedDpr = Math.sqrt(2_000_000 / (3840 * 2160));
+    canvas.width = Math.floor(3840 * expectedDpr);
+    canvas.height = Math.floor(2160 * expectedDpr);
+    let result;
+    const waiting = waitForFullResolutionFrames().then((value) => {
+      result = value;
+    });
+    await vi.advanceTimersByTimeAsync(48);
+    expect(result).toMatchObject({ expectedDpr, fullFrames: 3 });
+    await waiting;
   });
 });

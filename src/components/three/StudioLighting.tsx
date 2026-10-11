@@ -1,6 +1,11 @@
-import { useEffect, useMemo } from "react";
-import { useFrame } from "@react-three/fiber";
-import type { Group } from "three";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import type { ThreeElements } from "@react-three/fiber";
+import type { DirectionalLight, Group } from "three";
+import {
+  cacheDirectionalShadow,
+  invalidateSceneShadows,
+} from "./staticShadowPolicy";
 import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 RectAreaLightUniformsLib.init();
 import { Environment } from "@react-three/drei/core/Environment";
@@ -85,9 +90,10 @@ export function StudioLighting({
   const visibleOcean = venue.group.getObjectByName("ocean");
   if (visibleOcean) visibleOcean.visible = false;
   useEffect(() => () => venue.dispose(), [venue]);
-  useFrame(({ camera }) =>
-    setVenueInspectionCutaway(venue.group, camera.position.y),
-  );
+  useFrame(({ camera, scene }) => {
+    if (setVenueInspectionCutaway(venue.group, camera.position.y))
+      invalidateSceneShadows(scene);
+  });
   const outdoors = environment === "forest" || environment === "coast";
   const night = environment === "night";
   const gallery = environment === "gallery";
@@ -108,7 +114,7 @@ export function StudioLighting({
             groundColor="#515052"
             intensity={night ? 0.28 : 0.5}
           />
-          <directionalLight
+          <CachedDirectionalLight
             position={[-9, 9, -4]}
             intensity={night ? 0.38 : gallery ? 2.8 : 2.2}
             color="#f0f5ff"
@@ -286,7 +292,7 @@ function OutdoorLight({
       <fog attach="fog" args={["#bbd0de", 180, 620]} />
       <hemisphereLight intensity={0.5} color="#dbeaf3" groundColor="#646357" />
       {/* Aligned to the actual sun in the CC0 sky map (u≈0.595, v≈0.767). */}
-      <directionalLight
+      <CachedDirectionalLight
         position={[41.56, 55.73, 28.14]}
         intensity={3.4}
         color="#fff7e8"
@@ -302,6 +308,27 @@ function OutdoorLight({
         onUpdate={(light) => light.shadow.camera.layers.enable(2)}
       />
     </>
+  );
+}
+
+/** Main-scene directional depth is stationary until an explicit scene mutation. */
+function CachedDirectionalLight(props: ThreeElements["directionalLight"]) {
+  const light = useRef<DirectionalLight>(null);
+  const scene = useThree((state) => state.scene);
+  const get = useThree((state) => state.get);
+  useLayoutEffect(() => {
+    if (!light.current) return;
+    return cacheDirectionalShadow(scene, light.current, () => get().camera);
+  }, [scene, get]);
+  return (
+    <directionalLight
+      {...props}
+      ref={light}
+      onUpdate={(updated) => {
+        if (typeof props.onUpdate === "function") props.onUpdate(updated);
+        invalidateSceneShadows(scene);
+      }}
+    />
   );
 }
 

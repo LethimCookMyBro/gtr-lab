@@ -1,6 +1,9 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { AdaptiveDpr } from "@react-three/drei/core/AdaptiveDpr";
+import {
+  initialVehiclePixelRatio,
+  VehiclePixelDensity,
+} from "./VehiclePixelDensity";
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
 import { CABIN_URL, cabinCameraView } from "./cabinPreview";
 import { prepareAsyncRendererDisposal } from "./asyncRendererDisposal";
@@ -16,6 +19,7 @@ import {
 } from "./materialAdapter";
 import { useVehicleAsset } from "./useVehicleAsset";
 import { useSceneReadiness } from "./useSceneReadiness";
+import { invalidateSceneShadows } from "./staticShadowPolicy";
 import { CAMERA_VIEWS } from "./sceneHelpers";
 import type { PreparedVehicle } from "./materialAdapter";
 import type { VehicleSceneProps } from "./types";
@@ -35,6 +39,15 @@ function Vehicle({
   onReady: () => void;
 }) {
   const invalidate = useThree((state) => state.invalidate);
+  const scene = useThree((state) => state.scene);
+  useLayoutEffect(() => {
+    invalidateSceneShadows(scene);
+    invalidate();
+    return () => {
+      invalidateSceneShadows(scene);
+      invalidate();
+    };
+  }, [asset, scene, invalidate]);
   const renderedFrames = useRef(0);
   const ready = useRef(false);
   const initializedAppearance = useRef(false);
@@ -88,6 +101,7 @@ function ContextHealth({ onError }: { onError: (message: string) => void }) {
 
 /** One canvas; mount with a new key to retry a failed graphics context. */
 export default function VehicleScene(props: VehicleSceneProps) {
+  const [dpr, setDpr] = useState(initialVehiclePixelRatio);
   const asset = useVehicleAsset(
     props.url,
     props.materialRoles,
@@ -136,8 +150,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
       <Canvas
         shadows
         frameloop="demand"
-        dpr={[1, 1.75]}
-        performance={{ min: 0.6 }}
+        dpr={dpr}
         camera={{
           position: CAMERA_VIEWS.hero.position,
           fov: CAMERA_VIEWS.hero.fov,
@@ -167,7 +180,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
         }}
       >
         <ContextHealth onError={props.onError} />
-        <AdaptiveDpr />
+        <VehiclePixelDensity onChange={setDpr} />
         <CameraRig
           preset={props.preset}
           requestId={props.cameraRequest}

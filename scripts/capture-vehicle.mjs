@@ -33,7 +33,7 @@ try{
   if(view.ready){
    view.interactions=[];
    const frameHash = async label => {
-    await page.waitForFunction(() => { const canvas = document.querySelector('.scene-stage canvas'); return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.75)) < .02; }, {}, { timeout: 15000 });
+    await page.waitForFunction(() => { const canvas = document.querySelector('.scene-stage canvas'); return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.5, Math.sqrt(2_000_000 / Math.max(1, canvas.clientWidth * canvas.clientHeight)))) < .02; }, {}, { timeout: 15000 });
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const bytes = await page.locator('.scene-stage canvas').screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000 });
     return createHash('sha256').update(bytes).digest('hex');

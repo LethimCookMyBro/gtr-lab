@@ -28,7 +28,15 @@ export function waitForFullResolutionFrames({ timeoutMs = 15000 } = {}) {
       }
       samples++;
       const canvas = document.querySelector(".scene-stage canvas");
-      const expectedDpr = Math.min(devicePixelRatio, 1.75);
+      const expectedDpr =
+        canvas &&
+        Math.min(
+          devicePixelRatio,
+          1.5,
+          Math.sqrt(
+            2_000_000 / Math.max(1, canvas.clientWidth * canvas.clientHeight),
+          ),
+        );
       const observation = canvas && {
         css: [canvas.clientWidth, canvas.clientHeight],
         drawingBuffer: [canvas.width, canvas.height],
@@ -43,8 +51,8 @@ export function waitForFullResolutionFrames({ timeoutMs = 15000 } = {}) {
         );
       const same =
         previous && JSON.stringify(observation) === JSON.stringify(previous);
-      // A late OrbitControls change can regress AdaptiveDpr after an initially
-      // full canvas. Count only consecutive full native frames with stable size.
+      // Reject undersized or unstable buffers, including delayed quality changes
+      // in a regression fixture. The production scene uses stable bounded DPR.
       fullFrames = full ? (same ? fullFrames + 1 : 1) : 0;
       if (!full) regressedFrames++;
       previous = observation;

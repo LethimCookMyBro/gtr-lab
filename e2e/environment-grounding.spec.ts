@@ -54,11 +54,17 @@ async function ready(page: Page, allowFallbackNotice = false) {
         page.locator(".scene-stage canvas").evaluate((element) => {
           const c = element as HTMLCanvasElement;
           return Math.abs(
-            c.width / c.clientWidth - Math.min(devicePixelRatio, 1.75),
+            c.width / c.clientWidth -
+              Math.min(
+                devicePixelRatio,
+                1.5,
+                Math.sqrt(
+                  2_000_000 / Math.max(1, c.clientWidth * c.clientHeight),
+                ),
+              ),
           );
         }),
-      // Match the physical matrix: desktop SwiftShader can take 13–14s to
-      // present AdaptiveDpr's restored full-resolution frame after input.
+      // Preserve the existing bounded readiness window for slow software renders.
       { timeout: 15000 },
     )
     .toBeLessThan(0.02);
