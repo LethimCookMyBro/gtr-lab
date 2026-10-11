@@ -120,7 +120,7 @@ test('the same staged source push schedules real cabin and material proof alongs
 
 test('lifecycle capture behavior is byte-identical after normalizing only the new explicit contract name', async () => {
   const source = String(await read('scripts/diagnose-render-backpressure-lifecycle.mjs'));
-  const previous = source.replace(", 'contact-shadow-clamp-stability-2m-msaa-v1'", '').replace(", 'cabin-entry-functional-2m-msaa-v1'", '');
+  const previous = source.replace(", 'camera-terminal-orientation-2m-msaa-v1'", '').replace(", 'contact-shadow-clamp-stability-2m-msaa-v1'", '').replace(", 'cabin-entry-functional-2m-msaa-v1'", '');
   assert.equal(hash(previous), '375d4aef08e3c2affbf9bf4eed3830ce25ad54c3d371bd4b453f956f34c8d26c');
 });
 

@@ -136,7 +136,7 @@ test('gate rejects local execution before file lookup or any runtime setup', asy
 test('gate requires the exact render-backpressure request, source, both markers, and unchanged viewport contract', async () => {
   assert.ok(driverModule, 'The strict CI-only actual-browser lifecycle driver must exist');
   const { request, env } = await reviewedEnvironment();
-  assert.equal(request.geometryContract, 'contact-shadow-clamp-stability-2m-msaa-v1', 'Parent integration must pin the reviewed contact-shadow contract');
+  assert.equal(request.geometryContract, 'camera-terminal-orientation-2m-msaa-v1', 'Parent integration must pin the reviewed camera-terminal contract');
   const target = driverModule.validateBackpressureLifecycleEnvironment(env, request);
   assert.equal(target.geometry.sourceTree, request.sourceTree); assert.equal(target.geometry.maxBufferPixels, 2_000_000); assert.equal(target.geometry.maxDpr, 1.5);
   assert.deepEqual(target.geometry.contextCreation, { requestedAntialias: true, antialias: true, multisampled: true });

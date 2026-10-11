@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "allow": true,
+  "mode": "fixed",
+  "sourceSha": "current",
+  "sourceTree": "d37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6",
+  "geometryContract": "camera-terminal-orientation-2m-msaa-v1"
+}

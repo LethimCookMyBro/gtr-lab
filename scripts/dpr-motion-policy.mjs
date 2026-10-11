@@ -26,6 +26,9 @@ const CABIN_ENTRY_FUNCTIONAL_CONTRACT = 'cabin-entry-functional-2m-msaa-v1';
 // Optional-cabin contact-shadow isolation and exact clamped-key no-op repair; original capture acceptance remains required.
 const CONTACT_SHADOW_TREE = '79386e6926c422a81d2fd11a150faefe6513fcb8a89eb15872bc8beeb78d2ee8';
 const CONTACT_SHADOW_CONTRACT = 'contact-shadow-clamp-stability-2m-msaa-v1';
+// Terminal rig orientation and own-demand repair; preserve every native-motion and lifecycle acceptance gate.
+const CAMERA_TERMINAL_TREE = 'd37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6';
+const CAMERA_TERMINAL_CONTRACT = 'camera-terminal-orientation-2m-msaa-v1';
 const geometryRows = {
   desktop: {
     initial: { viewportWidth: 1440, viewportHeight: 900, cssWidth: 1440, cssHeight: 744, nativeDpr: 2, width: 1391, height: 718, attributeWidth: 1391, attributeHeight: 718 },
@@ -62,6 +65,7 @@ contracts[RENDER_BACKPRESSURE_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT]
 contracts[RENDER_REPAIR_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: RENDER_REPAIR_TREE };
 contracts[CABIN_ENTRY_FUNCTIONAL_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: CABIN_ENTRY_FUNCTIONAL_TREE };
 contracts[CONTACT_SHADOW_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: CONTACT_SHADOW_TREE };
+contracts[CAMERA_TERMINAL_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: CAMERA_TERMINAL_TREE };
 // Historical source-pinned motion must not inherit the current runtime model URL.
 const originalMotionModels = [
   { path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19_170_816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' },
@@ -162,7 +166,7 @@ export function validateMotionEnvironment(env) {
     for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]'])
       assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Brake candidate requires ${marker}`);
   }
-  if ([RENDER_BACKPRESSURE_TREE, RENDER_REPAIR_TREE, CABIN_ENTRY_FUNCTIONAL_TREE, CONTACT_SHADOW_TREE].includes(env.R35_EXPECTED_APP_TREE)) {
+  if ([RENDER_BACKPRESSURE_TREE, RENDER_REPAIR_TREE, CABIN_ENTRY_FUNCTIONAL_TREE, CONTACT_SHADOW_TREE, CAMERA_TERMINAL_TREE].includes(env.R35_EXPECTED_APP_TREE)) {
     assert.equal(env.GITHUB_EVENT_NAME, 'push', 'Pacing candidate requires reviewed main push');
     for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]'])
       assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Pacing candidate requires ${marker}`);

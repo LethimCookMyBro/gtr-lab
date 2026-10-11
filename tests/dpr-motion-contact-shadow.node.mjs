@@ -3,7 +3,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { applicationIdentity } from '../scripts/diagnose-dpr-motion.mjs';
 import { resolveMotionRequest, validateMotionEnvironment, assessMotionEvidence, motionModelsForSource } from '../scripts/dpr-motion-policy.mjs';
 import { validateBackpressureLifecycleEnvironment } from '../scripts/diagnose-render-backpressure-lifecycle.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -66,11 +65,11 @@ test('historical request and complete e9a0383 source remain frozen independently
   assert.deepEqual(motionModelsForSource(tree)[1], { path: '/models/ciasny-r35.glb', bytes: 8_296_356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' });
 });
 
-test('active request and complete runtime identity match only the new reviewed repair contract', async () => {
-  assert.deepEqual(await json('qa/dpr-motion-request.json'), request);
+test('historical request and complete runtime identity match only the reviewed contact-shadow contract', async () => {
+  assert.deepEqual(await json('qa/dpr-motion-contact-shadow-request.json'), request);
   const frozen = await json('qa/fixtures/dpr-motion-contact-shadow-identity.json');
   assert.equal(frozen.sha256, tree); assert.equal(hash(JSON.stringify(frozen.files)), tree);
-  assert.deepEqual(await applicationIdentity(new URL('..', import.meta.url).pathname), frozen);
+  assert.equal(frozen.files.length, 93);
 });
 
 test('both named lifecycle contracts are valid but no unreviewed contract or source alias is admitted', () => {
@@ -97,7 +96,8 @@ test('both CI lifecycle steps explicitly admit the repair contract without repla
 
 test('runtime repair touches only the separately reviewed source paths and retains every baseline source file', async () => {
   const historical = await json('qa/fixtures/dpr-motion-cabin-entry-functional-identity.json');
-  const current = await applicationIdentity(new URL('..', import.meta.url).pathname);
+  const current = await json('qa/fixtures/dpr-motion-contact-shadow-identity.json');
+  assert.equal(hash(JSON.stringify(current.files)), tree);
   assert.equal(current.sha256, tree); assert.equal(current.files.length, 93);
   const changed = current.files.filter(row => historical.files.find(old => old.path === row.path)?.sha256 !== row.sha256);
   assert.deepEqual(changed.map(row => row.path), ['src/components/three/CabinAttachment.tsx', 'src/components/three/keyboardControls.ts', 'src/components/three/stageLayers.ts']);
@@ -120,7 +120,7 @@ test('the same staged source push schedules real cabin and material proof alongs
 
 test('lifecycle capture behavior is byte-identical after normalizing only the new explicit contract name', async () => {
   const source = String(await read('scripts/diagnose-render-backpressure-lifecycle.mjs'));
-  const previous = source.replace(", 'contact-shadow-clamp-stability-2m-msaa-v1'", '');
+  const previous = source.replace(", 'camera-terminal-orientation-2m-msaa-v1'", '').replace(", 'contact-shadow-clamp-stability-2m-msaa-v1'", '');
   assert.equal(hash(previous), '45dbe6d45a06af0c2f995e4ece3b49dcb3cd03f7704a507364630751241a04f2');
 });
 
@@ -143,5 +143,13 @@ test('all functional captures, readiness budgets and exact route-return pixel as
   "scripts/capture-vehicle.mjs": "cae227647bf7b5164b01684369168d2023f0acb59f25d76e42d4f6ad394ca814",
   "scripts/capture-vehicle-materials.mjs": "89b6482085123776db600efa1d2237438b66654a619c39b72b9f07ff5b242505"
 };
-  for (const [path, expectedHash] of Object.entries(expected)) assert.equal(hash(await read(path)), expectedHash, path);
+  for (const [path, expectedHash] of Object.entries(expected)) {
+    const bytes = await read(path);
+    if (path === 'scripts/capture-cabin-preview.mjs') {
+      const resourceWait = "    // Compiled/selected UI can precede an admitted cabin draw. Resource cohorts\n    // require the matching full-cabin main and native completion, not RAF ticks.\n    await waitForFunctionalCapture(page, { preset: 'interior', timeout: 20_000 });\n";
+      const source = String(bytes);
+      assert.equal(source.split(resourceWait).length - 1, 1, 'Preserve the separately reviewed native resource wait exactly once');
+      assert.equal(hash(source.replace(resourceWait, '')), expectedHash, 'All prior cabin capture bytes remain exact');
+    } else assert.equal(hash(bytes), expectedHash, path);
+  }
 });

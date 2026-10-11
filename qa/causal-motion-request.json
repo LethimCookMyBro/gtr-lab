@@ -15,7 +15,7 @@
     "scripts/causal-capture.mjs": "d5c72d64ac636cb6de6c8249f52ec266b1385468740fbaaad61765e016045efd",
     "scripts/causal-evidence-replay.mjs": "e40a4fb14f9ee50e76c2845e5669b0645fdefd6d4dbf10ed15c805ecebee6030",
     "scripts/causal-motion-observer.mjs": "87627dcac02caa8d2bdf9a1068889a2735852ef2896f89e2d2e186391feaaf1d",
-    "scripts/causal-motion-preflight.mjs": "eb0da9fdc01688ae0a86b0d93d6da55a54932839d6ae878872cd63a6acec6a9e",
+    "scripts/causal-motion-preflight.mjs": "a49a9c260aac3d50f0a2b74ccc1ffa3b91b3c42c3a32afb1c3cdb709e66fdcc6",
     "scripts/causal-observed-effect-policy.mjs": "a56c82c76de3f2c5674bf61133fe34e67e511772ceb14c4172d4ca6ecbe2f1a3",
     "scripts/causal-transport-ledger.mjs": "bce978f2068e31be78d81751713bfb5374152282e1c8c3d8088b0fb9d1c2b5c1",
     "scripts/demand-final-request-policy.mjs": "599f0a0abd35b9c845254ea7d29444ba4db3e5e76afdc82b6c0366949014e6fe",
@@ -23,7 +23,7 @@
     "scripts/diagnose-configurator-controls.mjs": "3261ecc44eb8ca0a473d4047229c832f6ce655ee065806c4060b508e9078ff0d",
     "scripts/diagnose-dpr-motion.mjs": "b56d962004c4d0a65e0080eec5f9138c76f18e5b22602ea455bc5f64ecf97110",
     "scripts/dpr-motion-observer.mjs": "ba4364c76024cd543435fd578b3fdc2def691f935ec30fbf7e3e20f669169aa8",
-    "scripts/dpr-motion-policy.mjs": "1e83c090e6ba03a5359566390a785117a699c752e1203808ed89b9236d6e82b6",
+    "scripts/dpr-motion-policy.mjs": "33a69e394835ac5592c54c4b1dd278c80b42f3fb8335ee2821a075d5d66ba36b",
     "scripts/environment-pixel-comparison.mjs": "5994eaa59262f1093ec008e441e1247aaa62b20dca8842f254a4f34545d4d958",
     "scripts/functional-capture-readiness.mjs": "816f8123344a2ab9f98a2469a81758266fc3d60d69545977dae3e19412a2dffb",
     "scripts/vehicle-preview-readiness.mjs": "7005f0acc335ddfd2784a3f3ce6f0f4615447636074bc85e36e30259a0cbd17a"

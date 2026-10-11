@@ -1,0 +1,464 @@
+{
+  "sourceCommit": "128606e9e744d0b939827b13b9ec9af339e8d95f",
+  "source": "causal-motion-run-review-20261011/mobile/fixed-mobile/causal-observations.json",
+  "sourceSha256": "e9777eb0a8418a11ca0532175fee1bc4506cdce109d2960025f552e90f88a9b1",
+  "transform": {
+    "scale": 1.0000081514774057,
+    "position": [
+      0,
+      2.822209981912982e-05,
+      2.1544078648632483e-05
+    ],
+    "nativeBounds": {
+      "min": [
+        -1.021994709968567,
+        -2.822186976919605e-05,
+        -2.3500023880872787
+      ],
+      "max": [
+        1.021994709968567,
+        1.371688665207368,
+        2.3499593002812107
+      ]
+    },
+    "derivation": "independent-pinned-GLB-accessor-bounds"
+  },
+  "frames": [
+    {
+      "kind": "main",
+      "owner": 1,
+      "id": 18,
+      "snapshot": {
+        "vehicle": {
+          "url": "/models/ciasny-r35.glb",
+          "lights": false,
+          "paint": "#a6acb1",
+          "environment": "studio",
+          "environmentRequest": 0,
+          "cabinSeat": "passenger",
+          "exterior": true,
+          "full": true,
+          "proxy": false,
+          "lamps": [
+            {
+              "role": "headlights",
+              "emissive": [
+                0.913098651791473,
+                0.8879231178794776,
+                0.8148465722120952
+              ],
+              "intensity": 0
+            },
+            {
+              "role": "taillight-lens",
+              "emissive": [
+                1,
+                0.0027317428517647058,
+                0.0015176349176470587
+              ],
+              "intensity": 0
+            },
+            {
+              "role": "taillights",
+              "emissive": [
+                1,
+                0.015208514418949472,
+                0.009134058699157796
+              ],
+              "intensity": 0
+            }
+          ]
+        },
+        "camera": {
+          "preset": "interior",
+          "requestId": 0,
+          "cabin": true,
+          "target": [
+            -0.20000163029548115,
+            0.9000355584294844,
+            0.40002480466961093
+          ],
+          "destination": [
+            -0.4200034236205104,
+            1.1800378408431578,
+            -0.23498037151854173
+          ],
+          "targetFov": 72,
+          "settled": false
+        },
+        "pose": {
+          "position": [
+            -0.4200034236205105,
+            1.1800378408431578,
+            -0.23498037151854156
+          ],
+          "quaternion": [
+            -0.04518767026583838,
+            0.9526253379381041,
+            0.24314332444791079,
+            0.1770433951060497
+          ],
+          "projection": [
+            1.3128566010648117,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "dimensions": {
+          "width": 585,
+          "height": 558,
+          "cssWidth": 390,
+          "cssHeight": 372,
+          "pixelRatio": 1.5,
+          "renderWidth": 390,
+          "renderHeight": 372
+        },
+        "live": true
+      },
+      "stable": true,
+      "at": 61277.8,
+      "sequence": 3497,
+      "phase": "cabin-seat-controls"
+    },
+    {
+      "kind": "main",
+      "owner": 1,
+      "id": 19,
+      "snapshot": {
+        "vehicle": {
+          "url": "/models/ciasny-r35.glb",
+          "lights": false,
+          "paint": "#a6acb1",
+          "environment": "studio",
+          "environmentRequest": 0,
+          "cabinSeat": "driver",
+          "exterior": true,
+          "full": true,
+          "proxy": false,
+          "lamps": [
+            {
+              "role": "headlights",
+              "emissive": [
+                0.913098651791473,
+                0.8879231178794776,
+                0.8148465722120952
+              ],
+              "intensity": 0
+            },
+            {
+              "role": "taillight-lens",
+              "emissive": [
+                1,
+                0.0027317428517647058,
+                0.0015176349176470587
+              ],
+              "intensity": 0
+            },
+            {
+              "role": "taillights",
+              "emissive": [
+                1,
+                0.015208514418949472,
+                0.009134058699157796
+              ],
+              "intensity": 0
+            }
+          ]
+        },
+        "camera": {
+          "preset": "interior",
+          "requestId": 0,
+          "cabin": true,
+          "target": [
+            0.15000122272161084,
+            0.8400350693408399,
+            0.3900247231548369
+          ],
+          "destination": [
+            0.42000342362051046,
+            1.1800378408431578,
+            -0.23498037151854173
+          ],
+          "targetFov": 72,
+          "settled": true
+        },
+        "pose": {
+          "position": [
+            0.42000342362051046,
+            1.1800378408431578,
+            -0.23498037151854173
+          ],
+          "quaternion": [
+            -0.04647308763303349,
+            0.9531435971977622,
+            0.22476248219727177,
+            0.19707704544995475
+          ],
+          "projection": [
+            1.3128566010648117,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "dimensions": {
+          "width": 585,
+          "height": 558,
+          "cssWidth": 390,
+          "cssHeight": 372,
+          "pixelRatio": 1.5,
+          "renderWidth": 390,
+          "renderHeight": 372
+        },
+        "live": true
+      },
+      "stable": true,
+      "at": 63707.59999999999,
+      "sequence": 3652,
+      "phase": "cabin-seat-controls"
+    },
+    {
+      "kind": "main",
+      "owner": 1,
+      "id": 20,
+      "snapshot": {
+        "vehicle": {
+          "url": "/models/ciasny-r35.glb",
+          "lights": false,
+          "paint": "#a6acb1",
+          "environment": "studio",
+          "environmentRequest": 0,
+          "cabinSeat": "driver",
+          "exterior": true,
+          "full": true,
+          "proxy": false,
+          "lamps": [
+            {
+              "role": "headlights",
+              "emissive": [
+                0.913098651791473,
+                0.8879231178794776,
+                0.8148465722120952
+              ],
+              "intensity": 0
+            },
+            {
+              "role": "taillight-lens",
+              "emissive": [
+                1,
+                0.0027317428517647058,
+                0.0015176349176470587
+              ],
+              "intensity": 0
+            },
+            {
+              "role": "taillights",
+              "emissive": [
+                1,
+                0.015208514418949472,
+                0.009134058699157796
+              ],
+              "intensity": 0
+            }
+          ]
+        },
+        "camera": {
+          "preset": "interior",
+          "requestId": 0,
+          "cabin": true,
+          "target": [
+            0.15000122272161084,
+            0.8400350693408399,
+            0.3900247231548369
+          ],
+          "destination": [
+            0.42000342362051046,
+            1.1800378408431578,
+            -0.23498037151854173
+          ],
+          "targetFov": 72,
+          "settled": true
+        },
+        "pose": {
+          "position": [
+            0.42000342362051046,
+            1.1800378408431578,
+            -0.23498037151854173
+          ],
+          "quaternion": [
+            -0.04647308763303349,
+            0.9531435971977622,
+            0.22476248219727177,
+            0.19707704544995475
+          ],
+          "projection": [
+            1.3128566010648117,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "dimensions": {
+          "width": 585,
+          "height": 558,
+          "cssWidth": 390,
+          "cssHeight": 372,
+          "pixelRatio": 1.5,
+          "renderWidth": 390,
+          "renderHeight": 372
+        },
+        "live": true
+      },
+      "stable": true,
+      "at": 67516.50000000001,
+      "sequence": 3889,
+      "phase": "cabin-seat-controls"
+    }
+  ],
+  "driverCommit": {
+    "inputOrdinal": 101,
+    "seat": "driver",
+    "at": 62038.40000000001,
+    "owner": 1,
+    "snapshot": {
+      "vehicle": {
+        "url": "/models/ciasny-r35.glb",
+        "lights": false,
+        "paint": "#a6acb1",
+        "environment": "studio",
+        "environmentRequest": 0,
+        "cabinSeat": "driver",
+        "exterior": true,
+        "full": true,
+        "proxy": false,
+        "lamps": [
+          {
+            "role": "headlights",
+            "emissive": [
+              0.913098651791473,
+              0.8879231178794776,
+              0.8148465722120952
+            ],
+            "intensity": 0
+          },
+          {
+            "role": "taillight-lens",
+            "emissive": [
+              1,
+              0.0027317428517647058,
+              0.0015176349176470587
+            ],
+            "intensity": 0
+          },
+          {
+            "role": "taillights",
+            "emissive": [
+              1,
+              0.015208514418949472,
+              0.009134058699157796
+            ],
+            "intensity": 0
+          }
+        ]
+      },
+      "camera": {
+        "preset": "interior",
+        "requestId": 0,
+        "cabin": true,
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ],
+        "destination": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "targetFov": 72,
+        "settled": false
+      },
+      "pose": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.04518767026583838,
+          0.9526253379381041,
+          0.24314332444791079,
+          0.1770433951060497
+        ],
+        "projection": [
+          1.3128566010648117,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "dimensions": {
+        "width": 585,
+        "height": 558,
+        "cssWidth": 390,
+        "cssHeight": 372,
+        "pixelRatio": 1.5,
+        "renderWidth": 390,
+        "renderHeight": 372
+      },
+      "live": true
+    },
+    "logicalChangeObserved": true,
+    "interpretation": "logical-seat-and-destination-committed; presentation-unproven"
+  },
+  "harnessCommit": "e8f3e4b0e87353b3d5354dc9c3a94a87c10857e9"
+}

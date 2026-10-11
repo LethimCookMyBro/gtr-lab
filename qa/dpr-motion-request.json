@@ -3,6 +3,6 @@
   "allow": true,
   "mode": "fixed",
   "sourceSha": "current",
-  "sourceTree": "79386e6926c422a81d2fd11a150faefe6513fcb8a89eb15872bc8beeb78d2ee8",
-  "geometryContract": "contact-shadow-clamp-stability-2m-msaa-v1"
+  "sourceTree": "d37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6",
+  "geometryContract": "camera-terminal-orientation-2m-msaa-v1"
 }

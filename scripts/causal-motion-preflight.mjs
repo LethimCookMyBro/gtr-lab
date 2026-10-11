@@ -47,7 +47,11 @@ export function independentExteriorTransform(bytes){
   }
   const scale=4.7/Math.max(max[0]-min[0],max[2]-min[2]);
   assert.ok(Number.isFinite(scale)&&scale>0);
-  return {scale,position:[-(min[0]+max[0])*scale/2,-min[1]*scale,-(min[2]+max[2])*scale/2],nativeBounds:{min,max},derivation:'independent-pinned-GLB-accessor-bounds'};
+  // Browser initialization serializes these fixed numeric fields through JSON.
+  // Canonicalize signed zero here only; retain strict replay equality and every
+  // other number/value distinction (no rounding or generic JSON round-trip).
+  const jsonNumber=n=>Object.is(n,-0)?0:n;
+  return {scale:jsonNumber(scale),position:[-(min[0]+max[0])*scale/2,-min[1]*scale,-(min[2]+max[2])*scale/2].map(jsonNumber),nativeBounds:{min:min.map(jsonNumber),max:max.map(jsonNumber)},derivation:'independent-pinned-GLB-accessor-bounds'};
 }
 export async function prepareCausalConfig(root,collectorRoot,request,viewport){
   await verifyCollectorFiles(collectorRoot,request);

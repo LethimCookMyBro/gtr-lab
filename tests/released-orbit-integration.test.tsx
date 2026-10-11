@@ -151,7 +151,30 @@ describe("released exterior damping React/DOM ownership", () => {
     const rig = readFileSync("src/components/three/CameraRig.tsx", "utf8");
     expect(rig).toContain("useReleasedOrbitDamping({");
     expect(rig).toContain("}, -2);");
-    expect(rig.match(/orbit\.update\(\)/g)).toHaveLength(2); // Existing cabin drain and transition only.
+    const terminalInterior = `        // The earlier update used the interpolated target. Disabled interior
+        // controls skip Drei's later update, so finish their exact look now.
+        if (preset === "interior") {
+          orbit.update();
+          // Native spherical normalization must not translate the fixed eye.
+          camera.position.copy(destination.position);
+        }
+`;
+    expect(rig.split(terminalInterior)).toHaveLength(2);
+    const terminal = rig.slice(
+      rig.indexOf("camera.position.distanceToSquared(destination.position)"),
+      rig.indexOf("orbit.enableDamping = !reducedMotion && !moving.current;"),
+    );
+    expect(terminal).toContain(terminalInterior);
+    expect(terminal.indexOf(terminalInterior)).toBeGreaterThan(
+      terminal.indexOf("moving.current = false;"),
+    );
+    expect(terminal.indexOf(terminalInterior)).toBeGreaterThan(
+      terminal.indexOf("orbit.target.copy(destination.target);"),
+    );
+    expect(terminal.indexOf(terminalInterior)).toBeGreaterThan(
+      terminal.indexOf("orbit.maxPolarAngle = Math.PI / 2 - 0.025;"),
+    );
+    expect(rig.replace(terminalInterior, "").match(/orbit\.update\(\)/g)).toHaveLength(2); // Existing cabin drain and transition remain exact outside the reviewed interior terminal correction.
   });
   it("adds no updater and brackets the existing Drei callback", () => {
     render(<Harness />);

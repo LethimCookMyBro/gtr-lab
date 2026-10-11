@@ -10,7 +10,7 @@ import { validateMotionEnvironment, resolveMotionRequest, motionModelsForSource,
 import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { installRenderBackpressureLifecycleFixture } from './render-backpressure-lifecycle-fixture.mjs';
 
-const contracts = Object.freeze(['render-backpressure-2m-msaa-v1', 'render-repair-readiness-2m-msaa-v1', 'cabin-entry-functional-2m-msaa-v1', 'contact-shadow-clamp-stability-2m-msaa-v1']);
+const contracts = Object.freeze(['render-backpressure-2m-msaa-v1', 'render-repair-readiness-2m-msaa-v1', 'cabin-entry-functional-2m-msaa-v1', 'contact-shadow-clamp-stability-2m-msaa-v1', 'camera-terminal-orientation-2m-msaa-v1']);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export function validateBackpressureLifecycleEnvironment(env, request) {
   const target = validateMotionEnvironment(env);

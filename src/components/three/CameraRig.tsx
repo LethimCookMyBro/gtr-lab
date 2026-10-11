@@ -270,8 +270,15 @@ export function CameraRig({
         orbit.maxDistance = destination.maxDistance;
         orbit.minPolarAngle = 0.005;
         orbit.maxPolarAngle = Math.PI / 2 - 0.025;
+        // The earlier update used the interpolated target. Disabled interior
+        // controls skip Drei's later update, so finish their exact look now.
+        if (preset === "interior") {
+          orbit.update();
+          // Native spherical normalization must not translate the fixed eye.
+          camera.position.copy(destination.position);
+        }
       }
-      invalidate();
+      if (moving.current) invalidate();
     }
     orbit.enableDamping = !reducedMotion && !moving.current;
     orbit.autoRotate =
