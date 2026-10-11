@@ -13,6 +13,7 @@ import {
 import type { CabinCameraView } from "./cabinPreview";
 import type { VectorTuple } from "./sceneHelpers";
 import { useInteriorLook } from "./useInteriorLook";
+import { useReleasedOrbitDamping } from "./useReleasedOrbitDamping";
 import {
   connectExteriorKeyboard,
   setViewerAccessibility,
@@ -183,6 +184,16 @@ export function CameraRig({
     if (autoRotate) manuallyStopped.current = false;
     invalidate();
   }, [autoRotate, reducedMotion, invalidate]);
+
+  useReleasedOrbitDamping({
+    controls,
+    moving,
+    exterior: preset !== "interior",
+    reducedMotion,
+    autoRotate,
+    preset,
+    requestId,
+  });
 
   useFrame((_, delta) => {
     const orbit = controls.current;

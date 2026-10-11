@@ -130,11 +130,21 @@ export async function verifyPublicCabinModels({ fetchImpl = fetch } = {}) {
   return verified;
 }
 
+// A scenario may complete one optional model while deliberately cancelling the
+// other. Its words alone are not evidence that both requests should abort.
+const cancellationOwnerByScenario = new Map([
+  ['Delayed download cancel and stale response ignored', cabinPath],
+  ['In-flight cabin switch tears down and all other five stay photographic', cabinPath],
+  ['Proxy arrives while full cabin is in-flight and cancellation restores it', cabinPath],
+  ['In-flight window proxy model switch cancels without late resurrection', proxyPath],
+  ['In-flight window proxy context-loss cancel and explicit viewer retry', proxyPath],
+]);
+
 export function isExpectedCabinRequestFailure(item, responses, path = item.path) {
   if (!optionalPaths.includes(path) || item.path !== path || item.failure !== 'net::ERR_ABORTED' || !Number.isSafeInteger(item.requestId)) return false;
   const response = responses.find(candidate => candidate.requestId === item.requestId && candidate.path === path);
   return response?.status === 404 && response.injectedFault === 'missing'
-    || response?.status === 200 && ['held-stream', 'throttled-stream'].includes(response.injectedFault) && /cancel|in-flight/i.test(item.phase);
+    || response?.status === 200 && ['held-stream', 'throttled-stream'].includes(response.injectedFault) && cancellationOwnerByScenario.get(item.phase) === path;
 }
 
 export function isExpectedCabinBodyError(record, failures) {
