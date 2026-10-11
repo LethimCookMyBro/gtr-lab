@@ -1,0 +1,2367 @@
+{
+  "mode": "fixed",
+  "viewport": "desktop",
+  "sourceCommit": "6ff2c1c822c2eada5a64a1080da255e4b3b32112",
+  "harnessCommit": "6ff2c1c822c2eada5a64a1080da255e4b3b32112",
+  "sourceTree": "814ff47e781f112127596422caad0413c176331f892e9dc5697e10a1c36923c1",
+  "geometryContract": "render-repair-readiness-2m-msaa-v1",
+  "expectedGeometry": {
+    "name": "render-repair-readiness-2m-msaa-v1",
+    "sourceTree": "814ff47e781f112127596422caad0413c176331f892e9dc5697e10a1c36923c1",
+    "maxBufferPixels": 2000000,
+    "maxDpr": 1.5,
+    "contextCreation": {
+      "requestedAntialias": true,
+      "antialias": true,
+      "multisampled": true
+    },
+    "captures": [
+      [
+        "01-exterior-before",
+        "exterior-idle-before"
+      ],
+      [
+        "02-orbit-mid",
+        "exterior-orbit"
+      ],
+      [
+        "03-orbit-end",
+        "exterior-orbit"
+      ],
+      [
+        "04-controls-mid",
+        "exterior-controls-rotating"
+      ],
+      [
+        "05-controls-end",
+        "exterior-controls-rotating"
+      ],
+      [
+        "06-exterior-idle",
+        "exterior-idle-after"
+      ],
+      [
+        "07-cabin-driver",
+        "cabin-entry"
+      ],
+      [
+        "08-cabin-look-mid",
+        "cabin-look"
+      ],
+      [
+        "09-cabin-look-end",
+        "cabin-look"
+      ],
+      [
+        "10-cabin-seats",
+        "cabin-seat-controls"
+      ],
+      [
+        "11-cabin-idle",
+        "cabin-idle"
+      ],
+      [
+        "12-resized-look",
+        "resized-cabin-look"
+      ],
+      [
+        "13-resized-idle",
+        "resized-cabin-idle"
+      ]
+    ],
+    "originalQualitySource": {
+      "sourceCommit": "b3f72d6de048941ce7b21c94b13f2896849b01db",
+      "sourceTree": "0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8",
+      "maxBufferPixels": 2000000,
+      "maxDpr": 1.5
+    },
+    "initial": {
+      "viewportWidth": 1440,
+      "viewportHeight": 900,
+      "cssWidth": 1440,
+      "cssHeight": 744,
+      "nativeDpr": 2,
+      "width": 1967,
+      "height": 1016,
+      "attributeWidth": 1967,
+      "attributeHeight": 1016
+    },
+    "resized": {
+      "viewportWidth": 1280,
+      "viewportHeight": 800,
+      "cssWidth": 1280,
+      "cssHeight": 644,
+      "nativeDpr": 2,
+      "width": 1920,
+      "height": 966,
+      "attributeWidth": 1920,
+      "attributeHeight": 966
+    }
+  },
+  "renderer": "Chromium ANGLE SwiftShader software WebGL only",
+  "reducedMotion": "no-preference",
+  "nativeDeviceScaleFactor": 2,
+  "scope": "Actual production bundle; no app test hooks, app source changes, frame forcing, readPixels, GL state changes, or device-performance pass threshold. For contracts requiring creation evidence, actual attributes and default-buffer samples are queried once immediately after native context creation in untimed setup.",
+  "limitations": [
+    "SwiftShader timings cannot establish physical-device FPS or lag improvement.",
+    "Bounded composited screenshots can miss subframe or between-sample flicker; buffer-write/context observations run throughout.",
+    "Screenshots add readback overhead. Phase timing is descriptive; draw/triangle and backing-pixel changes are reported separately."
+  ],
+  "steps": [
+    {
+      "name": "Load the exact production Premium scene",
+      "result": "passed",
+      "elapsedMs": 23730.802436
+    },
+    {
+      "name": "Sustained native orbit and parent control updates",
+      "result": "passed",
+      "elapsedMs": 44960.98358
+    },
+    {
+      "name": "Opt into real cabin then sustain look and seat updates",
+      "result": "passed",
+      "elapsedMs": 81496.760218
+    },
+    {
+      "name": "Deliberate viewport resize is isolated from stable-size acceptance",
+      "result": "passed",
+      "elapsedMs": 25203.373942000006
+    }
+  ],
+  "captures": [
+    {
+      "phase": "exterior-idle-before",
+      "label": "01-exterior-before",
+      "file": "01-exterior-before.png",
+      "elapsedMs": 6180.591222999999,
+      "sha256": "9874f2aaea008cb103f2a689ed4f0a8455e65b833c99284e2662980f39610fe6",
+      "pixels": 845859,
+      "nearBlackFraction": 0.03595871179475539,
+      "channelRanges": [
+        255,
+        255,
+        255
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "38284a28b0e1c56be0f34cd550e7a009f2678fbecc4d683b54304e598faabdb9",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "exterior-orbit",
+      "label": "02-orbit-mid",
+      "file": "02-orbit-mid.png",
+      "elapsedMs": 7006.272207000002,
+      "sha256": "93f3e184d1fa550c2058abcd88c50f06f55f8c09627a94357df41cde273dbd07",
+      "pixels": 845859,
+      "nearBlackFraction": 0.036056836895983845,
+      "channelRanges": [
+        255,
+        255,
+        255
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "bf3aa0d664dc9c05a9c733a0c55bb80da4fd2def4265e2fcb41d9bc6a0c1a88c",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "exterior-orbit",
+      "label": "03-orbit-end",
+      "file": "03-orbit-end.png",
+      "elapsedMs": 5383.938537000002,
+      "sha256": "b733ada6ced5b68afb337e198d3a199201cc607ec7eadc2fac495aaa513ae24d",
+      "pixels": 845859,
+      "nearBlackFraction": 0.03289910020464404,
+      "channelRanges": [
+        254,
+        254,
+        254
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "106854a4d8c659f4ba2e0c5f6488495b2b323fb6960371be777baef6051baccd",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "exterior-controls-rotating",
+      "label": "04-controls-mid",
+      "file": "04-controls-mid.png",
+      "elapsedMs": 7605.793019999997,
+      "sha256": "fe6dbb7fe8fe0c29b71377c7557f63dc5dd6b8830692746129c14a5d326da102",
+      "pixels": 844311,
+      "nearBlackFraction": 0.03212915619955206,
+      "channelRanges": [
+        253,
+        254,
+        254
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "27501b094ba7bf9ae077247337d49d9eb3033c6b937cc524f65744e4718f804d",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387},\"pixels\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 844311,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "exterior-controls-rotating",
+      "label": "05-controls-end",
+      "file": "05-controls-end.png",
+      "elapsedMs": 6122.892447999999,
+      "sha256": "a1d0b982d5911c465ba3ee4d98b6258b2abd78d4def3aeae1b2c6818f2ef2bcd",
+      "pixels": 844311,
+      "nearBlackFraction": 0.03205453914493593,
+      "channelRanges": [
+        253,
+        254,
+        254
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "296bb1965254904d348253d935546e19b6303af1589bed02b15705a4bda327e8",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387},\"pixels\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 844311,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "exterior-idle-after",
+      "label": "06-exterior-idle",
+      "file": "06-exterior-idle.png",
+      "elapsedMs": 3163.7457980000036,
+      "sha256": "c625cefed86db6b0442eb7b71e519a9c08718ebdb011f7348b3c933f30765cb1",
+      "pixels": 845859,
+      "nearBlackFraction": 0.03209873040305772,
+      "channelRanges": [
+        253,
+        254,
+        254
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "616e047e5b6b136a4eb4d0d5da62257bbe70021d5b9b6a4bb09293c36d1eda35",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "cabin-entry",
+      "label": "07-cabin-driver",
+      "file": "07-cabin-driver.png",
+      "elapsedMs": 22920.880913999994,
+      "sha256": "4b6975dc01f48774c978c9041148a1983526c46233f94590819b9a5c54a2d0d8",
+      "pixels": 848145,
+      "nearBlackFraction": 0.04880769208095314,
+      "channelRanges": [
+        222,
+        226,
+        229
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "513254a58c4c6a6933c600d5de34fac27f64bcf253a6b2f69cef346f49c56d08",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "cabin-look",
+      "label": "08-cabin-look-mid",
+      "file": "08-cabin-look-mid.png",
+      "elapsedMs": 11706.892080000005,
+      "sha256": "dff5f6d8db12659284198375b078eb3bff9d619a2bb8a347004369537b0db646",
+      "pixels": 848145,
+      "nearBlackFraction": 0.04217321330668695,
+      "channelRanges": [
+        251,
+        252,
+        252
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "e7a66c784b72daf63b800654e6c8d273e872f5c34bd1255aeec57d501f6916d0",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "cabin-look",
+      "label": "09-cabin-look-end",
+      "file": "09-cabin-look-end.png",
+      "elapsedMs": 11471.787421999994,
+      "sha256": "485ecc0cd6de319342240d4a0910bf03c16775e84fa4233c45c34e562bb40bfc",
+      "pixels": 848145,
+      "nearBlackFraction": 0.031934398009774274,
+      "channelRanges": [
+        251,
+        252,
+        252
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "4b43fe59a8688dbf8ec90723acb790fe24837f2200721e4ff0eb35194ab966b5",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "cabin-seat-controls",
+      "label": "10-cabin-seats",
+      "file": "10-cabin-seats.png",
+      "elapsedMs": 11225.938261999996,
+      "sha256": "aac1b60c37e4196b040ab06b9726474aa47877ee080e18e038b685dc05936b57",
+      "pixels": 848145,
+      "nearBlackFraction": 0.037402802586821826,
+      "channelRanges": [
+        250,
+        251,
+        252
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "1fd6b19dfeaaeb0a7472b19161ad4c94015cc37388406a624d155b5f1e8c9ee4",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "cabin-idle",
+      "label": "11-cabin-idle",
+      "file": "11-cabin-idle.png",
+      "elapsedMs": 8261.642921999999,
+      "sha256": "f7f42900ac5d265747e8803c98c27a3b04eaa67a646c77f0bfe231874cfd3c99",
+      "pixels": 848145,
+      "nearBlackFraction": 0.04217321330668695,
+      "channelRanges": [
+        251,
+        252,
+        252
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "e7a66c784b72daf63b800654e6c8d273e872f5c34bd1255aeec57d501f6916d0",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "phase": "resized-cabin-look",
+      "label": "12-resized-look",
+      "file": "12-resized-look.png",
+      "elapsedMs": 10147.13503200002,
+      "sha256": "eac525134c0f6f92e374651209fe21a87297098912736c836d3d97e2402e7e1b",
+      "pixels": 619305,
+      "nearBlackFraction": 0.03847215830648872,
+      "channelRanges": [
+        250,
+        251,
+        252
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "72f537f3dc9708a125b5d57b8fb747e8243ade9c758e43ccfee6f6be85138699",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1276,
+          "height": 640,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1276,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 51.1875,
+              "y": 125,
+              "width": 200.953125,
+              "height": 134.875
+            },
+            "pixels": {
+              "x": 51,
+              "y": 125,
+              "width": 202,
+              "height": 135
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 51.1875,
+              "y": 576,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 51,
+              "y": 576,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 513,
+              "y": 581.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 513,
+              "y": 581,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1180.46875,
+              "y": 591,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1180,
+              "y": 591,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":640,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1280,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":51.1875,\"y\":125,\"width\":200.953125,\"height\":134.875},\"pixels\":{\"x\":51,\"y\":125,\"width\":202,\"height\":135}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387},\"pixels\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":51.1875,\"y\":576,\"width\":134,\"height\":44},\"pixels\":{\"x\":51,\"y\":576,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":513,\"y\":581.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":513,\"y\":581,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1180.46875,\"y\":591,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1180,\"y\":591,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 619305,
+        "canvasPixels": 824320
+      }
+    },
+    {
+      "phase": "resized-cabin-idle",
+      "label": "13-resized-idle",
+      "file": "13-resized-idle.png",
+      "elapsedMs": 8674.535478999984,
+      "sha256": "f88a55f828945211f6613b686d87f0a2d61e60b5e72bed2ec65ac4697821c71d",
+      "pixels": 619305,
+      "nearBlackFraction": 0.033368049668580105,
+      "channelRanges": [
+        250,
+        251,
+        252
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "286c0a2c204cba4c7f009c2b6c721b7b3349b3ea7bb3698b21bf3ddff9f9e94a",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1276,
+          "height": 640,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1276,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 51.1875,
+              "y": 125,
+              "width": 200.953125,
+              "height": 134.875
+            },
+            "pixels": {
+              "x": 51,
+              "y": 125,
+              "width": 202,
+              "height": 135
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 51.1875,
+              "y": 576,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 51,
+              "y": 576,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 513,
+              "y": 581.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 513,
+              "y": 581,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1180.46875,
+              "y": 591,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1180,
+              "y": 591,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":640,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1280,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":51.1875,\"y\":125,\"width\":200.953125,\"height\":134.875},\"pixels\":{\"x\":51,\"y\":125,\"width\":202,\"height\":135}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387},\"pixels\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":51.1875,\"y\":576,\"width\":134,\"height\":44},\"pixels\":{\"x\":51,\"y\":576,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":513,\"y\":581.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":513,\"y\":581,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1180.46875,\"y\":591,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1180,\"y\":591,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 619305,
+        "canvasPixels": 824320
+      }
+    }
+  ],
+  "screenshotRetries": [],
+  "console": [],
+  "pageErrors": [],
+  "requestFailures": [],
+  "runtimeBodies": [
+    {
+      "requestId": "3690.17",
+      "path": "/models/ciasny-r35.glb",
+      "url": "http://127.0.0.1:4178/models/ciasny-r35.glb",
+      "status": 200,
+      "phase": "setup",
+      "sha256": "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d",
+      "bytes": 8296356
+    },
+    {
+      "requestId": "3690.18",
+      "path": "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
+      "url": "http://127.0.0.1:4178/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
+      "status": 200,
+      "phase": "setup",
+      "sha256": "49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347",
+      "bytes": 956368
+    },
+    {
+      "requestId": "3690.38",
+      "path": "/models/r35-cabin-dashboard-5c0a9dca.glb",
+      "url": "http://127.0.0.1:4178/models/r35-cabin-dashboard-5c0a9dca.glb",
+      "status": 200,
+      "phase": "cabin-entry",
+      "sha256": "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
+      "bytes": 19170816
+    }
+  ],
+  "runtimeBundleBodies": [
+    {
+      "path": "/index.html",
+      "url": "http://127.0.0.1:4178/configurator/premium",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "1ef67187a2b6d1d6213a61dd1f21e281e6ffd1d10fc2370748807c01ab6f4c70"
+    },
+    {
+      "path": "/assets/index-BZvjGpnJ.css",
+      "url": "http://127.0.0.1:4178/assets/index-BZvjGpnJ.css",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "8c826e2e5762d9c2b30b91c425f78ec5a251857a2747c4525fd9f82d0c3694e2"
+    },
+    {
+      "path": "/assets/react-core-CYKLoYtd.js",
+      "url": "http://127.0.0.1:4178/assets/react-core-CYKLoYtd.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "c2514877056f62a4c74304b71a57dd4b066c832ce224f8e2db953ba0d724123c"
+    },
+    {
+      "path": "/assets/index-C-TTVieJ.js",
+      "url": "http://127.0.0.1:4178/assets/index-C-TTVieJ.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "a8a4347b271296bd37096214b53d850db3eeeb7a67315cbdfe20d7481cf58e06"
+    },
+    {
+      "path": "/assets/ConfiguratorPage-riYfLjnd.css",
+      "url": "http://127.0.0.1:4178/assets/ConfiguratorPage-riYfLjnd.css",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "75efeb6d23ade4c7d044b9b18ceff3491fbc207a4c38b829e236c1083a569462"
+    },
+    {
+      "path": "/assets/vanilla-m3Xdu9cz.js",
+      "url": "http://127.0.0.1:4178/assets/vanilla-m3Xdu9cz.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "65399dfdb398e1cbf16974d31f6db0f5a672116d676f86be3737ae366741074c"
+    },
+    {
+      "path": "/assets/ConfiguratorPage-DpWj5tfW.js",
+      "url": "http://127.0.0.1:4178/assets/ConfiguratorPage-DpWj5tfW.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "8779e3c6168e5e53b74c1e00a0d0ebe7f7c3d7891267745085165012b4d58637"
+    },
+    {
+      "path": "/assets/VehicleScene-CB_69KTD.js",
+      "url": "http://127.0.0.1:4178/assets/VehicleScene-CB_69KTD.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "fae1ffc41960d81107a90fdae566ed206de8094a854006083f1e96d00a97c970"
+    },
+    {
+      "path": "/assets/three-core-BfOeigue.js",
+      "url": "http://127.0.0.1:4178/assets/three-core-BfOeigue.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "351debeec1bd9139060612496dbc9e777426e5af8cb086077c28671ebbd52121"
+    },
+    {
+      "path": "/assets/compileRearScene-BWJgl6zp.js",
+      "url": "http://127.0.0.1:4178/assets/compileRearScene-BWJgl6zp.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "a20ed29e273c93e8a0b8f378c2818fdda5dbc3f21bdd409e439f7732d9273b12"
+    }
+  ],
+  "errors": [],
+  "result": "failed",
+  "rendererInfo": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "nativeDpr": 2
+  },
+  "phaseSummary": [
+    {
+      "phase": "exterior-idle-before",
+      "stableViewport": true,
+      "renderedFrames": 0,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 1,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 1,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 0
+      },
+      "triangles": {
+        "samples": 0
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "exterior-orbit",
+      "stableViewport": true,
+      "renderedFrames": 3,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 42,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 42,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 3,
+        "min": 217,
+        "median": 222,
+        "p95": 226,
+        "max": 226
+      },
+      "triangles": {
+        "samples": 3,
+        "min": 619388,
+        "median": 619832,
+        "p95": 619880,
+        "max": 619880
+      },
+      "observedFrameSpacingMs": {
+        "samples": 2,
+        "min": 7266.3319999999985,
+        "median": 7266.3319999999985,
+        "p95": 7499.690000000002,
+        "max": 7499.690000000002
+      }
+    },
+    {
+      "phase": "exterior-controls-rotating",
+      "stableViewport": true,
+      "renderedFrames": 3,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 14,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 14,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 3,
+        "min": 226,
+        "median": 226,
+        "p95": 226,
+        "max": 226
+      },
+      "triangles": {
+        "samples": 3,
+        "min": 619880,
+        "median": 619880,
+        "p95": 619880,
+        "max": 619880
+      },
+      "observedFrameSpacingMs": {
+        "samples": 2,
+        "min": 7316.341999999997,
+        "median": 7316.341999999997,
+        "p95": 7366.364000000001,
+        "max": 7366.364000000001
+      }
+    },
+    {
+      "phase": "exterior-idle-after",
+      "stableViewport": true,
+      "renderedFrames": 1,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 3,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 3,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 1,
+        "min": 226,
+        "median": 226,
+        "p95": 226,
+        "max": 226
+      },
+      "triangles": {
+        "samples": 1,
+        "min": 619880,
+        "median": 619880,
+        "p95": 619880,
+        "max": 619880
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "cabin-entry",
+      "stableViewport": true,
+      "renderedFrames": 2,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 5,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 5,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 2,
+        "min": 236,
+        "median": 236,
+        "p95": 296,
+        "max": 296
+      },
+      "triangles": {
+        "samples": 2,
+        "min": 674339,
+        "median": 674339,
+        "p95": 787704,
+        "max": 787704
+      },
+      "observedFrameSpacingMs": {
+        "samples": 1,
+        "min": 22265.804000000004,
+        "median": 22265.804000000004,
+        "p95": 22265.804000000004,
+        "max": 22265.804000000004
+      }
+    },
+    {
+      "phase": "cabin-look",
+      "stableViewport": true,
+      "renderedFrames": 2,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 36,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 36,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 2,
+        "min": 294,
+        "median": 294,
+        "p95": 303,
+        "max": 303
+      },
+      "triangles": {
+        "samples": 2,
+        "min": 674315,
+        "median": 674315,
+        "p95": 765777,
+        "max": 765777
+      },
+      "observedFrameSpacingMs": {
+        "samples": 1,
+        "min": 13482.846000000005,
+        "median": 13482.846000000005,
+        "p95": 13482.846000000005,
+        "max": 13482.846000000005
+      }
+    },
+    {
+      "phase": "cabin-seat-controls",
+      "stableViewport": true,
+      "renderedFrames": 1,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 6,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 6,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 1,
+        "min": 296,
+        "median": 296,
+        "p95": 296,
+        "max": 296
+      },
+      "triangles": {
+        "samples": 1,
+        "min": 674339,
+        "median": 674339,
+        "p95": 674339,
+        "max": 674339
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "cabin-idle",
+      "stableViewport": true,
+      "renderedFrames": 1,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 2,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 2,
+        "min": 1.3659722222222221,
+        "median": 1.3659722222222221,
+        "p95": 1.3659722222222221,
+        "max": 1.3659722222222221
+      },
+      "drawCalls": {
+        "samples": 1,
+        "min": 296,
+        "median": 296,
+        "p95": 296,
+        "max": 296
+      },
+      "triangles": {
+        "samples": 1,
+        "min": 674339,
+        "median": 674339,
+        "p95": 674339,
+        "max": 674339
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "viewport-change",
+      "stableViewport": false,
+      "renderedFrames": 0,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1967x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 3,
+        "min": 1998472,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 3,
+        "min": 1.3659722222222221,
+        "median": 1.53671875,
+        "p95": 1.53671875,
+        "max": 1.53671875
+      },
+      "drawCalls": {
+        "samples": 0
+      },
+      "triangles": {
+        "samples": 0
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "resized-cabin-look",
+      "stableViewport": true,
+      "renderedFrames": 0,
+      "partialFramesExcluded": 1,
+      "canvasWrites": 2,
+      "drawingBufferDimensions": [
+        "1967x1016",
+        "1920x966",
+        "1920x1016"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 17,
+        "min": 1854720,
+        "median": 1998472,
+        "p95": 1998472,
+        "max": 1998472
+      },
+      "effectiveDprX": {
+        "samples": 17,
+        "min": 1.5,
+        "median": 1.53671875,
+        "p95": 1.53671875,
+        "max": 1.53671875
+      },
+      "drawCalls": {
+        "samples": 0
+      },
+      "triangles": {
+        "samples": 0
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "resized-cabin-idle",
+      "stableViewport": true,
+      "renderedFrames": 0,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "1920x966"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 1,
+        "min": 1854720,
+        "median": 1854720,
+        "p95": 1854720,
+        "max": 1854720
+      },
+      "effectiveDprX": {
+        "samples": 1,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 0
+      },
+      "triangles": {
+        "samples": 0
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    }
+  ],
+  "contextCreationEvidence": [
+    {
+      "contextId": 1,
+      "creation": {
+        "phase": "setup",
+        "time": 930.1000000000058,
+        "sequence": 1,
+        "reads": 1,
+        "contextType": "webgl2",
+        "requestedAntialias": true,
+        "antialias": true,
+        "alpha": true,
+        "samples": 4,
+        "sampleBuffers": 1,
+        "defaultFramebufferBound": true
+      }
+    }
+  ],
+  "assessment": {
+    "mode": "fixed",
+    "stableWrites": [
+      {
+        "kind": "canvas-write",
+        "phase": "resized-cabin-look",
+        "property": "width",
+        "before": 1967,
+        "after": 1920,
+        "via": "property",
+        "contextId": 1,
+        "dimensions": {
+          "contextId": 1,
+          "width": 1920,
+          "height": 1016,
+          "attributeWidth": 1920,
+          "attributeHeight": 1016,
+          "cssWidth": 1280,
+          "cssHeight": 644,
+          "nativeDpr": 2,
+          "viewportWidth": 1280,
+          "viewportHeight": 800
+        },
+        "sequence": 163,
+        "time": 162075.5,
+        "timestamp": 162065.966
+      },
+      {
+        "kind": "canvas-write",
+        "phase": "resized-cabin-look",
+        "property": "height",
+        "before": 1016,
+        "after": 966,
+        "via": "property",
+        "contextId": 1,
+        "dimensions": {
+          "contextId": 1,
+          "width": 1920,
+          "height": 966,
+          "attributeWidth": 1920,
+          "attributeHeight": 966,
+          "cssWidth": 1280,
+          "cssHeight": 644,
+          "nativeDpr": 2,
+          "viewportWidth": 1280,
+          "viewportHeight": 800
+        },
+        "sequence": 165,
+        "time": 162077.2,
+        "timestamp": 162065.966
+      }
+    ],
+    "blankSamples": [],
+    "failures": [
+      "resized-cabin-look: geometry contract width must equal 1920",
+      "resized-cabin-look: geometry contract height must equal 966",
+      "resized-cabin-look: geometry contract attributeWidth must equal 1920",
+      "resized-cabin-look: geometry contract attributeHeight must equal 966",
+      "2 unexpected stable-viewport canvas writes (same-size writes clear too)",
+      "resized-cabin-look: native/1.5 DPR ceiling exceeded",
+      "resized-cabin-look: stable canvas dimension changed",
+      "cabin-seat-controls: missing sustained rendered-frame evidence",
+      "resized-cabin-look: missing sustained rendered-frame evidence",
+      "Deliberate viewport resize did not produce observed native buffer writes"
+    ]
+  },
+  "baselineChurnObserved": null
+}

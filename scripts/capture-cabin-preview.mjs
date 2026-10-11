@@ -320,6 +320,9 @@ try {
     await expect(canvas).toHaveAttribute('aria-label', /fixed seat/);
     await expect(page.getByRole('button', { name: 'Rotate', exact: true })).toBeDisabled();
     await assertLayout();
+    // Compiled/selected UI can precede an admitted cabin draw. Resource cohorts
+    // require the matching full-cabin main and native completion, not RAF ticks.
+    await waitForFunctionalCapture(page, { preset: 'interior', timeout: 20_000 });
   };
   const armFault = async (kind, path = cabinPath) => {
     assert.ok([cabinPath, proxyPath].includes(path), 'Faults target only a reviewed optional model');

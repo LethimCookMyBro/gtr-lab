@@ -1,0 +1,1542 @@
+{
+  "mode": "fixed",
+  "viewport": "mobile",
+  "sourceCommit": "6ff2c1c822c2eada5a64a1080da255e4b3b32112",
+  "harnessCommit": "6ff2c1c822c2eada5a64a1080da255e4b3b32112",
+  "sourceTree": "814ff47e781f112127596422caad0413c176331f892e9dc5697e10a1c36923c1",
+  "geometryContract": "render-repair-readiness-2m-msaa-v1",
+  "expectedGeometry": {
+    "name": "render-repair-readiness-2m-msaa-v1",
+    "sourceTree": "814ff47e781f112127596422caad0413c176331f892e9dc5697e10a1c36923c1",
+    "maxBufferPixels": 2000000,
+    "maxDpr": 1.5,
+    "contextCreation": {
+      "requestedAntialias": true,
+      "antialias": true,
+      "multisampled": true
+    },
+    "captures": [
+      [
+        "01-exterior-before",
+        "exterior-idle-before"
+      ],
+      [
+        "02-orbit-mid",
+        "exterior-orbit"
+      ],
+      [
+        "03-orbit-end",
+        "exterior-orbit"
+      ],
+      [
+        "04-controls-mid",
+        "exterior-controls-rotating"
+      ],
+      [
+        "05-controls-end",
+        "exterior-controls-rotating"
+      ],
+      [
+        "06-exterior-idle",
+        "exterior-idle-after"
+      ],
+      [
+        "07-cabin-driver",
+        "cabin-entry"
+      ],
+      [
+        "08-cabin-look-mid",
+        "cabin-look"
+      ],
+      [
+        "09-cabin-look-end",
+        "cabin-look"
+      ],
+      [
+        "10-cabin-seats",
+        "cabin-seat-controls"
+      ],
+      [
+        "11-cabin-idle",
+        "cabin-idle"
+      ],
+      [
+        "12-resized-look",
+        "resized-cabin-look"
+      ],
+      [
+        "13-resized-idle",
+        "resized-cabin-idle"
+      ]
+    ],
+    "originalQualitySource": {
+      "sourceCommit": "b3f72d6de048941ce7b21c94b13f2896849b01db",
+      "sourceTree": "0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8",
+      "maxBufferPixels": 2000000,
+      "maxDpr": 1.5
+    },
+    "initial": {
+      "viewportWidth": 390,
+      "viewportHeight": 844,
+      "cssWidth": 390,
+      "cssHeight": 372,
+      "nativeDpr": 3,
+      "width": 585,
+      "height": 558,
+      "attributeWidth": 585,
+      "attributeHeight": 558
+    },
+    "resized": {
+      "viewportWidth": 430,
+      "viewportHeight": 900,
+      "cssWidth": 430,
+      "cssHeight": 428,
+      "nativeDpr": 3,
+      "width": 645,
+      "height": 642,
+      "attributeWidth": 645,
+      "attributeHeight": 642
+    }
+  },
+  "renderer": "Chromium ANGLE SwiftShader software WebGL only",
+  "reducedMotion": "no-preference",
+  "nativeDeviceScaleFactor": 3,
+  "scope": "Actual production bundle; no app test hooks, app source changes, frame forcing, readPixels, GL state changes, or device-performance pass threshold. For contracts requiring creation evidence, actual attributes and default-buffer samples are queried once immediately after native context creation in untimed setup.",
+  "limitations": [
+    "SwiftShader timings cannot establish physical-device FPS or lag improvement.",
+    "Bounded composited screenshots can miss subframe or between-sample flicker; buffer-write/context observations run throughout.",
+    "Screenshots add readback overhead. Phase timing is descriptive; draw/triangle and backing-pixel changes are reported separately."
+  ],
+  "steps": [
+    {
+      "name": "Load the exact production Premium scene",
+      "result": "passed",
+      "elapsedMs": 8338.801081000001
+    },
+    {
+      "name": "Sustained native orbit and parent control updates",
+      "result": "passed",
+      "elapsedMs": 13012.421298999998
+    },
+    {
+      "name": "Opt into real cabin then sustain look and seat updates",
+      "result": "passed",
+      "elapsedMs": 17036.447571
+    },
+    {
+      "name": "Deliberate viewport resize is isolated from stable-size acceptance",
+      "result": "passed",
+      "elapsedMs": 6594.010286000004
+    }
+  ],
+  "captures": [
+    {
+      "phase": "exterior-idle-before",
+      "label": "01-exterior-before",
+      "file": "01-exterior-before.png",
+      "elapsedMs": 144.71612399999867,
+      "sha256": "e28f2c47462d61b8fd5382d5209e2149a68824e3cd52a40bb294c7ade8013f6c",
+      "pixels": 132484,
+      "nearBlackFraction": 0.03361160592977265,
+      "channelRanges": [
+        255,
+        255,
+        255
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "c38aff098335920579d2d3c426702c3c1dadc979f64fccdff616c9d53fe6269d",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "exterior-orbit",
+      "label": "02-orbit-mid",
+      "file": "02-orbit-mid.png",
+      "elapsedMs": 663.5136409999996,
+      "sha256": "70ee4e404a918fb12b7d0705fafb12b2384d111c58831df017798bf30c1d6404",
+      "pixels": 132484,
+      "nearBlackFraction": 0.0335059327918843,
+      "channelRanges": [
+        255,
+        255,
+        255
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "f7d401be38542d509326cdae05d03f67f6e6f784e1b859486bd2c31e3f3a94e8",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "exterior-orbit",
+      "label": "03-orbit-end",
+      "file": "03-orbit-end.png",
+      "elapsedMs": 593.4865890000001,
+      "sha256": "f4557dcc83a7662fd3dd6994d7562752468b870b29093feb5cf5e52a0d5d7cc6",
+      "pixels": 132484,
+      "nearBlackFraction": 0.030086651973068448,
+      "channelRanges": [
+        250,
+        251,
+        251
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "d87fa07116f210eba4847eb2695c5ae0fc4f1e2332afc25bd26d0cd0a1f00949",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "exterior-controls-rotating",
+      "label": "04-controls-mid",
+      "file": "04-controls-mid.png",
+      "elapsedMs": 1313.7877399999998,
+      "sha256": "c86ead5525554878682c25d4faa6e7b58ebdada9a55eb39a2e590a7b99907677",
+      "pixels": 132484,
+      "nearBlackFraction": 0.02795809305274599,
+      "channelRanges": [
+        245,
+        246,
+        247
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "6bbcffc2499d60be127ebc5fc2bed8d96ac0fa677d861ece64afb93f216d7441",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "exterior-controls-rotating",
+      "label": "05-controls-end",
+      "file": "05-controls-end.png",
+      "elapsedMs": 121.06522100000075,
+      "sha256": "bdf2f801f3a914f2bcb1ed3de182cf849ffe603b09302a911db29f3bf5579053",
+      "pixels": 132484,
+      "nearBlackFraction": 0.028026025784245644,
+      "channelRanges": [
+        245,
+        246,
+        248
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "6bf3b6ee67f5b676831182e76c0eebf7e0143eb4eb647dbe6f7fcb3c59cd7f94",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "exterior-idle-after",
+      "label": "06-exterior-idle",
+      "file": "06-exterior-idle.png",
+      "elapsedMs": 835.3828089999988,
+      "sha256": "c000fce269a27467d83e9223f5771fd3d1b59981ed131257a3b81b5077fc6ad5",
+      "pixels": 132484,
+      "nearBlackFraction": 0.028026025784245644,
+      "channelRanges": [
+        245,
+        246,
+        248
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "1bc9228dd6f428e84eeaa0e5885c2532d42f522eb94b35b6e2f6e9c9c4e0d2e6",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "cabin-entry",
+      "label": "07-cabin-driver",
+      "file": "07-cabin-driver.png",
+      "elapsedMs": 3611.0486089999977,
+      "sha256": "49985b204abeec4be4b22318c7ad368ae6ff7e32b2c2af0d6a13e676320245d4",
+      "pixels": 130474,
+      "nearBlackFraction": 0,
+      "channelRanges": [
+        69,
+        85,
+        86
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "22db1ac7a0f1c7b5a36e9b9fc8594f122d991e587d1c48f67b716f56277b3f9c",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "cabin-look",
+      "label": "08-cabin-look-mid",
+      "file": "08-cabin-look-mid.png",
+      "elapsedMs": 1173.1200860000026,
+      "sha256": "d411ff2d73a76bc6c3c74865c21784e4da195dd694840b4d74e5365a7d6943bc",
+      "pixels": 130474,
+      "nearBlackFraction": 0.024479973021444886,
+      "channelRanges": [
+        247,
+        248,
+        249
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "cff1882d39d08de55e7a0066186c217e9d92666d3fff31a91b0c90ea2abb59dd",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "cabin-look",
+      "label": "09-cabin-look-end",
+      "file": "09-cabin-look-end.png",
+      "elapsedMs": 1605.302854999998,
+      "sha256": "621a04a852dbe6157fb4df746a072e9f0e6bfe1b40dac931cbfaa1e428c53c21",
+      "pixels": 130474,
+      "nearBlackFraction": 0.027239143430875117,
+      "channelRanges": [
+        247,
+        248,
+        249
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "d99b66dd7ab20f5bbcf818c797a7755381a6d75902374c1b57cb3082ec8ddab9",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "cabin-seat-controls",
+      "label": "10-cabin-seats",
+      "file": "10-cabin-seats.png",
+      "elapsedMs": 681.298437999998,
+      "sha256": "a3b66506c5d01be73f81ed6324cb4a39b81677467f30c51a185914e90789653e",
+      "pixels": 130474,
+      "nearBlackFraction": 0.024388000674463877,
+      "channelRanges": [
+        247,
+        248,
+        249
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "3cd07e0d4b625e61f8c5d2c94c25b0b8f116fccb5b434247ee0a2d9eefc89519",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "cabin-idle",
+      "label": "11-cabin-idle",
+      "file": "11-cabin-idle.png",
+      "elapsedMs": 64.60740299999452,
+      "sha256": "09996d328efd4815dcb4b8f2d38e5c134432cafc53fdeede1faaaf6148e119d0",
+      "pixels": 130474,
+      "nearBlackFraction": 0.02450296610819014,
+      "channelRanges": [
+        247,
+        248,
+        249
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "aa4e334ddf78d6ea882c415e83074c5f5defeb505b7a03f7e59bfd944d0b9f4b",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "phase": "resized-cabin-look",
+      "label": "12-resized-look",
+      "file": "12-resized-look.png",
+      "elapsedMs": 386.7391239999997,
+      "sha256": "852560cc195ace34a8b99ef11fa3aba65af8cbc51dbd9a256eae019861c9022c",
+      "pixels": 169050,
+      "nearBlackFraction": 0.02430050280981958,
+      "channelRanges": [
+        248,
+        248,
+        250
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "ca4413f011b44ff7a36d67734fe6ee7232703f7d06b86f58f1ef57fea7e592c8",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 426,
+          "height": 424,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 597,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 597,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 191,
+              "y": 604,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 191,
+              "y": 604,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":426,\"height\":424,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":597,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":597,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":191,\"y\":604,\"width\":223,\"height\":30},\"pixels\":{\"x\":191,\"y\":604,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 169050,
+        "canvasPixels": 184040
+      }
+    },
+    {
+      "phase": "resized-cabin-idle",
+      "label": "13-resized-idle",
+      "file": "13-resized-idle.png",
+      "elapsedMs": 72.62376199999562,
+      "sha256": "20cb2042699aca586e6b9950de716e073a33831012ca86a9dc5af0a25cf030fb",
+      "pixels": 169050,
+      "nearBlackFraction": 0.030452528837622006,
+      "channelRanges": [
+        248,
+        249,
+        250
+      ],
+      "blank": false,
+      "contract": "bounded-composited-scene-sample-v1",
+      "scene": {
+        "sha256": "68ad39092a2997957fe032aead13ed6f3d146351938710ffc45198c57eb10f87",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 426,
+          "height": 424,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 597,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 597,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 191,
+              "y": 604,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 191,
+              "y": 604,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":426,\"height\":424,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":597,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":597,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":191,\"y\":604,\"width\":223,\"height\":30},\"pixels\":{\"x\":191,\"y\":604,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 169050,
+        "canvasPixels": 184040
+      }
+    }
+  ],
+  "screenshotRetries": [],
+  "console": [],
+  "pageErrors": [],
+  "requestFailures": [],
+  "runtimeBodies": [
+    {
+      "requestId": "3473.17",
+      "path": "/models/ciasny-r35.glb",
+      "url": "http://127.0.0.1:4178/models/ciasny-r35.glb",
+      "status": 200,
+      "phase": "setup",
+      "sha256": "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d",
+      "bytes": 8296356
+    },
+    {
+      "requestId": "3473.18",
+      "path": "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
+      "url": "http://127.0.0.1:4178/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
+      "status": 200,
+      "phase": "setup",
+      "sha256": "49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347",
+      "bytes": 956368
+    },
+    {
+      "requestId": "3473.38",
+      "path": "/models/r35-cabin-dashboard-5c0a9dca.glb",
+      "url": "http://127.0.0.1:4178/models/r35-cabin-dashboard-5c0a9dca.glb",
+      "status": 200,
+      "phase": "cabin-entry",
+      "sha256": "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
+      "bytes": 19170816
+    }
+  ],
+  "runtimeBundleBodies": [
+    {
+      "path": "/index.html",
+      "url": "http://127.0.0.1:4178/configurator/premium",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "1ef67187a2b6d1d6213a61dd1f21e281e6ffd1d10fc2370748807c01ab6f4c70"
+    },
+    {
+      "path": "/assets/index-BZvjGpnJ.css",
+      "url": "http://127.0.0.1:4178/assets/index-BZvjGpnJ.css",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "8c826e2e5762d9c2b30b91c425f78ec5a251857a2747c4525fd9f82d0c3694e2"
+    },
+    {
+      "path": "/assets/react-core-CYKLoYtd.js",
+      "url": "http://127.0.0.1:4178/assets/react-core-CYKLoYtd.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "c2514877056f62a4c74304b71a57dd4b066c832ce224f8e2db953ba0d724123c"
+    },
+    {
+      "path": "/assets/index-C-TTVieJ.js",
+      "url": "http://127.0.0.1:4178/assets/index-C-TTVieJ.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "a8a4347b271296bd37096214b53d850db3eeeb7a67315cbdfe20d7481cf58e06"
+    },
+    {
+      "path": "/assets/ConfiguratorPage-riYfLjnd.css",
+      "url": "http://127.0.0.1:4178/assets/ConfiguratorPage-riYfLjnd.css",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "75efeb6d23ade4c7d044b9b18ceff3491fbc207a4c38b829e236c1083a569462"
+    },
+    {
+      "path": "/assets/vanilla-m3Xdu9cz.js",
+      "url": "http://127.0.0.1:4178/assets/vanilla-m3Xdu9cz.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "65399dfdb398e1cbf16974d31f6db0f5a672116d676f86be3737ae366741074c"
+    },
+    {
+      "path": "/assets/ConfiguratorPage-DpWj5tfW.js",
+      "url": "http://127.0.0.1:4178/assets/ConfiguratorPage-DpWj5tfW.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "8779e3c6168e5e53b74c1e00a0d0ebe7f7c3d7891267745085165012b4d58637"
+    },
+    {
+      "path": "/assets/VehicleScene-CB_69KTD.js",
+      "url": "http://127.0.0.1:4178/assets/VehicleScene-CB_69KTD.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "fae1ffc41960d81107a90fdae566ed206de8094a854006083f1e96d00a97c970"
+    },
+    {
+      "path": "/assets/compileRearScene-BWJgl6zp.js",
+      "url": "http://127.0.0.1:4178/assets/compileRearScene-BWJgl6zp.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "a20ed29e273c93e8a0b8f378c2818fdda5dbc3f21bdd409e439f7732d9273b12"
+    },
+    {
+      "path": "/assets/three-core-BfOeigue.js",
+      "url": "http://127.0.0.1:4178/assets/three-core-BfOeigue.js",
+      "phase": "setup",
+      "status": 200,
+      "sha256": "351debeec1bd9139060612496dbc9e777426e5af8cb086077c28671ebbd52121"
+    }
+  ],
+  "errors": [],
+  "result": "failed",
+  "rendererInfo": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "nativeDpr": 3
+  },
+  "phaseSummary": [
+    {
+      "phase": "exterior-idle-before",
+      "stableViewport": true,
+      "renderedFrames": 0,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 1,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 1,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 0
+      },
+      "triangles": {
+        "samples": 0
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "exterior-orbit",
+      "stableViewport": true,
+      "renderedFrames": 4,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 44,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 44,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 4,
+        "min": 189,
+        "median": 189,
+        "p95": 197,
+        "max": 197
+      },
+      "triangles": {
+        "samples": 4,
+        "min": 618020,
+        "median": 618188,
+        "p95": 618476,
+        "max": 618476
+      },
+      "observedFrameSpacingMs": {
+        "samples": 3,
+        "min": 1316.5,
+        "median": 1316.7000000000007,
+        "p95": 1533.1720000000005,
+        "max": 1533.1720000000005
+      }
+    },
+    {
+      "phase": "exterior-controls-rotating",
+      "stableViewport": true,
+      "renderedFrames": 3,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 15,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 15,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 3,
+        "min": 189,
+        "median": 189,
+        "p95": 189,
+        "max": 189
+      },
+      "triangles": {
+        "samples": 3,
+        "min": 618476,
+        "median": 618476,
+        "p95": 618476,
+        "max": 618476
+      },
+      "observedFrameSpacingMs": {
+        "samples": 2,
+        "min": 1283.2000000000007,
+        "median": 1283.2000000000007,
+        "p95": 1283.3999999999996,
+        "max": 1283.3999999999996
+      }
+    },
+    {
+      "phase": "exterior-idle-after",
+      "stableViewport": true,
+      "renderedFrames": 4,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 9,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 9,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 4,
+        "min": 190,
+        "median": 190,
+        "p95": 190,
+        "max": 190
+      },
+      "triangles": {
+        "samples": 4,
+        "min": 618488,
+        "median": 618488,
+        "p95": 618488,
+        "max": 618488
+      },
+      "observedFrameSpacingMs": {
+        "samples": 3,
+        "min": 1200,
+        "median": 1216.6000000000022,
+        "p95": 1249.8999999999978,
+        "max": 1249.8999999999978
+      }
+    },
+    {
+      "phase": "cabin-entry",
+      "stableViewport": true,
+      "renderedFrames": 2,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 5,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 5,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 2,
+        "min": 186,
+        "median": 186,
+        "p95": 265,
+        "max": 265
+      },
+      "triangles": {
+        "samples": 2,
+        "min": 672217,
+        "median": 672217,
+        "p95": 744048,
+        "max": 744048
+      },
+      "observedFrameSpacingMs": {
+        "samples": 1,
+        "min": 3633.173999999999,
+        "median": 3633.173999999999,
+        "p95": 3633.173999999999,
+        "max": 3633.173999999999
+      }
+    },
+    {
+      "phase": "cabin-look",
+      "stableViewport": true,
+      "renderedFrames": 3,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 36,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 36,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 3,
+        "min": 253,
+        "median": 265,
+        "p95": 272,
+        "max": 272
+      },
+      "triangles": {
+        "samples": 3,
+        "min": 653695,
+        "median": 672217,
+        "p95": 755619,
+        "max": 755619
+      },
+      "observedFrameSpacingMs": {
+        "samples": 2,
+        "min": 1699.9000000000015,
+        "median": 1699.9000000000015,
+        "p95": 1816.5999999999985,
+        "max": 1816.5999999999985
+      }
+    },
+    {
+      "phase": "cabin-seat-controls",
+      "stableViewport": true,
+      "renderedFrames": 1,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 6,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 6,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 1,
+        "min": 265,
+        "median": 265,
+        "p95": 265,
+        "max": 265
+      },
+      "triangles": {
+        "samples": 1,
+        "min": 672217,
+        "median": 672217,
+        "p95": 672217,
+        "max": 672217
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "cabin-idle",
+      "stableViewport": true,
+      "renderedFrames": 1,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "585x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 2,
+        "min": 326430,
+        "median": 326430,
+        "p95": 326430,
+        "max": 326430
+      },
+      "effectiveDprX": {
+        "samples": 2,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 1,
+        "min": 265,
+        "median": 265,
+        "p95": 265,
+        "max": 265
+      },
+      "triangles": {
+        "samples": 1,
+        "min": 672217,
+        "median": 672217,
+        "p95": 672217,
+        "max": 672217
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "viewport-change",
+      "stableViewport": false,
+      "renderedFrames": 1,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 2,
+      "drawingBufferDimensions": [
+        "585x558",
+        "645x642",
+        "645x558"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 6,
+        "min": 326430,
+        "median": 359910,
+        "p95": 414090,
+        "max": 414090
+      },
+      "effectiveDprX": {
+        "samples": 6,
+        "min": 1.3604651162790697,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 1,
+        "min": 680,
+        "median": 680,
+        "p95": 680,
+        "max": 680
+      },
+      "triangles": {
+        "samples": 1,
+        "min": 1746980,
+        "median": 1746980,
+        "p95": 1746980,
+        "max": 1746980
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "resized-cabin-look",
+      "stableViewport": true,
+      "renderedFrames": 0,
+      "partialFramesExcluded": 1,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "645x642"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 14,
+        "min": 414090,
+        "median": 414090,
+        "p95": 414090,
+        "max": 414090
+      },
+      "effectiveDprX": {
+        "samples": 14,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 0
+      },
+      "triangles": {
+        "samples": 0
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    },
+    {
+      "phase": "resized-cabin-idle",
+      "stableViewport": true,
+      "renderedFrames": 0,
+      "partialFramesExcluded": 0,
+      "canvasWrites": 0,
+      "drawingBufferDimensions": [
+        "645x642"
+      ],
+      "densitySampling": "RAF-end and immediate native-write samples; not frame/time-weighted",
+      "backingPixels": {
+        "samples": 1,
+        "min": 414090,
+        "median": 414090,
+        "p95": 414090,
+        "max": 414090
+      },
+      "effectiveDprX": {
+        "samples": 1,
+        "min": 1.5,
+        "median": 1.5,
+        "p95": 1.5,
+        "max": 1.5
+      },
+      "drawCalls": {
+        "samples": 0
+      },
+      "triangles": {
+        "samples": 0
+      },
+      "observedFrameSpacingMs": {
+        "samples": 0
+      }
+    }
+  ],
+  "contextCreationEvidence": [
+    {
+      "contextId": 1,
+      "creation": {
+        "phase": "setup",
+        "time": 851.8999999999942,
+        "sequence": 1,
+        "reads": 1,
+        "contextType": "webgl2",
+        "requestedAntialias": true,
+        "antialias": true,
+        "alpha": true,
+        "samples": 4,
+        "sampleBuffers": 1,
+        "defaultFramebufferBound": true
+      }
+    }
+  ],
+  "assessment": {
+    "mode": "fixed",
+    "stableWrites": [],
+    "blankSamples": [],
+    "failures": [
+      "cabin-seat-controls: missing sustained rendered-frame evidence",
+      "resized-cabin-look: missing sustained rendered-frame evidence"
+    ]
+  },
+  "baselineChurnObserved": null
+}

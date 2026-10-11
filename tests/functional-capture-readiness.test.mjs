@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import orderFailures from "./fixtures/functional-readiness-order-failure.json";
+import cabinResourceFailures from "./fixtures/cabin-resource-main-failure.json";
+import cabinImages from "../qa/cabin-preview/realism-images.json";
+import { cabinResourceCohort } from "../scripts/cabin-resource-assertions.mjs";
 import {
   installFunctionalCaptureObserver,
   waitForFunctionalCapture,
@@ -545,3 +548,94 @@ it("provider reordering cannot bypass a pending later native drain", () => {
     reusedUnchanged: true,
   });
 });
+
+// Actual failure evidence from run 38141028511: UI selection/decoded images
+// precede the first driver main draw. Replayed native events are CPU contracts,
+// not a claim that a GPU or browser ran in this test.
+it.each(cabinResourceFailures)(
+  "$viewport resource sampling rejects cabin UI readiness before an admitted main",
+  async ({
+    failure,
+    attemptMark,
+    candidateEvidence,
+    expected: wanted,
+    completedDriver,
+  }) => {
+    observer({ kind: "stop", owner: 1 });
+    const owner = failure.request.owner;
+    state = copy(failure.lastMain.snapshot);
+    observer({
+      kind: "attach",
+      owner,
+      canvas,
+      context: {},
+      read: () => state,
+      pending: () => pending,
+    });
+    observer({ ...failure.lastMain, snapshot: copy(state) });
+    observer({ ...failure.lastBatch, status: undefined });
+    observer({
+      kind: "wait",
+      owner,
+      id: failure.lastBatch.id,
+      status: failure.lastBatch.status,
+    });
+    api().arm({ allowUnchanged: true });
+    state = copy(failure.current);
+    pending = true;
+    expect(state.vehicle).toMatchObject({
+      full: true,
+      proxy: false,
+      cabinSeat: "driver",
+    });
+    expect(state.camera.settled).toBe(false);
+    expect(failure.lastMain.snapshot.vehicle.full).toBe(false);
+    expect(failure.lastBatch.status).toBe(0x911b);
+    const proof = api().begin(wanted, 20000);
+    expect(api().poll(proof)).toBeNull();
+    expect(() =>
+      cabinResourceCohort(attemptMark, candidateEvidence, cabinImages.images),
+    ).toThrow(/Actual candidate bitmaps reached WebGL textures/);
+    // Elapsed RAF opportunities cannot complete native work. The same bound
+    // remains active; an eventual genuine driver main and positive fence can.
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(api().poll(proof)).toBeNull();
+    pending = false;
+    observer({ kind: "wait", owner, id: failure.lastBatch.id, status: 0x911c });
+    expect(api().poll(proof)).toBeNull();
+    state = copy(completedDriver.snapshot);
+    state.camera.requestId = failure.current.camera.requestId;
+    const draw = failure.lastMain.id + 1,
+      batch = failure.lastBatch.id + 1;
+    observer({
+      kind: "main",
+      owner,
+      id: draw,
+      snapshot: copy(state),
+      stable: true,
+    });
+    observer({
+      kind: "fence",
+      owner,
+      id: batch,
+      draws: [draw],
+      previous: null,
+    });
+    observer({ kind: "wait", owner, id: batch, status: 0x911b });
+    expect(api().poll(proof)).toBeNull();
+    observer({ kind: "wait", owner, id: batch, status: 0x911c });
+    expect(api().poll(proof)).toMatchObject({
+      owner,
+      mainDrawId: draw,
+      nativeStatus: 0x911c,
+      deadline: 20000,
+      reusedUnchanged: false,
+    });
+    // Completed rendering never replaces the independent real upload assertion.
+    expect(() =>
+      cabinResourceCohort(attemptMark, candidateEvidence, cabinImages.images),
+    ).toThrow(/Actual candidate bitmaps reached WebGL textures/);
+    await vi.advanceTimersByTimeAsync(19000);
+    expect(() => api().poll(proof)).toThrow(/deadline/);
+  },
+);

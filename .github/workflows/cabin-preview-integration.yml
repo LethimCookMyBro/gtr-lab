@@ -11,6 +11,7 @@ on:
       - 'tests/functional-capture-readiness.test.mjs'
       - 'tests/functional-render-observation.test.ts'
       - 'tests/fixtures/functional-readiness-order-failure.json'
+      - 'tests/fixtures/cabin-resource-main-failure.json'
       - 'tests/cabin-functional-workflow.node.mjs'
       - 'tests/cabin-capture-readiness.test.mjs'
       - 'tests/prepare-cabin-proxy.test.mjs'
