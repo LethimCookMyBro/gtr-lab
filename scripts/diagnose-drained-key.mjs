@@ -6,7 +6,7 @@ import { resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
-import { validateDrainedKeyEnvironment, assessDrainedKeyObservation, modelPins, limits } from './drained-key-policy.mjs';
+import { validateDrainedKeyEnvironment, assessDrainedKeyObservation, limits } from './drained-key-policy.mjs';
 import { installDrainedKeyObserver } from './drained-key-observer.mjs';
 import { waitForCleanGate, classifyKeys } from './drained-key-gates.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -17,6 +17,7 @@ export async function bounded(promise, ms, label) {
 }
 export async function main(env = process.env) {
   const target = validateDrainedKeyEnvironment(env); // Before browser/app/helper imports or setup.
+  const modelPins = target.contract.models;
   const root = resolve(env.R35_DRAINED_KEY_APP_ROOT ?? '.'), harness = dirname(fileURLToPath(import.meta.url));
   const { applicationIdentity } = await import(pathToFileURL(resolve(harness, 'diagnose-dpr-motion.mjs')));
   const source = await applicationIdentity(root);
@@ -33,12 +34,12 @@ export async function main(env = process.env) {
   for (const name of await readdir(resolve(root, 'dist/assets'))) if (/\.(?:js|css)$/.test(name)) bundles.set(`/assets/${name}`, hash(await readFile(resolve(root, 'dist/assets', name))));
   for (const model of modelPins) { const bytes = await readFile(resolve(root, 'dist' + model.path)); assert.equal(bytes.length, model.bytes); assert.equal(hash(bytes), model.sha256); }
   const output = resolve('drained-key-results/desktop'); await mkdir(output, { recursive: true });
-  const report = { scope: 'Three sequential native keys after clean checkpoint gates; one post-completion screenshot only', originalAcceptanceChanged: false, result: 'running', sourceCommit: env.R35_DRAINED_KEY_SOURCE_SHA, sourceTree: source.sha256, harnessCommit: env.GITHUB_SHA,
+  const report = { scope: 'Three sequential native keys after clean checkpoint gates; one post-completion screenshot only', originalAcceptanceChanged: false, result: 'running', sourceContract: target.contract.id, sourceCommit: env.R35_DRAINED_KEY_SOURCE_SHA, sourceTree: source.sha256, harnessCommit: env.GITHUB_SHA,
     reducedMotion: 'no-preference', viewport: target.viewport, deviceScaleFactor: target.deviceScaleFactor, limits, featureMode: 'default', explicitJavascriptFlush: false,
     limitations: ['One 45s screenshot after the third valid gate is diagnostic only; original 13-capture drag acceptance remains unchanged.', 'Pending counts are unobserved completion counts, not known GPU queue depth.', 'No explicit JavaScript flush is called, but pinned Chromium query polling and ANGLE fence creation can internally flush/submit work. The instrumentation is not a passive scheduling control.', 'Pinned ANGLE Vulkan may use global-EGL fence scope and include other earlier context work. Completion proves earlier app commands complete, not app-only GPU execution time.', 'Observable signal brackets include task-gated caching, command-buffer scheduling, polling delay and measurement overhead. SwiftShader results are not hardware FPS.', 'A naturally drained entry removes earlier tracked app-command backlog only. It cannot exclude compositor contention or later browser resolve/export work.'],
     steps: [], inputs: [], gates: [], captures: [], runtimeBodies: [], pageErrors: [], console: [], requestFailures: [], errors: [], geometry: [] };
   const save = () => bounded(writeFile(`${output}/report.json`, JSON.stringify(report, null, 2)), 5_000, 'Report write');
-  await writeFile(`${output}/identity.json`, JSON.stringify({ source, sourceCommit: report.sourceCommit, harnessCommit: report.harnessCommit, bundles: Object.fromEntries(bundles), models: modelPins }, null, 2)); await save();
+  await writeFile(`${output}/identity.json`, JSON.stringify({ source, sourceContract: target.contract.id, sourceCommit: report.sourceCommit, harnessCommit: report.harnessCommit, bundles: Object.fromEntries(bundles), models: modelPins }, null, 2)); await save();
   const { chromium, expect } = await import('@playwright/test');
   const { createAppServer } = await import(pathToFileURL(resolve(root, 'server.mjs')));
   const require = createRequire(import.meta.url); const { PNG } = require('playwright-core/lib/utilsBundle'); assert.equal(require('playwright-core/package.json').version, '1.63.0');
