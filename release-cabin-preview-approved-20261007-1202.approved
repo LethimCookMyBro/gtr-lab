@@ -1,10 +1,13 @@
 {
-  "release": "Premium cabin preview · work in progress",
-  "reviewedSource": "87e8132d4a6360b0ebc2c46ac5f794d3e9d57311",
-  "applicationIdentitySha256": "0820b36963eb70e3d2e488a02f17132d09427355971f8d6eca46c2a8c27bbafc",
-  "cabinGlbSha256": "3302157a1d5986aca0d263eb991f1f6dd08ffc9dcfa9f7680a3b0de29f2a7dfd",
-  "strictIntegrationRun": 37637847170,
-  "qualityRun": 37637847000,
-  "teardownProofRun": 37633615119,
-  "scope": "Premium only. Original-authored R35 approximation; not official factory geometry. The other five models remain photographic."
+  "release": "Premium cabin surface and dashboard preview · work in progress",
+  "reviewedSource": "76317f408668a7557609490cec60f15246f485fc",
+  "applicationIdentitySha256": "fff8b646be45844a9c4351fc9d467c92f35e6a1b8100eac0456ddeb55958eac8",
+  "cabinGlbSha256": "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
+  "cabinGlbBytes": 19170816,
+  "strictIntegrationRun": 38110004491,
+  "qualityRun": 38110004414,
+  "controlAuditRun": 38110004431,
+  "visualReview": "Actual desktop driver/passenger/pan and mobile renders reviewed; incremental center vent and continuous fascia accepted.",
+  "scope": "Premium only. Original-authored R35 approximation, static blank display, not official factory geometry or completed realism. Five other requested models remain unfinished.",
+  "historicalDiagnostic": "Original cabin WebGL review 38110004411 remains failed/incomplete in its historical full-resolution physical-transmission driver benchmark. It does not run this production thin-window asset; no physical-device performance claim."
 }
