@@ -120,14 +120,14 @@ const licensedR35: AssetManifest = {
     "Cabin preview uses artistic thin-glass window rendering only while inside. Fixed-seat inspection is available; doors, seats and instruments do not operate. Physical-device performance has not been verified.",
     "Body paint and running lights (front LED strips and rear rings) are independently controlled. Projector bulbs, beams, doors and other parts are not animated.",
   ],
-  url: "/models/ciasny-r35-brake-index-e9425289.glb",
+  url: "/models/ciasny-r35.glb",
   source:
     "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a",
   license: "https://creativecommons.org/licenses/by/4.0/",
   licenseName: "CC BY 4.0",
   author: "Ciasny",
   changes: [
-    "Adapted for GT-R LAB: transforms normalized, exhaust and lamp/window materials separated, textures resized to 2K WebP, tangents generated and geometry Meshopt-compressed. Candidate index-only topology reduction of exporter partitions 75–78, which include tire/wheel geometry. Source vertex attributes, transforms, materials and the other 78 meshes are unchanged; original assets remain preserved.",
+    "Adapted for GT-R LAB: transforms normalized, exhaust and lamp/window materials separated, textures resized to 2K WebP, tangents generated and geometry Meshopt-compressed. Exterior topology retained; original source preserved unchanged.",
     "Runtime lamp-cover transparency and the unlit front LED substrate are calibrated so the existing running-light emitters have a visible on/off response; window and housing materials are unchanged.",
   ],
   materialRoles: {

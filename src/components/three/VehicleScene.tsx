@@ -9,6 +9,7 @@ import { CABIN_URL, CABIN_PROXY_URL, cabinCameraView } from "./cabinPreview";
 import { prepareAsyncRendererDisposal } from "./asyncRendererDisposal";
 import { CabinAttachment } from "./CabinAttachment";
 import { CameraRig } from "./CameraRig";
+import { DemandRenderBackpressure } from "./DemandRenderBackpressure";
 import { RecoverableEnvironment } from "./RecoverableEnvironment";
 import { setViewerAccessibility } from "./keyboardControls";
 import { SceneBoundary, CanvasFallback } from "./SceneBoundary";
@@ -198,6 +199,10 @@ export default function VehicleScene(props: VehicleSceneProps) {
           setViewerAccessibility(gl.domElement, props.preset === "interior");
         }}
       >
+        <DemandRenderBackpressure
+          onError={props.onError}
+          onPendingChange={props.onRenderPending}
+        />
         <ContextHealth onError={props.onError} />
         <VehiclePixelDensity onChange={setDpr} />
         <CameraRig

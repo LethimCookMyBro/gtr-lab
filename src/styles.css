@@ -2248,6 +2248,10 @@ p {
   font-size: 12px;
   color: #c6ced4;
 }
+.scene-notice .text-link {
+  flex-shrink: 0;
+  min-height: 44px;
+}
 .scene-notice .icon-button {
   flex-shrink: 0;
 }

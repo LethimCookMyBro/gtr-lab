@@ -1,3 +1,7 @@
+# Historical brake-index experiment: runtime restored
+
+The document below records the staged geometry experiment, not the current runtime. The experiment produced no measured speed benefit and its desktop full-motion run failed. Runtime selection, current model-body proof and current UI expectations are restored to the original `/models/ciasny-r35.glb`. The derivative manifest, chunks, both attribution files, immutable identity and source-bound brake diagnostic contract remain intact for reproduction and provenance. The derivative is not loaded by the application. See `RENDER_BACKPRESSURE_INTEGRATION.md` for the independent pacing candidate and exact rollback record.
+
 # Staged brake-index runtime candidate
 
 This is a runtime A/B candidate only. Offline inspection is not production visual acceptance or a measured FPS improvement. The measured static-studio batching implementation, original 2,000,000-pixel budget and native MSAA are unchanged. No geometry transform, material-role map, renderer, cabin/proxy representation, interaction or disposal implementation changes.

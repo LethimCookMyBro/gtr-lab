@@ -139,9 +139,10 @@ test('every exact capture label and phase is mandatory, ordered, and nonblank', 
 });
 
 test('candidate request and complete production identity match the new closed contract', async () => {
-  assert.deepEqual(JSON.parse(await readFile(new URL('../qa/dpr-motion-request.json', import.meta.url), 'utf8')), request);
-  const identity = await applicationIdentity(new URL('..', import.meta.url).pathname);
+  assert.deepEqual(JSON.parse(await readFile(new URL('../qa/dpr-motion-brake-index-request.json', import.meta.url), 'utf8')), request);
+  const identity = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-brake-index-identity.json', import.meta.url), 'utf8'));
   assert.equal(identity.sha256, tree);
+  assert.equal(hash(JSON.stringify(identity.files)), tree);
 });
 
 test('identity guard runs before any browser, server, or candidate runtime setup', async () => {
@@ -232,7 +233,9 @@ test('only the model URL and accurate modification disclosure change the product
   const original = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-static-studio-identity.json', import.meta.url), 'utf8'));
   assert.equal(hash(JSON.stringify(original.files)), original.sha256);
   assert.equal(original.sha256, '6353f4929c3c9ef3387a0cedfa43d53e685d08592ca43a307304eac1e76a4261');
-  const current = await applicationIdentity(new URL('..', import.meta.url).pathname);
+  const current = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-brake-index-identity.json', import.meta.url), 'utf8'));
+  assert.equal(current.sha256, tree);
+  assert.equal(hash(JSON.stringify(current.files)), tree);
   assert.deepEqual(current.files.map(row => row.path), original.files.map(row => row.path));
   assert.deepEqual(current.files.filter((row, i) => row.sha256 !== original.files[i].sha256).map(row => row.path), ['src/data/models.ts']);
 });

@@ -24,6 +24,7 @@ export type VehicleSceneProps = {
   cameraViews?: Partial<Record<string, CameraView>>;
   onReady: () => void;
   onError: (message: string) => void;
+  onRenderPending?: (pending: boolean) => void;
   onProgress: (progress: number) => void;
   onManual: () => void;
   onEnvironmentFallback?: (message: string) => void;

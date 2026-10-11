@@ -14,6 +14,9 @@ const STATIC_STUDIO_TREE = '6353f4929c3c9ef3387a0cedfa43d53e685d08592ca43a307304
 const STATIC_STUDIO_CONTRACT = 'static-studio-batching-2m-msaa-v1';
 const BRAKE_INDEX_TREE = '6bdc7f056b9a0a58f37271423b020e4930b987ea43764620d95dd5bd2440795e';
 const BRAKE_INDEX_CONTRACT = 'brake-index-lod-2m-msaa-v1';
+// Independent pacing experiment on the original geometry; never reuse the brake contract.
+const RENDER_BACKPRESSURE_TREE = 'c3e6b02d198bbcdad46d403101706bbe859390d72729c6391adb01751ba0c3ca';
+const RENDER_BACKPRESSURE_CONTRACT = 'render-backpressure-2m-msaa-v1';
 const geometryRows = {
   desktop: {
     initial: { viewportWidth: 1440, viewportHeight: 900, cssWidth: 1440, cssHeight: 744, nativeDpr: 2, width: 1391, height: 718, attributeWidth: 1391, attributeHeight: 718 },
@@ -46,6 +49,7 @@ contracts[STATIC_STUDIO_CONTRACT] = { sourceTree: STATIC_STUDIO_TREE, maxBufferP
   rows: contracts[MSAA_OFF_CONTRACT].rows, captures: fullMotionCaptures,
 };
 contracts[BRAKE_INDEX_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: BRAKE_INDEX_TREE };
+contracts[RENDER_BACKPRESSURE_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: RENDER_BACKPRESSURE_TREE };
 // Historical source-pinned motion must not inherit the current runtime model URL.
 const originalMotionModels = [
   { path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19_170_816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' },
@@ -145,6 +149,11 @@ export function validateMotionEnvironment(env) {
     assert.equal(env.GITHUB_EVENT_NAME, 'push', 'Brake candidate requires reviewed main push');
     for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]'])
       assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Brake candidate requires ${marker}`);
+  }
+  if (env.R35_EXPECTED_APP_TREE === RENDER_BACKPRESSURE_TREE) {
+    assert.equal(env.GITHUB_EVENT_NAME, 'push', 'Pacing candidate requires reviewed main push');
+    for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]'])
+      assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Pacing candidate requires ${marker}`);
   }
   const geometry = validatedGeometryContract(env.R35_DPR_GEOMETRY_CONTRACT, env.R35_EXPECTED_APP_TREE, env.R35_DPR_MODE, env.R35_QA_VIEWPORT);
   return { mode: env.R35_DPR_MODE, name: env.R35_QA_VIEWPORT, ...motionViewports[env.R35_QA_VIEWPORT], baseUrl: 'http://127.0.0.1:4178', geometryContract: env.R35_DPR_GEOMETRY_CONTRACT, geometry };

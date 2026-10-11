@@ -42,7 +42,7 @@ test.afterEach(async ({ page }, info) => {
       deliberateFailure &&
       entry.kind === "error" &&
       /503/.test(entry.message) &&
-      /\/models\/ciasny-r35-brake-index-e9425289\.glb(?:\?|$)/.test(entry.url ?? "");
+      /\/models\/ciasny-r35\.glb(?:\?|$)/.test(entry.url ?? "");
   await info.attach("browser-diagnostics", {
     body: JSON.stringify(messages, null, 2),
     contentType: "application/json",
@@ -185,15 +185,15 @@ test("licensed production asset loads and all nine paints change rendered pixels
 }, info) => {
   const assetResponse = page.waitForResponse(
     (response) =>
-      /\/models\/ciasny-r35-brake-index-e9425289\.glb(?:\?|$)/.test(response.url()) && response.ok(),
+      /\/models\/ciasny-r35\.glb(?:\?|$)/.test(response.url()) && response.ok(),
   );
   await openVehicle(page);
   const response = await assetResponse;
   const bytes = await response.body();
   expect(bytes.subarray(0, 4).toString()).toBe("glTF");
-  expect(response.url()).toContain("/models/ciasny-r35-brake-index-e9425289.glb");
+  expect(response.url()).toContain("/models/ciasny-r35.glb");
   expect(createHash("sha256").update(bytes).digest("hex")).toBe(
-    "e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9",
+    "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d",
   );
   await info.attach("licensed-asset-response", {
     body: JSON.stringify(

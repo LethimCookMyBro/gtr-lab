@@ -39,6 +39,7 @@ interface ConfigState {
   stopAutoRotate: () => void;
   reset: () => void;
   retryScene: () => void;
+  sceneRequest: number;
   notice: string | null;
   paintAvailable: boolean;
   lightsAvailable: boolean;
@@ -54,6 +55,7 @@ const initial = {
   selectedEnvironment: "studio" as EnvironmentId,
   cameraPreset: "hero",
   cameraRequest: 0,
+  sceneRequest: 0,
   environmentRequest: 0,
   autoRotate: false,
   lightsEnabled: false,
@@ -132,7 +134,8 @@ export const useConfigurator = create<ConfigState>((set) => ({
     })),
   selectVariant: (id) => {
     if (getModel(id))
-      set({
+      set((state) => ({
+        sceneRequest: state.sceneRequest + 1,
         cabin: { phase: "closed" },
         selectedVariant: id,
         autoRotate: false,
@@ -145,7 +148,7 @@ export const useConfigurator = create<ConfigState>((set) => ({
         notice: null,
         paintAvailable: false,
         lightsAvailable: false,
-      });
+      }));
   },
   setPaint: (id) => {
     if (paints.some((p) => p.id === id)) set({ selectedPaint: id });
@@ -172,7 +175,8 @@ export const useConfigurator = create<ConfigState>((set) => ({
   togglePanel: (panel) =>
     set((state) => ({ panel: state.panel === panel ? null : panel })),
   retryScene: () =>
-    set({
+    set((state) => ({
+      sceneRequest: state.sceneRequest + 1,
       cabin: { phase: "closed" },
       selectedEnvironment: "studio",
       error: null,
@@ -180,7 +184,8 @@ export const useConfigurator = create<ConfigState>((set) => ({
       loadingProgress: 0,
       autoRotate: false,
       notice: null,
-    }),
+    })),
   stopAutoRotate: () => set({ autoRotate: false }),
-  reset: () => set(initial),
+  reset: () =>
+    set((state) => ({ ...initial, sceneRequest: state.sceneRequest + 1 })),
 }));

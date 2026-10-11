@@ -22,7 +22,7 @@ for (const viewport of viewports) {
     page,
   }, info) => {
     await page.setViewportSize(viewport);
-    await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", (route) =>
+    await page.route("**/models/ciasny-r35.glb", (route) =>
       route.fulfill({ status: 503, body: "Explicit non-3D layout test" }),
     );
     await page.route("https://media.flixel.com/**", () => {});
@@ -162,7 +162,7 @@ for (const viewport of [
     await page.route("https://media.flixel.com/**", (route) => {
       requests.push(route);
     });
-    await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", () => {});
+    await page.route("**/models/ciasny-r35.glb", () => {});
     await page.clock.install();
     await page.goto("/", { waitUntil: "domcontentloaded" });
     const film = page.locator(".home-film--hero");
@@ -224,7 +224,7 @@ for (const viewport of [
       await page.route("https://media.flixel.com/**", (route) => {
         requests.push(route);
       });
-      await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", () => {});
+      await page.route("**/models/ciasny-r35.glb", () => {});
       await page.goto("/", { waitUntil: "domcontentloaded" });
       await continueHomeWithout3D(page);
       const film = page.locator(".home-film--hero");

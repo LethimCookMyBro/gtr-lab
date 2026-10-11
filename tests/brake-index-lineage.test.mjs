@@ -18,14 +18,15 @@ function asset(path) {
   const length = bytes.readUInt32LE(12);
   return { entry, bytes, json: JSON.parse(bytes.subarray(20, 20 + length)), binary: bytes.subarray(28 + length) };
 }
-test('runtime and body proof select the immutable derivative and disclose the actual limited simplification', () => {
+test('restored runtime and body proof select the immutable original, leaving derivative lineage historical', () => {
   const runtime = models.find(model => model.id === 'premium').asset;
-  expect(runtime.url).toBe(candidatePath);
-  expect(cabinModels[1]).toEqual({ path: candidatePath, bytes: 8566388, sha256: candidateHash });
-  expect(runtime.changes.join(' ')).toMatch(/index-only.*75.?78/i);
-  expect(runtime.changes.join(' ')).toMatch(/tire\/wheel geometry/);
-  expect(runtime.changes.join(' ')).not.toMatch(/Exterior topology retained|No exterior mesh simplification/);
-  expect(runtime.changes.join(' ')).not.toMatch(/\bprivate\b/i);
+  expect(runtime.url).toBe('/models/ciasny-r35.glb');
+  expect(cabinModels[1]).toEqual({ path: '/models/ciasny-r35.glb', bytes: 8296356, sha256: originalHash });
+  expect(runtime.changes.join(' ')).toMatch(/Exterior topology retained|No exterior mesh simplification/);
+  expect(runtime.changes.join(' ')).not.toMatch(/index-only.*75.?78/i);
+  const derivative = manifest.find(entry => entry.path === candidatePath);
+  expect(derivative.changes.join(' ')).toMatch(/index-only.*75.?78/i);
+  expect(derivative.changes.join(' ')).toMatch(/tire\/wheel geometry/);
 });
 test('both exact exterior identities reconstruct from bounded chunks and retain source/license lineage', () => {
   validateManifest(manifest);
@@ -90,9 +91,9 @@ test('only four primitive index bindings differ, with every source binary byte a
 });
 
 
-test('current production material proof binds the derivative while historical diagnostic policies retain the original', () => {
+test('restored current material proof and historical diagnostics retain the original geometry', () => {
   const current = readFileSync('scripts/capture-vehicle-materials.mjs', 'utf8');
-  expect(current).toContain(candidatePath); expect(current).toContain(candidateHash); expect(current).not.toContain(originalHash);
+  expect(current).toContain('/models/ciasny-r35.glb'); expect(current).toContain(originalHash); expect(current).not.toContain(candidateHash);
   for (const file of ['scripts/capture-path-policy.mjs', 'scripts/gpu-frame-policy.mjs', 'scripts/capture-housing-material.mjs', 'qa/cabin-preview/prepare.mjs']) {
     const historical = readFileSync(file, 'utf8');
     expect(historical).toContain(originalHash); expect(historical).not.toContain(candidateHash);

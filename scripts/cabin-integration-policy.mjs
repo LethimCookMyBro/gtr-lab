@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 export const cabinOrigin = 'https://gtr-lab-production.up.railway.app';
 export const cabinModels = Object.freeze([
   { path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19_170_816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' },
-  { path: '/models/ciasny-r35-brake-index-e9425289.glb', bytes: 8_566_388, sha256: 'e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9' },
+  { path: '/models/ciasny-r35.glb', bytes: 8_296_356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' },
   { path: '/models/r35-exterior-cabin-proxy-49d7c2ab.glb', bytes: 956_368, sha256: '49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347' },
 ]);
 const cabinPath = cabinModels[0].path;

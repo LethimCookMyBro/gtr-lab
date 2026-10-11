@@ -7,6 +7,11 @@ on:
       - 'scripts/dpr-motion-observer.mjs'
       - 'scripts/dpr-motion-policy.mjs'
       - 'tests/dpr-motion-*.node.mjs'
+      - 'scripts/diagnose-render-backpressure-lifecycle.mjs'
+      - 'scripts/render-backpressure-lifecycle-fixture.mjs'
+      - 'tests/render-backpressure-lifecycle.node.mjs'
+      - 'tests/demand-render-backpressure.test.tsx'
+      - 'tests/render-backpressure-notice.test.tsx'
       - 'qa/dpr-motion-request.json'
       - '.github/workflows/dpr-motion-diagnostic.yml'
 permissions:
@@ -77,5 +82,80 @@ jobs:
         with:
           name: dpr-motion-${{ env.R35_DPR_MODE }}-${{ matrix.viewport }}-${{ github.sha }}
           path: dpr-motion-results/
+          retention-days: 14
+          if-no-files-found: warn
+
+  pacing-lifecycle:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-dpr-motion]') && contains(github.event.head_commit.message, '[stage-cabin-integration]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+    env:
+      R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      R35_DPR_APP_ROOT: candidate
+      R35_DPR_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve the reviewed request and fail closed before candidate/browser/server setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile, appendFile, mkdir, writeFile} from 'node:fs/promises';
+          import {resolveMotionRequest} from './scripts/dpr-motion-policy.mjs';
+          const request = JSON.parse(await readFile('qa/dpr-motion-request.json', 'utf8'));
+          const values = resolveMotionRequest(request, process.env);
+          await appendFile(process.env.GITHUB_ENV, Object.entries(values).map(([key, value]) => `${key}=${value}\n`).join(''));
+          await mkdir('dpr-motion-results', {recursive: true});
+          await writeFile('dpr-motion-results/resolved-request.json', JSON.stringify({request, resolved: values, harnessSha: process.env.GITHUB_SHA}, null, 2));
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_SOURCE_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Check source identity before installing or building the candidate
+        run: |
+          node --input-type=module -e "import assert from 'node:assert/strict'; import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs'; const identity=await applicationIdentity('candidate'); assert.equal(identity.sha256, process.env.R35_EXPECTED_APP_TREE);"
+          test "$(git -C candidate rev-parse HEAD)" = "$R35_SOURCE_SHA"
+      - name: Socket-free lifecycle fixture policy tests
+        run: |
+          node --check scripts/dpr-motion-policy.mjs
+          node --check scripts/dpr-motion-observer.mjs
+          node --check scripts/diagnose-dpr-motion.mjs
+          node --check scripts/render-backpressure-lifecycle-fixture.mjs
+          node --check scripts/diagnose-render-backpressure-lifecycle.mjs
+          node --test tests/render-backpressure-lifecycle.node.mjs
+      - run: npm ci
+      - name: Build the exact candidate production application
+        working-directory: candidate
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - name: Prove whole-tick admission, pending notice, manual retry and safe owner lifecycle
+        if: env.R35_DPR_GEOMETRY_CONTRACT == 'render-backpressure-2m-msaa-v1'
+        working-directory: candidate
+        run: |
+          node node_modules/vitest/vitest.mjs run tests/demand-render-backpressure.test.tsx tests/render-backpressure-notice.test.tsx tests/configurator-ui.test.tsx tests/configurator-panel-presence.test.tsx tests/store.test.ts tests/static-shadow-policy.test.ts tests/environment-shadow-cache.test.tsx tests/environment-capture-readiness.test.tsx tests/async-renderer-disposal.test.tsx tests/released-orbit-damping.test.ts tests/released-orbit-integration.test.tsx tests/vehicle-renderer-ownership.test.tsx tests/renderer-clear-alpha.test.tsx --pool=threads --maxWorkers=2 --minWorkers=1
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Prove injected-pending feedback, real retry generations, readiness and resource release
+        if: env.R35_DPR_GEOMETRY_CONTRACT == 'render-backpressure-2m-msaa-v1'
+        run: node scripts/diagnose-render-backpressure-lifecycle.mjs
+        timeout-minutes: 16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: render-backpressure-lifecycle-${{ matrix.viewport }}-${{ github.sha }}
+          path: |
+            render-backpressure-lifecycle-results/
+            dpr-motion-results/resolved-request.json
           retention-days: 14
           if-no-files-found: warn

@@ -58,7 +58,7 @@ it("credits a licensed model and explains its relationship to catalog specificat
     asset: {
       ...models[0].asset,
       status: "ready",
-      url: "/models/ciasny-r35-brake-index-e9425289.glb",
+      url: "/models/ciasny-r35.glb",
       kind: "licensed-model",
       displayName: "GT-R R35 · Ciasny edition",
       referenceNote:

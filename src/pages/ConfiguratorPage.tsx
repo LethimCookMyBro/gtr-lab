@@ -47,6 +47,25 @@ export function ConfiguratorPage() {
   );
   const windowStatus = windowView.model === id ? windowView.status : "loading";
   const state = useConfigurator();
+  // Initialize the route's model/generation before mounting its expensive Canvas.
+  // Otherwise a warm lazy scene mounts once here and again after selectVariant.
+  const [initializedModel, setInitializedModel] = useState<string | null>(null);
+  const sceneInitialized = initializedModel === id;
+  const sceneKey = `${id}:${state.sceneRequest}`;
+  const currentScene = useRef(sceneKey);
+  currentScene.current = sceneKey;
+  const [renderWait, setRenderWait] = useState({
+    key: sceneKey,
+    pending: false,
+  });
+  const onRenderPending = useCallback(
+    (pending: boolean) => {
+      if (currentScene.current === sceneKey)
+        setRenderWait({ key: sceneKey, pending });
+    },
+    [sceneKey],
+  );
+  const renderPending = renderWait.key === sceneKey && renderWait.pending;
   const reduced = useReducedMotion();
   const audio = useAudio();
   const cameraButton = useRef<HTMLButtonElement>(null);
@@ -72,6 +91,7 @@ export function ConfiguratorPage() {
   useEffect(() => () => useConfigurator.getState().exitCabin(false), []);
   useEffect(() => {
     state.selectVariant(id);
+    setInitializedModel(id);
   }, [id]);
   useEffect(() => {
     if (reduced) useConfigurator.setState({ autoRotate: false });
@@ -131,7 +151,8 @@ export function ConfiguratorPage() {
     );
   const paint = paints.find((p) => p.id === state.selectedPaint)!;
   const hasAsset = model.asset.status === "ready" && !!model.asset.url;
-  const interactive = hasAsset && state.ready && !state.error;
+  const interactive =
+    hasAsset && sceneInitialized && state.ready && !state.error;
   const sceneName = hasAsset
     ? model.asset.displayName || model.name
     : model.name;
@@ -228,39 +249,42 @@ export function ConfiguratorPage() {
               </div>
             }
           >
-            <VehicleScene
-              key={model.id}
-              url={model.asset.url!}
-              paint={paint.color}
-              environment={state.selectedEnvironment}
-              environmentRequest={state.environmentRequest}
-              preset={state.cameraPreset}
-              cameraRequest={state.cameraRequest}
-              autoRotate={state.autoRotate}
-              lights={state.lightsEnabled}
-              reducedMotion={reduced}
-              materialRoles={model.asset.materialRoles}
-              disabledEmissive={model.asset.disabledEmissive}
-              cameraViews={model.asset.cameraViews}
-              onReady={onReady}
-              onError={onError}
-              onProgress={onProgress}
-              onManual={onManual}
-              onEnvironmentFallback={onEnvironmentFallback}
-              onCapabilities={onCapabilities}
-              cabin={model.asset.cabinPreview ? state.cabin : undefined}
-              onCabinReady={state.cabinReady}
-              onCabinError={state.cabinFailed}
-              onCabinProgress={state.cabinProgress}
-              onWindowStatus={onWindowStatus}
-            />
+            {sceneInitialized && (
+              <VehicleScene
+                key={sceneKey}
+                url={model.asset.url!}
+                paint={paint.color}
+                environment={state.selectedEnvironment}
+                environmentRequest={state.environmentRequest}
+                preset={state.cameraPreset}
+                cameraRequest={state.cameraRequest}
+                autoRotate={state.autoRotate}
+                lights={state.lightsEnabled}
+                reducedMotion={reduced}
+                materialRoles={model.asset.materialRoles}
+                disabledEmissive={model.asset.disabledEmissive}
+                cameraViews={model.asset.cameraViews}
+                onReady={onReady}
+                onError={onError}
+                onRenderPending={onRenderPending}
+                onProgress={onProgress}
+                onManual={onManual}
+                onEnvironmentFallback={onEnvironmentFallback}
+                onCapabilities={onCapabilities}
+                cabin={model.asset.cabinPreview ? state.cabin : undefined}
+                onCabinReady={state.cabinReady}
+                onCabinError={state.cabinFailed}
+                onCabinProgress={state.cabinProgress}
+                onWindowStatus={onWindowStatus}
+              />
+            )}
           </Suspense>
         ) : (
           <div className="reference-view">
             <img src={model.image} alt={model.imageCaption} />
           </div>
         )}
-        {hasAsset && !state.ready && !state.error && (
+        {hasAsset && (!state.ready || !sceneInitialized) && !state.error && (
           <div className="scene-loading" role="status" aria-live="polite">
             <span className="loading-wordmark">
               GT-R LAB
@@ -429,7 +453,18 @@ export function ConfiguratorPage() {
         className="environment-transition"
         aria-hidden="true"
       />
-      {state.notice && (
+      {renderPending && hasAsset && !state.error ? (
+        <div role="status" aria-live="polite" className="scene-notice">
+          <p>
+            Rendering is taking longer than usual. You can keep waiting or retry
+            the viewer.
+          </p>
+          <button className="text-link" onClick={state.retryScene}>
+            <RefreshCw size={15} />
+            Retry viewer
+          </button>
+        </div>
+      ) : state.notice ? (
         <div role="status" className="scene-notice">
           <p>{state.notice}</p>
           <button
@@ -440,7 +475,7 @@ export function ConfiguratorPage() {
             <X size={16} />
           </button>
         </div>
-      )}
+      ) : null}
       <ConfiguratorPanels
         key={model.id}
         model={model}

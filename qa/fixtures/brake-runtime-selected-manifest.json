@@ -1,0 +1,608 @@
+{
+  "scope": "Staged runtime A/B candidate only; publication held; no deletions",
+  "baseCommit": "8db06c2f96e9fedcd8ce7d198d3212048e08620c",
+  "baseApplicationIdentity": "6353f4929c3c9ef3387a0cedfa43d53e685d08592ca43a307304eac1e76a4261",
+  "candidateApplicationIdentity": "6bdc7f056b9a0a58f37271423b020e4930b987ea43764620d95dd5bd2440795e",
+  "identityFileCount": 88,
+  "selectedFileCount": 65,
+  "files": [
+    {
+      "path": ".github/workflows/dpr-motion-diagnostic.yml",
+      "previous": {
+        "bytes": 3563,
+        "sha256": "558e6b2e0b55c11250b1bffc20b910a0e0f00f8bef5d27549bde15d82202b9eb"
+      },
+      "current": {
+        "bytes": 3637,
+        "sha256": "4f1cdc1f919d0d5d55ab414093c5a0d5d09da4163d78d15a97ca5fc1431e8a49"
+      }
+    },
+    {
+      "path": "docs/BRAKE_INDEX_LOD_PROVENANCE.md",
+      "previous": null,
+      "current": {
+        "bytes": 5115,
+        "sha256": "d8d009de7ba9a44d388f9defb7071f0a515029a5533d44f1fd7db6901d71fbb3"
+      }
+    },
+    {
+      "path": "e2e/home-hero-exit.spec.ts",
+      "previous": {
+        "bytes": 14219,
+        "sha256": "2354dbc90a60ed693ae030d1460d3123240a4ff8283cfde61ada2da9db0e8cb6"
+      },
+      "current": {
+        "bytes": 14240,
+        "sha256": "23793640d35f7de6b4da2c8fffa9e47b42716b07a2368cbe5fa68cdf345d13f5"
+      }
+    },
+    {
+      "path": "e2e/home-hero-viewport.spec.ts",
+      "previous": {
+        "bytes": 10565,
+        "sha256": "26cdf2357ccefd1e81202e26e907e6ec9da44fe2e2e04a2c25c579167fe33ecc"
+      },
+      "current": {
+        "bytes": 10628,
+        "sha256": "f6acae03089cb3d5297cadd9f89eec8cf82565011c2a7ad74a8e7de27080d85e"
+      }
+    },
+    {
+      "path": "e2e/home-loading.spec.ts",
+      "previous": {
+        "bytes": 22263,
+        "sha256": "35c41fcf0e6a91894c3072d724e7638921c406504d1ede0cd3f68680762cab08"
+      },
+      "current": {
+        "bytes": 22305,
+        "sha256": "9b271afd9a1971540657c0281cef0c6987698974cf6dff612e55a4bfa034fcbb"
+      }
+    },
+    {
+      "path": "e2e/home-motion.spec.ts",
+      "previous": {
+        "bytes": 69407,
+        "sha256": "38b3c9e4d6488fc6af679fac0b9b29aa9f6ec7e2e8c264a0c82b512e3334db28"
+      },
+      "current": {
+        "bytes": 69428,
+        "sha256": "451b092921654b96e3998020beff6ca78c86b3693180747eda086baffac24eb8"
+      }
+    },
+    {
+      "path": "e2e/home-opening-cards.spec.ts",
+      "previous": {
+        "bytes": 26294,
+        "sha256": "558ee521f581155fa0880338a41105dc69c5a4d4722de6be2c3e25e7d4046959"
+      },
+      "current": {
+        "bytes": 26357,
+        "sha256": "882a3320d7244f139b7a5c637e9ad434f69455abb47b8efe98df975eb53b3085"
+      }
+    },
+    {
+      "path": "e2e/rear-brand-layout.spec.ts",
+      "previous": {
+        "bytes": 9763,
+        "sha256": "0c146dbedfca9fc59d9c3cd3c0781be3a407fd8f264ca36ee0c18f0a863be0cc"
+      },
+      "current": {
+        "bytes": 9805,
+        "sha256": "b1db236b1a0fced707550b49f721d191bf9569f957deffce48ddf20f07f568f0"
+      }
+    },
+    {
+      "path": "e2e/rear-signature.spec.ts",
+      "previous": {
+        "bytes": 5126,
+        "sha256": "acc756cae2e0e1c1b39b01eaa8e529253a1913aa923b1e37e2fd471735414eb2"
+      },
+      "current": {
+        "bytes": 5168,
+        "sha256": "b03f82adb985ef999312104def2369a0472a7c9938aa92788e01fd1f0ca40c13"
+      }
+    },
+    {
+      "path": "e2e/vehicle.spec.ts",
+      "previous": {
+        "bytes": 20304,
+        "sha256": "e363e4d6f8c1eb4cef5217850676c218c6291613ae626aff1d3431e205512f76"
+      },
+      "current": {
+        "bytes": 20367,
+        "sha256": "5f59424d1b2f6d54b0ed894a452f5ad4661945eee162e3a2656fe053658da5bb"
+      }
+    },
+    {
+      "path": "modeldata/ATTRIBUTION.txt",
+      "previous": {
+        "bytes": 1001,
+        "sha256": "d5707921bf9bd7223310cbb886599c8355bb58b1ff310fb4e88f7ba4c796928f"
+      },
+      "current": {
+        "bytes": 1820,
+        "sha256": "0143555f2dadd17a070e0309b615d2da19ffb5bff47ef712039c0949e1522ed7"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0000.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "d0bdcddc42ae2a9fc6aea387a762bab7bd56460ee3637f02f8ab2f37bb7b05ee"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0001.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "6690008cf8507b9cbc359fb93cb5491b73c5d150fa51b4f401adfbc94e372f4b"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0002.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "ca99dde3119ce2941aa7185c19aeadc0b3e5ef8eb01af0eb467b417e6bc3b1b6"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0003.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "fb5da2b1e08febc79f1674f8ed2b06144d9196073ca86812eb6a183944cf8b08"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0004.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "4bf2bd50eaa950dcbd3ab0dbcbb2fba3e1e7e9d28f06c22c4a6fa7d18d7a1c2b"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0005.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "4635549e05632c0d2d0ccc155fd431559b46128414fc4497aaaa8d757393b4ba"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0006.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "99c943c96e1796b1d11d999665f1a5e9b0cf990b6c25d6d156ac2cda0bcaa935"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0007.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "c062605a03acec06e55c70bb0bd60e790a021d014613a7ff01cc44871577f9ae"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0008.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "7113652902199322f116b0b34ebbe173ca750aaac99eb4131dab09c4f0bd99a0"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0009.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "aba01b30dff70ed92c05e6e9e4a13979908b1de5a8d9470eac5bdbd2f32db1b0"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0010.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "558473213fc1b4e579c4982d7b52a430eaee869c0166ddaf71345f2866698475"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0011.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "7d1a386da71d66ebe3186e9c0af047b62e9dc4b9c7b79a864581a84b0ab7075c"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0012.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "2fdc6e74fa6f4cfc4b347c7d21edb4890db78485bb8cf35200892f48d2b73901"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0013.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "9b350edc403d59efebddfa4e74cb672b05278d30f45c7175d6eca4e7dd0337e1"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0014.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "eb1af8911799eb2ee8101a20fed1a52b0fb9096e33f3fb743e46cea18e03d74c"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0015.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "71a14550561dd396fe63ee31da949442b316a355107a5fa341a151767670d0b3"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0016.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "5a0d1c3ff5a213be9514b81182aa620d155694a6aa279f269c433e85071988b6"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0017.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "41d8cc69b493b338a661ada609e4386ed46600e9b09f581b7aacd1a994a44f59"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0018.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "d1f49a87d1254fb222be3807b9b0c33c1d0c2800b82caaab8cbf0f9f957db88b"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0019.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "60a78e8f73c0e5d50f1604c3af59aa3169a8e45267294d558a78bd95d6429f53"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0020.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "d7105904cb21dea3b1fcaaac7546e5cc6f1647fddf862453bffb43d58882c855"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0021.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "06ef3d3b8ffc4b6bfad255e13845b878d8f8d962f1a5726664ed7cbc8003b84d"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0022.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "19ba563456d81a9d85395092e114040eb54dd55de1bd3eada0c4dd7a352cec84"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0023.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "f512e43dcc1fddc208a52268b7aa7b0f410c655d155e65f31e9870a88c25bd80"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0024.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "b6204fd8a13991aed842902061706b73699ad1788d338a27bf340d75d3f97f54"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0025.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "0f0089407febe2d56064ebad33f993973a2be134ccd97fb48d47dd57eb2bf1b3"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0026.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "0a4f8a4d322f5fea19b89f1f75e46ede2a4304843b3cf93b0ffdb9623f8a855d"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0027.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "279a22bff8161d545873d44baae4148af73dc70f968f8b3f26d4d473265c8c59"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0028.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "496ea779e2200bbac002c6156ca06c5253cb31786f8a66401bd9933644e82561"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0029.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "0077f9d7393e78e9e13aabb3fff5567e0bee9b8b19303bed656b8521eae2e50d"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0030.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "31f1d2863d6784ca49126dc22921e2043bb126f874bb007cf5f4114e7c68a79f"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0031.bin",
+      "previous": null,
+      "current": {
+        "bytes": 262144,
+        "sha256": "fd6105e40bf11a05c686a5813367481d53efb3ee82200737a242c95cd6365e5b"
+      }
+    },
+    {
+      "path": "modeldata/ciasny-r35-brake-index-e9425289/0032.bin",
+      "previous": null,
+      "current": {
+        "bytes": 177780,
+        "sha256": "cb97731d7c9ab10a8662d89e020858bb92fb6914d455ccc60f5f70e8e4749d26"
+      }
+    },
+    {
+      "path": "modeldata/manifest.json",
+      "previous": {
+        "bytes": 6081,
+        "sha256": "90b9ee89a98171da11bc73d0766060c03c9d17f19ab7b1f1ac636b3ee4ddd67f"
+      },
+      "current": {
+        "bytes": 13564,
+        "sha256": "b86ee33ecef8cd54d7c3f9be0ec863b78e96812467705266bd4cf1013b2f2634"
+      }
+    },
+    {
+      "path": "public/models/ATTRIBUTION.txt",
+      "previous": {
+        "bytes": 1001,
+        "sha256": "d5707921bf9bd7223310cbb886599c8355bb58b1ff310fb4e88f7ba4c796928f"
+      },
+      "current": {
+        "bytes": 1820,
+        "sha256": "0143555f2dadd17a070e0309b615d2da19ffb5bff47ef712039c0949e1522ed7"
+      }
+    },
+    {
+      "path": "qa/dpr-motion-request.json",
+      "previous": {
+        "bytes": 224,
+        "sha256": "d2909b015a33bfaaea261cd898e5a4933d22e6e7681b7b1975cf001b5f6d5a5c"
+      },
+      "current": {
+        "bytes": 217,
+        "sha256": "9325fc1bc66c67c6f5eec798164f98b4afed24f602c61b26f0ac1ae48455044e"
+      }
+    },
+    {
+      "path": "qa/dpr-motion-static-studio-request.json",
+      "previous": null,
+      "current": {
+        "bytes": 224,
+        "sha256": "d2909b015a33bfaaea261cd898e5a4933d22e6e7681b7b1975cf001b5f6d5a5c"
+      }
+    },
+    {
+      "path": "qa/fixtures/dpr-motion-static-studio-identity.json",
+      "previous": null,
+      "current": {
+        "bytes": 13054,
+        "sha256": "0596b9efd1873f9a97ab1b7abec9a9d6ed7418463d2adc63a7069debf1290981"
+      }
+    },
+    {
+      "path": "scripts/cabin-integration-policy.mjs",
+      "previous": {
+        "bytes": 14984,
+        "sha256": "f3887aa2cb67b7082b0022d35cd66e06859e8034730c2ced38223cf5038de256"
+      },
+      "current": {
+        "bytes": 15005,
+        "sha256": "48b528266ff63d08fcf356b8a4d1abfef020c0b0c0fdfa191eefab76ff4074b8"
+      }
+    },
+    {
+      "path": "scripts/capture-vehicle-materials.mjs",
+      "previous": {
+        "bytes": 7059,
+        "sha256": "54be1a5f056a82a84a916ca16f2aa4f2d8608ac5dfbfc6c57c7beac5e62fc4d2"
+      },
+      "current": {
+        "bytes": 7098,
+        "sha256": "f2d340062554dd5d896d0cc55e6c131c10c97c1abdebc33614de1138a732bc36"
+      }
+    },
+    {
+      "path": "scripts/diagnose-dpr-motion.mjs",
+      "previous": {
+        "bytes": 22366,
+        "sha256": "8f751333b5e5cf3cd56a34ce27959d157f95ceea4cd43b0c5d857e0d4ee7ceb2"
+      },
+      "current": {
+        "bytes": 22343,
+        "sha256": "b56d962004c4d0a65e0080eec5f9138c76f18e5b22602ea455bc5f64ecf97110"
+      }
+    },
+    {
+      "path": "scripts/dpr-motion-policy.mjs",
+      "previous": {
+        "bytes": 15856,
+        "sha256": "02344a5b0d3976b47174e9f34991de841e5d2c73eefbcc035350e4d1d64ae490"
+      },
+      "current": {
+        "bytes": 17557,
+        "sha256": "a928358f9d971d0542466a9bd85f225d1e34f2ca2768be7b822dd30dd57b9e4b"
+      }
+    },
+    {
+      "path": "src/data/models.ts",
+      "previous": {
+        "bytes": 6319,
+        "sha256": "26318e7deb93dedb72969adef6096271cf483cdaf33df794a107c6aa7ff7b90a"
+      },
+      "current": {
+        "bytes": 6503,
+        "sha256": "519d25f165607b4d5166c4d59e9354e0bf28c961830c759937e2dc18de666c46"
+      }
+    },
+    {
+      "path": "tests/asset-disclosure.test.tsx",
+      "previous": {
+        "bytes": 3096,
+        "sha256": "2f513aebffc8d9339c589c4a4879d94f544e8a71e24d61ce64b035b2364da2d7"
+      },
+      "current": {
+        "bytes": 3117,
+        "sha256": "4a6dbdba50478c20e656ac086c8299c32ed69f0403d60bffba3de8fa98049842"
+      }
+    },
+    {
+      "path": "tests/brake-index-lineage.test.mjs",
+      "previous": null,
+      "current": {
+        "bytes": 7130,
+        "sha256": "7f2779207c6d701e62b6cb5f89eba433727431a9eacfac4a2037dd79c9f1e5c0"
+      }
+    },
+    {
+      "path": "tests/brake-index-preparation.test.mjs",
+      "previous": null,
+      "current": {
+        "bytes": 5488,
+        "sha256": "baba763d7dfc6f94f43f6eb56aa7f5ce23b03f2588ff1ea29774920f4be31228"
+      }
+    },
+    {
+      "path": "tests/cabin-integration-network.test.mjs",
+      "previous": {
+        "bytes": 13445,
+        "sha256": "62cc3c56e842caf1fa8b29ae38ff45fcfb2c0628034b40191d5867ea1bf715e6"
+      },
+      "current": {
+        "bytes": 13541,
+        "sha256": "2cd14576be566c22e2eccd318cbe0cd2b18bfde12074e2c7393f0b4e263b2b4b"
+      }
+    },
+    {
+      "path": "tests/cabin-live-policy.test.mjs",
+      "previous": {
+        "bytes": 15534,
+        "sha256": "c2ba14899dc35d1c4f9b64fb28e1ad94b6fabb154d5d5b1d56b4f86304a466d1"
+      },
+      "current": {
+        "bytes": 15629,
+        "sha256": "6f47f696e61f71a3dad34c4a47165571b756c0362497de99b50a6b079aa7aa79"
+      }
+    },
+    {
+      "path": "tests/dpr-motion-brake-index.node.mjs",
+      "previous": null,
+      "current": {
+        "bytes": 21373,
+        "sha256": "008b7d2ae3d9883c4b8db9aab0c9bab6771affd35bea36cc315b3ed74d07d395"
+      }
+    },
+    {
+      "path": "tests/dpr-motion-policy.node.mjs",
+      "previous": {
+        "bytes": 8582,
+        "sha256": "ad15579b014ca4aa9824ac778b13c1ad1faf93e81c60aeff8fe40405c953ee02"
+      },
+      "current": {
+        "bytes": 8608,
+        "sha256": "d88eb6e2d86fb87565bfab62d071bb54eff5efb1507426c84c79a46afccec632"
+      }
+    },
+    {
+      "path": "tests/dpr-motion-static-studio.node.mjs",
+      "previous": {
+        "bytes": 19114,
+        "sha256": "b2b95b36aee9b9eec326dd102e270763ae19bc47b108638a84155b8541a98e3e"
+      },
+      "current": {
+        "bytes": 19239,
+        "sha256": "ac209c59e715119c6c124dfcc89a23de4177d3f002557723b278189f5ed5d9ea"
+      }
+    },
+    {
+      "path": "tests/licensed-model-ui.test.tsx",
+      "previous": {
+        "bytes": 3103,
+        "sha256": "6eb6d24e5edec26c02cdf930b4671ad05cdd487aa2bb8142583673b6b3f66088"
+      },
+      "current": {
+        "bytes": 3124,
+        "sha256": "79d6103dfe3495b518f821b1ed32252ed7661f9fd71cf14eefa8d93f2ba9434c"
+      }
+    },
+    {
+      "path": "tests/rear-satin-materials.test.tsx",
+      "previous": {
+        "bytes": 18459,
+        "sha256": "a92b2ef72cfc3cad80198542905aa38efc16f9957e5fa12f2fcd2fd3e619645d"
+      },
+      "current": {
+        "bytes": 18480,
+        "sha256": "bff429418ae33daf87b010cfc279737819aefbd1efeaa69a47f16e2d02a66749"
+      }
+    },
+    {
+      "path": "tests/vehicle-asset-readiness.test.tsx",
+      "previous": {
+        "bytes": 4395,
+        "sha256": "f5de84a0f3dd63e4a28350455b226ea8cb5115f259527b378acdea8fb5f4a25f"
+      },
+      "current": {
+        "bytes": 4416,
+        "sha256": "cfb43820317514c006d104cc987da254e035583e34c5cdfa8169d30e635fd20b"
+      }
+    }
+  ]
+}

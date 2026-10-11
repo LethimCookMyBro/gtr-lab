@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", (route) =>
+  await page.route("**/models/ciasny-r35.glb", (route) =>
     route.fulfill({
       status: 503,
       body: "Deliberate motion-only failure; explicit non-3D path",

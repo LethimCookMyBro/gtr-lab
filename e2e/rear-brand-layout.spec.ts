@@ -213,7 +213,7 @@ test("compact rear identity clears the enlarged real vehicle and preserves authe
 }, info) => {
   const requests: string[] = [];
   page.on("request", (request) => {
-    if (request.url().endsWith("/models/ciasny-r35-brake-index-e9425289.glb"))
+    if (request.url().endsWith("/models/ciasny-r35.glb"))
       requests.push(request.url());
   });
   await page.route("https://media.flixel.com/**", (route) =>
@@ -226,7 +226,7 @@ test("compact rear identity clears the enlarged real vehicle and preserves authe
   const holdModel = new Promise<void>((resolve) => {
     releaseModel = resolve;
   });
-  await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", async (route) => {
+  await page.route("**/models/ciasny-r35.glb", async (route) => {
     await holdModel;
     await route.continue();
   });
