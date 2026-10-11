@@ -10,6 +10,64 @@ export const cabinModels = Object.freeze([
 const cabinPath = cabinModels[0].path;
 export const networkFaultHeader = 'x-r35-cabin-qa-fault';
 
+/** Observe actual app responses, with body retention and reads owned by one CDP session. */
+export async function observeCabinRuntimeBodies({ cdp, baseUrl, responses, errors, phase }) {
+  const byId = new Map(), pending = [];
+  cdp.on('Network.responseReceived', ({ requestId, response }) => {
+    const path = new URL(response.url).pathname;
+    if (!cabinModels.some(model => model.path === path)) return;
+    const record = { requestId, phase: phase(), path, url: response.url, status: response.status,
+      injectedFault: Object.entries(response.headers).find(([key]) => key.toLowerCase() === networkFaultHeader)?.[1] };
+    responses.push(record);
+    if (byId.has(requestId)) errors.push({ ...record, bodyError: 'Duplicate runtime response ID' });
+    byId.set(requestId, record);
+  });
+  cdp.on('Network.loadingFailed', ({ requestId, errorText }) => {
+    const record = byId.get(requestId);
+    if (record) record.failure = errorText;
+  });
+  cdp.on('Network.loadingFinished', ({ requestId }) => {
+    const record = byId.get(requestId);
+    if (!record) return;
+    if (record.completed) { errors.push({ ...record, bodyError: 'Duplicate runtime completion' }); return; }
+    record.completed = true;
+    if (record.status < 200 || record.status >= 300) return;
+    // Read immediately from the session whose Network.enable set these buffers.
+    // Playwright response.body() uses its separate, default-sized inspector cache.
+    pending.push((async () => {
+      const model = cabinModels.find(model => model.path === record.path);
+      assert.equal(record.url, baseUrl + model.path, 'Runtime model remains on the exact verification origin');
+      assert.equal(record.status, 200, 'Successful runtime model HTTP status is exact');
+      const response = await cdp.send('Network.getResponseBody', { requestId });
+      const bytes = Buffer.from(response.body, response.base64Encoded ? 'base64' : 'utf8');
+      record.bytes = bytes.length; record.sha256 = createHash('sha256').update(bytes).digest('hex');
+      assert.equal(record.bytes, model.bytes, 'Successful runtime asset byte length is exact');
+      assert.equal(record.sha256, model.sha256, 'Successful runtime asset has the exact expected identity');
+    })().catch(error => { record.bodyError = String(error); errors.push(record); }));
+  });
+  // Bounded headroom includes Chromium's base64 inspector representation of the
+  // 18.8 MB GLB. This retains evidence only; no fetch/replay or app interception.
+  await cdp.send('Network.enable', { maxResourceBufferSize: 64 * 1024 * 1024, maxTotalBufferSize: 256 * 1024 * 1024 });
+  return {
+    async verify(pageResponses, failures) {
+      await Promise.all(pending);
+      assert.deepEqual(errors, [], 'Every completed runtime asset body must be read and verified');
+      assert.deepEqual(failures.filter(item => !isExpectedCabinRequestFailure(item, pageResponses)), [], 'Only correlated, deliberately injected cabin faults may abort');
+      const signature = item => JSON.stringify([item.url, item.status, item.failure ?? null]);
+      const browserEvidence = pageResponses.map(item => ({ ...item, failure: failures.find(failure => failure.requestId === item.requestId)?.failure }));
+      assert.deepEqual(responses.map(signature).sort(), browserEvidence.map(signature).sort(), 'Both observers saw the same runtime responses and failures');
+      for (const record of responses) {
+        assert.equal(record.url, baseUrl + record.path, 'Runtime response origin is exact');
+        assert.ok(record.status === 200 || record.status === 404 && record.injectedFault === 'missing', 'Only exact success or the injected missing response is allowed');
+        if (record.failure || record.status === 404) continue;
+        const model = cabinModels.find(model => model.path === record.path);
+        assert.ok(record.completed && record.bytes === model.bytes && record.sha256 === model.sha256, 'Every completed runtime response has its own exact body proof');
+      }
+      for (const model of cabinModels) assert.ok(responses.some(item => item.path === model.path && item.status === 200 && item.completed && !item.failure && !item.injectedFault && item.sha256 === model.sha256), `A successful real ${model.path === cabinPath ? 'cabin' : 'exterior'} response was inspected`);
+    },
+  };
+}
+
 export function resolveCabinTarget(env) {
   assert.equal(env.GITHUB_ACTIONS, 'true', 'This browser proof is CI-only');
   assert.equal(env.R35_ALLOW_CABIN_INTEGRATION, '1', 'Explicit CI opt-in required');

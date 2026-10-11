@@ -12,7 +12,7 @@ import { verifyReleaseAssets } from './verify-release-assets.mjs';
 import { installCabinResourceObserver } from './cabin-resource-observer.mjs';
 import { cabinResourceCohort, assertCabinResourcesReleased } from './cabin-resource-assertions.mjs';
 import {
-  cabinModels, networkFaultHeader, resolveCabinTarget, verifyPublicCabinModels,
+  cabinModels, networkFaultHeader, resolveCabinTarget, verifyPublicCabinModels, observeCabinRuntimeBodies,
   createLiveCabinFaults, isExpectedCabinRequestFailure, isExpectedCabinBodyError, isExpectedCabinWarning, correlateCabinConsole404,
 } from './cabin-integration-policy.mjs';
 export { resolveCabinTarget, verifyPublicCabinModels, createLiveCabinFaults, isExpectedCabinRequestFailure, isExpectedCabinBodyError, isExpectedCabinWarning, correlateCabinConsole404 } from './cabin-integration-policy.mjs';
@@ -46,11 +46,10 @@ const report = {
 };
 await mkdir(output, { recursive: true });
 const save = () => writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
-let browser, server, page, observer, originalCanvas, liveFaults;
+let browser, server, page, observer, originalCanvas, liveFaults, runtimeBodies;
 let nextFault = null;
 let phase = 'setup';
 let cabinAttemptMark;
-const pendingBodies = [];
 const pendingGates = new Set();
 const requestIds = new WeakMap();
 let nextRequestId = 1;
@@ -125,14 +124,10 @@ try {
   page.setDefaultTimeout(15_000);
   page.setDefaultNavigationTimeout(45_000);
   const cdp = await context.newCDPSession(page);
-  await cdp.send('Network.enable');
+  runtimeBodies = await observeCabinRuntimeBodies({ cdp, baseUrl, responses: report.networkResponses, errors: report.runtimeAssetErrors, phase: () => phase });
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
   if (live) liveFaults = createLiveCabinFaults({ page, cdp, cabinUrl: baseUrl + cabinPath, requestId, faults: report.networkFaults });
   cdp.on('Log.entryAdded', ({ entry }) => { if (entry.source === 'network' && entry.level === 'error') report.networkConsole.push(entry); });
-  cdp.on('Network.responseReceived', ({ requestId: id, response }) => {
-    if (response.url !== baseUrl + cabinPath) return;
-    report.networkResponses.push({ requestId: id, url: response.url, status: response.status, injectedFault: Object.entries(response.headers).find(([key]) => key.toLowerCase() === networkFaultHeader)?.[1] });
-  });
   await cdp.send('Log.enable');
   page.on('pageerror', error => report.pageErrors.push({ phase, message: error.message }));
   page.on('console', message => {
@@ -162,15 +157,6 @@ try {
     record.url = response.url();
     assert.equal(record.url, baseUrl + path, 'Runtime model remains on the exact verification origin');
     report.responses.push(record);
-    if (response.ok()) pendingBodies.push(response.body().then(bytes => {
-      record.bytes = bytes.length; record.sha256 = hash(bytes);
-      assert.equal(record.sha256, path === cabinPath ? cabinSha256 : exteriorSha256, 'Successful runtime asset has the exact expected identity');
-      if (path === cabinPath) assert.equal(bytes.length, cabinBytes);
-    }).catch(error => {
-      record.bodyError = String(error);
-      // An interrupted response body is expected only in the two streaming faults.
-      report.runtimeAssetErrors.push(record);
-    }));
   });
   const resourceSnapshot = async () => page.evaluate(async () => {
     await globalThis.__cabinResourceObserver.settleIdentities();
@@ -523,7 +509,7 @@ try {
   });
 
   await check('Runtime asset identity and error hygiene', async () => {
-    await Promise.all(pendingBodies);
+    await runtimeBodies.verify(report.responses, report.requestFailures);
     const finalResources = await resourceSnapshot();
     assert.deepEqual(finalResources.issues, [], 'Resource observer has no coverage gaps');
     assert.equal(finalResources.pendingBitmapDecodes, 0);
@@ -531,14 +517,12 @@ try {
     const candidateHashes = new Set(expectedImages.map(image => image.sha256));
     for (const bitmap of finalResources.bitmaps.filter(item => candidateHashes.has(item.sourceSha256))) assert.equal(bitmap.closeCalls, 1, 'Every completed candidate load remains closed exactly once at final hygiene');
     await writeFile(`${output}/resource-observation.json`, JSON.stringify(finalResources, null, 2));
-    assert.ok(report.responses.some(item => item.path === cabinPath && item.sha256 === cabinSha256), 'A successful real cabin response was inspected');
-    assert.ok(report.responses.some(item => item.path === exteriorPath && item.sha256 === exteriorSha256), 'A successful real exterior response was inspected');
     const missingResponses = report.responses.filter(item => item.status === 404);
     assert.equal(missingResponses.length, 1, 'Exactly one intentional cabin 404');
     assert.equal(missingResponses[0].injectedFault, 'missing', 'The only 404 is the exact armed request');
     assert.equal(missingResponses[0].requestId, report.networkFaults.find(item => item.kind === 'missing')?.requestId, 'The 404 belongs to the missing fault');
     correlateCabinConsole404(report.console, report.networkConsole, report.networkResponses, baseUrl + cabinPath);
-    assert.deepEqual(report.runtimeAssetErrors.filter(item => !isExpectedCabinBodyError(item, report.requestFailures)), [], 'Every completed runtime asset keeps its exact identity');
+    assert.deepEqual(report.runtimeAssetErrors, [], 'Every completed runtime asset keeps its exact identity');
     assert.deepEqual(report.pageErrors, [], 'No uncaught application errors');
     assert.deepEqual(report.console.filter(item => item.type === 'error' && !item.intentional404), [], 'No unexpected console errors');
     const unexpectedFailures = report.requestFailures.filter(item => !isExpectedCabinRequestFailure(item, report.responses, cabinPath));
