@@ -1,0 +1,117 @@
+name: Private instrumented screenshot-feature discriminator
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose-screenshot-feature.mjs'
+      - 'scripts/screenshot-feature-policy.mjs'
+      - 'tests/screenshot-feature-*.node.mjs'
+      - 'qa/screenshot-feature-request.json'
+      - '.github/workflows/screenshot-feature-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: screenshot-feature-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-screenshot-feature]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        feature: [default, ignored]
+    env:
+      R35_SCREENSHOT_FEATURE_MODE: ${{ matrix.feature }}
+      R35_SCREENSHOT_FEATURE_APP_ROOT: candidate
+      R35_SCREENSHOT_FEATURE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve exact reviewed opt-in before candidate/browser/server setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile, appendFile, mkdir, writeFile} from 'node:fs/promises';
+          import {resolveFeatureRequest} from './scripts/screenshot-feature-policy.mjs';
+          const request=JSON.parse(await readFile('qa/screenshot-feature-request.json','utf8'));
+          const values=resolveFeatureRequest(request, process.env);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          await mkdir('screenshot-feature-results',{recursive:true});
+          await writeFile(`screenshot-feature-results/request-${process.env.R35_SCREENSHOT_FEATURE_MODE}.json`,JSON.stringify({request,resolved:values,harnessSha:process.env.GITHUB_SHA},null,2));
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_SCREENSHOT_FEATURE_SOURCE_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Preserve exact fixed source; verify without browser or sockets
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "$R35_SCREENSHOT_FEATURE_SOURCE_SHA"
+          node --input-type=module -e "import assert from 'node:assert/strict'; import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs'; assert.equal((await applicationIdentity('candidate')).sha256,process.env.R35_SCREENSHOT_FEATURE_SOURCE_TREE)"
+          node --check scripts/diagnose-screenshot-feature.mjs
+          node --check scripts/screenshot-feature-policy.mjs
+          node --test tests/screenshot-feature-*.node.mjs
+      - run: npm ci
+      - name: Build exact fixed candidate
+        working-directory: candidate
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Fresh process screenshot-feature lane; original deadlines and native pixels retained
+        run: node scripts/diagnose-screenshot-feature.mjs
+        timeout-minutes: 16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshot-feature-${{ matrix.feature }}-${{ github.sha }}
+          path: screenshot-feature-results/
+          retention-days: 14
+          if-no-files-found: warn
+  compare:
+    needs: capture
+    if: always() && github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-screenshot-feature]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: screenshot-feature-*-${{ github.sha }}
+          path: screenshot-feature-results
+          merge-multiple: true
+      - name: Require sole exact browser switch difference and equal native buffers; retain each failure
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,writeFile} from 'node:fs/promises';
+          import {compareFeatureLanes} from './scripts/screenshot-feature-policy.mjs';
+          const reports=[],missing=[];
+          for(const feature of ['default','ignored']) {
+            const path=`screenshot-feature-results/${feature}/report.json`;
+            try {reports.push(JSON.parse(await readFile(path,'utf8')));} catch(error) {missing.push({path,error:String(error)});}
+          }
+          const summary={...compareFeatureLanes(reports),missing};
+          await writeFile('screenshot-feature-results/comparison.json',JSON.stringify(summary,null,2));
+          console.log(JSON.stringify(summary,null,2));
+          if(missing.length || summary.failures.length || reports.some(r=>r.result!=='observed')) process.exitCode=1;
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshot-feature-comparison-${{ github.sha }}
+          path: screenshot-feature-results/comparison.json
+          retention-days: 14
+          if-no-files-found: warn

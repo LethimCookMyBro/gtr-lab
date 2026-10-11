@@ -90,7 +90,7 @@ test('prepared manifest pins both frozen inputs, common source lineage, exterior
   assert.equal(exterior.loadedPrimitives, 82);
   assert.equal(exterior.triangles, 566475);
   assert.deepEqual(manifest.sourceFiles.map(({ file, gitBlobSha }) => ({ file, gitBlobSha })), [
-    { file: 'src/components/three/materialAdapter.ts', gitBlobSha: '4677edf8203108556ab02dc5a16e0fb94b894f54' },
+    { file: 'src/components/three/materialAdapter.ts', gitBlobSha: '744e006a5a57f5137f93ec12ffb1ec2654e0c8e1' },
     { file: 'src/components/three/sceneHelpers.ts', gitBlobSha: 'fbcc786d7c408be8ce5ee140106b7c5bc0c727dc' },
   ]);
   const appearance = JSON.parse(await readFile(new URL('.qa-cabin-runtime/app-appearance.json', root), 'utf8'));
