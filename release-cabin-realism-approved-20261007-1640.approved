@@ -1,11 +1,11 @@
 {
   "version": 1,
   "allow": true,
-  "release": "[release-cabin-preparation-ao-static-faces]",
-  "stagedSource": "2f660090d3ae04549e705e0411dd7083f0626a95",
-  "sourceTree": "bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5",
-  "contract": "premium-unified-cabin-preparation-ao-static-faces-v1",
+  "contract": "ui-optimization-public-candidate-v1",
+  "stagedSource": "f975d55468504b8c52151f9d89cf37cf2f988957",
+  "sourceTree": "f530e2009115310a5c229d7024d3dc99dcb0d5ff0939d76cba4f9aeb947942c0",
   "modelSha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+  "release": "[release-ui-optimization]",
   "modelBytes": 20195752,
   "modelGzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
   "modelGzipBytes": 10194084

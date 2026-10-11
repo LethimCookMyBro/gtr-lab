@@ -1,0 +1,61 @@
+# Read-only public candidate proof. This workflow never writes a release marker.
+name: Public exact UI candidate verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release-ui-optimization-approved-20261011.approved'
+permissions:
+  contents: read
+concurrency:
+  group: ui-optimization-live-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  public-ui:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-ui-optimization]') && !contains(github.event.head_commit.message, '[stage-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, narrow, mobile]
+    env:
+      R35_ALLOW_UI_LIVE: '1'
+      R35_UI_LIVE_VIEWPORT: ${{ matrix.viewport }}
+      R35_UI_LIVE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate separate release marker and exact clean release source before setup
+        run: node scripts/ui-optimization-live.mjs --check-release
+      - run: npm ci
+      - name: Socket-free contracts and unchanged native Drawer ownership regressions
+        run: |
+          node --check scripts/ui-optimization-live.mjs
+          node --test tests/ui-optimization-live.node.mjs tests/ui-optimization-receipts.node.mjs tests/cabin-runtime-body-ledger.node.mjs tests/cabin-preparation-live.node.mjs
+          node node_modules/vitest/vitest.mjs run tests/drawer-compositing.test.ts tests/drawer-isolation.test.tsx tests/configurator-panel-presence.test.tsx tests/render-quality-ui.test.tsx --pool=threads --maxWorkers=1 --minWorkers=1
+      - name: Build actual release for exact public byte comparison
+        run: npm run build
+        timeout-minutes: 8
+      - name: Wait for this exact Railway revision
+        run: node scripts/wait-railway.mjs
+        timeout-minutes: 6
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Verify public identity first, then actual native Drawer controls and cleanup
+        run: node scripts/ui-optimization-live.mjs
+        timeout-minutes: 10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-ui-candidate-${{ matrix.viewport }}-${{ github.sha }}
+          path: ui-optimization-live-results/
+          retention-days: 14
+          if-no-files-found: warn

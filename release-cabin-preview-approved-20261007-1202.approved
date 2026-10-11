@@ -1,22 +1,25 @@
 {
-  "release": "Premium unified cabin preparation, original static display faces and contact-occlusion detail: incremental work in progress",
-  "reviewedSource": "2f660090d3ae04549e705e0411dd7083f0626a95",
-  "applicationIdentitySha256": "bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5",
+  "release": "Scoped homepage and Drawer UI optimization",
+  "reviewedSource": "f975d55468504b8c52151f9d89cf37cf2f988957",
+  "applicationIdentitySha256": "f530e2009115310a5c229d7024d3dc99dcb0d5ff0939d76cba4f9aeb947942c0",
   "cabinGlbSha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
   "cabinGlbBytes": 20195752,
   "cabinGzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
   "cabinGzipBytes": 10194084,
   "quality": "Standard 2M backing-pixel cap with MSAA remains default; Reduced 1M mode is an explicit user choice",
   "preparationRun": 38170572647,
-  "qualityRun": 38170572624,
+  "qualityRun": 38184754085,
   "priorAllFivePreparationRun": 38167159928,
   "priorQualityRun": 38167159857,
-  "verifiedScope": "Premium prepares within the viewer, then direct Interior selection reuses resident data without repeated cabin download/decode/upload. Eleven-image ownership, desktop/mobile route and context retirement, 390/320 failure recovery layout, static original instrument/display artwork and contact-occlusion detail. Route focus and selected-control accessibility improved.",
-  "releasePrerequisites": "Publish only after current Quality is terminal and scoped desktop/mobile recovery evidence is accepted. Verify actual public revision, build/model/wire bytes and native preparation/lifecycle before restoring baseline deployment watches.",
+  "verifiedScope": "Homepage avoids unused motion writes and large image blur; modal background isolation, focus/scroll ownership and opaque Drawer with unfiltered dark scrim. Four fresh exact-source viewport lanes passed native controls, receipts, screenshots and cleanup. Existing cabin model/runtime behavior otherwise unchanged.",
+  "releasePrerequisites": "Current exact candidate Quality must finish and artifact review pass before publication; verify exact deployed bytes and native public UI before restoring original deployment watches.",
   "remainingLimits": [
     "Current Standard desktop first entry exceeds the unchanged 20-second software-renderer completion bound; native completion was observed 22.8566 seconds after the click despite main submission 17.7 milliseconds after the click. Prior Standard failures remain.",
     "Mobile first/repeat entry took approximately 6.8\u20136.9 seconds and explicit Reduced desktop took 17.4\u201317.6 seconds in this software-renderer run. No repeated download does not establish instant response or hardware smoothness.",
     "Original sustained-motion/immediate-presentation failures and physical/geometry 15-second completion misses remain. Historical opt-in and closed-source cabin tests are incompatible with this prepared-entry source and remain preserved as failed historical results.",
-    "The cabin remains an authored approximation with coarse leather and approximate proportions; instrument and display faces are static illustrations, not functioning OEM instruments. Five other requested realistic variants are unfinished."
-  ]
+    "The cabin remains an authored approximation with coarse leather and approximate proportions; instrument and display faces are static illustrations, not functioning OEM instruments. Five other requested realistic variants are unfinished.",
+    "Prior UI desktop animation-observation and cleanup failures remain recorded. Candidate-only passing runs do not establish general or hardware speedup."
+  ],
+  "uiVerificationRun": 38184754127,
+  "priorCabinLiveRelease": "affd86701a2f16060215b4507aa653e5229ee3a3"
 }
