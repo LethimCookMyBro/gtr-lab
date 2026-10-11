@@ -1,7 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "allow": true,
   "mode": "fixed",
   "sourceSha": "current",
-  "sourceTree": "0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8"
+  "sourceTree": "60c442f0d379d3c111393eda9337921b6df853ecf5b6e4024f7ce05d958ab930",
+  "geometryContract": "pixel-budget-1m-v1"
 }

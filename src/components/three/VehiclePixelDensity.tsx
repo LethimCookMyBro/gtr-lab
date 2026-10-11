@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useThree } from "@react-three/fiber";
 
-const MAX_BUFFER_PIXELS = 2_000_000;
+const MAX_BUFFER_PIXELS = 1_000_000;
 const MAX_DPR = 1.5;
 
 export function vehiclePixelRatio(

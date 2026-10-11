@@ -64,6 +64,7 @@ export async function main(env = process.env) {
   }
   const output = resolve(`dpr-motion-results/${target.mode}-${target.name}`); await mkdir(output, { recursive: true });
   const report = { mode: target.mode, viewport: target.name, sourceCommit, harnessCommit: env.GITHUB_SHA, sourceTree: source.sha256,
+    geometryContract: target.geometryContract ?? null, expectedGeometry: target.geometry,
     renderer: 'Chromium ANGLE SwiftShader software WebGL only', reducedMotion: 'no-preference', nativeDeviceScaleFactor: target.deviceScaleFactor,
     scope: 'Actual production bundle; no app test hooks, app source changes, frame forcing, readPixels, GL state changes, or device-performance pass threshold.',
     limitations: ['SwiftShader timings cannot establish physical-device FPS or lag improvement.', 'Bounded composited screenshots can miss subframe or between-sample flicker; buffer-write/context observations run throughout.', 'Screenshots add readback overhead. Phase timing is descriptive; draw/triangle and backing-pixel changes are reported separately.'],
@@ -195,7 +196,7 @@ export async function main(env = process.env) {
         const { observation, resources } = await page.evaluate(() => ({ observation: window.__r35DprMotion.snapshot(), resources: window.__cabinResourceObserver.snapshot() }));
         await writeFile(`${output}/buffer-events.json`, JSON.stringify(observation, null, 2)); await writeFile(`${output}/resource-frames.json`, JSON.stringify(resources, null, 2));
         report.phaseSummary = summarizePhases(observation, resources);
-        report.assessment = assessMotionEvidence({ mode: target.mode, observation, pixels: report.captures });
+        report.assessment = assessMotionEvidence({ mode: target.mode, observation, pixels: report.captures, geometryContract: target.geometryContract, sourceTree: source.sha256, viewport: target.name });
         report.baselineChurnObserved = target.mode === 'baseline' ? report.assessment.stableWrites.length > 0 : null;
         if (resources.issues.length) report.assessment.failures.push(...resources.issues);
         for (const name of ['exterior-orbit', 'exterior-controls-rotating', 'cabin-look', 'cabin-seat-controls', 'resized-cabin-look']) {
