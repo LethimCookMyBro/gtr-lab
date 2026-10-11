@@ -777,3 +777,53 @@ describe("deliberate first-entry cabin cut", () => {
     expectCompletedPose();
   });
 });
+
+it("certifies applied camera state only after the real rig frame and invalidates changed owners", () => {
+  const appliedState: { current: { key: string; settled: boolean } | null } = {
+    current: null,
+  };
+  const props = {
+    preset: "hero",
+    requestId: 0,
+    autoRotate: false,
+    reducedMotion: true,
+    onManual: () => {},
+    appliedState,
+    appliedKey: "preparation:driver:1",
+  };
+  const result = render(<CameraRig {...props} />);
+  expect(appliedState.current).toEqual({
+    key: props.appliedKey,
+    settled: false,
+  });
+  frame();
+  expect(appliedState.current).toEqual({
+    key: props.appliedKey,
+    settled: true,
+  });
+  result.rerender(
+    <CameraRig
+      {...props}
+      preset="rear"
+      requestId={1}
+      appliedKey="preparation:return:2"
+      reducedMotion={false}
+    />,
+  );
+  expect(appliedState.current).toEqual({
+    key: "preparation:return:2",
+    settled: false,
+  });
+  frame();
+  expect(appliedState.current).toEqual({
+    key: "preparation:return:2",
+    settled: false,
+  });
+  for (let n = 0; n < 600 && !appliedState.current?.settled; n++) frame();
+  expect(appliedState.current).toEqual({
+    key: "preparation:return:2",
+    settled: true,
+  });
+  result.unmount();
+  expect(appliedState.current).toBeNull();
+});

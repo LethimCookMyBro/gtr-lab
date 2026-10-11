@@ -14,12 +14,14 @@ type Props = {
   asset: PreparedVehicle | null;
   exterior: PreparedVehicle;
   active: boolean;
+  prepared?: boolean;
   request: number;
   onReady: (request: number) => void;
   onError: (request: number, message: string) => void;
   proxy?: PreparedVehicle | null;
   proxyFailed?: boolean;
   onProxyError?: () => void;
+  onOwnerError?: (message: string) => void;
   onWindowStatus?: (status: CabinWindowStatus) => void;
 };
 
@@ -111,21 +113,28 @@ export function CabinAttachment({
   asset,
   exterior,
   active,
+  prepared,
   request,
   onReady,
   onError,
   proxy = null,
   proxyFailed = false,
   onProxyError,
+  onOwnerError,
   onWindowStatus,
 }: Props) {
   const scene = useThree((state) => state.scene),
     invalidate = useThree((state) => state.invalidate);
-  const callbacks = useRef({ onError, onProxyError, onWindowStatus });
-  callbacks.current = { onError, onProxyError, onWindowStatus };
+  const callbacks = useRef({
+    onError,
+    onProxyError,
+    onWindowStatus,
+    onOwnerError,
+  });
+  callbacks.current = { onError, onProxyError, onWindowStatus, onOwnerError };
   const owner = useRef<ReturnType<typeof createCabinWindowOwner> | null>(null);
-  const fullReady = useCabinCompilation(
-    asset,
+  const compiledReady = useCabinCompilation(
+    prepared === undefined ? asset : null,
     request,
     (readyRequest) => {
       if (owner.current) onReady(readyRequest);
@@ -137,6 +146,7 @@ export function CabinAttachment({
     },
     onError,
   );
+  const fullReady = prepared ?? compiledReady;
   const proxyReady = useCabinCompilation(
     proxy,
     0,
@@ -161,6 +171,9 @@ export function CabinAttachment({
       };
     } catch {
       callbacks.current.onProxyError?.();
+      callbacks.current.onOwnerError?.(
+        "The cabin window roles could not be verified. Please retry the viewer.",
+      );
     }
   }, [exterior, scene, invalidate]);
   const selected =

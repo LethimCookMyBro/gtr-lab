@@ -93,9 +93,9 @@ export function ConfiguratorPanels({
             )}
           {model.asset.cabinPreview && (
             <p className="availability-note" id="cabin-preview-note">
-              An original authored cabin, still in progress. Choosing the
-              preview downloads a separate 19.2 MB model. Not a verified factory
-              interior.
+              An original authored cabin, still in progress. Prepared with the
+              vehicle so Interior opens directly when ready. Not a verified
+              factory interior.
             </p>
           )}
           <div className="camera-choices">
@@ -106,7 +106,8 @@ export function ConfiguratorPanels({
                   !interactive ||
                   (p.id === "interior" &&
                     ((!model.asset.interior && !model.asset.cabinPreview) ||
-                      state.cabin.phase === "loading"))
+                      (model.asset.cabinPreview &&
+                        state.cabinPreparation.phase !== "ready")))
                 }
                 aria-describedby={
                   p.id === "interior" && model.asset.cabinPreview
@@ -137,7 +138,7 @@ export function ConfiguratorPanels({
               >
                 <span>
                   {p.id === "interior" && model.asset.cabinPreview
-                    ? "Cabin preview · work in progress"
+                    ? "Interior"
                     : p.name}
                 </span>
                 {p.id === "interior" &&

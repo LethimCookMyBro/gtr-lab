@@ -2,6 +2,8 @@ import { addAfterEffect, addEffect } from "@react-three/fiber";
 import type { RootState } from "@react-three/fiber";
 import { createFunctionalRenderObservation } from "./functionalRenderObservation";
 
+import { createRendererPreparationOwner } from "./rendererPreparation";
+
 const POLL_MS = 16;
 // Feedback threshold only: never a completion or failure deadline.
 const SLOW_RENDER_NOTICE_MS = 5_000;
@@ -62,6 +64,12 @@ export function installDemandRenderBackpressure(
   let batchGeneration = 0;
   let queuedBatch = false;
   let restoreFrames: (() => void) | undefined;
+  let preparing = false;
+  const preparation = createRendererPreparationOwner(renderer, schedulePoll);
+  if (lost)
+    preparation.reset(
+      new Error("The graphics context is not available for preparation."),
+    );
 
   function setPendingNotice(value: boolean) {
     if (pendingNotice === value) return;
@@ -83,6 +91,9 @@ export function installDemandRenderBackpressure(
   function fail() {
     if (stopped || failed || lost) return;
     failed = true;
+    preparation.reset(
+      new Error("The graphics device stopped completing preparation."),
+    );
     observation?.invalid("native failure");
     try {
       retireFence();
@@ -105,19 +116,27 @@ export function installDemandRenderBackpressure(
   }
   function poll(shouldWake: boolean): boolean {
     if (stopped || failed || lost) return false;
-    if (!sync) return true;
     try {
-      if (context.isContextLost()) {
+      if (context.isContextLost() || renderer.getContext() !== context) {
         onLost();
         return false;
       }
+      if (!sync) return true;
       const status = context.clientWaitSync(sync, 0, 0);
       observation?.wait(sync, status);
       if (
         status === context.ALREADY_SIGNALED ||
         status === context.CONDITION_SATISFIED
       ) {
+        if (context.isContextLost() || renderer.getContext() !== context) {
+          onLost();
+          return false;
+        }
+        if (!get().internal.active)
+          preparation.reset(new Error("The renderer root was retired."));
+        else preparation.completed(sync);
         retireFence("signaled");
+        schedulePoll();
         if (shouldWake) wake();
         return true;
       }
@@ -137,10 +156,41 @@ export function installDemandRenderBackpressure(
     return false;
   }
   function schedulePoll() {
-    if (stopped || failed || lost || !sync || timer !== undefined) return;
+    if (
+      stopped ||
+      failed ||
+      lost ||
+      (!sync && !preparation.hasWork()) ||
+      timer !== undefined
+    )
+      return;
     timer = setTimeout(() => {
       timer = undefined;
       poll(true);
+      const state = get();
+      if (!state.internal.active)
+        preparation.reset(new Error("The renderer root was retired."));
+      else preparation.poll();
+      if (
+        !stopped &&
+        !failed &&
+        !lost &&
+        !sync &&
+        !windowOpen &&
+        !queuedBatch &&
+        state.internal.active &&
+        state.frameloop === "demand" &&
+        !renderer.xr.isPresenting &&
+        state.internal.frames === 0 &&
+        preparation.hasWork()
+      ) {
+        preparing = true;
+        try {
+          if (preparation.runNext()) sealBatch();
+        } finally {
+          preparing = false;
+        }
+      }
       schedulePoll();
     }, POLL_MS);
   }
@@ -161,6 +211,7 @@ export function installDemandRenderBackpressure(
       }
       const previous = sync;
       sync = next;
+      preparation.seal(next, previous);
       observation?.fence(next, previous);
       pendingSince ??= performance.now();
       if (previous) {
@@ -236,17 +287,52 @@ export function installDemandRenderBackpressure(
     this: typeof renderer,
     ...args
   ) {
-    const snapshot = observation?.begin(args[0], args[1]);
+    const hasWaiters = preparation.hasMainWaiters();
+    const rootMain =
+      hasWaiters &&
+      !preparing &&
+      args[0] === get().scene &&
+      args[1] === get().camera &&
+      renderer.getRenderTarget() === null &&
+      context.getParameter(context.DRAW_FRAMEBUFFER_BINDING) === null;
+    if (
+      hasWaiters &&
+      (preparing || (!rootMain && renderer.getRenderTarget() === null))
+    )
+      preparation.invalidateMain();
+    const mainToken = rootMain ? preparation.beforeMain() : [];
+    // Tiny/scissored preparation draws may use the exact root scene/camera,
+    // but are not a displayed full main presentation in either completion API.
+    const snapshot = preparing
+      ? renderer.getRenderTarget() === null
+        ? { kind: "foreign-default" as const }
+        : undefined
+      : observation?.begin(args[0], args[1]);
     try {
       const result = render.apply(this, args);
       observation?.main(snapshot);
+      if (mainToken.length)
+        preparation.afterMain(
+          mainToken,
+          !stopped &&
+            !failed &&
+            !lost &&
+            renderer.getContext() === context &&
+            args[0] === get().scene &&
+            args[1] === get().camera &&
+            renderer.getRenderTarget() === null &&
+            context.getParameter(context.DRAW_FRAMEBUFFER_BINDING) === null,
+        );
       return result;
     } catch (error) {
+      preparation.afterMain(mainToken, false);
       observation?.invalid("render failed");
       throw error;
     } finally {
       if (!stopped && !failed && !lost) {
-        if (windowOpen) observedWork = true;
+        if (preparing) {
+          /* The preparation owner seals the entire synchronous step. */
+        } else if (windowOpen) observedWork = true;
         else if (!queuedBatch) {
           queuedBatch = true;
           const generation = ++batchGeneration;
@@ -262,6 +348,9 @@ export function installDemandRenderBackpressure(
   renderer.render = observedRender;
   function onLost() {
     lost = true;
+    preparation.reset(
+      new Error("The graphics context was lost during preparation."),
+    );
     observation?.invalid("context lost");
     batchGeneration++;
     queuedBatch = false;
@@ -283,6 +372,7 @@ export function installDemandRenderBackpressure(
     context = restored;
     lost = context.isContextLost();
     failed = false;
+    preparation.restore();
     sealBatch();
     // Always redraw the restored drawing buffer, even if input was unchanged.
     get().invalidate();
@@ -293,6 +383,7 @@ export function installDemandRenderBackpressure(
   return () => {
     if (stopped) return;
     stopped = true;
+    preparation.dispose();
     observation?.stop();
     batchGeneration++;
     closeWindow(false);

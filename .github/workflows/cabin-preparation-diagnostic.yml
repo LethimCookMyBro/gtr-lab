@@ -1,0 +1,78 @@
+# Private/staged source proof only. No publication, deployment or write permissions.
+name: Staged unified cabin preparation proof
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'server.mjs'
+      - 'scripts/*cabin-preparation*.mjs'
+      - 'qa/cabin-preparation-request.json'
+      - 'qa/fixtures/cabin-preparation-identity.json'
+      - 'tests/cabin-preparation-contract.node.mjs'
+      - '.github/workflows/cabin-preparation-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cabin-preparation-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  prove:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-cabin-preparation]') && contains(github.event.head_commit.message, '[stage-cabin-integration]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+        lane: [feature, lifecycle]
+    env:
+      R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      R35_PREPARATION_LANE: ${{ matrix.lane }}
+      R35_PREPARATION_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve closed request and immutable source before setup
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFile,appendFile} from 'node:fs/promises';
+          import {resolvePreparationRequest} from './scripts/cabin-preparation-policy.mjs';
+          import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs';
+          const request=JSON.parse(await readFile('qa/cabin-preparation-request.json','utf8'));
+          const values=resolvePreparationRequest(request,process.env);
+          const frozen=JSON.parse(await readFile('qa/fixtures/cabin-preparation-identity.json','utf8'));
+          assert.deepEqual(await applicationIdentity('.'),frozen);
+          assert.equal(frozen.sha256,values.R35_EXPECTED_APP_TREE);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          NODE
+          node scripts/build-cabin-preparation-readiness.mjs
+          node --check scripts/diagnose-cabin-preparation.mjs
+          node --check scripts/cabin-preparation-observer.mjs
+          node --check scripts/cabin-preparation-readiness.generated.mjs
+          node --test tests/cabin-preparation-contract.node.mjs
+      - run: npm ci
+      - name: Exact focused runtime preparation and ownership regressions
+        run: node node_modules/vitest/vitest.mjs run tests/renderer-preparation.test.ts tests/demand-render-backpressure.test.tsx tests/demand-render-resize.test.tsx tests/functional-render-observation.test.ts tests/async-renderer-disposal.test.tsx tests/cabin-preparation-steps.test.ts tests/cabin-resident-asset.test.tsx tests/cabin-resident-state.test.ts tests/cabin-runtime-preparation.test.tsx tests/cabin-preparation-ui.test.tsx --pool=threads --maxWorkers=1 --minWorkers=1
+      - run: node node_modules/typescript/bin/tsc --noEmit
+      - run: npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Exact-source native preparation and residency feature proof
+        run: node scripts/diagnose-cabin-preparation.mjs
+        timeout-minutes: 20
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cabin-preparation-${{ matrix.viewport }}-${{ matrix.lane }}-${{ github.sha }}
+          path: cabin-preparation-results/
+          retention-days: 14
+          if-no-files-found: warn

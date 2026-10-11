@@ -7,6 +7,12 @@ export const CABIN_PROXY_URL = "/models/r35-exterior-cabin-proxy-49d7c2ab.glb";
 export type CabinWindowStatus = "loading" | "ready" | "unavailable";
 export const CABIN_SEATS = ["driver", "passenger", "rear"] as const;
 export type CabinSeat = (typeof CABIN_SEATS)[number];
+/** Preparation belongs to the route; entering/exiting only selects a view. */
+export type CabinPreparationState =
+  | { phase: "idle" }
+  | { phase: "loading"; request: number; progress: HomeSceneLoadState }
+  | { phase: "ready"; request: number }
+  | { phase: "error"; request: number; message: string };
 export type CabinPreviewState =
   | { phase: "closed" }
   | { phase: "loading"; request: number; progress: HomeSceneLoadState }

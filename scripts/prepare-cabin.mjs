@@ -294,20 +294,28 @@ export async function prepareCabin({
     if (!info.isFile()) throw new Error("Cabin source must be a regular file");
     if (info.size !== asset.gzipBytes)
       throw new Error("Cabin source byte count mismatch");
-    asset.bytes = asset.decode(await readFile(source));
+    asset.gzip = await readFile(source);
+    asset.bytes = asset.decode(asset.gzip);
   }
   const directory = resolve(root, "public/models");
   await mkdir(directory, { recursive: true });
   if (!(await lstat(directory)).isDirectory())
     throw new Error("Cabin output must be a regular directory");
   for (const asset of assets) {
-    const output = resolve(directory, asset.filename);
-    const temporary = output + "." + randomUUID() + ".prepared";
-    try {
-      await writeFile(temporary, asset.bytes, { flag: "wx" });
-      await rename(temporary, output);
-    } finally {
-      await rm(temporary, { force: true });
+    // Retain the already verified encoding rather than spending CPU to
+    // recompress each request. Both representations decode to the same model.
+    for (const [filename, bytes] of [
+      [asset.filename, asset.bytes],
+      [asset.filename + ".gz", asset.gzip],
+    ]) {
+      const output = resolve(directory, filename);
+      const temporary = output + "." + randomUUID() + ".prepared";
+      try {
+        await writeFile(temporary, bytes, { flag: "wx" });
+        await rename(temporary, output);
+      } finally {
+        await rm(temporary, { force: true });
+      }
     }
     log(
       `[cabin] verified ${asset.filename}: ${asset.bytes.length} bytes, ${asset.sha256}`,

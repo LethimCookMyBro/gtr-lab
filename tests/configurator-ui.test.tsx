@@ -66,6 +66,12 @@ describe("configurator honest functional flow", () => {
     expect(screen.getByRole("main").className).toContain("environment-gallery");
     expect(screen.getByRole("main").className).not.toContain("is-scene-ready");
     act(() => useConfigurator.setState({ ready: true }));
+    expect(screen.getByRole("main").className).not.toContain("is-scene-ready");
+    act(() =>
+      useConfigurator
+        .getState()
+        .cabinReady(useConfigurator.getState().cabinRequest),
+    );
     expect(screen.getByRole("main").className).toContain("is-scene-ready");
   });
   it("does not apply bright-gallery ink labels to photo-only variants", () => {
@@ -140,7 +146,7 @@ describe("configurator honest functional flow", () => {
     expect(screen.getByRole("dialog").textContent).toContain(
       "An original authored cabin, still in progress",
     );
-    const interior = screen.getByRole("button", { name: /Cabin preview/ });
+    const interior = screen.getByRole("button", { name: "Interior" });
     expect(interior.getAttribute("aria-describedby")).toBe(
       "cabin-preview-note",
     );

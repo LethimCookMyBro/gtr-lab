@@ -221,7 +221,9 @@ test("offline preparation emits byte-identical full and proxy assets on repeated
     expect((await readFile(join(root, "public", path))).equals(raw)).toBe(true);
     expect((await readdir(join(root, "public/models"))).sort()).toEqual([
       "r35-cabin-dashboard-5c0a9dca.glb",
+      "r35-cabin-dashboard-5c0a9dca.glb.gz",
       "r35-exterior-cabin-proxy-49d7c2ab.glb",
+      "r35-exterior-cabin-proxy-49d7c2ab.glb.gz",
     ]);
   }
 });

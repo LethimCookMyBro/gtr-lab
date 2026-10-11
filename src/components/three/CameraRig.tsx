@@ -28,6 +28,9 @@ type Props = {
   reducedMotion: boolean;
   onManual: () => void;
   cameraViews?: Partial<Record<string, CameraView>>;
+  interactive?: boolean;
+  appliedState?: { current: { key: string; settled: boolean } | null };
+  appliedKey?: string;
 };
 
 export function CameraRig({
@@ -38,6 +41,9 @@ export function CameraRig({
   reducedMotion,
   onManual,
   cameraViews,
+  interactive = true,
+  appliedState,
+  appliedKey = "",
 }: Props) {
   const preset = cabinView ? "interior" : exteriorPreset;
   const wasPreview = useRef(false);
@@ -59,6 +65,13 @@ export function CameraRig({
   const manuallyStopped = useRef(false);
   const wasInterior = useRef(preset === "interior");
   const leavingInterior = useRef(false);
+  useLayoutEffect(() => {
+    if (!appliedState) return;
+    appliedState.current = { key: appliedKey, settled: false };
+    return () => {
+      if (appliedState.current?.key === appliedKey) appliedState.current = null;
+    };
+  }, [appliedState, appliedKey]);
   const lookTransition = useMemo(
     () => ({
       direction: new Vector3(),
@@ -288,6 +301,8 @@ export function CameraRig({
       !moving.current &&
       !manuallyStopped.current;
     if (orbit.autoRotate) invalidate();
+    if (appliedState)
+      appliedState.current = { key: appliedKey, settled: !moving.current };
   }, -2);
 
   function stopForManualInput() {
@@ -308,7 +323,7 @@ export function CameraRig({
   manualHandler.current = stopForManualInput;
   useEffect(() => {
     setViewerAccessibility(gl.domElement, preset === "interior");
-    if (preset === "interior" || !controls.current) return;
+    if (!interactive || preset === "interior" || !controls.current) return;
     return connectExteriorKeyboard({
       canvas: gl.domElement,
       camera,
@@ -325,10 +340,10 @@ export function CameraRig({
         }
       },
     });
-  }, [gl, camera, preset, invalidate, transitionClock]);
+  }, [gl, camera, preset, invalidate, transitionClock, interactive]);
 
   useInteriorLook({
-    enabled: preset === "interior",
+    enabled: interactive && preset === "interior",
     seat: destination.position,
     target: destination.target,
     onManual: stopForManualInput,
@@ -337,7 +352,7 @@ export function CameraRig({
 
   return (
     <OrbitControls
-      enabled={preset !== "interior"}
+      enabled={interactive && preset !== "interior"}
       ref={controls}
       makeDefault
       enablePan={false}

@@ -423,3 +423,12 @@ it("restores glass before an early outer loader disposal and never double-dispos
   for (const dispose of [...originalDisposed, ...thinDisposed])
     expect(dispose).toHaveBeenCalledTimes(1);
 });
+
+it('reports an invalid window owner to managed preparation before readiness can hang', () => {
+  const ownerError = vi.fn();
+  const result = render(<CabinAttachment exterior={asset(false)} asset={asset()} proxy={null}
+    active={false} prepared={true} request={8} onReady={() => {}} onError={() => {}}
+    onOwnerError={ownerError} />);
+  expect(ownerError).toHaveBeenCalledWith(expect.stringMatching(/window roles/i));
+  expect(result.container.querySelectorAll('[data-asset]')).toHaveLength(0);
+});

@@ -1,4 +1,4 @@
-import { Component, useEffect, lazy, Suspense } from "react";
+import { Component, useEffect, useRef, lazy, Suspense } from "react";
 import type { ReactNode, ErrorInfo } from "react";
 import { Routes, Route, useLocation, Link } from "react-router-dom";
 import { SiteLayout } from "./components/layout/SiteLayout";
@@ -6,11 +6,52 @@ import { HomePage } from "./pages/HomePage";
 import { ModelsPage } from "./pages/ModelsPage";
 import { HeritagePage } from "./pages/HeritagePage";
 import { CreditsPage } from "./pages/CreditsPage";
+import { getModel } from "./data/models";
 const Configurator = lazy(() =>
   import("./pages/ConfiguratorPage").then((m) => ({
     default: m.ConfiguratorPage,
   })),
 );
+function routeTitle(pathname: string) {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  if (path === "/") return "GT-R LAB — Engineered to defy.";
+  if (path === "/models") return "GT-R LAB — Models";
+  if (path === "/heritage" || path === "/about") return "GT-R LAB — Heritage";
+  if (path === "/credits") return "GT-R LAB — Credits & sources";
+  const match = /^\/configurator(?:\/([^/]+))?$/.exec(path);
+  if (match) {
+    const model = getModel(match[1] || "premium");
+    return model
+      ? `GT-R LAB — ${model.shortName} configurator`
+      : "GT-R LAB — Model not found";
+  }
+  return "GT-R LAB — Page not found";
+}
+
+// Inside Suspense: focus only after the destination has actually committed.
+// Initial visits and same-page query/hash changes retain native focus behavior.
+function RouteFocus() {
+  const { pathname, hash } = useLocation();
+  const previous = useRef(pathname);
+  useEffect(() => {
+    if (previous.current === pathname) return;
+    previous.current = pathname;
+    // An opening/loading dialog owns focus until its own completion handler.
+    if (
+      document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]')
+    )
+      return;
+    const fragment = hash ? document.getElementById(hash.slice(1)) : null;
+    const destination =
+      fragment?.querySelector<HTMLElement>("h1, h2, h3") ??
+      fragment ??
+      document.querySelector<HTMLElement>("main h1, .not-found h1");
+    if (!destination || destination.closest("[inert]")) return;
+    destination.tabIndex = -1;
+    destination.focus({ preventScroll: true });
+  }, [pathname, hash]);
+  return null;
+}
 function RouteEffects() {
   const location = useLocation();
   useEffect(() => {
@@ -19,9 +60,7 @@ function RouteEffects() {
         document.getElementById(location.hash.slice(1))?.scrollIntoView(),
       );
     } else window.scrollTo(0, 0);
-    document.title = location.pathname.startsWith("/configurator")
-      ? "GT-R LAB — Configurator"
-      : "GT-R LAB — Engineered to defy.";
+    document.title = routeTitle(location.pathname);
   }, [location]);
   return null;
 }
@@ -85,6 +124,7 @@ export function App() {
             }
           />
         </Routes>
+        <RouteFocus />
       </Suspense>
     </ErrorBoundary>
   );

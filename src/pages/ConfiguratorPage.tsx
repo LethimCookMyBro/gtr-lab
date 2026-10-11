@@ -28,7 +28,11 @@ import { Brand, SoundButton } from "../components/layout/SiteLayout";
 import { ConfiguratorPanels } from "../components/configurator/ConfiguratorPanels";
 import { CabinPreviewControls } from "../components/configurator/CabinPreviewControls";
 import "../styles/cabin-preview.css";
-import type { CabinWindowStatus } from "../components/three/cabinPreview";
+import {
+  CABIN_URL,
+  type CabinWindowStatus,
+} from "../components/three/cabinPreview";
+import { formatModelBytes } from "../components/home/homeReadiness";
 const VehicleScene = lazy(() => import("../components/three/VehicleScene"));
 export function ConfiguratorPage() {
   const { model: id = "premium" } = useParams();
@@ -96,6 +100,22 @@ export function ConfiguratorPage() {
   useEffect(() => {
     if (reduced) useConfigurator.setState({ autoRotate: false });
   }, [reduced, state.autoRotate]);
+  useEffect(() => {
+    if (
+      sceneInitialized &&
+      model?.asset.cabinPreview &&
+      state.ready &&
+      !state.error &&
+      state.cabinPreparation.phase === "idle"
+    )
+      useConfigurator.getState().prepareCabin();
+  }, [
+    sceneInitialized,
+    model,
+    state.ready,
+    state.error,
+    state.cabinPreparation.phase,
+  ]);
   const onReady = useCallback(
     () =>
       useConfigurator.setState({
@@ -111,6 +131,7 @@ export function ConfiguratorPage() {
         ready: false,
         error: message,
         cabin: { phase: "closed" },
+        cabinPreparation: { phase: "idle" },
       }),
     [],
   );
@@ -151,8 +172,22 @@ export function ConfiguratorPage() {
     );
   const paint = paints.find((p) => p.id === state.selectedPaint)!;
   const hasAsset = model.asset.status === "ready" && !!model.asset.url;
+  const preparingCabin =
+    !!model.asset.cabinPreview &&
+    state.cabinPreparation.phase !== "ready" &&
+    state.cabinPreparation.phase !== "error";
+  const cabinProgress =
+    state.cabinPreparation.phase === "loading"
+      ? state.cabinPreparation.progress
+      : null;
+  const cabinDownload =
+    cabinProgress?.phase === "downloading" ? cabinProgress : null;
   const interactive =
-    hasAsset && sceneInitialized && state.ready && !state.error;
+    hasAsset &&
+    sceneInitialized &&
+    state.ready &&
+    !state.error &&
+    !preparingCabin;
   const sceneName = hasAsset
     ? model.asset.displayName || model.name
     : model.name;
@@ -164,6 +199,19 @@ export function ConfiguratorPage() {
   };
   return (
     <main
+      data-cabin-preparation={
+        model.asset.cabinPreview ? state.cabinPreparation.phase : undefined
+      }
+      data-cabin-request={
+        state.cabinPreparation.phase !== "idle"
+          ? state.cabinPreparation.request
+          : undefined
+      }
+      data-cabin-model-url={model.asset.cabinPreview ? CABIN_URL : undefined}
+      data-cabin-progress={cabinProgress?.phase}
+      data-cabin-started-at={state.cabinPreparationStartedAt ?? undefined}
+      data-cabin-ready-at={state.cabinPreparationReadyAt ?? undefined}
+      data-cabin-entry-requested-at={state.cabinEntryRequestedAt ?? undefined}
       className={
         "configurator environment-" +
         state.selectedEnvironment +
@@ -273,6 +321,10 @@ export function ConfiguratorPage() {
                 onEnvironmentFallback={onEnvironmentFallback}
                 onCapabilities={onCapabilities}
                 cabin={model.asset.cabinPreview ? state.cabin : undefined}
+                cabinPreparation={
+                  model.asset.cabinPreview ? state.cabinPreparation : undefined
+                }
+                cabinPreparationAllowed={state.ready && !state.error}
                 onCabinReady={state.cabinReady}
                 onCabinError={state.cabinFailed}
                 onCabinProgress={state.cabinProgress}
@@ -285,23 +337,61 @@ export function ConfiguratorPage() {
             <img src={model.image} alt={model.imageCaption} />
           </div>
         )}
-        {hasAsset && (!state.ready || !sceneInitialized) && !state.error && (
-          <div className="scene-loading" role="status" aria-live="polite">
-            <span className="loading-wordmark">
-              GT-R LAB
-              <span />
-            </span>
-            <p>
-              {state.loadingProgress >= 99
-                ? "Preparing the renderer"
-                : "Loading vehicle assets"}
-            </p>
-            <div className="progress-track">
-              <span style={{ width: state.loadingProgress + "%" }} />
+        {hasAsset &&
+          (!state.ready || !sceneInitialized || preparingCabin) &&
+          !state.error && (
+            <div className="scene-loading" role="status" aria-live="polite">
+              <span className="loading-wordmark">
+                GT-R LAB
+                <span />
+              </span>
+              <p>
+                {state.ready && preparingCabin
+                  ? cabinDownload
+                    ? "Preparing exterior and interior"
+                    : cabinProgress?.phase === "decoding"
+                      ? "Decoding interior geometry and textures"
+                      : "Preparing your complete 3D view"
+                  : state.loadingProgress >= 99
+                    ? "Preparing the renderer"
+                    : "Loading vehicle assets"}
+              </p>
+              {state.ready && preparingCabin ? (
+                <>
+                  {cabinDownload && (
+                    <small>
+                      {formatModelBytes(cabinDownload.loadedBytes)}
+                      {cabinDownload.totalBytes
+                        ? ` / ${formatModelBytes(cabinDownload.totalBytes)}`
+                        : ""}
+                    </small>
+                  )}
+                  {cabinDownload?.totalBytes ? (
+                    <progress
+                      aria-label="Interior preparation download"
+                      max={cabinDownload.totalBytes}
+                      value={cabinDownload.loadedBytes}
+                    />
+                  ) : (
+                    <span
+                      className="cabin-load-indeterminate"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <small>
+                    You can browse model details or choose another model.
+                  </small>
+                </>
+              ) : (
+                <>
+                  <div className="progress-track">
+                    <span style={{ width: state.loadingProgress + "%" }} />
+                  </div>
+                  <small>{Math.round(state.loadingProgress)}%</small>
+                </>
+              )}
             </div>
-            <small>{Math.round(state.loadingProgress)}%</small>
-          </div>
-        )}
+          )}
       </div>
       <div className="config-toolbar" aria-label="Scene tools">
         <button
@@ -399,6 +489,17 @@ export function ConfiguratorPage() {
           >
             <RefreshCw size={15} />
             Try again
+          </button>
+        </div>
+      )}
+      {!state.error && state.cabinPreparation.phase === "error" && (
+        <div className="cabin-preparation-error" role="alert">
+          <p>
+            Interior preparation couldn’t finish.{" "}
+            {state.cabinPreparation.message}
+          </p>
+          <button className="text-link" onClick={state.prepareCabin}>
+            <RefreshCw size={15} /> Retry interior preparation
           </button>
         </div>
       )}

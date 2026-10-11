@@ -5,9 +5,10 @@ import {
   VehiclePixelDensity,
 } from "./VehiclePixelDensity";
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
-import { CABIN_URL, CABIN_PROXY_URL, cabinCameraView } from "./cabinPreview";
+import { CABIN_PROXY_URL } from "./cabinPreview";
 import { prepareAsyncRendererDisposal } from "./asyncRendererDisposal";
-import { CabinAttachment } from "./CabinAttachment";
+import { CabinRuntime } from "./CabinRuntime";
+import { useResidentCabinAsset } from "./useResidentCabinAsset";
 import { createTargetTransitionClock } from "./targetTransition";
 import { CameraRig } from "./CameraRig";
 import { DemandRenderBackpressure } from "./DemandRenderBackpressure";
@@ -167,10 +168,10 @@ export default function VehicleScene(props: VehicleSceneProps) {
     props.onError,
     props.disabledEmissive,
   );
-  const cabinRequested =
-    props.cabin?.phase === "loading" || props.cabin?.phase === "active";
   const cabinRequest =
-    props.cabin && props.cabin.phase !== "closed" ? props.cabin.request : 0;
+    props.cabinPreparation && props.cabinPreparation.phase !== "idle"
+      ? props.cabinPreparation.request
+      : 0;
   const [proxyFailed, setProxyFailed] = useState(false);
   const proxyAsset = useVehicleAsset(
     props.cabin ? CABIN_PROXY_URL : null,
@@ -187,26 +188,21 @@ export default function VehicleScene(props: VehicleSceneProps) {
     true,
     props.url,
   );
-  const cabinAsset = useVehicleAsset(
-    cabinRequested ? CABIN_URL : null,
-    { paint: [], headlights: [], taillights: [] },
-    () => {},
-    (message) => props.onCabinError?.(cabinRequest, message),
-    [],
-    (progress) => props.onCabinProgress?.(cabinRequest, progress),
-    true,
-    cabinRequest,
+  // Loader failure must not release the opaque stage before the exterior's
+  // real native completion. Keep it scoped to the route/request recovery owner.
+  const [cabinLoadFailure, setCabinLoadFailure] = useState<{
+    request: number;
+    message: string;
+  } | null>(null);
+  const cabinAsset = useResidentCabinAsset(
+    props.cabinPreparation,
+    (request, message) => setCabinLoadFailure({ request, message }),
+    props.onCabinProgress,
   );
   // Canvas is created before the asynchronous assets arrive. Read the latest
   // owners at final renderer disposal, after its scene children detach/restore.
   const ownedAssets = useRef({ asset, cabinAsset, proxyAsset });
   ownedAssets.current = { asset, cabinAsset, proxyAsset };
-  const seat = props.cabin?.phase === "active" ? props.cabin.seat : null;
-  const cabinView = useMemo(
-    () =>
-      seat && asset && cabinAsset ? cabinCameraView(seat, asset) : undefined,
-    [seat, asset, cabinAsset],
-  );
   const readiness = useSceneReadiness(
     props.url,
     `${props.environment}:${props.environmentRequest ?? 0}`,
@@ -268,15 +264,16 @@ export default function VehicleScene(props: VehicleSceneProps) {
           props={props}
         />
         <VehiclePixelDensity onChange={setDpr} quality={props.renderQuality} />
-        <CameraRig
-          preset={props.preset}
-          requestId={props.cameraRequest}
-          cameraViews={props.cameraViews}
-          cabinView={cabinView}
-          autoRotate={props.autoRotate}
-          reducedMotion={props.reducedMotion}
-          onManual={props.onManual}
-        />
+        {!props.cabin && (
+          <CameraRig
+            preset={props.preset}
+            requestId={props.cameraRequest}
+            cameraViews={props.cameraViews}
+            autoRotate={props.autoRotate}
+            reducedMotion={props.reducedMotion}
+            onManual={props.onManual}
+          />
+        )}
         {asset ? (
           <>
             <RecoverableEnvironment
@@ -287,19 +284,20 @@ export default function VehicleScene(props: VehicleSceneProps) {
               onReady={readiness.onEnvironmentRendered}
             />
             {props.cabin && (
-              <CabinAttachment
-                asset={cabinRequested ? cabinAsset : null}
+              <CabinRuntime
+                asset={cabinAsset}
+                loadFailure={
+                  cabinLoadFailure?.request === cabinRequest
+                    ? cabinLoadFailure.message
+                    : undefined
+                }
                 proxy={proxyAsset}
                 proxyFailed={proxyFailed}
                 onProxyError={() => setProxyFailed(true)}
                 onWindowStatus={props.onWindowStatus}
                 exterior={asset}
-                active={props.cabin?.phase === "active"}
                 request={cabinRequest}
-                onReady={(request) => props.onCabinReady?.(request)}
-                onError={(request, message) =>
-                  props.onCabinError?.(request, message)
-                }
+                props={props}
               />
             )}
             <Vehicle

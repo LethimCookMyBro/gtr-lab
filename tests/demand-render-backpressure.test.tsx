@@ -20,6 +20,11 @@ import type { RootState } from "@react-three/fiber";
 import type { WebGLRenderer } from "three";
 import { installDemandRenderBackpressure } from "../src/components/three/demandFrameAdmission";
 
+import {
+  enqueueRendererPreparation,
+  awaitCompletedMain,
+} from "../src/components/three/rendererPreparation";
+
 import { DemandRenderBackpressure } from "../src/components/three/DemandRenderBackpressure";
 
 const THREE: typeof import("three") = createRequire(import.meta.url)("three");
@@ -63,6 +68,8 @@ async function fixture(
   const syncs: { status: number }[] = [];
   const order: string[] = [];
   const context = {
+    DRAW_FRAMEBUFFER_BINDING: 0x8ca6,
+    getParameter: vi.fn((): unknown => null),
     SYNC_GPU_COMMANDS_COMPLETE: 0x9117,
     ALREADY_SIGNALED: 0x911a,
     TIMEOUT_EXPIRED: 0x911b,
@@ -103,6 +110,7 @@ async function fixture(
       order.push("render");
       draws.push(latestInput);
     },
+    getRenderTarget: () => null,
     setPixelRatio() {},
     setSize() {},
     getPixelRatio: () => 1,
@@ -705,5 +713,596 @@ it.each([false, true])(
     expect(camera.position.toArray()).toEqual(baseline);
     expect(f.draws).toHaveLength(count + (pending ? 1 : 0));
     if (pending) expect(f.draws.at(-1)).toBe(42);
+  },
+);
+
+async function idle(f: Awaited<ReturnType<typeof fixture>>) {
+  f.complete();
+  await frame();
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(16));
+  await frame();
+  expect(f.state.internal.frames).toBe(0);
+}
+function observed<T>(promise: Promise<T>) {
+  const events: { value?: T; error?: unknown; done?: boolean } = {};
+  void promise.then(
+    (value) => Object.assign(events, { value, done: true }),
+    (error) => Object.assign(events, { error, done: true }),
+  );
+  return events;
+}
+it("preparation wakes an idle owner without fabricating a main tick and requires a positive native fence", async () => {
+  const f = await fixture();
+  await idle(f);
+  const draws = f.draws.length,
+    count = f.syncs.length;
+  const run = vi.fn();
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run,
+    }),
+  );
+  expect(run).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(run).toHaveBeenCalledTimes(1);
+  expect(f.draws).toHaveLength(draws);
+  expect(f.state.internal.frames).toBe(0);
+  expect(f.syncs).toHaveLength(count + 1);
+  expect(result.done).toBeUndefined();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result).toEqual({ value: undefined, done: true });
+});
+it("native completion and asynchronous link completion are independent preparation barriers", async () => {
+  const f = await fixture();
+  await idle(f);
+  let linked = false;
+  const poll = vi.fn(() => linked);
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => ({ poll }),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  expect(poll).not.toHaveBeenCalled();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(poll).toHaveBeenCalled();
+  expect(result.done).toBeUndefined();
+  linked = true;
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBe(true);
+  expect(result.error).toBeUndefined();
+});
+it("normal demand gets priority and nested preparation renders seal exactly one complete batch", async () => {
+  const f = await fixture();
+  await idle(f);
+  const count = f.syncs.length;
+  const run = vi.fn(() => {
+    for (let i = 0; i < 3; i++)
+      f.renderer.render(new THREE.Scene(), f.state.camera);
+  });
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run,
+    }),
+  );
+  f.input(1);
+  await vi.advanceTimersByTimeAsync(16);
+  expect(run).not.toHaveBeenCalled();
+  await frame();
+  expect(f.draws.at(-1)).toBe(1);
+  expect(f.syncs).toHaveLength(count + 1);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(run).toHaveBeenCalledTimes(1);
+  expect(f.syncs).toHaveLength(count + 2);
+  await Promise.resolve();
+  expect(f.syncs).toHaveLength(count + 2);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBe(true);
+});
+it("abort removes queued work and stops link queries while retaining the native in-flight fence", async () => {
+  const f = await fixture();
+  await idle(f);
+  const abort = new AbortController();
+  const poll = vi.fn(() => false);
+  const first = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: abort.signal,
+      run: () => ({ poll }),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  const native = f.syncs.at(-1);
+  abort.abort();
+  await Promise.resolve();
+  expect(first.error).toMatchObject({ name: "AbortError" });
+  const next = vi.fn();
+  const second = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: next,
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(48);
+  expect(next).not.toHaveBeenCalled();
+  expect(poll).not.toHaveBeenCalled();
+  expect(f.syncs.at(-1)).toBe(native);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(next).toHaveBeenCalledTimes(1);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(second.done).toBe(true);
+  const queuedAbort = new AbortController(),
+    never = vi.fn();
+  const third = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: queuedAbort.signal,
+      run: never,
+    }),
+  );
+  queuedAbort.abort();
+  await vi.advanceTimersByTimeAsync(32);
+  expect(never).not.toHaveBeenCalled();
+  expect(third.error).toMatchObject({ name: "AbortError" });
+});
+it("a throwing preparation step seals partial work but preserves the usable renderer", async () => {
+  const f = await fixture();
+  await idle(f);
+  const count = f.syncs.length;
+  const error = new Error("optional shader failed");
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => {
+        throw error;
+      },
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.error).toBe(error);
+  expect(f.syncs).toHaveLength(count + 1);
+  expect(f.errors).not.toHaveBeenCalled();
+  f.input(7);
+  await frame();
+  expect(f.draws.at(-1)).not.toBe(7);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  await frame();
+  expect(f.draws.at(-1)).toBe(7);
+});
+it("main readiness requires a fresh successful root/default-target draw and its completed fence", async () => {
+  const f = await fixture();
+  await idle(f);
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => "driver-generation-1",
+    }),
+  );
+  f.renderer.render(new THREE.Scene(), f.state.camera);
+  await Promise.resolve();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBeUndefined();
+  f.state.invalidate();
+  await frame();
+  expect(result.done).toBeUndefined();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.value).toMatchObject({ stamp: "driver-generation-1" });
+  expect(result.value!.completedAt).toBeGreaterThanOrEqual(
+    result.value!.submittedAt,
+  );
+});
+it("a main certificate cannot survive changed state, aborted generation, or context restoration", async () => {
+  const f = await fixture();
+  await idle(f);
+  let stamp = "driver-1";
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => stamp,
+    }),
+  );
+  f.state.invalidate();
+  await frame();
+  stamp = "driver-2";
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.error).toBeInstanceOf(Error);
+  const abort = new AbortController(),
+    cancelled = observed(
+      awaitCompletedMain(f.renderer, {
+        signal: abort.signal,
+        stamp: () => stamp,
+      }),
+    );
+  abort.abort();
+  await Promise.resolve();
+  expect(cancelled.error).toMatchObject({ name: "AbortError" });
+  const old = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => stamp,
+    }),
+  );
+  f.state.invalidate();
+  await frame();
+  f.lose();
+  f.restore();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(old.error).toBeInstanceOf(Error);
+  expect(old.value).toBeUndefined();
+});
+it("superseding offscreen work carries main completion forward without accepting the old fence", async () => {
+  const f = await fixture();
+  await idle(f);
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => "driver",
+    }),
+  );
+  f.state.invalidate();
+  await frame();
+  const old = f.syncs.at(-1)!;
+  const target = new THREE.WebGLRenderTarget(1, 1);
+  f.renderer.getRenderTarget = () => target;
+  f.renderer.render(new THREE.Scene(), f.state.camera);
+  f.renderer.getRenderTarget = () => null;
+  await Promise.resolve();
+  old.status = f.context.ALREADY_SIGNALED;
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBeUndefined();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.value?.stamp).toBe("driver");
+});
+
+it("preparation-owned default-framebuffer draws never certify a main presentation", async () => {
+  const f = await fixture();
+  await idle(f);
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => "driver",
+    }),
+  );
+  const prep = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => f.renderer.render(f.state.scene, f.state.camera),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(prep.done).toBe(true);
+  expect(result.done).toBeUndefined();
+  f.state.invalidate();
+  await frame();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.value?.stamp).toBe("driver");
+});
+it("queued preparation invalidates an earlier submitted main certificate", async () => {
+  const f = await fixture();
+  await idle(f);
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => "driver",
+    }),
+  );
+  f.state.invalidate();
+  await frame();
+  const prep = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => {},
+    }),
+  );
+  await Promise.resolve();
+  expect(result.error).toBeInstanceOf(Error);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(prep.done).toBe(true);
+});
+it("a foreign default-framebuffer write rejects a previously submitted main", async () => {
+  const f = await fixture();
+  await idle(f);
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => "driver",
+    }),
+  );
+  f.state.invalidate();
+  await frame();
+  f.renderer.render(new THREE.Scene(), f.state.camera);
+  await Promise.resolve();
+  expect(result.error).toBeInstanceOf(Error);
+});
+it("native loss during the completion query cannot resolve a preparation ticket", async () => {
+  const f = await fixture();
+  await idle(f);
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => {},
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  f.context.clientWaitSync.mockImplementationOnce(() => {
+    f.loseSilently();
+    return f.context.ALREADY_SIGNALED;
+  });
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.error).toBeInstanceOf(Error);
+  expect(result.value).toBeUndefined();
+});
+it("an inactive root cannot complete presentation after it is retired", async () => {
+  const f = await fixture();
+  await idle(f);
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => "driver",
+    }),
+  );
+  f.state.invalidate();
+  await frame();
+  f.state.internal.active = false;
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.error).toBeInstanceOf(Error);
+  f.state.internal.active = true;
+});
+it("a link-check failure rejects optional preparation without losing normal demand", async () => {
+  const f = await fixture();
+  await idle(f);
+  const error = new Error("link failed");
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => ({
+        poll: () => {
+          throw error;
+        },
+      }),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.error).toBe(error);
+  expect(f.errors).not.toHaveBeenCalled();
+  f.input(13);
+  await frame();
+  expect(f.draws.at(-1)).toBe(13);
+});
+it("abort after fence completion prevents all later program polling", async () => {
+  const f = await fixture();
+  await idle(f);
+  const signal = new AbortController(),
+    poll = vi.fn(() => false);
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: signal.signal,
+      run: () => ({ poll }),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(poll).toHaveBeenCalledTimes(1);
+  signal.abort();
+  await vi.advanceTimersByTimeAsync(100);
+  expect(poll).toHaveBeenCalledTimes(1);
+  expect(result.error).toMatchObject({ name: "AbortError" });
+});
+it("main stamp callback failures remain local and await alone creates no frames or timers", async () => {
+  const f = await fixture();
+  await idle(f);
+  const count = vi.getTimerCount(),
+    draws = f.draws.length;
+  const error = new Error("stamp invalid");
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => {
+        throw error;
+      },
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(100);
+  expect(f.draws).toHaveLength(draws);
+  expect(vi.getTimerCount()).toBe(count);
+  f.input(1);
+  await frame();
+  expect(result.error).toBe(error);
+  expect(f.errors).not.toHaveBeenCalled();
+});
+it("a changed stamp inside submission cannot satisfy the ticket until a later stable main", async () => {
+  const f = await fixture();
+  await idle(f);
+  let n = 0;
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => (++n === 1 ? "old" : "new"),
+    }),
+  );
+  f.input(1);
+  await frame();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBeUndefined();
+  f.input(2);
+  await frame();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.value?.stamp).toBe("new");
+});
+it("preparation cannot commit a pending resize before its normal repaint tick", async () => {
+  const f = await fixture({ component: true });
+  await idle(f);
+  const resized = vi.fn();
+  f.renderer.setDrawingBufferSize = resized;
+  const run = vi.fn();
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run,
+    }),
+  );
+  f.state.setSize(180, 120);
+  await vi.advanceTimersByTimeAsync(16);
+  expect(resized).not.toHaveBeenCalled();
+  expect(run).not.toHaveBeenCalled();
+  await frame();
+  expect(resized).toHaveBeenCalledTimes(1);
+  expect(run).not.toHaveBeenCalled();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(run).toHaveBeenCalledTimes(1);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBe(true);
+});
+it("link polling survives a positive fence observed in an otherwise empty global RAF", async () => {
+  const f = await fixture();
+  await idle(f);
+  let linked = false;
+  const poll = vi.fn(() => linked);
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => ({ poll }),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  f.complete(); // The installed global loop may still have an empty callback scheduled.
+  const sibling = await fixture({ paced: false });
+  sibling.state.invalidate();
+  await frame(); // Only sibling draws; target completion is consumed by before-effect.
+  expect(f.state.internal.frames).toBe(0);
+  expect(f.syncs.at(-1)?.status).toBe(f.context.ALREADY_SIGNALED);
+  expect(result.done).toBeUndefined();
+  linked = true;
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBe(true);
+});
+
+it("functional evidence never labels preparation-owned tiny default draws as main", async () => {
+  const events: { kind: string; draws?: number[] }[] = [];
+  vi.stubGlobal("__gtrFunctionalCaptureObserver", (event: { kind: string }) =>
+    events.push(event),
+  );
+  const f = await fixture();
+  Object.assign(f.context, {
+    DRAW_FRAMEBUFFER_BINDING: 0x8ca6,
+    getParameter: () => null,
+  });
+  await idle(f);
+  events.length = 0;
+  const prep = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => f.renderer.render(f.state.scene, f.state.camera),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(prep.done).toBe(true);
+  expect(events.filter((e) => e.kind === "main")).toHaveLength(0);
+  expect(events.some((e) => e.kind === "buffer-replaced")).toBe(true);
+  expect(events.some((e) => e.kind === "invalid")).toBe(false);
+  expect(events.find((e) => e.kind === "fence")?.draws).toEqual([]);
+  f.input(1);
+  await frame();
+  expect(events.filter((e) => e.kind === "main")).toHaveLength(1);
+});
+
+it("inactive root stops KHR polling after the native fence has completed", async () => {
+  const f = await fixture();
+  await idle(f);
+  const poll = vi.fn(() => false);
+  const result = observed(
+    enqueueRendererPreparation(f.renderer, {
+      signal: new AbortController().signal,
+      run: () => ({ poll }),
+    }),
+  );
+  await vi.advanceTimersByTimeAsync(16);
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  const count = poll.mock.calls.length;
+  f.state.internal.active = false;
+  await vi.advanceTimersByTimeAsync(32);
+  expect(poll).toHaveBeenCalledTimes(count);
+  expect(result.error).toBeInstanceOf(Error);
+  f.state.internal.active = true;
+});
+it("main proof checks the native default framebuffer and never queries it without waiters", async () => {
+  const f = await fixture();
+  await idle(f);
+  expect(f.context.getParameter).not.toHaveBeenCalled();
+  const result = observed(
+    awaitCompletedMain(f.renderer, {
+      signal: new AbortController().signal,
+      stamp: () => "driver",
+    }),
+  );
+  f.context.getParameter.mockReturnValue({ foreign: true });
+  f.input(1);
+  await frame();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.done).toBeUndefined();
+  f.context.getParameter.mockReturnValue(null);
+  f.input(2);
+  await frame();
+  f.complete();
+  await vi.advanceTimersByTimeAsync(16);
+  expect(result.value?.stamp).toBe("driver");
+});
+
+it.each(["lost", "replaced"])(
+  "a %s context after native completion stops KHR queries",
+  async (kind) => {
+    const f = await fixture();
+    await idle(f);
+    const poll = vi.fn(() => false);
+    const result = observed(
+      enqueueRendererPreparation(f.renderer, {
+        signal: new AbortController().signal,
+        run: () => ({ poll }),
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(16);
+    f.complete();
+    await vi.advanceTimersByTimeAsync(16);
+    const count = poll.mock.calls.length;
+    if (kind === "lost") f.loseSilently();
+    else
+      f.renderer.getContext = () =>
+        ({ ...f.context }) as unknown as WebGL2RenderingContext;
+    await vi.advanceTimersByTimeAsync(32);
+    expect(poll).toHaveBeenCalledTimes(count);
+    expect(result.error).toBeInstanceOf(Error);
   },
 );

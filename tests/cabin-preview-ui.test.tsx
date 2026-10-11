@@ -42,43 +42,12 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-it("opts in from the camera drawer, shows real bytes and offers cancel and retry", async () => {
-  setup();
-  act(() => useConfigurator.setState({ ready: true }));
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Camera" }));
-  expect(screen.getByRole("dialog").textContent).toContain("19.2 MB");
-  await user.click(
-    screen.getByRole("button", { name: /Cabin preview · work in progress/ }),
-  );
-  expect(state().cabin.phase).toBe("loading");
-  const request = state().cabinRequest;
-  act(() =>
-    state().cabinProgress(request, {
-      phase: "downloading",
-      loadedBytes: 4000000,
-      totalBytes: 19170816,
-    }),
-  );
-  expect(screen.getByText("4.0 MB / 19.2 MB")).toBeTruthy();
-  await user.click(
-    screen.getByRole("button", { name: "Cancel cabin loading" }),
-  );
-  expect(state().cabin.phase).toBe("closed");
-  expect(document.activeElement).toBe(
-    screen.getByRole("button", { name: "Camera" }),
-  );
-  act(() => state().beginCabin());
-  act(() => state().cabinFailed(state().cabinRequest, "HTTP 404"));
-  expect(screen.getByRole("alert").textContent).toContain("HTTP 404");
-  await user.click(screen.getByRole("button", { name: "Retry cabin preview" }));
-  expect(state().cabin.phase).toBe("loading");
-});
 it("offers three fixed seats and Escape restores exterior focus without affecting a foreground drawer", async () => {
   setup();
   act(() => useConfigurator.setState({ ready: true }));
-  act(() => state().beginCabin());
+  act(() => state().prepareCabin());
   act(() => state().cabinReady(state().cabinRequest));
+  act(() => state().beginCabin());
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Passenger" }));
   expect(state().cabin).toMatchObject({ seat: "passenger" });
@@ -111,7 +80,7 @@ it.each(["nismo", "tspec", "gtr50", "gt3", "gt500"])(
 it("does not move focus out of a foreground drawer when optional loading resolves", async () => {
   setup();
   act(() => useConfigurator.setState({ ready: true }));
-  act(() => state().beginCabin());
+  act(() => state().prepareCabin());
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Model detail" }));
   const dialog = screen.getByRole("dialog");
@@ -125,9 +94,12 @@ it.each(["loading", "active"] as const)(
   async (phase) => {
     setup();
     act(() => useConfigurator.setState({ ready: true }));
-    act(() => state().beginCabin());
+    act(() => state().prepareCabin());
     const request = state().cabinRequest;
-    if (phase === "active") act(() => state().cabinReady(request));
+    if (phase === "active") {
+      act(() => state().cabinReady(request));
+      act(() => state().beginCabin());
+    }
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Switch model" }));
     await user.click(
@@ -152,6 +124,7 @@ it("announces window readiness without gating exterior controls or changing cabi
       lightsAvailable: true,
     }),
   );
+  act(() => state().cabinReady(state().cabinRequest));
   expect(screen.getByText("Loading window view…")).toBeTruthy();
   const lights = screen.getByRole("button", { name: "Lights" });
   expect(lights.hasAttribute("disabled")).toBe(false);
@@ -202,10 +175,11 @@ it.each(["loading", "ready", "unavailable"] as const)(
     setup();
     await waitFor(() => expect(viewer.props).not.toBeNull());
     act(() => useConfigurator.setState({ ready: true }));
-    act(() => state().beginCabin());
+    act(() => state().prepareCabin());
     const label = document.querySelector<HTMLElement>(".cabin-window-status")!;
     expect(label.hidden).toBe(false);
     act(() => state().cabinReady(state().cabinRequest));
+    act(() => state().beginCabin());
     expect(label.hidden).toBe(true);
     expect(screen.queryByRole("status")).toBeNull();
     act(() => viewer.props!.onWindowStatus!(status));
@@ -222,6 +196,8 @@ it.each(["loading", "ready", "unavailable"] as const)(
           ? "Window view ready · Simplified cabin"
           : "Window view unavailable",
     );
-    expect(screen.getByRole("button", { name: "Model provenance & limitations" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Model provenance & limitations" }),
+    ).toBeTruthy();
   },
 );

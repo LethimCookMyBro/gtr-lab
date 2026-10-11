@@ -27,7 +27,12 @@ describe("session-only rendering quality", () => {
     useConfigurator.getState().setCamera("front");
     useConfigurator.getState().setEnvironment("gallery");
     useConfigurator.setState({ ready: true });
+    useConfigurator.getState().prepareCabin();
+    useConfigurator
+      .getState()
+      .cabinReady(useConfigurator.getState().cabinRequest);
     useConfigurator.getState().beginCabin();
+    expect(useConfigurator.getState().cabin.phase).toBe("active");
     useConfigurator.getState().exitCabin(false);
     useConfigurator.getState().retryScene();
     useConfigurator.getState().selectVariant("gt500");

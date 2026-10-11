@@ -5,6 +5,7 @@ import type { EnvironmentId } from "../data/configuration";
 import type { RenderQuality } from "../components/three/types";
 import type {
   CabinPreviewState,
+  CabinPreparationState,
   CabinSeat,
 } from "../components/three/cabinPreview";
 import type { HomeSceneLoadState } from "../components/home/homeReadiness";
@@ -14,7 +15,12 @@ interface ConfigState {
   renderQuality: RenderQuality;
   setRenderQuality: (quality: RenderQuality) => void;
   cabin: CabinPreviewState;
+  cabinPreparation: CabinPreparationState;
   cabinRequest: number;
+  cabinPreparationStartedAt: number | null;
+  cabinPreparationReadyAt: number | null;
+  cabinEntryRequestedAt: number | null;
+  prepareCabin: () => void;
   beginCabin: () => void;
   cabinProgress: (request: number, progress: HomeSceneLoadState) => void;
   cabinReady: (request: number) => void;
@@ -50,7 +56,11 @@ interface ConfigState {
 const initial = {
   renderQuality: "standard" as RenderQuality,
   cabin: { phase: "closed" } as CabinPreviewState,
+  cabinPreparation: { phase: "idle" } as CabinPreparationState,
   cabinRequest: 0,
+  cabinPreparationStartedAt: null as number | null,
+  cabinPreparationReadyAt: null as number | null,
+  cabinEntryRequestedAt: null as number | null,
   paintAvailable: false,
   lightsAvailable: false,
   notice: null as string | null,
@@ -76,52 +86,98 @@ export const useConfigurator = create<ConfigState>((set) => ({
     if (renderQuality === "standard" || renderQuality === "reduced")
       set({ renderQuality });
   },
+  prepareCabin: () =>
+    set((state) => {
+      if (
+        state.selectedVariant !== "premium" ||
+        !state.ready ||
+        state.error ||
+        state.cabinPreparation.phase === "loading" ||
+        state.cabinPreparation.phase === "ready"
+      )
+        return {};
+      const request = state.cabinRequest + 1;
+      return {
+        cabinRequest: request,
+        cabinPreparationStartedAt: performance.now(),
+        cabinPreparationReadyAt: null,
+        cabinEntryRequestedAt: null,
+        cabinPreparation: {
+          phase: "loading",
+          request,
+          progress: { phase: "downloading", loadedBytes: 0 },
+        },
+      };
+    }),
   beginCabin: () =>
     set((state) => {
       if (
         state.selectedVariant !== "premium" ||
         !state.ready ||
         state.error ||
-        state.cabin.phase === "loading" ||
+        state.cabinPreparation.phase !== "ready" ||
         state.cabin.phase === "active"
       )
         return {};
-      const request = state.cabinRequest + 1;
+      const entryRequestedAt = performance.now();
+      try {
+        performance.mark?.("gtr-cabin-entry-request", {
+          startTime: entryRequestedAt,
+          detail: { request: state.cabinPreparation.request },
+        });
+      } catch {
+        /* Optional timing never changes interaction. */
+      }
       return {
-        cabinRequest: request,
+        cabinEntryRequestedAt: entryRequestedAt,
         cabin: {
-          phase: "loading",
-          request,
-          progress: { phase: "downloading", loadedBytes: 0 },
+          phase: "active",
+          request: state.cabinPreparation.request,
+          seat: "driver",
+          resumeRotation: state.autoRotate,
         },
+        autoRotate: false,
         panel: null,
       };
     }),
   cabinProgress: (request, progress) =>
     set((state) =>
-      state.cabin.phase === "loading" && state.cabin.request === request
-        ? { cabin: { ...state.cabin, progress } }
+      state.cabinPreparation.phase === "loading" &&
+      state.cabinPreparation.request === request
+        ? { cabinPreparation: { ...state.cabinPreparation, progress } }
         : {},
     ),
   cabinReady: (request) =>
-    set((state) =>
-      state.cabin.phase === "loading" && state.cabin.request === request
-        ? {
-            cabin: {
-              phase: "active",
-              request,
-              seat: "driver",
-              resumeRotation: state.autoRotate,
-            },
-            autoRotate: false,
-          }
-        : {},
-    ),
+    set((state) => {
+      if (
+        state.cabinPreparation.phase !== "loading" ||
+        state.cabinPreparation.request !== request
+      )
+        return {};
+      const readyAt = performance.now();
+      if (state.cabinPreparationStartedAt !== null) {
+        try {
+          performance.measure?.("gtr-cabin-preparation-ready", {
+            start: state.cabinPreparationStartedAt,
+            end: readyAt,
+            detail: { request },
+          });
+        } catch {
+          /* Optional timing never changes readiness. */
+        }
+      }
+      return {
+        cabinPreparation: { phase: "ready", request },
+        cabinPreparationReadyAt: readyAt,
+      };
+    }),
   cabinFailed: (request, message) =>
     set((state) =>
-      state.cabin.phase !== "closed" && state.cabin.request === request
+      state.cabinPreparation.phase !== "idle" &&
+      state.cabinPreparation.request === request
         ? {
-            cabin: { phase: "error", request, message },
+            cabinPreparation: { phase: "error", request, message },
+            cabin: { phase: "closed" },
             autoRotate:
               state.cabin.phase === "active"
                 ? state.cabin.resumeRotation
@@ -146,6 +202,10 @@ export const useConfigurator = create<ConfigState>((set) => ({
       set((state) => ({
         sceneRequest: state.sceneRequest + 1,
         cabin: { phase: "closed" },
+        cabinPreparation: { phase: "idle" },
+        cabinPreparationStartedAt: null,
+        cabinPreparationReadyAt: null,
+        cabinEntryRequestedAt: null,
         selectedVariant: id,
         autoRotate: false,
         lightsEnabled: false,
@@ -187,6 +247,10 @@ export const useConfigurator = create<ConfigState>((set) => ({
     set((state) => ({
       sceneRequest: state.sceneRequest + 1,
       cabin: { phase: "closed" },
+      cabinPreparation: { phase: "idle" },
+      cabinPreparationStartedAt: null,
+      cabinPreparationReadyAt: null,
+      cabinEntryRequestedAt: null,
       selectedEnvironment: "studio",
       error: null,
       ready: false,
@@ -196,5 +260,9 @@ export const useConfigurator = create<ConfigState>((set) => ({
     })),
   stopAutoRotate: () => set({ autoRotate: false }),
   reset: () =>
-    set((state) => ({ ...initial, sceneRequest: state.sceneRequest + 1 })),
+    set((state) => ({
+      ...initial,
+      sceneRequest: state.sceneRequest + 1,
+      cabinRequest: state.cabinRequest + 1,
+    })),
 }));

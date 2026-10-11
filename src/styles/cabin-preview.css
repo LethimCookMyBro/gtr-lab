@@ -159,3 +159,73 @@
     grid-template-rows: 230px minmax(0, 1fr) 242px;
   }
 }
+
+/* Preparation covers only the 3D stage; navigation and model content stay live. */
+.cabin-preparation-error {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 220px;
+  transform: translateX(-50%);
+  width: min(460px, calc(100% - 36px));
+  padding: 16px;
+  background: #111619;
+  border: 1px solid #ffffff26;
+  color: #ddd;
+  font-size: 13px;
+}
+.cabin-preparation-error .text-link {
+  margin-top: 12px;
+}
+
+@media (max-width: 380px) {
+  .configurator.has-window-view {
+    --cabin-rail-height: calc(225px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(497px + var(--cabin-rail-height));
+    grid-template-rows: 230px minmax(180px, 1fr) calc(
+        87px + var(--cabin-rail-height)
+      );
+  }
+  .configurator.has-window-view .paint-rail {
+    height: var(--cabin-rail-height);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  }
+  .configurator.has-window-view .config-toolbar {
+    bottom: var(--cabin-rail-height);
+  }
+  .configurator.has-window-view .scene-bottom {
+    bottom: calc(104px + var(--cabin-rail-height));
+  }
+  .paint-rail.cabin-preview-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cabin-seat-choices {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-width: 0;
+  }
+  .cabin-seat-choices button {
+    min-width: 0;
+    padding-inline: 4px;
+    white-space: normal;
+  }
+  .cabin-preview-controls .cabin-exit {
+    justify-self: start;
+  }
+  .cabin-preview-copy {
+    overflow-wrap: anywhere;
+  }
+  .cabin-preparation-error {
+    bottom: calc(104px + var(--cabin-rail-height, 155px));
+  }
+  .scene-loading {
+    padding-inline: 18px;
+    text-align: center;
+  }
+  .scene-loading small {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
