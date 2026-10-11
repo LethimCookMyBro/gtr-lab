@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "allow": true,
+  "contract": "drawer-opaque-compositing-v2",
+  "baselineCommit": "8ad20d9280ac56cb77fd78df2c63eb105ebdc0a4",
+  "baselineTree": "3cc14885944d21ec3c934a0c36d468b064225f0c24ade0870f24566dedb0507b",
+  "candidateTree": "cc9236f314433e932c765c67cfe8f9a2912f47bf9995bee92fb2847c7f2e33b3"
+}

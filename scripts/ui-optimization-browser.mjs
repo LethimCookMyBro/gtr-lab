@@ -275,4 +275,5 @@ export async function main(env=process.env) {
   } else report.status='failed';
   report.finishedAt=new Date().toISOString();await save();assert.equal(report.status,'passed','Exact staged UI browser acceptance');
 }
+export { exerciseDrawer, traceWindow, workloadIdentity };
 if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url)await main();

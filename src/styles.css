@@ -1060,8 +1060,7 @@ p {
   top: 0;
   bottom: 0;
   width: min(530px, 100%);
-  background: #171b1eeb;
-  backdrop-filter: blur(30px);
+  background: #171b1e;
   box-shadow: -20px 0 100px #0005;
   border-left: 1px solid var(--line);
   display: flex;
