@@ -1,0 +1,70 @@
+# Separate candidate-only desktop evidence. No baseline process or comparison.
+name: Staged exact candidate desktop Drawer verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/drawer-compositing-*.mjs'
+      - 'tests/drawer-compositing-*.node.mjs'
+      - '.github/workflows/drawer-desktop-candidate-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: drawer-desktop-candidate-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  exact-candidate-desktop:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-drawer-desktop-only]') && !contains(github.event.head_commit.message, '[release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: candidate-app
+    env:
+      R35_ALLOW_DRAWER_COMPOSITING: '1'
+      R35_DRAWER_CANDIDATE_ONLY: '1'
+      R35_DRAWER_VIEWPORT: desktop
+      R35_DRAWER_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: candidate-app
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: candidate-app/package-lock.json
+      - name: Validate closed desktop request and exact clean candidate checkout
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {resolve} from 'node:path';
+          import {validateDrawerRequest} from './scripts/drawer-compositing-policy.mjs';
+          import {verifyDrawerCheckout} from './scripts/drawer-compositing-browser.mjs';
+          const request=JSON.parse(await readFile('qa/drawer-compositing-request.json','utf8'));
+          validateDrawerRequest(request,process.env);
+          await verifyDrawerCheckout(resolve('.'),'candidate',request,process.env);
+          NODE
+          node --check scripts/drawer-compositing-browser.mjs
+          node --test tests/drawer-compositing-contract.node.mjs tests/ui-optimization-receipts.node.mjs tests/cabin-runtime-body-ledger.node.mjs
+      - run: npm ci
+      - name: Existing Drawer and native quality ownership regressions
+        run: node node_modules/vitest/vitest.mjs run tests/drawer-compositing.test.ts tests/drawer-isolation.test.tsx tests/configurator-panel-presence.test.tsx tests/render-quality-ui.test.tsx --pool=threads --maxWorkers=1 --minWorkers=1
+      - run: node node_modules/typescript/bin/tsc --noEmit
+      - name: Build exact candidate production app and assets
+        run: npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Only candidate in a fresh desktop child process
+        run: node scripts/drawer-compositing-browser.mjs
+        timeout-minutes: 10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drawer-desktop-candidate-only-${{ github.sha }}
+          path: candidate-app/drawer-compositing-results/
+          retention-days: 14
+          if-no-files-found: warn

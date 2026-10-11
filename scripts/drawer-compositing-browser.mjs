@@ -4,10 +4,11 @@ import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync, spawn } from 'node:child_process';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { sourceIdentity, sha256 } from './ui-optimization-policy.mjs';
 import { exerciseDrawer, traceWindow, workloadIdentity } from './ui-optimization-browser.mjs';
 import { createUiReceipts } from './ui-optimization-receipts.mjs';
-import { drawerBaselineCommit, drawerContract, validateDrawerRequest, assessDrawerLanes } from './drawer-compositing-policy.mjs';
+import { drawerBaselineCommit, drawerContract, validateDrawerRequest, assessDrawerLanes, assessCandidateDrawerLane } from './drawer-compositing-policy.mjs';
 const git=(root,args)=>execFileSync('git',['-C',root,...args],{encoding:'utf8'}).trim();
 async function bounded(work,ms,label){let timer;try{return await Promise.race([work,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`${label}: original ${ms}ms deadline exceeded`)),ms);})]);}finally{clearTimeout(timer);}}
 // Return real Playwright Locators, decorating only the existing opening click.
@@ -49,6 +50,13 @@ export async function recordDrawerCapture({capture,readStyles,screenshot,now=()=
 export function ownershipRetired(result,cleanup) {
   return [0,1].includes(result.exitCode)&&!result.timedOut&&!result.signal&&!result.spawnError&&['context','browser','server'].every(name=>cleanup?.[name]==='passed');
 }
+export function annotateDiagnosticReceipts(diagnostics,seen,now=()=>performance.now()) {
+  for(const diagnostic of diagnostics||[])for(const sample of diagnostic.samples)if(!seen.has(sample)) {
+    sample.nodeObservedAtMs=now();sample.observedAfterPredicateFailure=diagnostic.status==='failed';
+    sample.observedWithinOriginalPredicateWindow=sample.nodeObservedAtMs<=diagnostic.startedAt+diagnostic.originalDeadlineMs;
+    seen.add(sample);
+  }
+}
 export async function verifyDrawerCheckout(root,lane,request,env) {
   const commit=git(root,['rev-parse','HEAD']);assert.equal(commit,lane==='baseline'?drawerBaselineCommit:env.GITHUB_SHA);
   assert.equal(git(root,['status','--porcelain','--untracked-files=no']),'');
@@ -57,17 +65,26 @@ export async function verifyDrawerCheckout(root,lane,request,env) {
 }
 async function childLane(lane,env) {
   assert.equal(env.R35_DRAWER_CHILD,'1');assert.ok(['baseline','candidate'].includes(lane));
+  if(env.R35_DRAWER_CANDIDATE_ONLY==='1')assert.equal(lane,'candidate','Isolated desktop request never starts a baseline process');
   const harness=resolve('.'),request=JSON.parse(await readFile('qa/drawer-compositing-request.json','utf8'));
   const target=validateDrawerRequest(request,env),output=resolve('drawer-compositing-results',target.name,lane);await mkdir(output,{recursive:true});
   const root=lane==='baseline'?resolve(harness,'../baseline-app'):harness;
   const identity=await verifyDrawerCheckout(root,lane,request,env);
   const row={lane,contract:drawerContract,harnessCommit:env.GITHUB_SHA,...identity,workload:await workloadIdentity(root),status:'running',openingActions:[],captures:[],pageErrors:[],console:[],runtimeBodies:[],errors:[],cleanup:{context:'not-started',browser:'not-started',server:'not-started'},
     scope:'Direct-entry NISMO then Premium using the unchanged real Drawer sequence. This setup differs from v1 homepage-to-drawer; it cannot relabel the earlier desktop stall. Trace spans the entire fixed action sequence including screenshots, scene setup and native inputs. Timings are descriptive software-runner observations, not isolated animation cost or physical-device FPS.'};
-  const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(row,null,2));await save();
+  const seenSamples=new WeakSet();
+  if(env.R35_DRAWER_CANDIDATE_ONLY==='1')row.runnerObservation={clock:'Node performance.now; page samples retain their separate page clock',completedPriorReportWritesMs:[],scope:'Diagnostic receipt/save and Node event-loop observations; not proof of compositor completion or cause.'};
+  const save=async()=>{
+    if(row.runnerObservation)annotateDiagnosticReceipts(row.animationDiagnostics,seenSamples);
+    const started=performance.now();await writeFile(resolve(output,'report.json'),JSON.stringify(row,null,2));
+    if(row.runnerObservation)row.runnerObservation.completedPriorReportWritesMs.push(performance.now()-started);
+  };await save();
   const pin=bytes=>({sha256:sha256(bytes),bytes:bytes.length});const bundles=new Map([['/index.html',pin(await readFile(resolve(root,'dist/index.html')))]]);
   for(const name of await readdir(resolve(root,'dist/assets')))if(/\.(js|css)$/.test(name))bundles.set('/assets/'+name,pin(await readFile(resolve(root,'dist/assets',name))));
   const {chromium,expect}=await import('@playwright/test');const {createAppServer}=await import(pathToFileURL(resolve(root,'server.mjs')));
   let server,browser,context,page,receipts;
+  const loopDelay=row.runnerObservation?monitorEventLoopDelay({resolution:100}):undefined;loopDelay?.enable();
+  const utilizationStart=loopDelay?performance.eventLoopUtilization():undefined;
   try {
     server=createAppServer(resolve(root,'dist'));await new Promise((done,reject)=>{server.once('error',reject);server.listen(4189,'127.0.0.1',done);});
     browser=await chromium.launch({timeout:30000,args:['--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader']});
@@ -99,6 +116,7 @@ async function childLane(lane,env) {
       try{await bounded(close(),15000,`${name} cleanup`);row.cleanup[name]='passed';}catch(error){row.cleanup[name]='failed';row.status='failed';row.errors.push({message:String(error)});}await save();
     }
   }
+  if(loopDelay){loopDelay.disable();row.runnerObservation.eventLoop={resolutionMs:100,meanDelayMs:Number.isFinite(loopDelay.mean)?loopDelay.mean/1e6:null,maxDelayMs:loopDelay.max/1e6,p99DelayMs:loopDelay.percentile(99)/1e6,utilization:performance.eventLoopUtilization(utilizationStart)};}
   await save();return row.status==='passed'?0:1;
 }
 async function runLaneProcess(lane,target,deadline) {
@@ -128,7 +146,7 @@ export async function collectIndependentLanes(runLane,onRow) {
   return lanes;
 }
 export async function main(env=process.env) {
-  assert.equal(env.R35_DRAWER_CHILD,undefined);
+  assert.equal(env.R35_DRAWER_CHILD,undefined);assert.equal(env.R35_DRAWER_CANDIDATE_ONLY,undefined);
   const request=JSON.parse(await readFile('qa/drawer-compositing-request.json','utf8')),target=validateDrawerRequest(request,env);
   const output=resolve('drawer-compositing-results',target.name);await mkdir(output,{recursive:true});
   const report={contract:drawerContract,request,target,harnessCommit:env.GITHUB_SHA,status:'running',lanes:[],limitations:['New direct-entry v2 setup, not the prior homepage-to-drawer sequence. Original failed v1 verdicts remain unchanged.','Each source executes in a separate Node and browser process. A failed baseline never blocks independent candidate execution.','A single ordered pair including screenshots and scene setup cannot establish causal hardware speedup.','No comparison metrics are emitted unless both complete the identical drawer sequence and cleanup with exact body receipts.']};
@@ -140,8 +158,19 @@ export async function main(env=process.env) {
   if(report.assessment.comparable)report.metricComparison={scope:'Whole identical direct-entry drawer action sequence; includes screenshots, native inputs and scene setup',baseline:report.lanes[0].trace,candidate:report.lanes[1].trace};
   await save();assert.equal(report.status,'passed','Both exact v2 lanes and original cleanup must pass');
 }
+export async function mainCandidateOnly(env=process.env) {
+  assert.equal(env.R35_DRAWER_CHILD,undefined);assert.equal(env.R35_DRAWER_CANDIDATE_ONLY,'1');
+  const request=JSON.parse(await readFile('qa/drawer-compositing-request.json','utf8')),target=validateDrawerRequest(request,env);
+  const output=resolve('drawer-compositing-results',target.name);await mkdir(output,{recursive:true});
+  const report={contract:'drawer-desktop-candidate-only-v1',request,target,harnessCommit:env.GITHUB_SHA,status:'running',lanes:[],limitations:['Fresh candidate-only desktop runner; no baseline Node/browser process is started.','No paired or comparative metrics are permitted. Original v1 and v2 failures remain unchanged.','The same source-bound Drawer actions, 5-second predicate, original receipt and cleanup budgets apply. CSS observations are not GPU completion or hardware FPS.']};
+  const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2));await save();
+  try{report.lanes.push(await runLaneProcess('candidate',target,performance.now()+8*60*1000));}
+  catch(error){report.lanes.push({lane:'candidate',status:'failed',errors:[{message:String(error)}]});}
+  report.assessment=assessCandidateDrawerLane(report.lanes[0],request);report.status=report.assessment.status;
+  await save();assert.equal(report.status,'passed','Exact standalone candidate desktop acceptance');
+}
 if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url) {
   const argument=process.argv[2];
-  if(argument===undefined)await main();
+  if(argument===undefined){if(process.env.R35_DRAWER_CANDIDATE_ONLY==='1')await mainCandidateOnly();else await main();}
   else {assert.match(argument,/^--lane=(baseline|candidate)$/);const status=await childLane(argument.slice(7),process.env);process.exit(status);}
 }

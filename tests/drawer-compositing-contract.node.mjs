@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { drawerBaselineCommit,drawerBaselineTree,drawerCandidateTree,drawerContract,drawerSequence,drawerOpenings,drawerCaptures,validateDrawerRequest,assessDrawerLanes } from '../scripts/drawer-compositing-policy.mjs';
+import { drawerBaselineCommit,drawerBaselineTree,drawerCandidateTree,drawerContract,drawerSequence,drawerOpenings,drawerCaptures,validateDrawerRequest,assessDrawerLanes,assessCandidateDrawerLane } from '../scripts/drawer-compositing-policy.mjs';
 const request={version:2,allow:true,contract:drawerContract,baselineCommit:drawerBaselineCommit,baselineTree:drawerBaselineTree,candidateTree:drawerCandidateTree};
 const env={GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'LethimCookMyBro/gtr-lab',GITHUB_REF:'refs/heads/main',GITHUB_EVENT_NAME:'push',GITHUB_SHA:'a'.repeat(40),R35_ALLOW_DRAWER_COMPOSITING:'1',R35_DRAWER_COMMIT_MESSAGE:'QA [stage-drawer-compositing]',R35_DRAWER_VIEWPORT:'desktop'};
 const fixture=()=>['baseline','candidate'].map(lane=>({
@@ -78,4 +78,29 @@ test('normal failed lane can prove retirement without passing functional accepta
   for(const name of ['context','browser','server'])assert.equal(ownershipRetired({exitCode:1},{...cleanup,[name]:'failed'}),false);
   const rows=fixture();rows[0].status='failed';rows[0].process.exitCode=1;rows[0].process.ownershipRetired=ownershipRetired(rows[0].process,rows[0].cleanup);
   assert.equal(rows[0].process.ownershipRetired,true);assert.equal(assessDrawerLanes(rows,request).status,'failed');assert.equal(assessDrawerLanes(rows,request).comparable,false);
+});
+
+test('candidate-only desktop validates a real single lane without fabricating a baseline',()=>{
+  const onlyEnv={...env,R35_DRAWER_CANDIDATE_ONLY:'1',R35_DRAWER_COMMIT_MESSAGE:'[stage-drawer-desktop-only]'};
+  assert.equal(validateDrawerRequest(request,onlyEnv).name,'desktop');
+  for(const patch of [{R35_DRAWER_VIEWPORT:'mobile'},{R35_DRAWER_CANDIDATE_ONLY:'any'},{R35_DRAWER_COMMIT_MESSAGE:'[stage-drawer-compositing]'}])assert.throws(()=>validateDrawerRequest(request,{...onlyEnv,...patch}));
+  assert.throws(()=>validateDrawerRequest(request,{...env,R35_DRAWER_COMMIT_MESSAGE:'[stage-drawer-desktop-only]'}));
+  const candidate=fixture()[1];assert.deepEqual(assessCandidateDrawerLane(candidate,request),{status:'passed',scope:'candidate-only',comparable:false,failures:[]});
+  for(const mutate of [row=>row.lane='baseline',row=>row.status='failed',row=>row.cleanup.browser='failed',row=>row.process.exitCode=1,row=>row.process.ownershipRetired=false,row=>row.runtimeLedger.state='open',row=>row.drawer[0].checks[0].passed=false,row=>row.captures[0].captureReturnMs=NaN,row=>row.animationDiagnostics[0].elapsedMs=5001,row=>row.source.sha256=drawerBaselineTree,row=>row.workload=undefined,row=>delete row.drawer[0].settled,row=>row.drawer[0].settled.dialog.width=NaN,row=>row.drawer[0].settled.controls=[]]) {
+    const row=fixture()[1];mutate(row);const result=assessCandidateDrawerLane(row,request);assert.equal(result.status,'failed');assert.equal(result.comparable,false);
+  }
+});
+test('standalone desktop entry starts only the real candidate child and emits no comparative metric',async()=>{
+  const source=await readFile(new URL('../scripts/drawer-compositing-browser.mjs',import.meta.url),'utf8');
+  const standalone=source.slice(source.indexOf('export async function mainCandidateOnly'),source.indexOf('if(process.argv[1]'));
+  assert.match(standalone,/runLaneProcess\('candidate',target,performance.now\(\)\+8\*60\*1000\)/);assert.doesNotMatch(standalone,/runLaneProcess\('baseline'|metricComparison\s*=/);
+  assert.match(source,/if\(env.R35_DRAWER_CANDIDATE_ONLY==='1'\)assert.equal\(lane,'candidate'/);
+  assert.match(source,/sample.nodeObservedAtMs=now\(\)/);assert.match(source,/loopDelay\?\.enable\(\)/);assert.match(source,/loopDelay.disable\(\)/);
+});
+
+test('late diagnostic receipt is labeled without changing original predicate failure or deadline',async()=>{
+  const {annotateDiagnosticReceipts}=await import('../scripts/drawer-compositing-browser.mjs');
+  const diagnostic={status:'failed',startedAt:100,originalDeadlineMs:5000,elapsedMs:5700,originalError:'original timeout',samples:[{at:900,animations:[]}]};const seen=new WeakSet();
+  annotateDiagnosticReceipts([diagnostic],seen,()=>5800);assert.equal(diagnostic.status,'failed');assert.equal(diagnostic.originalError,'original timeout');assert.equal(diagnostic.originalDeadlineMs,5000);assert.equal(diagnostic.samples[0].observedWithinOriginalPredicateWindow,false);assert.equal(diagnostic.samples[0].observedAfterPredicateFailure,true);
+  const frozen=JSON.stringify(diagnostic);annotateDiagnosticReceipts([diagnostic],seen,()=>9000);assert.equal(JSON.stringify(diagnostic),frozen);
 });

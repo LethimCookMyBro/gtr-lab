@@ -19,25 +19,30 @@ export function validateDrawerRequest(request,env) {
   assert.equal(request.candidateTree,drawerCandidateTree);
   assert.equal(env.GITHUB_ACTIONS,'true');assert.equal(env.GITHUB_REPOSITORY,'LethimCookMyBro/gtr-lab');assert.equal(env.GITHUB_REF,'refs/heads/main');assert.equal(env.GITHUB_EVENT_NAME,'push');
   assert.match(env.GITHUB_SHA??'',/^[a-f0-9]{40}$/);assert.notEqual(env.GITHUB_SHA,drawerBaselineCommit);
-  assert.equal(env.R35_ALLOW_DRAWER_COMPOSITING,'1');assert.ok(env.R35_DRAWER_COMMIT_MESSAGE?.includes('[stage-drawer-compositing]'));assert.ok(!env.R35_DRAWER_COMMIT_MESSAGE?.includes('[release-'));
+  assert.equal(env.R35_ALLOW_DRAWER_COMPOSITING,'1');
+  assert.ok(env.R35_DRAWER_CANDIDATE_ONLY===undefined||env.R35_DRAWER_CANDIDATE_ONLY==='1');
+  const candidateOnly=env.R35_DRAWER_CANDIDATE_ONLY==='1';
+  assert.ok(env.R35_DRAWER_COMMIT_MESSAGE?.includes(candidateOnly?'[stage-drawer-desktop-only]':'[stage-drawer-compositing]'));assert.ok(!env.R35_DRAWER_COMMIT_MESSAGE?.includes('[release-'));
+  if(candidateOnly)assert.equal(env.R35_DRAWER_VIEWPORT,'desktop');
   assert.ok(Object.hasOwn(viewports,env.R35_DRAWER_VIEWPORT));
   for(const key of ['R35_UI_URL','R35_UI_ROOT','R35_SOURCE_SHA','HOME_QA_URL','R35_DRAWER_URL','R35_DRAWER_ROOT'])assert.equal(env[key],undefined);
   return {...viewports[env.R35_DRAWER_VIEWPORT],name:env.R35_DRAWER_VIEWPORT,origin:'http://127.0.0.1:4189'};
 }
-export function assessDrawerLanes(lanes,request) {
+export function assessDrawerLane(row,name,request,harnessCommit) {
   const failures=[];
-  if(!Array.isArray(lanes)||lanes.length!==2)return {status:'failed',comparable:false,failures:['Both independent lanes are mandatory']};
-  for(const [index,name] of ['baseline','candidate'].entries()) {
-    const row=lanes[index];
-    if(row?.lane!==name){failures.push(`${name}: missing or out-of-order lane`);continue;}
+    if(row?.lane!==name){failures.push(`${name}: missing or out-of-order lane`);return failures;}
     if(row.status!=='passed'||row.process?.exitCode!==0||row.process?.timedOut||row.process?.signal||row.process?.spawnError||row.process?.ownershipRetired!==true)failures.push(`${name}: lane/process did not pass or ownership retirement is unproven`);
     if(!row.cleanup||['context','browser','server'].some(key=>row.cleanup[key]!=='passed'))failures.push(`${name}: cleanup did not complete`);
     if(row.source?.sha256!==request[`${name}Tree`]||row.fullTrackedCheckoutClean!==true)failures.push(`${name}: source identity missing or wrong`);
-    if(!/^[a-f0-9]{40}$/.test(row.harnessCommit??'')||row.harnessCommit===drawerBaselineCommit||row.commit!==(name==='baseline'?drawerBaselineCommit:row.harnessCommit)||row.harnessCommit!==lanes[1]?.harnessCommit)failures.push(`${name}: actual checkout revision missing or wrong`);
+    if(!/^[a-f0-9]{40}$/.test(row.harnessCommit??'')||row.harnessCommit===drawerBaselineCommit||row.commit!==(name==='baseline'?drawerBaselineCommit:row.harnessCommit)||row.harnessCommit!==harnessCommit)failures.push(`${name}: actual checkout revision missing or wrong`);
     if(!Array.isArray(row.errors)||row.errors.length||!Array.isArray(row.pageErrors)||row.pageErrors.length)failures.push(`${name}: execution errors`);
     const ledger=row.runtimeLedger;
     if(!ledger||ledger.state!=='finished'||!Array.isArray(ledger.errors)||ledger.errors.length||!Array.isArray(ledger.eventErrors)||ledger.eventErrors.length||!Array.isArray(ledger.lateEvents)||ledger.lateEvents.length||!Array.isArray(ledger.requests)||!ledger.requests.length||ledger.requests.some(r=>r.state!=='body-completed')||!Array.isArray(ledger.generations)||ledger.generations.length!==2||ledger.generations.some(d=>d.state!=='sealed'))failures.push(`${name}: original request ledger incomplete`);
     if(!Array.isArray(row.drawer)||JSON.stringify(row.drawer.map(d=>`${d.model}:${d.panel}`))!==JSON.stringify(drawerSequence)||row.drawer.some(d=>!Array.isArray(d.checks)||!d.checks.length||d.checks.some(check=>check.passed!==true))||!Array.isArray(row.drawerFailures)||row.drawerFailures.length)failures.push(`${name}: exact Drawer sequence did not pass`);
+    for(const entry of row.drawer||[])if(entry.panel!=='route-unmount') {
+      const settled=entry.settled,finiteRect=rect=>['x','y','width','height'].every(key=>Number.isFinite(rect?.[key]));
+      if(!finiteRect(settled?.dialog)||!Array.isArray(settled?.controls)||!settled.controls.length||settled.controls.some(control=>typeof control.tag!=='string'||typeof control.label!=='string'||typeof control.disabled!=='boolean'||!finiteRect(control.rect)))failures.push(`${name}: settled geometry/control evidence missing or nonfinite`);
+    }
     if(!Array.isArray(row.animationDiagnostics)||JSON.stringify(row.animationDiagnostics.map(d=>d.panel))!==JSON.stringify(drawerOpenings)||row.animationDiagnostics.some(d=>d.status!=='settled'||d.originalDeadlineMs!==5000||!Number.isFinite(d.startedAt)||!Number.isFinite(d.elapsedMs)||d.elapsedMs<0||d.elapsedMs>5000))failures.push(`${name}: opening checkpoints incomplete or over original deadline`);
     if(!Array.isArray(row.openingActions)||JSON.stringify(row.openingActions.map(d=>d.panel))!==JSON.stringify(drawerOpenings)||row.openingActions.some((d,i)=>d.status!=='returned'||!Number.isFinite(d.actionStartMs)||!Number.isFinite(d.clickReturnMs)||!Number.isFinite(d.clickDurationMs)||d.clickReturnMs<d.actionStartMs||d.clickDurationMs!==d.clickReturnMs-d.actionStartMs||d.clickReturnMs>row.animationDiagnostics?.[i]?.startedAt||(i>0&&d.actionStartMs<row.openingActions[i-1].clickReturnMs)))failures.push(`${name}: actual opening action observations missing or unordered`);
     if(!Array.isArray(row.captures)||JSON.stringify(row.captures.map(d=>d.label))!==JSON.stringify(drawerCaptures))failures.push(`${name}: required captures incomplete`);
@@ -48,7 +53,17 @@ export function assessDrawerLanes(lanes,request) {
       if(!colorMatches(sheet?.background,[23,27,30],name==='baseline'?235/255:1)||sheet?.backdropFilter!==(name==='baseline'?'blur(30px)':'none')||sheet?.opacity!=='1'||!colorMatches(backdrop?.background,[5,8,9],.4)||backdrop?.backdropFilter!=='blur(4px)')failures.push(`${name}: expected sheet/backdrop treatment not observed`);
     }
     if(!row.trace||!Number.isFinite(row.trace.elapsedMs)||row.trace.elapsedMs<=0)failures.push(`${name}: trace evidence missing`);
-  }
+  return failures;
+}
+export function assessCandidateDrawerLane(row,request) {
+  const failures=assessDrawerLane(row,'candidate',request,row?.harnessCommit);
+  if(!/^[a-f0-9]{64}$/.test(row?.workload?.sha256??''))failures.push('Candidate exact built workload identity missing');
+  return {status:failures.length?'failed':'passed',scope:'candidate-only',comparable:false,failures};
+}
+export function assessDrawerLanes(lanes,request) {
+  const failures=[];
+  if(!Array.isArray(lanes)||lanes.length!==2)return {status:'failed',comparable:false,failures:['Both independent lanes are mandatory']};
+  for(const [index,name] of ['baseline','candidate'].entries())failures.push(...assessDrawerLane(lanes[index],name,request,lanes[1]?.harnessCommit));
   if(lanes[0].workload?.sha256!==lanes[1].workload?.sha256||!lanes[0].workload?.sha256)failures.push('Exact non-bundle workloads differ or are missing');
   const comparable=failures.length===0;
   if(comparable)for(let i=0;i<drawerSequence.length;i++) {
