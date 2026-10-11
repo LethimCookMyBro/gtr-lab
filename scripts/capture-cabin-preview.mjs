@@ -304,10 +304,10 @@ try {
       const fault = report.networkFaults.findLast(item => item.kind === 'throttled-stream');
       assert.ok(Number.isSafeInteger(fault?.requestId), 'Partial progress belongs to the armed public request');
       fault.observedPartialBytes = bytes;
-      await expect(controls.getByRole('status')).toContainText('/ 18.8 MB');
+      await expect(controls.getByRole('status')).toContainText('/ 19.2 MB');
     } else {
       await expect(progress).toHaveAttribute('value', '1048576');
-      await expect(controls.getByRole('status')).toContainText('1.0 MB / 18.8 MB');
+      await expect(controls.getByRole('status')).toContainText('1.0 MB / 19.2 MB');
     }
   };
   const releaseAborted = async fault => {
@@ -331,7 +331,7 @@ try {
     });
     assert.ok(report.webgl, 'An actual live WebGL context exists');
     await cameraButton.click();
-    await expect(page.getByRole('dialog')).toContainText('18.8 MB');
+    await expect(page.getByRole('dialog')).toContainText('19.2 MB');
     assert.equal(assetCounts().cabin, 0, 'Opening Camera does not fetch the cabin');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);

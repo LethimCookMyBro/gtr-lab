@@ -13,26 +13,26 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateGlb } from "./prepare-models.mjs";
 export const CABIN_SHA256 =
-  "0b72bab4a297a9ac736e6fd65333de51e376f5364d6581ef1024423f6f146d83";
+  "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326";
 const gzipSha =
-  "b40071d2f5f2e57af9891697c8cb73ca1d57c10b0f1cc3c3dc3d9c097b1aa5dd";
+  "70036f4c17601909d4c382a0530501618dace139debb55cd966698e89b8b75f5";
 export function decodeCabin(gzip) {
   if (
-    gzip.length !== 9758286 ||
+    gzip.length !== 9798606 ||
     createHash("sha256").update(gzip).digest("hex") !== gzipSha
   )
     throw new Error("Cabin source checksum mismatch");
-  const bytes = gunzipSync(gzip, { maxOutputLength: 18848516 });
+  const bytes = gunzipSync(gzip, { maxOutputLength: 19170816 });
   validateGlb(bytes, {
-    bytes: 18848516,
+    bytes: 19170816,
     sha256: CABIN_SHA256,
-    path: "/models/r35-cabin-realism-0b72bab4.glb",
+    path: "/models/r35-cabin-dashboard-5c0a9dca.glb",
   });
   return bytes;
 }
 async function prepareCabin() {
   const root = fileURLToPath(new URL("../", import.meta.url));
-  const source = resolve(root, "qa/cabin-preview/r35-cabin-realism.glb.gz");
+  const source = resolve(root, "qa/cabin-preview/r35-cabin-dashboard.glb.gz");
   if (!(await lstat(source)).isFile())
     throw new Error("Cabin source must be a regular file");
   const bytes = decodeCabin(await readFile(source));
@@ -40,7 +40,7 @@ async function prepareCabin() {
   await mkdir(directory, { recursive: true });
   if (!(await lstat(directory)).isDirectory())
     throw new Error("Cabin output must be a regular directory");
-  const output = resolve(directory, "r35-cabin-realism-0b72bab4.glb");
+  const output = resolve(directory, "r35-cabin-dashboard-5c0a9dca.glb");
   const temporary = output + "." + randomUUID() + ".prepared";
   try {
     await writeFile(temporary, bytes, { flag: "wx" });

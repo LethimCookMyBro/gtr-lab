@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 
 export const cabinOrigin = 'https://gtr-lab-production.up.railway.app';
 export const cabinModels = Object.freeze([
-  { path: '/models/r35-cabin-realism-0b72bab4.glb', bytes: 18_848_516, sha256: '0b72bab4a297a9ac736e6fd65333de51e376f5364d6581ef1024423f6f146d83' },
+  { path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19_170_816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' },
   { path: '/models/ciasny-r35.glb', bytes: 8_296_356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' },
 ]);
 const cabinPath = cabinModels[0].path;
@@ -46,7 +46,7 @@ export async function observeCabinRuntimeBodies({ cdp, baseUrl, responses, error
     })().catch(error => { record.bodyError = String(error); errors.push(record); }));
   });
   // Bounded headroom includes Chromium's base64 inspector representation of the
-  // 18.8 MB GLB. This retains evidence only; no fetch/replay or app interception.
+  // 19.2 MB GLB. This retains evidence only; no fetch/replay or app interception.
   await cdp.send('Network.enable', { maxResourceBufferSize: 64 * 1024 * 1024, maxTotalBufferSize: 256 * 1024 * 1024 });
   return {
     async verify(pageResponses, failures) {
@@ -192,7 +192,7 @@ export function createLiveCabinFaults({ page, cdp, cabinUrl, requestId, faults }
         await page.route(cabinUrl, handler, { times: 1 });
       } else {
         // Only transport is slowed. The body and headers still come from Railway.
-        // 64 KiB/s keeps 18.8 MB in flight through screenshot and cancellation.
+        // 64 KiB/s keeps 19.2 MB in flight through screenshot and cancellation.
         throttled = true;
         await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: 65_536, uploadThroughput: -1 });
         fault.release = async () => {

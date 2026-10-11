@@ -1,3 +1,7 @@
+# Current incremental app candidate
+
+The application candidate now uses the separately pinned `r35-cabin-dashboard.glb.gz` (expanded SHA-256 `5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326`). See [dashboard geometry provenance](DASHBOARD_GEOMETRY_PROVENANCE.md) for its exact source lineage, bounds and limitations. The material-only `r35-cabin-realism.glb.gz` and all earlier assets below remain unchanged historical inputs. The standalone inspector comparisons described below remain frozen; they are not rendered acceptance of the new app candidate.
+
 # Contained spatial cabin browser comparison
 
 This separate preview is outside application routes and build inputs. It does not deploy a cabin to the live app. Candidate publication and later app integration require separate review.

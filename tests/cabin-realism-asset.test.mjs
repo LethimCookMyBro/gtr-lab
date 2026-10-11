@@ -2,14 +2,14 @@ import { test, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
-const bytes = gunzipSync(readFileSync('qa/cabin-preview/r35-cabin-realism.glb.gz'));
+const bytes = gunzipSync(readFileSync('qa/cabin-preview/r35-cabin-dashboard.glb.gz'));
 const jsonLength = bytes.readUInt32LE(12);
 const json = JSON.parse(bytes.subarray(20, 20 + jsonLength));
 const binary = bytes.subarray(28 + jsonLength);
 
 test('the exact textured cabin retains bounded geometry, opaque materials and all embedded maps', () => {
-  expect(createHash('sha256').update(bytes).digest('hex')).toBe('0b72bab4a297a9ac736e6fd65333de51e376f5364d6581ef1024423f6f146d83');
-  expect(bytes.length).toBe(18848516);
+  expect(createHash('sha256').update(bytes).digest('hex')).toBe('5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326');
+  expect(bytes.length).toBe(19170816);
   expect(json.nodes.length).toBe(653);
   expect(json.nodes.filter(node => node.mesh !== undefined).length).toBe(284);
   expect(json.materials.length).toBe(46);
@@ -24,7 +24,7 @@ test('the exact textured cabin retains bounded geometry, opaque materials and al
     if (attributes.TEXCOORD_3 !== undefined) for (let index = 0; index <= 3; index++) expect(attributes['TEXCOORD_' + index]).toBeTypeOf('number');
     if (attributes.TEXCOORD_2 !== undefined) for (let index = 0; index <= 2; index++) expect(attributes['TEXCOORD_' + index]).toBeTypeOf('number');
   }
-  expect(primitives).toBe(309); expect(triangles).toBe(509692);
+  expect(primitives).toBe(309); expect(triangles).toBe(508950);
   for (const material of json.materials) expect(material.alphaMode ?? 'OPAQUE').toBe('OPAQUE');
   for (const buffer of json.buffers) expect(buffer.uri).toBeUndefined();
   let rgbaWithMips = 0;

@@ -36,7 +36,7 @@ it.each(["exterior", "cabin"])(
   async (asset) => {
     const fixture =
       asset === "cabin"
-        ? gunzipSync(readFileSync("qa/cabin-preview/r35-cabin-realism.glb.gz"))
+        ? gunzipSync(readFileSync("qa/cabin-preview/r35-cabin-dashboard.glb.gz"))
         : bytes;
     const originalFetch = globalThis.fetch;
     vi.stubGlobal("URL", NodeURL);

@@ -5,7 +5,7 @@ import { gunzipSync } from 'node:zlib';
 import { isExpectedCabinRequestFailure } from '../scripts/capture-cabin-preview.mjs';
 import * as policy from '../scripts/cabin-integration-policy.mjs';
 
-const path = '/models/r35-cabin-realism-0b72bab4.glb';
+const path = '/models/r35-cabin-dashboard-5c0a9dca.glb';
 const phase = 'Missing cabin preserves exterior and Retry loads real asset';
 const missing = { requestId: 3, path, status: 404, injectedFault: 'missing' };
 const retry = { requestId: 4, path, status: 200 };
@@ -65,7 +65,7 @@ it('allows only the correlated public throttled request during cancellation', ()
 });
 
 const bodyBytes = [
-  gunzipSync(readFileSync('qa/cabin-preview/r35-cabin-realism.glb.gz')),
+  gunzipSync(readFileSync('qa/cabin-preview/r35-cabin-dashboard.glb.gz')),
   Buffer.concat(JSON.parse(readFileSync('modeldata/manifest.json', 'utf8'))[0].chunks.map(chunk => readFileSync(`modeldata/${chunk.path}`))),
 ];
 
@@ -106,7 +106,7 @@ async function bodyFixture() {
 }
 
 describe('same-session runtime response identity without sockets', () => {
-  it('buffers and hashes the actual 18.8 MB cabin response on the observing CDP session', async () => {
+  it('buffers and hashes the actual 19.2 MB cabin response on the observing CDP session', async () => {
     const f = await bodyFixture(); f.add(0); f.add(1);
     await f.observer.verify(f.pageResponses, f.failures);
     expect(f.calls[0]).toMatchObject({ method: 'Network.enable', params: { maxResourceBufferSize: 64 * 1024 * 1024, maxTotalBufferSize: 256 * 1024 * 1024 } });
