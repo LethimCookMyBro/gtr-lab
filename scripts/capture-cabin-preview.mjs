@@ -113,7 +113,10 @@ try {
     }
     const bytes = path === proxyPath ? proxy : cabin;
     const partialBytes = path === proxyPath ? 65_536 : 1_048_576;
-    response.writeHead(200, { 'Content-Type': 'model/gltf-binary', 'Content-Length': bytes.length, 'Cache-Control': 'no-store', [networkFaultHeader]: fault.kind });
+    // Match production GLB transport. Chromium 153 misreports no-store stream
+    // EOF as ERR_ABORTED (upstream fix 62473ad0f747e245e514c93e741bb8e168a2a207).
+    // Network.setCacheDisabled below still forces every real request/body.
+    response.writeHead(200, { 'Content-Type': 'model/gltf-binary', 'Content-Length': bytes.length, 'Cache-Control': 'public,max-age=3600', [networkFaultHeader]: fault.kind });
     // These are genuine model bytes, not an invented percentage. Holding the
     // remaining body makes partial byte progress and cancellation deterministic.
     response.write(bytes.subarray(0, partialBytes));
