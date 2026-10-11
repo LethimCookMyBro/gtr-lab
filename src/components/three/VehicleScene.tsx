@@ -107,6 +107,10 @@ export default function VehicleScene(props: VehicleSceneProps) {
     [],
     (progress) => props.onCabinProgress?.(cabinRequest, progress),
   );
+  // Canvas is created before the asynchronous assets arrive. Read the latest
+  // owners at final renderer disposal, after its scene children detach/restore.
+  const ownedAssets = useRef({ asset, cabinAsset });
+  ownedAssets.current = { asset, cabinAsset };
   const seat = props.cabin?.phase === "active" ? props.cabin.seat : null;
   const cabinView = useMemo(
     () =>
@@ -148,7 +152,10 @@ export default function VehicleScene(props: VehicleSceneProps) {
         }}
         fallback={<CanvasFallback />}
         onCreated={({ gl }) => {
-          prepareAsyncRendererDisposal(gl);
+          prepareAsyncRendererDisposal(gl, () => {
+            ownedAssets.current.cabinAsset?.dispose();
+            ownedAssets.current.asset?.dispose();
+          });
           // ContactShadows removes scene.background for its depth pass. Clear
           // unused render-target pixels transparently even with an opaque canvas.
           gl.setClearAlpha(0);

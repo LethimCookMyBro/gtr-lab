@@ -94,7 +94,27 @@ test('prepared manifest pins both frozen inputs, common source lineage, exterior
     { file: 'src/components/three/sceneHelpers.ts', gitBlobSha: 'fbcc786d7c408be8ce5ee140106b7c5bc0c727dc' },
   ]);
   const appearance = JSON.parse(await readFile(new URL('.qa-cabin-runtime/app-appearance.json', root), 'utf8'));
-  assert.equal(appearance.sourceGitBlob, '0f123a553ba0b924cfa6232b36e4faee00b72990');
+  assert.equal(appearance.sourceGitBlob, 'd432f5db38eb7633d931b838e6241604c83aeeae');
+});
+
+test('cabin opt-in metadata retains the exact frozen exterior appearance contract', async () => {
+  const appearance = JSON.parse(await readFile(new URL('.qa-cabin-runtime/app-appearance.json', root), 'utf8'));
+  // These are the exact fields consumed by the inspector, unchanged from the
+  // original 0f123a55 models.ts blob. New cabin disclosures must not rebaseline them.
+  assert.deepEqual(appearance.materialRoles, {
+    paint: ['CarPaint'],
+    headlights: ['Headlight_Emitter'],
+    taillights: ['Taillight_Emitter'],
+    taillightLenses: ['Glass.001'],
+    wheelFinish: ['Brakes_Metal.001_0'],
+    lowerTrimFinish: [
+      'Front Bumper.007_Reflective Plastic_0',
+      'DoorStep_Reflective Plastic_0',
+      'Rear bottom Bumper_Reflective Plastic_0',
+    ],
+    lampCovers: ['Headlights_Glass_0', 'TailightsGlass_Glass_0'],
+  });
+  assert.deepEqual(appearance.disabledEmissive, ['Reverse_Emitter']);
 });
 
 test('baseline evidence retains the original model identity and identical camera contract', async () => {

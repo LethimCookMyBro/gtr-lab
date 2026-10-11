@@ -74,7 +74,9 @@ for (const [name, expected] of Object.entries(sourceFiles)) {
   sourceManifest.push({ file: `src/components/three/${name}`, gitBlobSha: gitSha, sha256: sha256(source) });
 }
 const modelsSource = await readFile(join(root, 'src/data/models.ts')), modelsGitSha = gitHash(modelsSource);
-assert.equal(modelsGitSha, '0f123a553ba0b924cfa6232b36e4faee00b72990');
+// The opt-in cabin integration changed disclosures/capability metadata only.
+// preparation.test.mjs separately pins the unchanged exterior appearance fields.
+assert.equal(modelsGitSha, 'd432f5db38eb7633d931b838e6241604c83aeeae');
 const parsed = ts.createSourceFile('models.ts', modelsSource.toString(), ts.ScriptTarget.Latest, true);
 let definition;
 function visit(node) {

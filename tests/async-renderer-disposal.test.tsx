@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { useEffect } from "react";
-import { act, createRoot, _roots } from "@react-three/fiber";
+import { StrictMode, useEffect } from "react";
+import { cleanup, render } from "@testing-library/react";
+import { textureAllocation } from "./helpers/three-texture-allocation";
+import { act, Canvas, createRoot, _roots } from "@react-three/fiber";
 import { createRequire } from "node:module";
 import type { WebGLRenderer } from "three";
 import { prepareAsyncRendererDisposal } from "../src/components/three/asyncRendererDisposal";
@@ -12,6 +14,7 @@ beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
 });
 afterEach(() => {
+  cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -266,8 +269,8 @@ it("releases every retired root exactly once across 24 overlapping root lifecycl
   const initialRoots = _roots.size;
   const attempts = [];
   for (let index = 0; index < 24; index++) {
-    const f = fixture();
-    prepareAsyncRendererDisposal(f.renderer);
+    const f = { ...fixture(), release: vi.fn() };
+    prepareAsyncRendererDisposal(f.renderer, f.release);
     const root = createRoot(f.renderer.domElement);
     await root.configure({
       gl: () => f.renderer,
@@ -281,16 +284,139 @@ it("releases every retired root exactly once across 24 overlapping root lifecycl
   expect(_roots.size).toBe(initialRoots);
   expect(vi.getTimerCount()).toBe(24);
   for (const f of attempts) {
+    expect(f.release).toHaveBeenCalledTimes(1);
     expect(f.dispose).toHaveBeenCalledTimes(1);
     expect(f.forceContextLoss).not.toHaveBeenCalled();
     f.complete();
   }
   await act(async () => vi.advanceTimersByTimeAsync(16));
   for (const f of attempts) {
+    expect(f.release).toHaveBeenCalledTimes(1);
     expect(f.dispose).toHaveBeenCalledTimes(1);
     expect(f.forceContextLoss).toHaveBeenCalledTimes(1);
     expect(f.context.deleteSync).toHaveBeenCalledTimes(1);
   }
   expect(_roots.size).toBe(initialRoots);
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it("releases external-owned textures before R3F clears the renderer allocation cache", async () => {
+  const f = fixture();
+  const allocation = textureAllocation();
+  const texture = new THREE.Texture(document.createElement("canvas"));
+  allocation.upload(texture);
+  expect(allocation.allocated).toHaveLength(1);
+  const order: string[] = [];
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    order.push("resource release");
+    texture.dispose();
+  };
+  f.dispose.mockImplementation(() => {
+    order.push("renderer cache clear");
+    allocation.properties.dispose();
+  });
+  prepareAsyncRendererDisposal(f.renderer, release);
+  const root = createRoot(f.renderer.domElement);
+  await root.configure({
+    gl: () => f.renderer,
+    frameloop: "never",
+    size: { width: 40, height: 40, top: 0, left: 0 },
+  });
+  await act(async () => root.render(null));
+  await act(async () => root.unmount());
+  // Model ownership lives above Canvas. Its passive cleanup may follow the
+  // renderer teardown, as in the CI failure, and must remain safe/idempotent.
+  release();
+  expect(allocation.deleted).toEqual(allocation.allocated);
+  expect(order).toEqual(["resource release", "renderer cache clear"]);
+  expect(allocation.info.memory.textures).toBe(0);
+  expect(f.forceContextLoss).not.toHaveBeenCalled();
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(16));
+  expect(f.forceContextLoss).toHaveBeenCalledTimes(1);
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it("keeps native disposal and R3F's rejection fallback when an owner cleanup throws", async () => {
+  const f = fixture();
+  const release = vi.fn(() => {
+    throw new Error("owner cleanup failed");
+  });
+  prepareAsyncRendererDisposal(f.renderer, release);
+  const pending = f.renderer.dispose();
+  expect(f.renderer.dispose()).toBe(pending);
+  await expect(pending).rejects.toThrow("owner cleanup failed");
+  expect(release).toHaveBeenCalledTimes(1);
+  expect(f.dispose).toHaveBeenCalledTimes(1);
+  expect(f.context.fenceSync).not.toHaveBeenCalled();
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it("does not release owners during StrictMode effect replay or rerender, only final Canvas retirement", async () => {
+  const f = fixture();
+  const release = vi.fn(),
+    mounted = vi.fn(),
+    cleaned = vi.fn();
+  const observers = new Set<() => void>();
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      constructor(callback: () => void) {
+        observers.add(callback);
+      }
+      observe() {}
+      disconnect() {}
+    },
+  );
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    bottom: 40,
+    right: 40,
+    width: 40,
+    height: 40,
+    toJSON() {},
+  });
+  function OuterOwner() {
+    useEffect(() => {
+      mounted();
+      return cleaned;
+    }, []);
+    return (
+      <Canvas
+        gl={() => f.renderer}
+        frameloop="never"
+        onCreated={({ gl }) => prepareAsyncRendererDisposal(gl, release)}
+      />
+    );
+  }
+  const view = () => (
+    <StrictMode>
+      <OuterOwner />
+    </StrictMode>
+  );
+  const result = render(view());
+  await act(async () => {
+    for (const notify of observers) notify();
+    await vi.advanceTimersByTimeAsync(50);
+  });
+  expect(mounted).toHaveBeenCalledTimes(2);
+  expect(cleaned).toHaveBeenCalledTimes(1);
+  expect(_roots.size).toBe(1);
+  expect(release).not.toHaveBeenCalled();
+  result.rerender(view());
+  expect(release).not.toHaveBeenCalled();
+  await act(async () => result.unmount());
+  expect(cleaned).toHaveBeenCalledTimes(2);
+  expect(release).toHaveBeenCalledTimes(1);
+  expect(f.dispose).toHaveBeenCalledTimes(1);
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(16));
+  expect(f.forceContextLoss).toHaveBeenCalledTimes(1);
   expect(vi.getTimerCount()).toBe(0);
 });

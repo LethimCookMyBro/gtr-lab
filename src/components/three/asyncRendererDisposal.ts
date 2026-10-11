@@ -10,7 +10,10 @@ const DRAIN_LIMIT_MS = 30_000;
  * without blocking the UI. Failure rejects into R3F's existing final-release
  * fallback; it never suppresses forceContextLoss or retains an endless poll.
  */
-export function prepareAsyncRendererDisposal(renderer: WebGLRenderer): void {
+export function prepareAsyncRendererDisposal(
+  renderer: WebGLRenderer,
+  releaseOwnedResources?: () => void,
+): void {
   if (prepared.has(renderer)) return;
   prepared.add(renderer);
   const dispose = renderer.dispose.bind(renderer);
@@ -41,7 +44,14 @@ export function prepareAsyncRendererDisposal(renderer: WebGLRenderer): void {
       };
       const lost = () => finish();
       try {
-        dispose();
+        // Canvas can retire before its outer model loader's passive cleanup.
+        // Texture.dispose must run while Three still retains native handles;
+        // renderer.dispose clears that allocation cache without deleting them.
+        try {
+          releaseOwnedResources?.();
+        } finally {
+          dispose();
+        }
         const gl = renderer.getContext();
         if (gl.isContextLost()) {
           finish();
