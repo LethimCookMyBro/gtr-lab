@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "drawer-scrim-only-candidate-v1",
+  "baselineCommit": "a5f080d7f8c61d15255af025e8ec03ff1f544e44",
+  "baselineTree": "cc9236f314433e932c765c67cfe8f9a2912f47bf9995bee92fb2847c7f2e33b3",
+  "candidateTree": "f530e2009115310a5c229d7024d3dc99dcb0d5ff0939d76cba4f9aeb947942c0"
+}

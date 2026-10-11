@@ -7,8 +7,8 @@ const stylesheet = parse(
 );
 const rules = (selector: string) => {
   const matches: Rule[] = [];
-  stylesheet.walkRules(selector, (rule) => {
-    matches.push(rule);
+  stylesheet.walkRules((rule) => {
+    if (rule.selectors.includes(selector)) matches.push(rule);
   });
   return matches;
 };
@@ -37,16 +37,15 @@ describe("drawer compositing surfaces", () => {
     expect(property(sheet(), "background")).toBe("#171b1e");
   });
 
-  it("keeps the existing viewport backdrop without a second sheet blur", () => {
+  it("keeps the exact viewport scrim without filtering its backdrop", () => {
     const backdrop = rules(".drawer-backdrop").find((rule) =>
-      property(rule, "backdrop-filter"),
+      property(rule, "background"),
     );
     expect(property(backdrop, "background")).toBe("#05080966");
-    expect(property(backdrop, "backdrop-filter")).toBe("blur(4px)");
     expect(property(backdrop, "inset")).toBe("0");
     expect(property(backdrop, "width")).toBe("100%");
     expect(property(backdrop, "height")).toBe("100%");
-    for (const rule of rules(".drawer")) {
+    for (const rule of [...rules(".drawer"), ...rules(".drawer-backdrop")]) {
       for (const name of ["backdrop-filter", "-webkit-backdrop-filter"]) {
         expect(["", "none"]).toContain(property(rule, name));
       }
@@ -67,5 +66,66 @@ describe("drawer compositing surfaces", () => {
         (luminance(foreground) + 0.05) / (luminance(background) + 0.05),
       ).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  it("preserves desktop, mobile, dismissal and reduced-motion choreography", () => {
+    expect(property(sheet(), "animation")).toBe(
+      "drawer-in 0.3s cubic-bezier(0.2, 0.7, 0.2, 1)",
+    );
+    const inMedia = (selector: string, query: string) =>
+      rules(selector).find(
+        (rule) =>
+          rule.parent?.type === "atrule" && rule.parent.params === query,
+      );
+    expect(
+      property(inMedia(".drawer", "(max-width: 760px)"), "animation"),
+    ).toBe("rise-in 0.25s");
+    const enteringBackdrop = rules(".drawer-backdrop").find(
+      (rule) => rule.parent?.type === "root" && property(rule, "animation"),
+    );
+    expect(property(enteringBackdrop, "animation")).toBe(
+      "drawer-backdrop-in 300ms ease both",
+    );
+    expect(
+      property(
+        rules('.drawer-layer[data-phase="closing"] .drawer')[0],
+        "animation",
+      ),
+    ).toBe("drawer-out 280ms cubic-bezier(0.4, 0, 0.7, 0.2) both");
+    expect(
+      property(
+        rules('.drawer-layer[data-phase="closing"] .drawer-backdrop')[0],
+        "animation",
+      ),
+    ).toBe("drawer-backdrop-out 280ms ease both");
+    for (const selector of [".drawer", ".drawer-backdrop"]) {
+      expect(
+        property(
+          inMedia(selector, "(prefers-reduced-motion: reduce)"),
+          "animation",
+        ),
+      ).toBe("none");
+    }
+  });
+
+  it("preserves large close and selection targets plus visible radio focus", () => {
+    for (const name of ["min-width", "min-height"]) {
+      expect(property(rules(".icon-button")[0], name)).toBe("44px");
+    }
+    expect(property(rules(".camera-choices button")[0], "min-height")).toBe(
+      "67px",
+    );
+    expect(property(rules(".render-quality label")[0], "min-height")).toBe(
+      "64px",
+    );
+    expect(
+      property(rules(".render-quality label:focus-within")[0], "outline"),
+    ).toBe("2px solid currentColor");
+    expect(
+      property(
+        rules(".render-quality label:focus-within")[0],
+        "outline-offset",
+      ),
+    ).toBe("3px");
   });
 });

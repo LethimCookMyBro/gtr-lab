@@ -1050,7 +1050,6 @@ p {
   position: absolute;
   inset: 0;
   background: #05080966;
-  backdrop-filter: blur(4px);
   width: 100%;
   height: 100%;
 }

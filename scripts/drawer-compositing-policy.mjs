@@ -13,6 +13,7 @@ function colorMatches(value,channels,alpha) {
   return !!match&&channels.every((c,i)=>Number(match[i+1])===c)&&Math.abs(Number(match[4]??1)-alpha)<.002;
 }
 export function validateDrawerRequest(request,env) {
+  assert.equal(env.R35_DRAWER_SCRIM_ONLY,undefined);
   assert.deepEqual(Object.keys(request).sort(),['allow','baselineCommit','baselineTree','candidateTree','contract','version'].sort());
   assert.equal(request.version,2);assert.equal(request.allow,true);assert.equal(request.contract,drawerContract);
   assert.equal(request.baselineCommit,drawerBaselineCommit);assert.equal(request.baselineTree,drawerBaselineTree);
@@ -28,7 +29,8 @@ export function validateDrawerRequest(request,env) {
   for(const key of ['R35_UI_URL','R35_UI_ROOT','R35_SOURCE_SHA','HOME_QA_URL','R35_DRAWER_URL','R35_DRAWER_ROOT'])assert.equal(env[key],undefined);
   return {...viewports[env.R35_DRAWER_VIEWPORT],name:env.R35_DRAWER_VIEWPORT,origin:'http://127.0.0.1:4189'};
 }
-export function assessDrawerLane(row,name,request,harnessCommit) {
+export function assessDrawerLane(row,name,request,harnessCommit,expectedBackdropFilter='blur(4px)') {
+  assert.ok(['blur(4px)','none'].includes(expectedBackdropFilter));
   const failures=[];
     if(row?.lane!==name){failures.push(`${name}: missing or out-of-order lane`);return failures;}
     if(row.status!=='passed'||row.process?.exitCode!==0||row.process?.timedOut||row.process?.signal||row.process?.spawnError||row.process?.ownershipRetired!==true)failures.push(`${name}: lane/process did not pass or ownership retirement is unproven`);
@@ -50,13 +52,13 @@ export function assessDrawerLane(row,name,request,harnessCommit) {
       const sheet=capture.styles?.sheet,backdrop=capture.styles?.backdrop;
       const times=[capture.actionStartMs,capture.captureStartMs,capture.captureReturnMs,capture.observationEndMs];
       if(capture.status!=='captured'||!/^[a-f0-9]{64}$/.test(capture.sha256??'')||times.some((time,i)=>!Number.isFinite(time)||(i>0&&time<times[i-1]))||(index>0&&capture.actionStartMs<row.captures[index-1].observationEndMs)||capture.originalDeadlineMs!==45000||!Number.isFinite(capture.captureDurationMs)||capture.captureDurationMs!==capture.captureReturnMs-capture.captureStartMs||!Number.isFinite(capture.observationDurationMs)||capture.observationDurationMs!==capture.observationEndMs-capture.actionStartMs||capture.observationDurationMs>45000)failures.push(`${name}: screenshot receipt or observation incomplete, unordered or over original deadline`);
-      if(!colorMatches(sheet?.background,[23,27,30],name==='baseline'?235/255:1)||sheet?.backdropFilter!==(name==='baseline'?'blur(30px)':'none')||sheet?.opacity!=='1'||!colorMatches(backdrop?.background,[5,8,9],.4)||backdrop?.backdropFilter!=='blur(4px)')failures.push(`${name}: expected sheet/backdrop treatment not observed`);
+      if(!colorMatches(sheet?.background,[23,27,30],name==='baseline'?235/255:1)||sheet?.backdropFilter!==(name==='baseline'?'blur(30px)':'none')||sheet?.opacity!=='1'||!colorMatches(backdrop?.background,[5,8,9],.4)||backdrop?.backdropFilter!==expectedBackdropFilter)failures.push(`${name}: expected sheet/backdrop treatment not observed`);
     }
     if(!row.trace||!Number.isFinite(row.trace.elapsedMs)||row.trace.elapsedMs<=0)failures.push(`${name}: trace evidence missing`);
   return failures;
 }
-export function assessCandidateDrawerLane(row,request) {
-  const failures=assessDrawerLane(row,'candidate',request,row?.harnessCommit);
+export function assessCandidateDrawerLane(row,request,expectedBackdropFilter='blur(4px)') {
+  const failures=assessDrawerLane(row,'candidate',request,row?.harnessCommit,expectedBackdropFilter);
   if(!/^[a-f0-9]{64}$/.test(row?.workload?.sha256??''))failures.push('Candidate exact built workload identity missing');
   return {status:failures.length?'failed':'passed',scope:'candidate-only',comparable:false,failures};
 }
