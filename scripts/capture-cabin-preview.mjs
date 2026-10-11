@@ -10,6 +10,7 @@ import { createAppServer } from '../server.mjs';
 
 import { verifyReleaseAssets } from './verify-release-assets.mjs';
 import { waitForCabinWindowReady } from './cabin-capture-readiness.mjs';
+import { measureCabinWindowLayout, assertCabinWindowLayout } from './cabin-window-layout.mjs';
 import { installCabinResourceObserver } from './cabin-resource-observer.mjs';
 import { cabinResourceCohort, assertCabinResourcesReleased } from './cabin-resource-assertions.mjs';
 import {
@@ -207,7 +208,9 @@ try {
       assert.ok(button.x >= -1 && button.y >= -1 && button.right <= measurements.width + 1 && button.bottom <= measurements.height + 1, `${button.text} fits the viewport`);
       assert.ok(button.height >= 43 && button.unobscured, `${button.text} is a usable, unobscured target`);
     }
-    return measurements;
+    const windowStatus = await page.evaluate(measureCabinWindowLayout);
+    assertCabinWindowLayout(windowStatus);
+    return { ...measurements, windowStatus };
   };
   const capture = async label => {
     // Verify focus at the call site first, then remove focus-visible styling
@@ -636,7 +639,9 @@ try {
       const fullBefore = await capture('full-before-late-proxy');
       const cohort = await activeResources('full-before-late-proxy');
       await expect(page.locator('.cabin-window-status')).toHaveText('Loading window view…');
+      await expect(page.locator('.cabin-window-status')).toBeHidden();
       await fault.release(); await waitForCabinWindowReady(page); await activeCabin();
+      await expect(page.locator('.cabin-window-status')).toBeHidden();
       await comparePixels(fullBefore, await capture('full-after-late-proxy'), 'Late proxy does not leak through the active full cabin');
       assert.equal(assetCounts().proxy, before.proxy, 'Detailed-cabin entry does not restart the pending proxy');
       await controls.getByRole('button', { name: 'Back to exterior', exact: true }).click();

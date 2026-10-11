@@ -61,6 +61,11 @@ describe('window-ready exterior capture baseline', () => {
     expect(source).toMatch(/if \(window\) \{\s*await waitForCabinWindowReady\(page\)/);
     expect(source).toMatch(/await waitForCabinWindowReady\(page\);[\s\S]*const exteriorBefore = await capture\('exterior-before'\)/);
     expect(source).toContain('comparison.changedPixels === 0');
+    expect(source).toContain('page.evaluate(measureCabinWindowLayout)');
+    expect(source).toContain('assertCabinWindowLayout(windowStatus)');
+    const lateProxy = source.slice(source.indexOf("await check('Full cabin arrives before proxy"), source.indexOf("await check('Proxy arrives while full cabin"));
+    expect(lateProxy.match(/await expect\(page.locator\('\.cabin-window-status'\)\).toBeHidden\(\)/g)).toHaveLength(2);
+    expect(lateProxy).toContain("await comparePixels(fullBefore, await capture('full-after-late-proxy')");
     expect(source).toContain("bitmap.closeCalls, 1, 'Every completed candidate load remains closed exactly once at final hygiene'");
     for (const proof of [
       'Full cabin arrives before proxy and late proxy remains hidden',

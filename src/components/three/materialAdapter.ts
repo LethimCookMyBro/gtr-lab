@@ -90,6 +90,11 @@ export function prepareVehicle(
     if (!(object instanceof Mesh)) return;
     object.castShadow = !nativeCabin;
     object.receiveShadow = !nativeCabin;
+    // Opaque sorting otherwise uses allocation-time material IDs: a fast
+    // texture-free proxy can move ahead of the exterior after route return.
+    // Keep the reviewed exterior-then-cabin order on every native mesh (glTF
+    // child groups reset group-level ordering), retaining normal depth tests.
+    if (nativeCabin) object.renderOrder = 1;
     const declaredMesh = (names: string[] = []) =>
       names.some(
         (name) => name === object.name || name === object.userData.name,

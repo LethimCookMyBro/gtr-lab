@@ -130,23 +130,32 @@
   }
 }
 
-/* The adjacent live region fits within the provenance row without changing
-   its accessible button name or adding a loading overlay/control-ready gate. */
+/* Keep the live region below the intact provenance touch target. Normal flow
+   lets its longest copy wrap without painting over the button label. */
 .provenance-with-window-status {
-  position: relative;
-}
-.provenance-with-window-status .study-disclosure {
-  padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 .cabin-window-status {
-  position: absolute;
-  left: 22px;
-  bottom: 2px;
   display: block;
+  margin-left: 22px;
+  max-width: calc(100% - 22px);
   color: inherit;
   font-size: 11px;
   line-height: 1.3;
   font-weight: 400;
   letter-spacing: normal;
   pointer-events: none;
+}
+.cabin-window-status[hidden] {
+  display: none;
+}
+@media (max-width: 760px) {
+  .configurator.has-window-view {
+    /* Reserve the same header space while inside the cabin, so hiding its
+       irrelevant exterior status never resizes the canvas or camera. */
+    grid-template-rows: 230px minmax(0, 1fr) 242px;
+  }
 }

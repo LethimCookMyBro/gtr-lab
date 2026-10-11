@@ -8,6 +8,10 @@ import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { validateFeatureEnvironment, featureLaunchOptions, validateActualArguments, expectedNativeGeometry } from './screenshot-feature-policy.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+// Dependency injection permits a socket-free assertion of the actual launch contract.
+export async function launchFeatureBrowser(chromium, mode) {
+  return await chromium.launch({ timeout: 30_000, ...featureLaunchOptions(mode) });
+}
 async function within(promise, milliseconds, label) {
   let timer;
   try { return await Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} exceeded its ${milliseconds}ms evidence budget`)), milliseconds); })]); }
@@ -34,7 +38,7 @@ export async function main(env = process.env) {
     featureMode: target.featureMode, viewport: target.name, viewportSize: target.viewport, nativeDeviceScaleFactor: target.deviceScaleFactor, scale: target.scale, protocolAttribution: target.protocolAttribution,
     reducedMotion: 'no-preference', result: 'running', steps: [], captures: [], attempts: [], inputs: [], errors: [], console: [], pageErrors: [], requestFailures: [], runtimeBodies: [],
     limits: { screenshotMs: 45_000, maxScreenshotAttempts: 2, clickMs: 15_000, readinessMs: 90_000, navigationMs: 45_000, evidenceMs: 5_000 },
-    limitations: ['SwiftShader software rendering; no physical-device FPS conclusion.', 'Only initial exterior and first orbit capture are tested; cabin/controls/full normal-motion acceptance are not replaced.', 'Both lanes explicitly enable pw:protocol attribution; Playwright serializes bodies before the metadata-only sink, so timings are instrumented and cannot be pooled with clean captures.', 'Only the exact default CDPScreenshotNewSurface enable switch is removed in the ignored lane. Every other normalized actual browser argument and native scene geometry must match.', 'Protocol logging stops between screenshot attempts; an unobserved reply in that gap can leave a stale pending ID. Positive old/new command overlap requires observed reply ordering.'],
+    limitations: ['SwiftShader software rendering; no physical-device FPS conclusion.', 'Both lanes explicitly include --enable-automation to authorize actual command-line metadata; this common browser automation setting is not a rendering-performance fix.', 'Only initial exterior and first orbit capture are tested; cabin/controls/full normal-motion acceptance are not replaced.', 'Both lanes explicitly enable pw:protocol attribution; Playwright serializes bodies before the metadata-only sink, so timings are instrumented and cannot be pooled with clean captures.', 'Only the exact default CDPScreenshotNewSurface enable switch is removed in the ignored lane. Every other normalized actual browser argument and native scene geometry must match.', 'Protocol logging stops between screenshot attempts; an unobserved reply in that gap can leave a stale pending ID. Positive old/new command overlap requires observed reply ordering.'],
   };
   const save = () => writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
   await writeFile(`${output}/identity.json`, JSON.stringify({ source, sourceCommit: report.sourceCommit, harnessCommit: report.harnessCommit, bundles: Object.fromEntries(bundles), models: cabinModels }, null, 2)); await save();
@@ -59,9 +63,8 @@ export async function main(env = process.env) {
   try {
     server = createAppServer(resolve(root, 'dist'));
     await new Promise((done, reject) => { server.once('error', reject); server.listen(4178, '127.0.0.1', done); });
-    const args = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader']; report.browserArgs = args;
-    report.featureLaunchOptions = featureLaunchOptions(target.featureMode);
-    browser = await chromium.launch({ timeout: 30_000, args, ...report.featureLaunchOptions }); report.browserVersion = browser.version(); assert.equal(report.browserVersion, '153.0.8010.12', 'Reviewed Chromium version required');
+    report.featureLaunchOptions = featureLaunchOptions(target.featureMode); report.browserArgs = report.featureLaunchOptions.args;
+    browser = await launchFeatureBrowser(chromium, target.featureMode); report.browserVersion = browser.version(); assert.equal(report.browserVersion, '153.0.8010.12', 'Reviewed Chromium version required');
     const browserCdp = await browser.newBrowserCDPSession();
     try { report.actualBrowserArguments = (await within(browserCdp.send('Browser.getBrowserCommandLine'), 5_000, 'Actual browser command line')).arguments; } finally { await browserCdp.detach(); }
     report.normalizedBrowserArguments = validateActualArguments(target.featureMode, report.actualBrowserArguments); await save();

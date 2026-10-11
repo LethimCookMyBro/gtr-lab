@@ -64,9 +64,9 @@ for (const name of ['three.core.js', 'three.module.js']) await cp(join(threeRoot
 await cp(join(threeRoot, 'examples/jsm'), join(vendor, 'addons'), { recursive: true });
 await cp(join(threeRoot, 'LICENSE'), join(vendor, 'THREE-LICENSE'));
 
-// Reviewed proxy-runtime adapter from 4d0f40ac; default exterior behavior is unchanged.
+// Reviewed proxy adapter plus native-cabin order correction; default exterior is unchanged.
 // SOURCE_IDENTITY_PROVENANCE.md preserves the original adapter lineage and limits.
-const sourceFiles = { 'materialAdapter.ts': '744e006a5a57f5137f93ec12ffb1ec2654e0c8e1', 'sceneHelpers.ts': 'fbcc786d7c408be8ce5ee140106b7c5bc0c727dc' };
+const sourceFiles = { 'materialAdapter.ts': '28f8a5dfeecbed1baf2a56c0bc5baf0374dfade2', 'sceneHelpers.ts': 'fbcc786d7c408be8ce5ee140106b7c5bc0c727dc' };
 const sourceManifest = [], sourceOut = join(output, 'viewer/app-source'); await mkdir(sourceOut, { recursive: true });
 for (const [name, expected] of Object.entries(sourceFiles)) {
   const source = await readFile(join(root, 'src/components/three', name)), gitSha = gitHash(source);

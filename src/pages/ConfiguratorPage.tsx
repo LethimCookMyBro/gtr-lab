@@ -146,6 +146,9 @@ export function ConfiguratorPage() {
       className={
         "configurator environment-" +
         state.selectedEnvironment +
+        (hasAsset && model.asset.cabinPreview && !state.error
+          ? " has-window-view"
+          : "") +
         (interactive ? " is-scene-ready" : "")
       }
     >
@@ -191,6 +194,7 @@ export function ConfiguratorPage() {
               {model.asset.cabinPreview && !state.error && (
                 <span
                   className="cabin-window-status"
+                  hidden={state.cabin.phase === "active"}
                   role="status"
                   aria-live="polite"
                 >

@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 export const sourcePin = Object.freeze({ sha: '70b7644944f908a0dfad8999b0a44a61d84d5d4d', tree: 'cd008a4eb221e3323b988a9119e4f7f5109ad90dbf122b08b32127dfea4232a2' });
 export const expectedNativeGeometry = Object.freeze({ nativeDpr: 2, viewport: { width: 1440, height: 900 }, canvas: { x: 0, y: 0, width: 1440, height: 744 }, buffer: { width: 1967, height: 1016 } });
+export const automationArgument = '--enable-automation';
+const commonBrowserArguments = Object.freeze(['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', automationArgument]);
 export const newSurfaceArgument = '--enable-features=CDPScreenshotNewSurface';
 export function validateFeatureEnvironment(env) {
   assert.equal(env.GITHUB_ACTIONS, 'true', 'Screenshot-feature diagnostic is CI-only');
@@ -25,12 +27,13 @@ export function resolveFeatureRequest(request, env) {
 }
 export function featureLaunchOptions(mode) {
   assert.ok(['default', 'ignored'].includes(mode));
-  return mode === 'ignored' ? { ignoreDefaultArgs: [newSurfaceArgument] } : {};
+  return { args: [...commonBrowserArguments], ...(mode === 'ignored' ? { ignoreDefaultArgs: [newSurfaceArgument] } : {}) };
 }
 /** Preserve all actual command-line arguments except the unique ephemeral profile suffix. */
 export function validateActualArguments(mode, args) {
   assert.ok(['default', 'ignored'].includes(mode));
   assert(Array.isArray(args) && args.length > 1 && args.every(a => typeof a === 'string'), 'Actual browser command line is required');
+  assert.equal(args.filter(a => a === automationArgument).length, 1, 'Actual command-line proof requires exactly one explicit automation flag in both lanes');
   const exact = args.filter(a => a === newSurfaceArgument);
   assert.equal(exact.length, mode === 'default' ? 1 : 0, 'Actual feature switch does not match the reviewed lane');
   const featureMentions = args.filter(a => /CDPScreenshotNewSurface/.test(a));

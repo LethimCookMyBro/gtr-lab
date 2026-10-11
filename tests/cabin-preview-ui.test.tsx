@@ -195,3 +195,33 @@ it("hides optional window status on a model switch and ignores the old model cal
   expect(document.querySelector(".cabin-window-status")).toBeNull();
   expect(state().selectedVariant).toBe("nismo");
 });
+
+it.each(["loading", "ready", "unavailable"] as const)(
+  "hides irrelevant exterior-window announcements inside the full cabin and restores latest %s status on exit",
+  async (status) => {
+    setup();
+    await waitFor(() => expect(viewer.props).not.toBeNull());
+    act(() => useConfigurator.setState({ ready: true }));
+    act(() => state().beginCabin());
+    const label = document.querySelector<HTMLElement>(".cabin-window-status")!;
+    expect(label.hidden).toBe(false);
+    act(() => state().cabinReady(state().cabinRequest));
+    expect(label.hidden).toBe(true);
+    expect(screen.queryByRole("status")).toBeNull();
+    act(() => viewer.props!.onWindowStatus!(status));
+    expect(label.hidden).toBe(true);
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(state().cabin.phase).toBe("active");
+    act(() => state().exitCabin(false));
+    expect(label.hidden).toBe(false);
+    expect(screen.getByRole("status")).toBe(label);
+    expect(label.textContent).toBe(
+      status === "loading"
+        ? "Loading window view…"
+        : status === "ready"
+          ? "Window view ready · Simplified cabin"
+          : "Window view unavailable",
+    );
+    expect(screen.getByRole("button", { name: "Model provenance & limitations" })).toBeTruthy();
+  },
+);
