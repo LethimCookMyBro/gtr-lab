@@ -47,7 +47,28 @@ export function Drawer({
           ...element.querySelectorAll<HTMLElement>(
             'button:not(:disabled),a[href],input,select,[tabindex="0"]',
           ),
-        ].filter((e) => e.getClientRects().length > 0);
+        ]
+          .filter(
+            (e) => e.getClientRects().length > 0 && !e.matches(":disabled"),
+          )
+          .filter((e, _index, candidates) => {
+            // A native radio group has one tab stop: its checked input.
+            if (
+              !(e instanceof HTMLInputElement) ||
+              e.type !== "radio" ||
+              !e.name ||
+              e.checked
+            )
+              return true;
+            return !candidates.some(
+              (other) =>
+                other instanceof HTMLInputElement &&
+                other.type === "radio" &&
+                other.name === e.name &&
+                other.form === e.form &&
+                other.checked,
+            );
+          });
         const first = elements[0],
           last = elements.at(-1);
         if (!first) {

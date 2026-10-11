@@ -2,10 +2,13 @@ import type { CabinPreviewState, CabinWindowStatus } from "./cabinPreview";
 import type { HomeSceneLoadState } from "../home/homeReadiness";
 import type { MaterialRoles, CameraView } from "./sceneHelpers";
 
+export type RenderQuality = "standard" | "reduced";
+
 export type StudioEnvironment =
   "studio" | "gallery" | "night" | "forest" | "coast";
 export type VehicleSceneProps = {
   url: string;
+  renderQuality?: RenderQuality;
   cabin?: CabinPreviewState;
   onWindowStatus?: (status: CabinWindowStatus) => void;
   onCabinReady?: (request: number) => void;

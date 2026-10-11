@@ -449,3 +449,59 @@ it("keeps undefined DPR a no-op and does not add native resets on fast completed
   ).toEqual([]);
   expect(f.renderer.getPixelRatio()).toBe(1.5);
 });
+
+it("keeps the painted Standard buffer while Reduced waits for the existing fence, then changes once", async () => {
+  const f = await fixture(1440, 744, 2);
+  await act(async () =>
+    f.store.getState().setDpr(vehiclePixelRatio(1440, 744, 2, "reduced")),
+  );
+  await frame();
+  expect(f.painted()).toBe(true);
+  expect([f.canvas.width, f.canvas.height]).toEqual([1967, 1016]);
+  expect(f.order).toEqual([]);
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(16));
+  await frame();
+  expect(f.order).toEqual([
+    "width:1391",
+    "height:718",
+    "tick",
+    "render",
+    "fence",
+  ]);
+  expect(f.painted()).toBe(true);
+  expect(f.errors).not.toHaveBeenCalled();
+});
+
+it("reverses an uncommitted quality choice without a redundant buffer reset", async () => {
+  const f = await fixture(1440, 744, 2);
+  for (const quality of ["reduced", "standard"] as const)
+    await act(async () =>
+      f.store.getState().setDpr(vehiclePixelRatio(1440, 744, 2, quality)),
+    );
+  expect(f.order).toEqual([]);
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(16));
+  await frame();
+  expect(f.order).toEqual(["tick", "render", "fence"]);
+  expect([f.canvas.width, f.canvas.height]).toEqual([1967, 1016]);
+});
+
+it("retires an unapplied quality choice on owner release without a native write", async () => {
+  const f = await fixture(1440, 744, 2);
+  await act(async () =>
+    f.store.getState().setDpr(vehiclePixelRatio(1440, 744, 2, "reduced")),
+  );
+  await f.release();
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(100));
+  await frame();
+  // Removing the owner leaves a live empty R3F root, which may redraw. The
+  // retired resize must not change either native dimension.
+  expect(
+    f.order.filter(
+      (event) => event.startsWith("width:") || event.startsWith("height:"),
+    ),
+  ).toEqual([]);
+  expect([f.canvas.width, f.canvas.height]).toEqual([1967, 1016]);
+});

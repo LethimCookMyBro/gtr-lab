@@ -157,7 +157,9 @@ function ContextHealth({ onError }: { onError: (message: string) => void }) {
 
 /** One canvas; mount with a new key to retry a failed graphics context. */
 export default function VehicleScene(props: VehicleSceneProps) {
-  const [dpr, setDpr] = useState(initialVehiclePixelRatio);
+  const [dpr, setDpr] = useState(() =>
+    initialVehiclePixelRatio(props.renderQuality),
+  );
   const asset = useVehicleAsset(
     props.url,
     props.materialRoles,
@@ -265,7 +267,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
           proxyAsset={proxyAsset}
           props={props}
         />
-        <VehiclePixelDensity onChange={setDpr} />
+        <VehiclePixelDensity onChange={setDpr} quality={props.renderQuality} />
         <CameraRig
           preset={props.preset}
           requestId={props.cameraRequest}

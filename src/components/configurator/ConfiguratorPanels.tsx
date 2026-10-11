@@ -156,6 +156,51 @@ export function ConfiguratorPanels({
       )}
       {panel === "environment" && (
         <>
+          <fieldset
+            className="render-quality"
+            disabled={model.asset.status !== "ready" || !model.asset.url}
+            aria-describedby="render-quality-note"
+          >
+            <legend>Rendering quality</legend>
+            <label>
+              <input
+                type="radio"
+                name="render-quality"
+                value="standard"
+                checked={state.renderQuality === "standard"}
+                onChange={() => state.setRenderQuality("standard")}
+              />
+              <span>
+                <strong>Standard</strong>
+                <small>
+                  Up to 2 million pixels · More fine detail (default)
+                </small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="render-quality"
+                value="reduced"
+                checked={state.renderQuality === "reduced"}
+                onChange={() => state.setRenderQuality("reduced")}
+              />
+              <span>
+                <strong>Reduced</strong>
+                <small>
+                  Up to 1 million pixels · Less pixel work, softer fine detail
+                </small>
+              </span>
+            </label>
+            <p id="render-quality-note">
+              May help on larger screens. Small screens may look and perform the
+              same. Both keep anti-aliasing. Kept for this visit; reload
+              restores Standard.
+            </p>
+            {(model.asset.status !== "ready" || !model.asset.url) && (
+              <p>Quality applies to 3D models, not photo references.</p>
+            )}
+          </fieldset>
           <p className="panel-intro">
             Lighting, reflections and background change together.
           </p>

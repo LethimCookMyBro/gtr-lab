@@ -79,8 +79,14 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-async function setup(width = 1440, height = 900) {
-  const view = render(<VehicleScene {...props} />);
+async function setup(
+  width = 1440,
+  height = 900,
+  renderQuality: "standard" | "reduced" = "standard",
+) {
+  const view = render(
+    <VehicleScene {...props} renderQuality={renderQuality} />,
+  );
   const canvas = document.createElement("canvas");
   let rendererWidth = canvas.width;
   let rendererHeight = canvas.height;
@@ -204,14 +210,16 @@ async function setup(width = 1440, height = 900) {
 }
 
 it.each([
-  [1440, 744, 2],
-  [390, 372, 3],
-])(
-  "does not resize the %sx%s drawing buffer at native DPR%s on orbit regression, recovery, or unchanged Canvas configure",
-  async (width, height, nativeDpr) => {
+  [1440, 744, 2, "standard"],
+  [390, 372, 3, "standard"],
+  [1440, 744, 2, "reduced"],
+  [390, 372, 3, "reduced"],
+] as const)(
+  "does not resize the %sx%s drawing buffer at native DPR%s in %s quality on orbit regression, recovery, or unchanged Canvas configure",
+  async (width, height, nativeDpr, renderQuality) => {
     vi.stubGlobal("devicePixelRatio", nativeDpr);
     const { view, root, store, renderer, deviceSizing, configure } =
-      await setup(width, height);
+      await setup(width, height, renderQuality);
     const stableDpr = store.getState().viewport.dpr;
     const initialRenderer = store.getState().gl;
     deviceSizing.setPixelRatio.mockClear();
@@ -223,6 +231,7 @@ it.each([
       view.rerender(
         <VehicleScene
           {...props}
+          renderQuality={renderQuality}
           paint={step ? "#222222" : "#ffffff"}
           lights={step % 2 === 0}
           autoRotate={step % 2 !== 0}
@@ -408,3 +417,104 @@ it.each([
     expect(deviceSizing.setDrawingBufferSize).not.toHaveBeenCalled();
   },
 );
+
+it("starts Reduced at its chosen budget before actual canvas measurement", () => {
+  expect(initialVehiclePixelRatio("reduced")).toBe(
+    Math.sqrt(1_000_000 / (1440 * 900)),
+  );
+});
+
+it.each([
+  [1440, 744, 2, 1391, 718],
+  [1280, 644, 2, 1409, 709],
+  [390, 372, 3, 585, 558],
+  [430, 428, 3, 645, 642],
+  [3840, 2160, 2, 1333, 750],
+])(
+  "starts Reduced %sx%s at DPR%s with exact %sx%s pixels and antialiasing",
+  async (width, height, nativeDpr, bufferWidth, bufferHeight) => {
+    vi.stubGlobal("devicePixelRatio", nativeDpr);
+    const { store, renderer } = await setup(width, height, "reduced");
+    expect(store.getState().viewport.dpr).toBe(
+      vehiclePixelRatio(width, height, nativeDpr, "reduced"),
+    );
+    expect([renderer.domElement.width, renderer.domElement.height]).toEqual([
+      bufferWidth,
+      bufferHeight,
+    ]);
+    expect(bufferWidth * bufferHeight).toBeLessThanOrEqual(1_000_000);
+    expect(host.canvas.gl.antialias).toBe(true);
+  },
+);
+
+it("changes and reverses quality through the same admitted DPR owner", async () => {
+  const { view, root, store, renderer, deviceSizing, configure } = await setup(
+    1440,
+    744,
+  );
+  const originalRenderer = store.getState().gl;
+  const initialSize = [renderer.domElement.width, renderer.domElement.height];
+  const setChoice = async (renderQuality: "standard" | "reduced") => {
+    view.rerender(<VehicleScene {...props} renderQuality={renderQuality} />);
+    await act(async () => root.render(host.canvas.children));
+    await configure();
+  };
+  deviceSizing.setDrawingBufferSize.mockClear();
+  deviceSizing.setPixelRatio.mockClear();
+  deviceSizing.setSize.mockClear();
+  await setChoice("reduced");
+  expect(host.canvas.dpr).toBe(vehiclePixelRatio(1440, 744, 2, "reduced"));
+  expect([renderer.domElement.width, renderer.domElement.height]).toEqual(
+    initialSize,
+  );
+  expect(deviceSizing.setDrawingBufferSize).not.toHaveBeenCalled();
+  await frame();
+  expect([renderer.domElement.width, renderer.domElement.height]).toEqual([
+    1391, 718,
+  ]);
+  expect(deviceSizing.setDrawingBufferSize).toHaveBeenCalledTimes(1);
+  await setChoice("standard");
+  await frame();
+  expect([renderer.domElement.width, renderer.domElement.height]).toEqual(
+    initialSize,
+  );
+  expect(deviceSizing.setDrawingBufferSize).toHaveBeenCalledTimes(2);
+  expect(deviceSizing.setPixelRatio).not.toHaveBeenCalled();
+  expect(deviceSizing.setSize).not.toHaveBeenCalled();
+  expect(store.getState().gl).toBe(originalRenderer);
+});
+
+it("coalesces rapid quality choices to the final requested buffer", async () => {
+  const { view, root, renderer, deviceSizing, configure } = await setup(
+    1440,
+    744,
+  );
+  deviceSizing.setDrawingBufferSize.mockClear();
+  for (const renderQuality of ["reduced", "standard", "reduced"] as const) {
+    view.rerender(<VehicleScene {...props} renderQuality={renderQuality} />);
+    await act(async () => root.render(host.canvas.children));
+    await configure();
+  }
+  expect(deviceSizing.setDrawingBufferSize).not.toHaveBeenCalled();
+  await frame();
+  expect(deviceSizing.setDrawingBufferSize).toHaveBeenCalledTimes(1);
+  expect([renderer.domElement.width, renderer.domElement.height]).toEqual([
+    1391, 718,
+  ]);
+});
+
+it("does not reset mobile buffers when both choices produce the same ratio", async () => {
+  const { view, root, renderer, deviceSizing, configure } = await setup(
+    390,
+    372,
+  );
+  deviceSizing.setDrawingBufferSize.mockClear();
+  view.rerender(<VehicleScene {...props} renderQuality="reduced" />);
+  await act(async () => root.render(host.canvas.children));
+  await configure();
+  await frame();
+  expect(deviceSizing.setDrawingBufferSize).not.toHaveBeenCalled();
+  expect([renderer.domElement.width, renderer.domElement.height]).toEqual([
+    585, 558,
+  ]);
+});

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { getModel } from "../data/models";
 import { paints, environments, cameraPresets } from "../data/configuration";
 import type { EnvironmentId } from "../data/configuration";
+import type { RenderQuality } from "../components/three/types";
 import type {
   CabinPreviewState,
   CabinSeat,
@@ -10,6 +11,8 @@ import type { HomeSceneLoadState } from "../components/home/homeReadiness";
 export type Panel =
   "camera" | "environment" | "models" | "details" | "assets" | null;
 interface ConfigState {
+  renderQuality: RenderQuality;
+  setRenderQuality: (quality: RenderQuality) => void;
   cabin: CabinPreviewState;
   cabinRequest: number;
   beginCabin: () => void;
@@ -45,6 +48,7 @@ interface ConfigState {
   lightsAvailable: boolean;
 }
 const initial = {
+  renderQuality: "standard" as RenderQuality,
   cabin: { phase: "closed" } as CabinPreviewState,
   cabinRequest: 0,
   paintAvailable: false,
@@ -67,6 +71,11 @@ const initial = {
 };
 export const useConfigurator = create<ConfigState>((set) => ({
   ...initial,
+  // A visit-only viewer choice: model, environment and retry do not reset it.
+  setRenderQuality: (renderQuality) => {
+    if (renderQuality === "standard" || renderQuality === "reduced")
+      set({ renderQuality });
+  },
   beginCabin: () =>
     set((state) => {
       if (

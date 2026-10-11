@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "allow": true,
+  "mode": "fixed",
+  "sourceSha": "current",
+  "sourceTree": "6c1bdd3ee8c4819a3d81f9e8044b3e460ed27846efebe8bdaf9cedb67b09a3fb",
+  "geometryContract": "selectable-render-quality-standard-2m-reduced-1m-msaa-v1"
+}

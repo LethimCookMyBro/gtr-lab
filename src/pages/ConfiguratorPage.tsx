@@ -253,6 +253,7 @@ export function ConfiguratorPage() {
               <VehicleScene
                 key={sceneKey}
                 url={model.asset.url!}
+                renderQuality={state.renderQuality}
                 paint={paint.color}
                 environment={state.selectedEnvironment}
                 environmentRequest={state.environmentRequest}

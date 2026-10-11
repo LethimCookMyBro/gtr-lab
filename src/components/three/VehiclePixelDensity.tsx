@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useThree } from "@react-three/fiber";
+import type { RenderQuality } from "./types";
 
 const MAX_BUFFER_PIXELS = 2_000_000;
 const MAX_DPR = 1.5;
@@ -8,29 +9,36 @@ export function vehiclePixelRatio(
   width: number,
   height: number,
   nativeDpr: number,
+  quality: RenderQuality = "standard",
 ) {
   return Math.min(
     nativeDpr,
     MAX_DPR,
-    Math.sqrt(MAX_BUFFER_PIXELS / Math.max(1, width * height)),
+    Math.sqrt(
+      (quality === "reduced" ? 1_000_000 : MAX_BUFFER_PIXELS) /
+        Math.max(1, width * height),
+    ),
   );
 }
 
-export function initialVehiclePixelRatio() {
+export function initialVehiclePixelRatio(quality: RenderQuality = "standard") {
   return typeof window === "undefined"
     ? 1
     : vehiclePixelRatio(
         window.innerWidth,
         window.innerHeight,
         window.devicePixelRatio || 1,
+        quality,
       );
 }
 
 /** Canvas is the only DPR owner. Camera motion never reallocates its buffer. */
 export function VehiclePixelDensity({
   onChange,
+  quality = "standard",
 }: {
   onChange: (dpr: number) => void;
+  quality?: RenderQuality;
 }) {
   const { width, height } = useThree((state) => state.size);
   const [nativeDpr, setNativeDpr] = useState(
@@ -49,7 +57,7 @@ export function VehiclePixelDensity({
     };
   }, [nativeDpr]);
   useLayoutEffect(() => {
-    onChange(vehiclePixelRatio(width, height, nativeDpr));
-  }, [width, height, nativeDpr, onChange]);
+    onChange(vehiclePixelRatio(width, height, nativeDpr, quality));
+  }, [width, height, nativeDpr, quality, onChange]);
   return null;
 }

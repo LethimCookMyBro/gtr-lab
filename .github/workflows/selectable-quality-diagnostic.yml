@@ -1,0 +1,83 @@
+# Release remains held. This workflow has read-only permissions and never deploys.
+name: Staged selectable rendering quality proof
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/*selectable-quality*.mjs'
+      - 'qa/selectable-quality-request.json'
+      - 'qa/fixtures/selectable-quality-identity.json'
+      - 'tests/selectable-quality-contract.node.mjs'
+      - '.github/workflows/selectable-quality-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: selectable-quality-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  prove:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-selectable-quality]') && contains(github.event.head_commit.message, '[stage-dpr-motion]') && contains(github.event.head_commit.message, '[stage-cabin-integration]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+        lane: [native-motion, selector-feature]
+    env:
+      R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      R35_DPR_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve new closed contract and verify immutable source before setup
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFile,appendFile} from 'node:fs/promises';
+          import {resolveQualityRequest} from './scripts/selectable-quality-policy.mjs';
+          import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs';
+          const request=JSON.parse(await readFile('qa/selectable-quality-request.json','utf8'));
+          const values=resolveQualityRequest(request,process.env);
+          const frozen=JSON.parse(await readFile('qa/fixtures/selectable-quality-identity.json','utf8'));
+          assert.deepEqual(await applicationIdentity('.'),frozen);
+          assert.equal(frozen.sha256,values.R35_EXPECTED_APP_TREE);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          NODE
+          node scripts/build-selectable-quality-drivers.mjs
+          node --check scripts/diagnose-selectable-quality.mjs
+          node --check scripts/diagnose-selectable-quality-motion.generated.mjs
+          node --check scripts/selectable-quality-readiness.generated.mjs
+          node --test tests/selectable-quality-contract.node.mjs
+      - run: npm ci
+      - name: Focused feature and ownership regressions with explicit safe paths
+        run: node node_modules/vitest/vitest.mjs run tests/render-quality-state.test.ts tests/render-quality-ui.test.tsx tests/vehicle-pixel-density.test.tsx tests/demand-render-resize.test.tsx tests/demand-render-backpressure.test.tsx tests/functional-render-observation.test.ts tests/vehicle-msaa-creation.test.tsx tests/vehicle-renderer-ownership.test.tsx --pool=threads --maxWorkers=2 --minWorkers=1
+      - run: npm run typecheck
+      - run: npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Original Standard native-motion inputs and deadlines, independently binding
+        if: matrix.lane == 'native-motion'
+        run: node scripts/diagnose-selectable-quality-motion.generated.mjs
+        timeout-minutes: 16
+      - name: Bounded trusted selector, admitted buffer and completed scene proof
+        if: matrix.lane == 'selector-feature'
+        run: node scripts/diagnose-selectable-quality.mjs
+        timeout-minutes: 16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selectable-quality-${{ matrix.lane }}-${{ matrix.viewport }}-${{ github.sha }}
+          path: |
+            selectable-quality-results/
+            dpr-motion-results/
+          retention-days: 14
+          if-no-files-found: warn

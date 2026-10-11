@@ -2442,3 +2442,64 @@ p {
     color: #30383e;
   }
 }
+
+/* Visit-only quality controls share the existing scrollable scene drawer. */
+.render-quality {
+  border: 0;
+  padding: 0;
+  margin: 0 0 28px;
+  min-width: 0;
+}
+.render-quality legend {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.render-quality label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.render-quality label + label {
+  margin-top: 8px;
+}
+.render-quality input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--red);
+}
+.render-quality label:has(input:checked) {
+  border-color: var(--red);
+}
+.render-quality label:focus-within {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.render-quality strong,
+.render-quality small {
+  display: block;
+}
+.render-quality strong {
+  font-size: 14px;
+}
+.render-quality small,
+.render-quality p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.render-quality small {
+  margin-top: 4px;
+}
+.render-quality p {
+  margin: 12px 0 0;
+}
+.render-quality:disabled label {
+  opacity: 0.5;
+  cursor: default;
+}
