@@ -37,6 +37,8 @@ concurrency:
 jobs:
   production-cabin:
     # The stage marker is added only after source/backup review and explicit go.
+    # Rendering-budget changes also require this full cabin/window lifecycle check,
+    # even when model bytes and attachment code remain unchanged.
     if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-cabin-integration]')
     runs-on: ubuntu-latest
     timeout-minutes: 25
