@@ -1,0 +1,2369 @@
+{
+  "contract": "r35-causal-observed-effect-v1",
+  "result": "insufficient",
+  "failures": [
+    "Raw model transform differs from independently derived source model"
+  ],
+  "source": {
+    "commit": "128606e9e744d0b939827b13b9ec9af339e8d95f",
+    "tree": "79386e6926c422a81d2fd11a150faefe6513fcb8a89eb15872bc8beeb78d2ee8"
+  },
+  "originalGate": {
+    "sha256": "200ab65de47c9e9ae62bee6c5dc5e4538b5eb74acbed531945deba85121d73cb",
+    "result": "failed",
+    "failures": [
+      "resized-cabin-look: geometry contract width must equal 1920",
+      "resized-cabin-look: geometry contract height must equal 966",
+      "resized-cabin-look: geometry contract attributeWidth must equal 1920",
+      "resized-cabin-look: geometry contract attributeHeight must equal 966",
+      "2 unexpected stable-viewport canvas writes (same-size writes clear too)",
+      "resized-cabin-look: native/1.5 DPR ceiling exceeded",
+      "resized-cabin-look: stable canvas dimension changed",
+      "cabin-seat-controls: missing sustained rendered-frame evidence",
+      "resized-cabin-look: missing sustained rendered-frame evidence",
+      "Deliberate viewport resize did not produce observed native buffer writes"
+    ]
+  },
+  "currentOriginalAssertionsOnCausalRun": {
+    "result": "failed",
+    "failures": [
+      "resized-cabin-look: missing sustained rendered-frame evidence"
+    ]
+  },
+  "transport": {
+    "result": "original-transport-preserved",
+    "failures": []
+  },
+  "endpoints": [
+    {
+      "label": "01-exterior-before",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 4,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          4.275,
+          1.8675,
+          5.1
+        ],
+        "quaternion": [
+          -0.08013820504802704,
+          0.34053680848002116,
+          0.029144897635118138,
+          0.9363563024318041
+        ],
+        "projection": [
+          1.6899405195501391,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "a239649822a0a526f3cf8a0842a1cca3989f7ee35cda53bc727cd2a12ab3a274",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "02-orbit-mid",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 5,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          3.712847591351937,
+          1.9114320208460176,
+          5.513404914668876
+        ],
+        "quaternion": [
+          -0.0847034917164519,
+          0.2908669375723716,
+          0.025861856388588626,
+          0.9526557129952284
+        ],
+        "projection": [
+          1.6899405195501391,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "a4f078abc7d519f50e1522d0a9c002d3d6a373138c54ef397d57d2228e976117",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "03-orbit-end",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 6,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          3.492326830265677,
+          1.578785705406405,
+          5.7156383434220315
+        ],
+        "quaternion": [
+          -0.06133445455126112,
+          0.2702640180580623,
+          0.017255039298031714,
+          0.9606756522608626
+        ],
+        "projection": [
+          1.6899405195501391,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "ebabfd908811dfc4b4f0395f452779964613ab48fdfd7247c1ff9f3db99aab85",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "04-controls-mid",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 7,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          2.9548749136831396,
+          1.2510405882165359,
+          6.048891748754702
+        ],
+        "quaternion": [
+          -0.03833834393179976,
+          0.22507795388623103,
+          0.00886359487270469,
+          0.9735458503557434
+        ],
+        "projection": [
+          1.6899405195501391,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "97fa963344c0212b3b17b4524fc45ba7cdb1e39c18c4653066078ded8e7f3648",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387},\"pixels\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 844311,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "05-controls-end",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 8,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          2.9544473353390193,
+          1.2510405882164342,
+          6.049100601442742
+        ],
+        "quaternion": [
+          -0.03833865717314888,
+          0.22504354579512076,
+          0.008862239878245828,
+          0.9735538046592287
+        ],
+        "projection": [
+          1.6899405195501391,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "4823ff5259a1822c1f2846d6788c6dd72df8c175e5f8bdc84967cb2383bcb2be",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1329,
+              "y": 243,
+              "width": 89,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387},\"pixels\":{\"x\":1329,\"y\":243,\"width\":89,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 844311,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "06-exterior-idle",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 9,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          2.9536306196797812,
+          1.2510405882163416,
+          6.049499426081211
+        ],
+        "quaternion": [
+          -0.03833925533104484,
+          0.22497782555994075,
+          0.008859651808068962,
+          0.9735689939993065
+        ],
+        "projection": [
+          1.6899405195501391,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "7da92550d6ab20bf9029a3d82b1a9df50c9e47424d07935fee6449841b57b81f",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 211,
+              "height": 156.890625
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 212,
+              "height": 157
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 630.5,
+              "y": 681.40625,
+              "width": 179,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 630,
+              "y": 681,
+              "width": 180,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":211,\"height\":156.890625},\"pixels\":{\"x\":57,\"y\":125,\"width\":212,\"height\":157}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":630.5,\"y\":681.40625,\"width\":179,\"height\":33.1875},\"pixels\":{\"x\":630,\"y\":681,\"width\":180,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 845859,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "07-cabin-driver",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 12,
+      "completion": {
+        "fenceId": 14,
+        "status": 37148,
+        "at": 103213.29999999999
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.04647309706770401,
+            0.9531436002578741,
+            0.22476226347620226,
+            0.19707727787202609
+          ],
+          "projection": [
+            0.7111306589101063,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.04647309706770402,
+          0.953143600257874,
+          0.22476226347620226,
+          0.19707727787202614
+        ],
+        "projection": [
+          0.7111306589101063,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "e7a66c784b72daf63b800654e6c8d273e872f5c34bd1255aeec57d501f6916d0",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "08-cabin-look-mid",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 14,
+      "completion": {
+        "fenceId": 16,
+        "status": 37148,
+        "at": 129215
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.07041157993451977,
+            0.9278348448089218,
+            0.22770830352580895,
+            0.2869035354869765
+          ],
+          "projection": [
+            0.7111306589101063,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.07041157993451977,
+          0.9278348448089219,
+          0.22770830352580892,
+          0.2869035354869765
+        ],
+        "projection": [
+          0.7111306589101063,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "4b43fe59a8688dbf8ec90723acb790fe24837f2200721e4ff0eb35194ab966b5",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "09-cabin-look-end",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 16,
+      "completion": {
+        "fenceId": 18,
+        "status": 37148,
+        "at": 155219.4
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.05004479625696031,
+            0.9489041958622282,
+            0.24203641228242093,
+            0.19620071501427142
+          ],
+          "projection": [
+            0.7111306589101063,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.05004479625696031,
+          0.9489041958622282,
+          0.24203641228242095,
+          0.19620071501427142
+        ],
+        "projection": [
+          0.7111306589101063,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "1fd6b19dfeaaeb0a7472b19161ad4c94015cc37388406a624d155b5f1e8c9ee4",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "10-cabin-seats",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 19,
+      "completion": {
+        "fenceId": 21,
+        "status": 37148,
+        "at": 189555.69999999998
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.04647309706770401,
+            0.9531436002578741,
+            0.22476226347620226,
+            0.19707727787202609
+          ],
+          "projection": [
+            0.7111306589101063,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.04647309706770402,
+          0.953143600257874,
+          0.22476226347620226,
+          0.19707727787202614
+        ],
+        "projection": [
+          0.7111306589101063,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "e7a66c784b72daf63b800654e6c8d273e872f5c34bd1255aeec57d501f6916d0",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "11-cabin-idle",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": true,
+      "nativeMainDraw": 19,
+      "completion": {
+        "fenceId": 21,
+        "status": 37148,
+        "at": 189555.69999999998
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.04647309706770401,
+            0.9531436002578741,
+            0.22476226347620226,
+            0.19707727787202609
+          ],
+          "projection": [
+            0.7111306589101063,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.04647309706770402,
+          0.953143600257874,
+          0.22476226347620226,
+          0.19707727787202614
+        ],
+        "projection": [
+          0.7111306589101063,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "e7a66c784b72daf63b800654e6c8d273e872f5c34bd1255aeec57d501f6916d0",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1436,
+          "height": 740,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1436,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 57.59375,
+              "y": 125,
+              "width": 200.953125,
+              "height": 140.59375
+            },
+            "pixels": {
+              "x": 57,
+              "y": 125,
+              "width": 202,
+              "height": 141
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1333,
+              "y": 243,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 57.59375,
+              "y": 676,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 57,
+              "y": 676,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 593,
+              "y": 681.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 593,
+              "y": 681,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1334.0625,
+              "y": 691,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1334,
+              "y": 691,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":740,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1440,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1436,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":57.59375,\"y\":125,\"width\":200.953125,\"height\":140.59375},\"pixels\":{\"x\":57,\"y\":125,\"width\":202,\"height\":141}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387},\"pixels\":{\"x\":1333,\"y\":243,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":57.59375,\"y\":676,\"width\":134,\"height\":44},\"pixels\":{\"x\":57,\"y\":676,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":593,\"y\":681.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":593,\"y\":681,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1334.0625,\"y\":691,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1334,\"y\":691,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 848145,
+        "canvasPixels": 1071360
+      }
+    },
+    {
+      "label": "12-resized-look",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 21,
+      "completion": {
+        "fenceId": 24,
+        "status": 37148,
+        "at": 219041.99999999997
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.07041157993451977,
+            0.9278348448089218,
+            0.22770830352580895,
+            0.2869035354869765
+          ],
+          "projection": [
+            0.6924921537370592,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.07041157993451977,
+          0.9278348448089219,
+          0.22770830352580892,
+          0.2869035354869765
+        ],
+        "projection": [
+          0.6924921537370593,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "286c0a2c204cba4c7f009c2b6c721b7b3349b3ea7bb3698b21bf3ddff9f9e94a",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1276,
+          "height": 640,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1276,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 51.1875,
+              "y": 125,
+              "width": 200.953125,
+              "height": 134.875
+            },
+            "pixels": {
+              "x": 51,
+              "y": 125,
+              "width": 202,
+              "height": 135
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 51.1875,
+              "y": 576,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 51,
+              "y": 576,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 513,
+              "y": 581.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 513,
+              "y": 581,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1180.46875,
+              "y": 591,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1180,
+              "y": 591,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":640,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1280,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":51.1875,\"y\":125,\"width\":200.953125,\"height\":134.875},\"pixels\":{\"x\":51,\"y\":125,\"width\":202,\"height\":135}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387},\"pixels\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":51.1875,\"y\":576,\"width\":134,\"height\":44},\"pixels\":{\"x\":51,\"y\":576,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":513,\"y\":581.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":513,\"y\":581,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1180.46875,\"y\":591,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1180,\"y\":591,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 619305,
+        "canvasPixels": 824320
+      }
+    },
+    {
+      "label": "13-resized-idle",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": true,
+      "nativeMainDraw": 21,
+      "completion": {
+        "fenceId": 24,
+        "status": 37148,
+        "at": 219041.99999999997
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.07041157993451977,
+            0.9278348448089218,
+            0.22770830352580895,
+            0.2869035354869765
+          ],
+          "projection": [
+            0.6924921537370592,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.07041157993451977,
+          0.9278348448089219,
+          0.22770830352580892,
+          0.2869035354869765
+        ],
+        "projection": [
+          0.6924921537370593,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "286c0a2c204cba4c7f009c2b6c721b7b3349b3ea7bb3698b21bf3ddff9f9e94a",
+        "bounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1276,
+          "height": 640,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".config-header",
+            "observed": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 98
+            },
+            "pixels": {
+              "x": 2,
+              "y": 2,
+              "width": 1276,
+              "height": 96
+            }
+          },
+          {
+            "name": ".config-title",
+            "observed": {
+              "x": 51.1875,
+              "y": 125,
+              "width": 200.953125,
+              "height": 134.875
+            },
+            "pixels": {
+              "x": 51,
+              "y": 125,
+              "width": 202,
+              "height": 135
+            }
+          },
+          {
+            "name": ".config-toolbar",
+            "observed": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            },
+            "pixels": {
+              "x": 1173,
+              "y": 216,
+              "width": 85,
+              "height": 387
+            }
+          },
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 51.1875,
+              "y": 576,
+              "width": 134,
+              "height": 44
+            },
+            "pixels": {
+              "x": 51,
+              "y": 576,
+              "width": 135,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 513,
+              "y": 581.40625,
+              "width": 254,
+              "height": 33.1875
+            },
+            "pixels": {
+              "x": 513,
+              "y": 581,
+              "width": 254,
+              "height": 34
+            }
+          },
+          {
+            "name": ".scene-bottom > *[2]",
+            "observed": {
+              "x": 1180.46875,
+              "y": 591,
+              "width": 48.34375,
+              "height": 14
+            },
+            "pixels": {
+              "x": 1180,
+              "y": 591,
+              "width": 49,
+              "height": 14
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":640,\"insetPixels\":2},\"exclusions\":[{\"name\":\".config-header\",\"observed\":{\"x\":0,\"y\":0,\"width\":1280,\"height\":98},\"pixels\":{\"x\":2,\"y\":2,\"width\":1276,\"height\":96}},{\"name\":\".config-title\",\"observed\":{\"x\":51.1875,\"y\":125,\"width\":200.953125,\"height\":134.875},\"pixels\":{\"x\":51,\"y\":125,\"width\":202,\"height\":135}},{\"name\":\".config-toolbar\",\"observed\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387},\"pixels\":{\"x\":1173,\"y\":216,\"width\":85,\"height\":387}},{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":51.1875,\"y\":576,\"width\":134,\"height\":44},\"pixels\":{\"x\":51,\"y\":576,\"width\":135,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":513,\"y\":581.40625,\"width\":254,\"height\":33.1875},\"pixels\":{\"x\":513,\"y\":581,\"width\":254,\"height\":34}},{\"name\":\".scene-bottom > *[2]\",\"observed\":{\"x\":1180.46875,\"y\":591,\"width\":48.34375,\"height\":14},\"pixels\":{\"x\":1180,\"y\":591,\"width\":49,\"height\":14}}]}",
+        "comparedPixels": 619305,
+        "canvasPixels": 824320
+      }
+    }
+  ],
+  "inputs": {
+    "received": 117,
+    "independentlyChangedPhysicalEffect": 44,
+    "noOpConsumptionUnproven": 3,
+    "seatRequests": [
+      {
+        "inputOrdinal": 58,
+        "seat": "driver",
+        "receivedAt": 62069.19999999998,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      },
+      {
+        "inputOrdinal": 99,
+        "seat": "passenger",
+        "receivedAt": 155724.6,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      },
+      {
+        "inputOrdinal": 100,
+        "seat": "rear",
+        "receivedAt": 156113.5,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      },
+      {
+        "inputOrdinal": 101,
+        "seat": "driver",
+        "receivedAt": 156496.19999999998,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      }
+    ],
+    "seatCommits": [
+      {
+        "seat": "driver",
+        "inputOrdinal": 58,
+        "at": 68944.79999999999,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      },
+      {
+        "seat": "passenger",
+        "inputOrdinal": 99,
+        "at": 155726.19999999998,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      },
+      {
+        "seat": "rear",
+        "inputOrdinal": 100,
+        "at": 156115.3,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      },
+      {
+        "seat": "driver",
+        "inputOrdinal": 101,
+        "at": 156498.1,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      }
+    ]
+  },
+  "reviewedEndpointSchema": "insufficient: no producer handler-consumed epoch; no exterior controller oracle; not fabricated",
+  "unresolved": [
+    "Exterior damping and auto-rotation expected pose",
+    "Moving PNG 04/05 to native-state attribution",
+    "No-op/clamped handler consumption without independently changed state",
+    "Intermediate seat presentation",
+    "Old frame-count and stable-resize failures",
+    "Compositor frame identity; between-sample flicker; physical-device responsiveness"
+  ],
+  "fullMotionVerdict": "not-established",
+  "perceptualSmoothness": "not-established",
+  "hardwareFps": "not-established"
+}

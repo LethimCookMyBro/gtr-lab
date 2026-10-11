@@ -1,0 +1,1170 @@
+{
+  "contract": "r35-causal-observed-effect-v1",
+  "result": "insufficient",
+  "failures": [
+    "Original transport 177: waitForTimeout mismatch",
+    "Original transport 178: setViewportSize mismatch",
+    "Original transport 179: waitForTimeout mismatch",
+    "Original transport 180: move mismatch",
+    "Original transport 181: down mismatch",
+    "Original transport 182: move mismatch",
+    "Drag move 1 differs from original exact deltas",
+    "Original transport 183: waitForTimeout mismatch",
+    "Original transport 184: move mismatch",
+    "Drag move 2 differs from original exact deltas",
+    "Original transport 185: waitForTimeout mismatch",
+    "Original transport 186: move mismatch",
+    "Drag move 3 differs from original exact deltas",
+    "Original transport 187: waitForTimeout mismatch",
+    "Original transport 188: move mismatch",
+    "Drag move 4 differs from original exact deltas",
+    "Original transport 189: waitForTimeout mismatch",
+    "Original transport 190: move mismatch",
+    "Drag move 5 differs from original exact deltas",
+    "Original transport 191: waitForTimeout mismatch",
+    "Original transport 192: move mismatch",
+    "Drag move 6 differs from original exact deltas",
+    "Original transport 193: waitForTimeout mismatch",
+    "Original transport 194: move mismatch",
+    "Drag move 7 differs from original exact deltas",
+    "Original transport 195: waitForTimeout mismatch",
+    "Original transport 196: move mismatch",
+    "Drag move 8 differs from original exact deltas",
+    "Original transport 197: waitForTimeout mismatch",
+    "Original transport 198: move mismatch",
+    "Drag move 9 differs from original exact deltas",
+    "Original transport 199: waitForTimeout mismatch",
+    "Original transport 200: move mismatch",
+    "Drag move 10 differs from original exact deltas",
+    "Original transport 201: waitForTimeout mismatch",
+    "Original transport 202: move mismatch",
+    "Drag move 11 differs from original exact deltas",
+    "Original transport 203: waitForTimeout mismatch",
+    "Original transport 204: move mismatch",
+    "Drag move 12 differs from original exact deltas",
+    "Original transport 205: waitForTimeout mismatch",
+    "Original transport 206: up mismatch",
+    "Original transport 207: waitForTimeout mismatch",
+    "Unexpected extra transport actions",
+    "Exactly thirteen original capture transactions required",
+    "Exactly thirteen returned original PNGs required",
+    "Raw model transform differs from independently derived source model",
+    "Exact original resize model boundary missing or reordered"
+  ],
+  "source": {
+    "commit": "128606e9e744d0b939827b13b9ec9af339e8d95f",
+    "tree": "79386e6926c422a81d2fd11a150faefe6513fcb8a89eb15872bc8beeb78d2ee8"
+  },
+  "originalGate": {
+    "sha256": "68903c28cebd161d5d336a7249aaa8b8d28489c746376cbdf7dacf989aa893be",
+    "result": "failed",
+    "failures": [
+      "cabin-seat-controls: missing sustained rendered-frame evidence",
+      "resized-cabin-look: missing sustained rendered-frame evidence"
+    ]
+  },
+  "currentOriginalAssertionsOnCausalRun": {
+    "result": "failed",
+    "failures": [
+      "Geometry contract requires every original phase once, in order, including deliberate resize",
+      "Static studio contract requires all 13 original nonblank captures once, in order, in their exact phases",
+      "resized-cabin-look: missing sustained rendered-frame evidence",
+      "All 13 bounded normal-motion captures are required",
+      "Deliberate viewport resize did not produce observed native buffer writes"
+    ]
+  },
+  "transport": {
+    "result": "insufficient",
+    "failures": [
+      "Original transport 177: waitForTimeout mismatch",
+      "Original transport 178: setViewportSize mismatch",
+      "Original transport 179: waitForTimeout mismatch",
+      "Original transport 180: move mismatch",
+      "Original transport 181: down mismatch",
+      "Original transport 182: move mismatch",
+      "Drag move 1 differs from original exact deltas",
+      "Original transport 183: waitForTimeout mismatch",
+      "Original transport 184: move mismatch",
+      "Drag move 2 differs from original exact deltas",
+      "Original transport 185: waitForTimeout mismatch",
+      "Original transport 186: move mismatch",
+      "Drag move 3 differs from original exact deltas",
+      "Original transport 187: waitForTimeout mismatch",
+      "Original transport 188: move mismatch",
+      "Drag move 4 differs from original exact deltas",
+      "Original transport 189: waitForTimeout mismatch",
+      "Original transport 190: move mismatch",
+      "Drag move 5 differs from original exact deltas",
+      "Original transport 191: waitForTimeout mismatch",
+      "Original transport 192: move mismatch",
+      "Drag move 6 differs from original exact deltas",
+      "Original transport 193: waitForTimeout mismatch",
+      "Original transport 194: move mismatch",
+      "Drag move 7 differs from original exact deltas",
+      "Original transport 195: waitForTimeout mismatch",
+      "Original transport 196: move mismatch",
+      "Drag move 8 differs from original exact deltas",
+      "Original transport 197: waitForTimeout mismatch",
+      "Original transport 198: move mismatch",
+      "Drag move 9 differs from original exact deltas",
+      "Original transport 199: waitForTimeout mismatch",
+      "Original transport 200: move mismatch",
+      "Drag move 10 differs from original exact deltas",
+      "Original transport 201: waitForTimeout mismatch",
+      "Original transport 202: move mismatch",
+      "Drag move 11 differs from original exact deltas",
+      "Original transport 203: waitForTimeout mismatch",
+      "Original transport 204: move mismatch",
+      "Drag move 12 differs from original exact deltas",
+      "Original transport 205: waitForTimeout mismatch",
+      "Original transport 206: up mismatch",
+      "Original transport 207: waitForTimeout mismatch",
+      "Unexpected extra transport actions"
+    ]
+  },
+  "endpoints": [
+    {
+      "label": "01-exterior-before",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 4,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          5.215500000000002,
+          2.1199500000000002,
+          6.222000000000001
+        ],
+        "quaternion": [
+          -0.08013820504802703,
+          0.3405368084800212,
+          0.029144897635118138,
+          0.9363563024318041
+        ],
+        "projection": [
+          3.119890189938719,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "dcd4111784126daa6ca7b2b6e52b6f8f48c8b0a09a5f8cc9efa4f4fd0d03968c",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "02-orbit-mid",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 5,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          3.7954649285019446,
+          2.2270800817242025,
+          7.155259593912851
+        ],
+        "quaternion": [
+          -0.0891353704483347,
+          0.24042234773449617,
+          0.02217722687830398,
+          0.9663126569867847
+        ],
+        "projection": [
+          3.119890189938719,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "a02535f2167bba2ed9f66ecc26abad2f7fc4412210303f92eeaf2d3d4b8ba9dc",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "03-orbit-end",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 6,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          3.1918166840700044,
+          1.413528065111445,
+          7.563458820585667
+        ],
+        "quaternion": [
+          -0.0412905981134802,
+          0.1981654266435281,
+          0.008355641158242076,
+          0.9792628520736678
+        ],
+        "projection": [
+          3.119890189938719,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "212a4d8ea88f484587758b39bca079909d290a03f117ed19e4e761c80c5950fe",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "04-controls-mid",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 7,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          1.7846067160336683,
+          0.925943628349543,
+          8.040357600475849
+        ],
+        "quaternion": [
+          -0.012425210983976144,
+          0.10898222453760154,
+          0.0013623487631238965,
+          0.9939651064663623
+        ],
+        "projection": [
+          3.119890189938719,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "18ee42f1a6ee638fa2378220f85aede363794741fe3f2ee86daab08ad7708650",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "05-controls-end",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 8,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          1.7788051473354043,
+          0.925943628349543,
+          8.041643098413116
+        ],
+        "quaternion": [
+          -0.012425701641646376,
+          0.10862364536411234,
+          0.0013578662899907073,
+          0.9940043570355529
+        ],
+        "projection": [
+          3.119890189938719,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "17174d8e0609c2115fbaf476ebf93b5e20874555412774d3297a7ed40fc9d7d5",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "06-exterior-idle",
+      "result": "unresolved-exterior-or-moving-pose",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 10,
+      "completion": null,
+      "expected": null,
+      "actual": {
+        "position": [
+          1.7676332209362382,
+          0.925943628349543,
+          8.044106182210978
+        ],
+        "quaternion": [
+          -0.012426641714242846,
+          0.10793326022511104,
+          0.001349236026255605,
+          0.9940795589262611
+        ],
+        "projection": [
+          3.119890189938719,
+          0,
+          0,
+          0,
+          0,
+          3.2708526184841404,
+          0,
+          0,
+          0,
+          0,
+          -1.0000571444898425,
+          -1,
+          0,
+          0,
+          -0.04000114288979685,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "3902c06f2e8aaa9fbd6870caeb8b309cde0a0817b16c2f8e454d04f5a3b59b98",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            },
+            "pixels": {
+              "x": 218,
+              "y": 548,
+              "width": 156,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30},\"pixels\":{\"x\":218,\"y\":548,\"width\":156,\"height\":30}}]}",
+        "comparedPixels": 132484,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "07-cabin-driver",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 13,
+      "completion": {
+        "fenceId": 15,
+        "status": 37148,
+        "at": 45926.59999999999
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.04647309706770401,
+            0.9531436002578741,
+            0.22476226347620226,
+            0.19707727787202609
+          ],
+          "projection": [
+            1.3128566010648117,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.04647309706770402,
+          0.953143600257874,
+          0.22476226347620226,
+          0.19707727787202614
+        ],
+        "projection": [
+          1.3128566010648117,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "cff1882d39d08de55e7a0066186c217e9d92666d3fff31a91b0c90ea2abb59dd",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "08-cabin-look-mid",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 15,
+      "completion": {
+        "fenceId": 17,
+        "status": 37148,
+        "at": 53446.09999999999
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.07041157993451977,
+            0.9278348448089218,
+            0.22770830352580895,
+            0.2869035354869765
+          ],
+          "projection": [
+            1.3128566010648117,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.07041157993451977,
+          0.9278348448089219,
+          0.22770830352580892,
+          0.2869035354869765
+        ],
+        "projection": [
+          1.3128566010648117,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "700581c97f97e8344c8b9ac4e9f8faa08dacfda39f98a3d61048435c04044f1a",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "09-cabin-look-end",
+      "result": "observed-effect-endpoint-only",
+      "failures": [],
+      "reusedUnchanged": false,
+      "nativeMainDraw": 17,
+      "completion": {
+        "fenceId": 19,
+        "status": 37148,
+        "at": 61098.8
+      },
+      "expected": {
+        "seat": "driver",
+        "preset": "interior",
+        "fov": 72,
+        "pose": {
+          "position": [
+            0.4200034236205104,
+            1.1800378408431578,
+            -0.2349803715185417
+          ],
+          "quaternion": [
+            -0.05004479625696028,
+            0.9489041958622282,
+            0.24203641228242084,
+            0.19620071501427142
+          ],
+          "projection": [
+            1.3128566010648117,
+            0,
+            0,
+            0,
+            0,
+            1.3763819204711736,
+            0,
+            0,
+            0,
+            0,
+            -1.0006001849478385,
+            -1,
+            0,
+            0,
+            -0.030009247391925658,
+            0
+          ]
+        },
+        "destination": [
+          0.4200034236205104,
+          1.1800378408431578,
+          -0.2349803715185417
+        ],
+        "target": [
+          0.15000122272161084,
+          0.8400350693408399,
+          0.3900247231548369
+        ]
+      },
+      "actual": {
+        "position": [
+          0.42000342362051046,
+          1.1800378408431578,
+          -0.23498037151854173
+        ],
+        "quaternion": [
+          -0.05004479625696031,
+          0.9489041958622282,
+          0.2420364122824209,
+          0.19620071501427144
+        ],
+        "projection": [
+          1.3128566010648117,
+          0,
+          0,
+          0,
+          0,
+          1.3763819204711736,
+          0,
+          0,
+          0,
+          0,
+          -1.0006001849478385,
+          -1,
+          0,
+          0,
+          -0.030009247391925658,
+          0
+        ]
+      },
+      "scene": {
+        "sha256": "3cd07e0d4b625e61f8c5d2c94c25b0b8f116fccb5b434247ee0a2d9eefc89519",
+        "bounds": {
+          "x": 2,
+          "y": 232,
+          "width": 386,
+          "height": 368,
+          "insetPixels": 2
+        },
+        "exclusions": [
+          {
+            "name": ".scene-bottom > *[0]",
+            "observed": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            },
+            "pixels": {
+              "x": 16,
+              "y": 541,
+              "width": 111,
+              "height": 44
+            }
+          },
+          {
+            "name": ".scene-bottom > *[1]",
+            "observed": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            },
+            "pixels": {
+              "x": 151,
+              "y": 548,
+              "width": 223,
+              "height": 30
+            }
+          }
+        ],
+        "contract": "visible-scene-rgba-v2",
+        "layout": "{\"bounds\":{\"x\":2,\"y\":232,\"width\":386,\"height\":368,\"insetPixels\":2},\"exclusions\":[{\"name\":\".scene-bottom > *[0]\",\"observed\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44},\"pixels\":{\"x\":16,\"y\":541,\"width\":111,\"height\":44}},{\"name\":\".scene-bottom > *[1]\",\"observed\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30},\"pixels\":{\"x\":151,\"y\":548,\"width\":223,\"height\":30}}]}",
+        "comparedPixels": 130474,
+        "canvasPixels": 145080
+      }
+    },
+    {
+      "label": "10-cabin-seats",
+      "result": "insufficient",
+      "failures": [
+        "Capture sequence certificate missing or regressed",
+        "Capture input ordinal differs from latest raw trusted receipt",
+        "Capture input ordinal differs from latest raw trusted receipt",
+        "Selected main/default-buffer is not current native lineage",
+        "Selected native main does not match independently replayed cabin state",
+        "Committed cabin camera controls differ from independently replayed seat model",
+        "Raw main completion fence/wait is missing or not causal",
+        "Raw latest native drain is not completed",
+        "Independent original capture geometry differs",
+        "Independent seat/vehicle/light material state missing",
+        "Missing original final seat request",
+        "Missing independently nonblank sampled pixels",
+        "Capture attempt timing or operation provenance malformed",
+        "Original wall-clock capture/evidence deadline not met",
+        "Independent expected pose/native completion/stable bracket not proved",
+        "Capture did not retain exact observed native state",
+        "Invalid independent target, liveness or stable state",
+        "Missing genuine completed native main/prefix lineage",
+        "Capture native proof absent or duplicated in raw production events",
+        "Cross-capture owner/buffer/input lineage regressed",
+        "Changed physical target lacks changed scene pixels at identical mask geometry"
+      ],
+      "reusedUnchanged": false,
+      "nativeMainDraw": null,
+      "completion": null,
+      "expected": null,
+      "actual": null,
+      "scene": null
+    }
+  ],
+  "inputs": {
+    "received": 101,
+    "independentlyChangedPhysicalEffect": 32,
+    "noOpConsumptionUnproven": 2,
+    "seatRequests": [
+      {
+        "inputOrdinal": 58,
+        "seat": "driver",
+        "receivedAt": 31351.100000000006,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      },
+      {
+        "inputOrdinal": 99,
+        "seat": "passenger",
+        "receivedAt": 61261.59999999999,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      },
+      {
+        "inputOrdinal": 100,
+        "seat": "rear",
+        "receivedAt": 61650.40000000001,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      },
+      {
+        "inputOrdinal": 101,
+        "seat": "driver",
+        "receivedAt": 62034.59999999999,
+        "observation": "changed-logical-seat-observed",
+        "supersededAt": null,
+        "logicalChangeObserved": true,
+        "presentation": "not-established"
+      }
+    ],
+    "seatCommits": [
+      {
+        "seat": "driver",
+        "inputOrdinal": 58,
+        "at": 34145.7,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      },
+      {
+        "seat": "passenger",
+        "inputOrdinal": 99,
+        "at": 61263.3,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      },
+      {
+        "seat": "rear",
+        "inputOrdinal": 100,
+        "at": 61656.40000000001,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      },
+      {
+        "seat": "driver",
+        "inputOrdinal": 101,
+        "at": 62038.40000000001,
+        "logicalChangeObserved": true,
+        "interpretation": "logical-seat-and-destination-committed; presentation-unproven",
+        "presentation": "not-established"
+      }
+    ]
+  },
+  "reviewedEndpointSchema": "insufficient: no producer handler-consumed epoch; no exterior controller oracle; not fabricated",
+  "unresolved": [
+    "Exterior damping and auto-rotation expected pose",
+    "Moving PNG 04/05 to native-state attribution",
+    "No-op/clamped handler consumption without independently changed state",
+    "Intermediate seat presentation",
+    "Old frame-count and stable-resize failures",
+    "Compositor frame identity; between-sample flicker; physical-device responsiveness"
+  ],
+  "fullMotionVerdict": "not-established",
+  "perceptualSmoothness": "not-established",
+  "hardwareFps": "not-established"
+}

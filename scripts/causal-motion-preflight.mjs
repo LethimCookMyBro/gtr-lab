@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 export const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
-export const sourcePin=Object.freeze({commit:'128606e9e744d0b939827b13b9ec9af339e8d95f',tree:'79386e6926c422a81d2fd11a150faefe6513fcb8a89eb15872bc8beeb78d2ee8',model:'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d'});
+export const sourcePin=Object.freeze({commit:'dfdb11f3feb55fcaf5819fc93fe9b269165b4463',tree:'d37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6',model:'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d'});
 export function validateCausalEnvironment(env,request){
   assert.equal(env.CI,'true','CI only');assert.equal(env.GITHUB_ACTIONS,'true','GitHub Actions only');
   assert.equal(env.GITHUB_REPOSITORY,'LethimCookMyBro/gtr-lab','Exact authorized repository only');
@@ -15,7 +15,7 @@ export function validateCausalEnvironment(env,request){
   assert.equal(request?.version,1);assert.equal(request?.allow,true);assert.equal(request?.contract,'r35-causal-observed-effect-v1');
   assert.equal(request.sourceSha,sourcePin.commit);assert.equal(request.sourceTree,sourcePin.tree);assert.equal(request.exteriorModelSha256,sourcePin.model);
   assert.ok(['desktop','mobile'].includes(env.R35_QA_VIEWPORT));
-  return {R35_ALLOW_DPR_MOTION_PROBE:'1',R35_DPR_MODE:'fixed',R35_SOURCE_SHA:sourcePin.commit,R35_EXPECTED_APP_TREE:sourcePin.tree,R35_DPR_GEOMETRY_CONTRACT:'contact-shadow-clamp-stability-2m-msaa-v1'};
+  return {R35_ALLOW_DPR_MOTION_PROBE:'1',R35_DPR_MODE:'fixed',R35_SOURCE_SHA:sourcePin.commit,R35_EXPECTED_APP_TREE:sourcePin.tree,R35_DPR_GEOMETRY_CONTRACT:'camera-terminal-orientation-2m-msaa-v1'};
 }
 export const requiredCollectorFiles=Object.freeze(["evidence/desktop-original-report.json", "evidence/e9-motion-policy.mjs", "evidence/mobile-original-report.json", "scripts/build-causal-driver.mjs", "scripts/cabin-resource-observer.mjs", "scripts/causal-cabin-model.mjs", "scripts/causal-capture.mjs", "scripts/causal-evidence-replay.mjs", "scripts/causal-motion-observer.mjs", "scripts/causal-motion-preflight.mjs", "scripts/causal-observed-effect-policy.mjs", "scripts/causal-transport-ledger.mjs", "scripts/demand-final-request-policy.mjs", "scripts/diagnose-causal-motion.mjs", "scripts/diagnose-configurator-controls.mjs", "scripts/diagnose-dpr-motion.mjs", "scripts/dpr-motion-observer.mjs", "scripts/dpr-motion-policy.mjs", "scripts/environment-pixel-comparison.mjs", "scripts/functional-capture-readiness.mjs", "scripts/vehicle-preview-readiness.mjs"]);
 export async function verifyCollectorFiles(root,request){

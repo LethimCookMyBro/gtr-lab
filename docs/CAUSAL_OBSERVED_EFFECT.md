@@ -130,15 +130,15 @@ The original files and failed result are not overwritten or reclassified.
 
 ## Closed CI staging
 
-The new workflow and request are private files only. They can run actual WebGL
+The source-bound workflow and request can run actual WebGL
 only in GitHub Actions on the exact repository/main branch with all explicit
 staging markers. They verify complete collector hashes and the exact reviewed
 source commit/tree before installing, building or launching a browser/server.
-The current closed source pin is 128606e9e744d0b939827b13b9ec9af339e8d95f and source identity
-79386e6926c422a81d2fd11a150faefe6513fcb8a89eb15872bc8beeb78d2ee8 (93 files).
-Its Git tree is 539c03c57a3707e3f443d758dda741029ede78ee; geometry contract is
-contact-shadow-clamp-stability-2m-msaa-v1. The source-bound policy SHA-256 is
-1e83c090e6ba03a5359566390a785117a699c752e1203808ed89b9236d6e82b6, independently
+The current closed source pin is dfdb11f3feb55fcaf5819fc93fe9b269165b4463 and source identity
+d37a85b85db277453e836dddec2ff0472235aec791a54e1bbdb4124c9eb575b6 (93 files).
+Its Git tree is d1315e5a56b088e1bca23b2028cb6d10c4432284; geometry contract is
+camera-terminal-orientation-2m-msaa-v1. The source-bound policy SHA-256 is
+33a69e394835ac5592c54c4b1dd278c80b42f3fb8335ee2821a075d5d66ba36b, independently
 matched to the exact published GitHub file. A newer approved candidate requires a separately verified exact commit/tree and
 an explicit reviewed pin change; no wildcard source identity is accepted.
 
@@ -149,3 +149,19 @@ motion, smoothness and hardware FPS remain `not-established`. Original failures
 still produce the original nonzero runner status and are not concealed by a
 successful narrow endpoint. A malformed/insufficient causal sidecar also sets a
 nonzero diagnostic exit status even if the current original assertions pass.
+
+## Preserved native run and exact rebind
+
+The published 128606e source request and both original/causal reports from run
+38142958548 are preserved byte-for-byte in `evidence/causal-128606e/`, with hashes
+and archive provenance. Both original run outcomes remain failed/insufficient.
+Desktop returned all 13 PNGs with seven valid cabin endpoint certificates; mobile
+returned nine PNGs with three valid cabin endpoint certificates before the final
+seat pose failed the unchanged strict oracle. The exact source target above
+repairs that terminal pose; only new native evidence can establish its behavior.
+
+The accepted construction-only signed-zero normalization removes the model
+transform's JSON representation mismatch. It changes no strict artifact equality,
+pose tolerance (1e-8), input schedule, capture deadline, retry rule or native
+completion requirement. No full-motion, exterior, smoothness or intermediate-seat
+presentation verdict follows from a narrow cabin observed-effect result.

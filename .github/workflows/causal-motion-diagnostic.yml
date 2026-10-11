@@ -71,7 +71,7 @@ jobs:
         timeout-minutes: 8
       - name: Explicit socket-free collector tests
         run: |
-          node --test tests/causal-model.node.mjs tests/causal-observer.node.mjs tests/causal-capture.node.mjs tests/causal-transport.node.mjs tests/causal-preflight.node.mjs tests/causal-policy.node.mjs tests/causal-signed-zero.node.mjs
+          node --test tests/causal-model.node.mjs tests/causal-observer.node.mjs tests/causal-capture.node.mjs tests/causal-transport.node.mjs tests/causal-preflight.node.mjs tests/causal-policy.node.mjs tests/causal-signed-zero.node.mjs tests/causal-source-rebind.node.mjs
       - run: npx playwright install --with-deps chromium
         timeout-minutes: 5
       - name: Collect original normal-motion schedule and separate causal sidecar

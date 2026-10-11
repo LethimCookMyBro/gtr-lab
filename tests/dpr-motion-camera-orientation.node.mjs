@@ -181,7 +181,7 @@ test('shared policy adds only the closed terminal contract and preserves every h
   }
 });
 
-test('causal compatibility updates only reviewed policy and signed-zero pins while retaining its historical source and all other dependency pins', async () => {
+test('causal compatibility adds only the reviewed exact runtime binding and preserves all other dependency pins', async () => {
   const historical = {
   "version": 1,
   "allow": true,
@@ -217,12 +217,14 @@ test('causal compatibility updates only reviewed policy and signed-zero pins whi
   assert.equal(Object.keys(historical.files).length, 21);
   const updated = structuredClone(historical);
   updated.files['scripts/dpr-motion-policy.mjs'] = hash(await read('scripts/dpr-motion-policy.mjs'));
-  updated.files['scripts/causal-motion-preflight.mjs'] = 'a49a9c260aac3d50f0a2b74ccc1ffa3b91b3c42c3a32afb1c3cdb709e66fdcc6';
+  updated.files['scripts/causal-motion-preflight.mjs'] = '35215e7b7cbb376c492349c374101055622deb3cc32d991fc1a9e94703349143';
+  updated.sourceSha = 'dfdb11f3feb55fcaf5819fc93fe9b269165b4463';
+  updated.sourceTree = tree;
   assert.equal(hash(await read('scripts/causal-motion-preflight.mjs')), updated.files['scripts/causal-motion-preflight.mjs']);
   assert.deepEqual(current, updated);
-  assert.equal(current.sourceSha, '128606e9e744d0b939827b13b9ec9af339e8d95f');
-  assert.equal(current.sourceTree, legacyTree);
-  assert.notEqual(current.sourceTree, tree, 'The causal diagnostic is not rebound to the runtime repair');
+  assert.equal(current.sourceSha, 'dfdb11f3feb55fcaf5819fc93fe9b269165b4463');
+  assert.equal(current.sourceTree, tree);
+  assert.deepEqual(await json('evidence/causal-128606e/request.json'), historical, 'Published historical request remains byte-exact and distinct');
   for (const [path, expected] of Object.entries(historical.files)) if (!['scripts/dpr-motion-policy.mjs', 'scripts/causal-motion-preflight.mjs'].includes(path)) {
     assert.equal(current.files[path], expected, path);
     assert.equal(hash(await read(path)), expected, path);

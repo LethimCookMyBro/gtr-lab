@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "128606e9e744d0b939827b13b9ec9af339e8d95f",
+  "sourceTree": "79386e6926c422a81d2fd11a150faefe6513fcb8a89eb15872bc8beeb78d2ee8",
+  "harnessCommit": "e8f3e4b0e87353b3d5354dc9c3a94a87c10857e9",
+  "runId": 38142958548,
+  "runUrl": "https://github.com/LethimCookMyBro/gtr-lab/actions/runs/38142958548",
+  "publishedOutcome": "failed; causal aggregate insufficient for both viewports",
+  "files": {
+    "request.json": "6bc302c90ab05538fa0814b07cb22562c8992a58a5659faa3e174e7b65ea8f17",
+    "desktop-original-report.json": "2e62fbac6e170ff19fc52edb931fa9149b3060cc8eb98e2f35517a941f649b6c",
+    "desktop-causal-report.json": "c011bd5c470bf7b9a29cecd58d2f51c2d970f0379e7a25e79120a74e26ccc662",
+    "mobile-original-report.json": "143d00fdb056dcecf2e00ad48a74a68ff9b040aff661374aedacfce7238f28a9",
+    "mobile-causal-report.json": "d8d64b806d49d115f532f56d9426d4701c50224dea1dcc69abcb7818ce66a546"
+  },
+  "archives": {
+    "desktop": {
+      "artifactId": 11704225602,
+      "sha256": "da7d8c1517cac10a683e5f00b907fed5d9dd1d11fd24aa2cd6f5df9c1367a2f2"
+    },
+    "mobile": {
+      "artifactId": 11703691604,
+      "sha256": "572091dbb306fd3cce74f00e5350efa99810e3f3bfb7fdd424f1be48360861bb"
+    }
+  },
+  "limits": [
+    "Original results are immutable; the signed-zero fix does not replace historical run outcomes.",
+    "Desktop recorded seven valid cabin endpoint certificates, mobile three; full motion remains unproved.",
+    "Exterior/moving attribution, no-op consumption, intermediate seat presentation and perceptual smoothness remain unresolved."
+  ]
+}
