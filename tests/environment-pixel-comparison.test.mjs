@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+import { parse } from "postcss";
 import {
   canvasPixelHash,
   assertDistinctScenePixels,
@@ -236,10 +238,10 @@ it("observes the information header when it has a box and ignores desktop displa
 function mobileLayout() {
   return {
     viewport: { width: 390, height: 844 },
-    header: { x: 0, y: 0, width: 390, height: 210 },
-    canvas: { x: 0, y: 210, width: 390, height: 392 },
+    header: { x: 0, y: 0, width: 390, height: 230 },
+    canvas: { x: 0, y: 230, width: 390, height: 372 },
     nav: { x: 0, y: 0, width: 390, height: 77 },
-    title: { x: 0, y: 77, width: 390, height: 128 },
+    title: { x: 0, y: 77, width: 390, height: 148 },
     provenance: { x: 24, y: 157, width: 200, height: 44 },
     touchControls: Array.from({ length: 6 }, (_, i) => ({
       x: 12 + i * 60,
@@ -249,38 +251,91 @@ function mobileLayout() {
     })),
   };
 }
-describe("mobile header and retained touch controls", () => {
-  it("accepts the 210px information header adjoining a 392px viewer", () => {
+describe("premium mobile header and retained touch controls", () => {
+  it("accepts the 230px window-status header adjoining a 372px viewer", () => {
     expect(() => assertMobileViewerLayout(mobileLayout())).not.toThrow();
+  });
+  it("pins the geometry contract to the shipped window-status CSS", () => {
+    const stylesheet = parse(
+      readFileSync(
+        new URL("../src/styles/cabin-preview.css", import.meta.url),
+        "utf8",
+      ),
+    );
+    const rows = [];
+    stylesheet.walkRules(".configurator.has-window-view", (rule) => {
+      if (
+        rule.parent?.name === "media" &&
+        rule.parent.params === "(max-width: 760px)"
+      )
+        rule.walkDecls("grid-template-rows", (declaration) =>
+          rows.push(declaration.value),
+        );
+    });
+    expect(rows).toEqual(["230px minmax(0, 1fr) 242px"]);
+    const layout = mobileLayout();
+    expect(layout.header.height).toBe(230);
+    expect(layout.canvas.height).toBe(layout.viewport.height - 230 - 242);
+    expect(layout.canvas.y + layout.canvas.height).toBe(602);
+  });
+  it("rejects the obsolete 210px header even when its 392px viewer adjoins it", () => {
+    const layout = mobileLayout();
+    layout.header.height = 210;
+    layout.canvas.y = 210;
+    layout.canvas.height = 392;
+    expect(() => assertMobileViewerLayout(layout)).toThrow(/230px.*header/);
   });
   it("rejects a shortened, vertically displaced information header", () => {
     const layout = mobileLayout();
     layout.header.y = 10;
-    layout.header.height = 200;
+    layout.header.height = 220;
     layout.nav.y = 10;
     layout.nav.height = 67;
-    expect(() => assertMobileViewerLayout(layout)).toThrow(/210px.*header/);
+    expect(() => assertMobileViewerLayout(layout)).toThrow(/230px.*header/);
   });
   it("rejects title content extending into the viewer", () => {
     const layout = mobileLayout();
-    layout.title.height = 140;
+    layout.title.height = 160;
     expect(() => assertMobileViewerLayout(layout)).toThrow(/title.*inside/);
   });
   it("rejects a canvas gap or overlap at the header boundary", () => {
     const layout = mobileLayout();
-    layout.canvas.y = 208;
+    layout.canvas.y = 228;
     expect(() => assertMobileViewerLayout(layout)).toThrow(/boundary/);
   });
-  it("rejects a header/viewer boundary away from 210px", () => {
+  it("rejects a header/viewer boundary away from 230px", () => {
     const layout = mobileLayout();
-    layout.header.height = 220;
-    layout.canvas.y = 220;
-    expect(() => assertMobileViewerLayout(layout)).toThrow(/210/);
+    layout.header.height = 240;
+    layout.canvas.y = 240;
+    expect(() => assertMobileViewerLayout(layout)).toThrow(/230/);
   });
-  it("rejects a viewer shorter than 390px", () => {
+  it.each([370, 374])(
+    "rejects a %spx viewer that changes the reserved controls boundary",
+    (height) => {
+      const layout = mobileLayout();
+      layout.canvas.height = height;
+      expect(() => assertMobileViewerLayout(layout)).toThrow(/372px.*602px/);
+    },
+  );
+  it.each(["header", "canvas"])(
+    "rejects a horizontally shifted or narrowed %s",
+    (key) => {
+      const shifted = mobileLayout();
+      shifted[key].x = 2;
+      expect(() => assertMobileViewerLayout(shifted)).toThrow(
+        /full viewport width/,
+      );
+      const narrowed = mobileLayout();
+      narrowed[key].width = 388;
+      expect(() => assertMobileViewerLayout(narrowed)).toThrow(
+        /full viewport width/,
+      );
+    },
+  );
+  it("rejects a different viewport instead of silently adapting this matrix contract", () => {
     const layout = mobileLayout();
-    layout.canvas.height = 389;
-    expect(() => assertMobileViewerLayout(layout)).toThrow(/390/);
+    layout.viewport.height = 900;
+    expect(() => assertMobileViewerLayout(layout)).toThrow(/390×844/);
   });
   it("rejects missing or undersized touch controls", () => {
     const layout = mobileLayout();

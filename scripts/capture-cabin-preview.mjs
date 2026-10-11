@@ -12,6 +12,7 @@ import { verifyReleaseAssets } from './verify-release-assets.mjs';
 import { waitForCabinWindowReady } from './cabin-capture-readiness.mjs';
 import { measureCabinWindowLayout, assertCabinWindowLayout } from './cabin-window-layout.mjs';
 import { installCabinResourceObserver } from './cabin-resource-observer.mjs';
+import { installCabinLoadLifecycle, observeCabinLoadNetwork, observeCabinFaultResponse, cabinLoadTime, correlateCabinLoadRequests } from './cabin-load-lifecycle.mjs';
 import { cabinResourceCohort, assertCabinResourcesReleased } from './cabin-resource-assertions.mjs';
 import {
   cabinModels, assertCabinModelRequests, networkFaultHeader, resolveCabinTarget, verifyPublicCabinModels, observeCabinRuntimeBodies,
@@ -43,14 +44,21 @@ const report = {
   scope: live ? 'Actual public Railway app after exact HTML/JS/CSS and GLB preflight. One request-scoped 404 per optional cabin/proxy is intercepted; partial downloads use real public bytes under CDP throttling. No local server or application test hooks.' : 'Actual npm-built production app with exact reviewed assets. Network faults are injected only by this CI test server; no application test hooks or alternate scene.',
   renderer: 'Chromium ANGLE SwiftShader software WebGL; no physical-device FPS or performance claim',
   expectedAssets: { cabin: { path: cabinPath, sha256: cabinSha256, bytes: cabinBytes }, exterior: { path: exteriorPath, sha256: exteriorSha256, bytes: exteriorModel.bytes }, proxy: { ...proxyModel } },
+  loadLifecycle: { browser: null, network: { requests: [], issues: [] }, correlations: [], issues: [] },
   resourceEvidence: [], checks: [], frames: [], requests: [], responses: [], requestFailures: [], console: [], pageErrors: [], runtimeAssetErrors: [], errors: [], networkFaults: [], networkConsole: [], networkResponses: [],
   remaining: ['Physical-device performance, Safari/WebKit and Android device behavior are not measured', 'Late GPU/decoder callbacks are covered by production unit tests; browser faults specifically exercise aborted streaming responses and route teardown', ...(live ? ['Deterministic held-proxy and full/proxy arrival-order faults run only in the local-production CI matrix; public verification does not alter proxy response bodies or globally throttle initial exterior loading'] : [])],
 };
 await mkdir(output, { recursive: true });
 const save = () => writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
-let browser, server, page, observer, originalCanvas, liveFaults, runtimeBodies;
+let browser, server, page, observer, originalCanvas, liveFaults, runtimeBodies, loadNetwork;
 let nextFault = null;
 let phase = 'setup';
+const snapshotLoadLifecycle = async stage => {
+  if (!page || page.isClosed()) return;
+  report.loadLifecycle.stage = stage;
+  report.loadLifecycle.browser = await page.evaluate(() => globalThis.__cabinLoadLifecycle?.snapshot() ?? null).catch(error => { report.loadLifecycle.issues.push(String(error)); return null; });
+  report.loadLifecycle.correlations = correlateCabinLoadRequests(report.requests, report.loadLifecycle.browser, report.loadLifecycle.network);
+};
 let cabinAttemptMark;
 const pendingGates = new Set();
 const requestIds = new WeakMap();
@@ -96,6 +104,7 @@ try {
     if (path !== nextFault?.path || !nextFault) { void productionHandler(request, response); return; }
     const fault = nextFault; nextFault = null;
     fault.started = true;
+    observeCabinFaultResponse(request, response, fault);
     if (fault.kind === 'missing') {
       response.writeHead(404, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store', [networkFaultHeader]: fault.kind });
       response.end('Intentional cabin-only 404 for recovery verification');
@@ -110,6 +119,8 @@ try {
     response.write(bytes.subarray(0, partialBytes));
     fault.sentBytes = partialBytes;
     fault.release = () => {
+      fault.lifecycle.releaseInvoked ??= cabinLoadTime();
+      fault.lifecycle.releaseCalls = (fault.lifecycle.releaseCalls ?? 0) + 1;
       fault.released = true;
       fault.clientAlreadyClosed = response.destroyed;
       if (!response.destroyed) response.end(bytes.subarray(partialBytes));
@@ -129,11 +140,13 @@ try {
     ...(selectedViewport === 'mobile' ? { isMobile: true, hasTouch: true } : {}),
   });
   await context.addInitScript(installCabinResourceObserver, { expectedImages });
+  await context.addInitScript(installCabinLoadLifecycle, { urls: cabinModels.map(model => baseUrl + model.path) });
   await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
   page = await context.newPage();
   page.setDefaultTimeout(15_000);
   page.setDefaultNavigationTimeout(45_000);
   const cdp = await context.newCDPSession(page);
+  loadNetwork = observeCabinLoadNetwork(cdp, cabinModels.map(model => baseUrl + model.path), () => phase, report.loadLifecycle.network);
   runtimeBodies = await observeCabinRuntimeBodies({ cdp, baseUrl, responses: report.networkResponses, errors: report.runtimeAssetErrors, phase: () => phase });
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
   if (live) liveFaults = createLiveCabinFaults({ page, cdp, cabinUrl: baseUrl + cabinPath, requestId, faults: report.networkFaults });
@@ -148,16 +161,16 @@ try {
   page.on('request', request => {
     const path = new URL(request.url()).pathname;
     liveFaults?.onRequest(request);
-    if (path.endsWith('.glb')) report.requests.push({ requestId: requestId(request), phase, path, url: request.url(), method: request.method() });
+    if (path.endsWith('.glb')) report.requests.push({ requestId: requestId(request), phase, path, url: request.url(), method: request.method(), ordinal: report.requests.filter(item => item.url === request.url()).length + 1, observedAt: cabinLoadTime() });
   });
   page.on('requestfailed', request => {
     liveFaults?.onFailed(request);
-    report.requestFailures.push({ requestId: requestId(request), phase, path: new URL(request.url()).pathname, failure: request.failure()?.errorText });
+    report.requestFailures.push({ requestId: requestId(request), phase, path: new URL(request.url()).pathname, failure: request.failure()?.errorText, observedAt: cabinLoadTime() });
   });
   page.on('response', response => {
     const path = new URL(response.url()).pathname;
     if (!cabinModels.some(model => model.path === path)) return;
-    const record = { requestId: requestId(response.request()), phase, path, status: response.status(), injectedFault: response.headers()[networkFaultHeader] };
+    const record = { requestId: requestId(response.request()), phase, path, status: response.status(), observedAt: cabinLoadTime(), injectedFault: response.headers()[networkFaultHeader] };
     if (live) record.injectedFault = report.networkFaults.find(fault => fault.requestId === record.requestId)?.kind;
     else if (record.injectedFault) {
       const fault = report.networkFaults.findLast(item => item.kind === record.injectedFault && item.path === path && item.started && item.requestId === undefined);
@@ -307,7 +320,7 @@ try {
     assert.ok([cabinPath, proxyPath].includes(path), 'Faults target only a reviewed optional model');
     if (live) return liveFaults.arm(kind, phase, path);
     assert.equal(nextFault, null, 'One network fault at a time');
-    const fault = { kind, phase, path };
+    const fault = { kind, phase, path, armedAt: cabinLoadTime() };
     report.networkFaults.push(fault); nextFault = fault; return fault;
   };
   const assertPartialDownload = async () => {
@@ -672,8 +685,14 @@ try {
   }
 
   await check('Runtime asset identity and error hygiene', async () => {
+    await snapshotLoadLifecycle('before-strict-hygiene');
     assertCabinModelRequests(report.requests, baseUrl);
     await runtimeBodies.verify(report.responses, report.requestFailures);
+    assert.equal(report.loadLifecycle.browser?.version, 1, 'Passive load lifecycle observer is present');
+    assert.deepEqual(report.loadLifecycle.browser.issues, [], 'Browser lifecycle coverage has no gaps');
+    assert.deepEqual(report.loadLifecycle.network.issues, [], 'CDP lifecycle coverage has no gaps');
+    assert.deepEqual(report.loadLifecycle.issues, [], 'Lifecycle snapshot succeeds');
+    assert.ok(report.loadLifecycle.correlations.every(item => item.browserFetchId !== null && item.cdpRequestId !== null), 'Each exact page request maps to its browser fetch and CDP attempt');
     const finalResources = await resourceSnapshot();
     assert.deepEqual(finalResources.issues, [], 'Resource observer has no coverage gaps');
     assert.equal(finalResources.pendingBitmapDecodes, 0);
@@ -702,9 +721,17 @@ try {
   report.result = 'passed';
 } catch (error) {
   report.result = 'failed'; report.errors.push({ phase, message: String(error), stack: error.stack }); process.exitCode = 1;
+  await snapshotLoadLifecycle('failure-before-cleanup');
   if (page && !page.isClosed()) report.resourceFailure = await page.evaluate(() => globalThis.__cabinResourceObserver?.snapshot()).catch(() => null);
   if (page && !page.isClosed()) await page.screenshot({ path: `${output}/${selectedViewport}-failure-page.png`, fullPage: true, timeout: 15_000 }).catch(() => {});
 } finally {
+  // Snapshot before teardown so diagnostic cleanup cannot impersonate an app abort.
+  if (!report.loadLifecycle.browser) await snapshotLoadLifecycle('finally-before-cleanup');
+  report.loadLifecycle.cleanupStartsAt = cabinLoadTime();
+  loadNetwork?.stop();
+  await writeFile(`${output}/load-lifecycle.json`, JSON.stringify(report.loadLifecycle, null, 2)).catch(error => {
+    report.result = 'failed'; process.exitCode = 1; report.loadLifecycle.issues.push(`Timeline persistence failed: ${String(error)}`);
+  });
   await liveFaults?.dispose().catch(error => { report.result = 'failed'; process.exitCode = 1; report.errors.push({ phase: 'restore-public-network', message: String(error) }); });
   for (const fault of pendingGates) fault.release();
   await observer?.evaluate(state => state.stop()).catch(() => {});

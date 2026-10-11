@@ -182,6 +182,9 @@ export function observeOverlayRectangles() {
   return rectangles;
 }
 
+// This is the premium 390×844 environment-matrix contract. The window-status
+// header deliberately reserves 230px; the existing 242px control area keeps
+// the canvas bottom at 602px. Do not infer expected bounds from observed CSS.
 export function assertMobileViewerLayout(layout) {
   const { header, canvas, viewport, nav, title, provenance, touchControls } =
     layout;
@@ -199,20 +202,30 @@ export function assertMobileViewerLayout(layout) {
   }))
     assert(valid(rect), "Missing mobile " + name + " bounds");
   assert(
-    Math.abs(header.y) <= 1 && Math.abs(header.height - 210) <= 1,
-    "Mobile 210px information header must start at the viewport top",
+    viewport?.width === 390 && viewport?.height === 844,
+    "Mobile environment layout contract requires the 390×844 viewport",
   );
+  assert(
+    Math.abs(header.y) <= 1 && Math.abs(header.height - 230) <= 1,
+    "Mobile 230px information header must start at the viewport top",
+  );
+  for (const [name, rect] of Object.entries({ header, canvas }))
+    assert(
+      Math.abs(rect.x) <= 1 && Math.abs(rect.width - viewport.width) <= 1,
+      "Mobile " + name + " must occupy the full viewport width",
+    );
   assert(
     Math.abs(header.y + header.height - canvas.y) <= 1,
     "Mobile header/canvas boundary has a gap or overlap",
   );
   assert(
-    Math.abs(canvas.y - 210) <= 1,
-    "Mobile viewer must begin at the 210px header boundary",
+    Math.abs(canvas.y - 230) <= 1,
+    "Mobile viewer must begin at the 230px header boundary",
   );
   assert(
-    canvas.height >= 390,
-    "Mobile viewer must retain at least 390px height at 390×844",
+    Math.abs(canvas.height - 372) <= 1 &&
+      Math.abs(canvas.y + canvas.height - 602) <= 1,
+    "Mobile viewer must retain its 372px height and 602px controls boundary",
   );
   const inside = (inner, outer) =>
     inner.x >= outer.x - 1 &&

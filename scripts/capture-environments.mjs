@@ -429,7 +429,7 @@ async function runViewport(name, viewport) {
       : undefined;
     if (mobileLayout) {
       const check =
-        "Mobile 210px information header contains nav/title/provenance, adjoins a >=390px viewer and retains >=44px touch controls";
+        "Mobile 230px information header contains nav/title/provenance, adjoins a 372px viewer ending at 602px and retains >=44px touch controls";
       if (!view.checks.includes(check)) view.checks.push(check);
     }
     const overlays = await page.evaluate(observeOverlayRectangles);

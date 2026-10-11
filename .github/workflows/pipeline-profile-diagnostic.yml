@@ -1,0 +1,73 @@
+name: Private bounded capture pipeline profile
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose-pipeline-profile.mjs'
+      - 'scripts/pipeline-profile-*.mjs'
+      - 'tests/pipeline-profile.node.mjs'
+      - 'qa/pipeline-profile-request.json'
+      - '.github/workflows/pipeline-profile-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: pipeline-profile-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  profile:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-pipeline-profile]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      R35_PIPELINE_APP_ROOT: candidate
+      R35_PIPELINE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve exact reviewed opt-in before candidate/browser/server setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,appendFile,mkdir,writeFile} from 'node:fs/promises';
+          import {resolvePipelineRequest} from './scripts/pipeline-profile-policy.mjs';
+          const request=JSON.parse(await readFile('qa/pipeline-profile-request.json','utf8'));
+          const values=resolvePipelineRequest(request,process.env);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          await mkdir('pipeline-profile-results',{recursive:true});
+          await writeFile('pipeline-profile-results/request.json',JSON.stringify({request,resolved:values,harnessSha:process.env.GITHUB_SHA},null,2));
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_PIPELINE_SOURCE_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Preserve exact source and verify pure diagnostic contracts without browser or sockets
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "$R35_PIPELINE_SOURCE_SHA"
+          node --input-type=module -e "import assert from 'node:assert/strict'; import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs'; assert.equal((await applicationIdentity('candidate')).sha256,process.env.R35_PIPELINE_SOURCE_TREE)"
+          node --check scripts/diagnose-pipeline-profile.mjs
+          node --check scripts/pipeline-profile-policy.mjs
+          node --check scripts/pipeline-profile-collector.mjs
+          node --test tests/pipeline-profile.node.mjs
+      - run: npm ci
+      - name: Build immutable fixed candidate
+        working-directory: candidate
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: One bounded desktop profile; one post-orbit 45s capture without retry
+        run: node scripts/diagnose-pipeline-profile.mjs
+        timeout-minutes: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-profile-${{ github.sha }}
+          path: pipeline-profile-results/
+          retention-days: 14
+          if-no-files-found: warn

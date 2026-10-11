@@ -210,8 +210,9 @@ test("licensed production asset loads and all nine paints change rendered pixels
     const header = page.locator(".config-information-header");
     const headerBounds = (await header.boundingBox())!;
     expect(headerBounds.y).toBe(0);
-    expect(headerBounds.height).toBe(210);
-    expect(bounds.y).toBe(210);
+    expect(headerBounds.height).toBe(230);
+    expect(bounds.y).toBe(230);
+    expect(bounds.height).toBe(372);
     expect(headerBounds.y + headerBounds.height).toBe(bounds.y);
     expect(bounds.y + bounds.height).toBe(602);
     for (const selector of [".config-header", ".config-title"])
