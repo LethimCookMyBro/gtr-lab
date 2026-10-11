@@ -1,0 +1,57 @@
+{
+  "sourceSha256": "eeb932963006eb3bf33ff84d5c469da34b7a9dc87628e4ccb139b87b78793b57",
+  "result": {
+    "file": "r35-contact-ao-static-faces.glb",
+    "bytes": 20195752,
+    "sha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452"
+  },
+  "before": {
+    "mesh_nodes": 284,
+    "mesh_definitions": 284,
+    "triangles": 505664,
+    "primitives": 309,
+    "materials": 46,
+    "textures": 11,
+    "images": 11,
+    "binary_bytes": 18702956
+  },
+  "after": {
+    "mesh_nodes": 284,
+    "mesh_definitions": 284,
+    "triangles": 505664,
+    "primitives": 309,
+    "materials": 46,
+    "textures": 11,
+    "images": 11,
+    "binary_bytes": 19550964
+  },
+  "addedAOVertices": 211964,
+  "addedAOPrimitives": 105,
+  "addedUVBytes": 847856,
+  "newImages": 0,
+  "imageSize": [
+    512,
+    512
+  ],
+  "originalORMBytes": 182806,
+  "newORMBytes": 182959,
+  "encodedAOStrength": 0.65,
+  "normalScaleChanges": {
+    "leather": [
+      0.8,
+      0.55
+    ],
+    "upperDashboard": [
+      0.62,
+      0.45
+    ]
+  },
+  "leatherRoughnessFactor": [
+    1,
+    0.98
+  ],
+  "baselineGzipBytes": 9902372,
+  "candidateGzipBytes": 10194084,
+  "allExistingImagePixelsExceptLeatherORMRedExact": true,
+  "sampling": "Linear scalar lookup with constant V; spatial contact bake encoded per original vertex in new UV3. Not tiled contact shadows."
+}

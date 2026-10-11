@@ -1,9 +1,9 @@
 /** Closed, exact-source preparation/residency acceptance. No browser or socket side effects. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-export const preparationContract = 'premium-unified-cabin-preparation-residency-v1';
+export const preparationContract = 'premium-unified-cabin-preparation-ao-static-faces-v1';
 // Exact independently reviewed runtime, including the route accessibility and transport layers.
-export const preparationTree = 'c30deae33d34aa0fa43883878143c3aa602362bf96da35e9092ec6e4d92a68fa';
+export const preparationTree = '70263165c8e0daff8c9402c0d23af8647e9155bd4c605b875937c65b3b48237b';
 export const budgets = Object.freeze({ initial: 90_000, functional: 20_000, lifecycle: 30_000, screenshot: 45_000 });
 export const requiredCases = Object.freeze({ feature: Object.freeze(['direct-entry-residency']), lifecycle: Object.freeze([
   'resize-quality-during-preparation', 'trusted-route-cancels-fetch', 'trusted-model-cancels-native-decode-delivery',
@@ -15,10 +15,13 @@ export const modelRequestSequences = Object.freeze(Object.fromEntries([
   ['network-failure-exterior-and-retry', [503, 200]], ['native-viewer-retry-retires-residency', [200, 200]], ['savedata-and-nonpremium-boundaries', [200]],
 ].map(([name, sequence]) => [name, Object.freeze(sequence)])));
 export const models = Object.freeze([
-  Object.freeze({ path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19_170_816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' }),
+  Object.freeze({ path: '/models/r35-cabin-contact-ao-static-faces-8645956f.glb', bytes: 20_195_752, sha256: '8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452' }),
   Object.freeze({ path: '/models/ciasny-r35.glb', bytes: 8_296_356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' }),
   Object.freeze({ path: '/models/r35-exterior-cabin-proxy-49d7c2ab.glb', bytes: 956_368, sha256: '49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347' }),
 ]);
+export const cabinWire = Object.freeze({ bytes: 10_194_084, sha256: 'efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16' });
+export const cabinResourcePlan = Object.freeze({ imageCount: 11, textureObjects: 62, compileJobs: 78, textureJobs: 62, geometryJobs: 78, totalJobs: 218,
+  scope: 'Exact CPU GLTFLoader/job-construction expectations; Texture objects are not native GPU allocation counts.' });
 const ownKeys = (object, expected) => assert.deepEqual(Object.keys(object).sort(), [...expected].sort());
 export const sha256 = value => createHash('sha256').update(value).digest('hex');
 export function readinessWindow(budget, now = performance.now()) {
@@ -50,7 +53,7 @@ export function resolvePreparationRequest(request, env) {
   ownKeys(request, ['version', 'allow', 'sourceSha', 'sourceTree', 'contract', 'modelSha256']);
   assert.equal(request.version, 1); assert.equal(request.allow, true); assert.equal(request.sourceSha, 'current');
   assert.equal(request.sourceTree, preparationTree); assert.equal(request.contract, preparationContract);
-  assert.equal(request.modelSha256, models[0].sha256, 'Only the exact accepted 5c0a model is admitted');
+  assert.equal(request.modelSha256, models[0].sha256, 'Only the exact accepted 8645956f AO/static-face model is admitted');
   const values = { R35_SOURCE_SHA: env.GITHUB_SHA, R35_EXPECTED_APP_TREE: preparationTree, R35_PREPARATION_CONTRACT: preparationContract };
   validatePreparationEnvironment({ ...env, ...values }); return values;
 }
@@ -62,7 +65,7 @@ export function acceptedCabinImages(bytes) {
   const document = JSON.parse(bytes.subarray(20, 20 + jsonLength).toString('utf8'));
   const binaryHeader = 20 + jsonLength; assert.equal(bytes.readUInt32LE(binaryHeader + 4), 0x004e4942);
   const binary = bytes.subarray(binaryHeader + 8, binaryHeader + 8 + bytes.readUInt32LE(binaryHeader));
-  assert.ok(document.images.length > 0);
+  assert.equal(document.images.length, cabinResourcePlan.imageCount);
   return document.images.map((image, index) => {
     assert.equal(image.uri, undefined, 'External image URLs are forbidden');
     const view = document.bufferViews[image.bufferView]; assert.equal(view.buffer ?? 0, 0);
@@ -205,6 +208,7 @@ export function assertCaseSourceClosure(row, wire) {
   for (const r of row.browserModelRequests) { assert.equal(r.url, 'http://127.0.0.1:4178' + models[0].path); if (r.failed) assert.equal(r.failed, 'net::ERR_ABORTED'); }
   assert.equal(cancellations.length, sequence.filter(v => v === 'aborted').length);
   assert.equal(failures.length, sequence.filter(v => v === 503).length);
+  assert.equal(wire.wireEntityBytes, cabinWire.bytes); assert.equal(wire.wireEntitySha256, cabinWire.sha256);
   assert.ok(Number.isSafeInteger(wire.wireEntityBytes) && wire.wireEntityBytes > 0 && wire.wireEntityBytes < models[0].bytes);
   // All other actual served JS/CSS/assets still require their unchanged Playwright body hashes.
   for (const receipt of row.runtimeBodies) {

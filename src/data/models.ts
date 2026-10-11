@@ -117,6 +117,7 @@ const licensedR35: AssetManifest = {
   limitations: [
     "Source exterior is a custom-aero R35; exact factory trim and model year are unverified.",
     "The optional cabin preview is an original authored R35 approximation, still a work in progress. It is not official Nissan/OEM geometry or a verified factory interior; some shapes and materials remain generic.",
+    "Cabin displays and dial faces are static illustrations, not working instruments or live telemetry. Contact shading is baked into the fixed cabin; materials and controls remain an approximate authored study.",
     "Cabin preview uses artistic thin-glass window rendering only while inside. Fixed-seat inspection is available; doors, seats and instruments do not operate. Physical-device performance has not been verified.",
     "Body paint and running lights (front LED strips and rear rings) are independently controlled. Projector bulbs, beams, doors and other parts are not animated.",
   ],

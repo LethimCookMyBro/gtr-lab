@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { sha256 } from './cabin-preparation-policy.mjs';
 import { deriveQualityReadiness, pins as functionalPins } from './build-selectable-quality-drivers.mjs';
 export const pins = Object.freeze({ ...functionalPins,
-  'scripts/prepare-cabin.mjs': '6a3d1b017accecffb8f6602bebabc3b871aa8a95b3df49d402e16836cfbd1db2',
+  'scripts/prepare-cabin.mjs': 'bb1164b7fce0fc0618999cca8eef69f1d66d8fc10fc18dc1e47ba5a175f3092f',
   'scripts/causal-motion-preflight.mjs': '35215e7b7cbb376c492349c374101055622deb3cc32d991fc1a9e94703349143',
   'scripts/build-selectable-quality-drivers.mjs': '5e22bfb35be5392853ebbfa071108fec6d2a3385f327c8d083696b96ff0013df',
   'scripts/cabin-resource-observer.mjs': 'c35d627df9e75868925c4c6cce53eb2071ac00ef1030d73b2e97513a10e22caf',

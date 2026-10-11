@@ -25,7 +25,7 @@ test("publishes only checksum-verified gzip sidecars paired with the exact decod
     await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
   const { join, resolve } = await import("node:path");
-  const { prepareCabin, CABIN_PROXY_ASSET } =
+  const { prepareCabin, CABIN_PROXY_ASSET, CABIN_CONTACT_AO_ASSET } =
     await import("../scripts/prepare-cabin.mjs");
   const root = await mkdtemp(join(tmpdir(), "gtr-precompressed-cabin-"));
   try {
@@ -37,6 +37,11 @@ test("publishes only checksum-verified gzip sidecars paired with the exact decod
     );
     await prepareCabin({ root, log() {} });
     for (const [source, filename, sha] of [
+      [
+        "r35-cabin-contact-ao-static-faces.glb.gz",
+        CABIN_CONTACT_AO_ASSET.path.split("/").at(-1),
+        CABIN_CONTACT_AO_ASSET.sha256,
+      ],
       [
         "r35-cabin-dashboard.glb.gz",
         "r35-cabin-dashboard-5c0a9dca.glb",

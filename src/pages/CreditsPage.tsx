@@ -314,6 +314,23 @@ export function CreditsPage() {
             </div>
           ))}
       </section>
+      <section id="cabin-study">
+        <h2>Original cabin study</h2>
+        <p>
+          The approximate R35 cabin, static display and dial artwork, and baked
+          contact shading are original authored studies. They are not factory
+          CAD or operating instruments. The exterior model retains its separate
+          Ciasny attribution.
+        </p>
+        <p>
+          Static face artwork uses DejaVu Sans and DejaVu Sans Bold. DejaVu
+          changes are public domain; the original Bitstream Vera notices and
+          permission terms are retained.
+        </p>
+        <a href="/licenses/cabin-static-faces-DejaVu.txt">
+          Static face typography · font license
+        </a>
+      </section>
       <section>
         <h2>Software & typography</h2>
         <p>

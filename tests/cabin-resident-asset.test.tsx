@@ -19,7 +19,7 @@ afterEach(() => {
 });
 function fixture() {
   const compressed = readFileSync(
-      "qa/cabin-preview/r35-cabin-dashboard.glb.gz",
+      "qa/cabin-preview/r35-cabin-contact-ao-static-faces.glb.gz",
     ),
     bytes = gunzipSync(compressed);
   class Bitmap {
@@ -84,7 +84,7 @@ it("retains exact real cabin geometry/maps/bitmaps across ready, exit and reentr
       },
     },
   );
-  await waitFor(() => expect(f.bitmaps).toHaveLength(10));
+  await waitFor(() => expect(f.bitmaps).toHaveLength(11));
   await act(async () => f.pending.splice(0).forEach((resolve) => resolve()));
   await waitFor(() => expect(result.current).not.toBeNull());
   const resident = result.current!;
@@ -116,7 +116,7 @@ it("retains exact real cabin geometry/maps/bitmaps across ready, exit and reentr
     expect(result.current).toBe(resident);
   }
   expect(f.modelFetch).toHaveBeenCalledTimes(1);
-  expect(f.bitmaps).toHaveLength(10);
+  expect(f.bitmaps).toHaveLength(11);
   for (const dispose of disposals) expect(dispose).not.toHaveBeenCalled();
   for (const bitmap of f.bitmaps) expect(bitmap.close).not.toHaveBeenCalled();
   const downloaded = progress.filter((state) => state.phase === "downloading");
@@ -148,7 +148,7 @@ it("retires a decode cancelled by route navigation and never reports the old gen
       },
     },
   );
-  await waitFor(() => expect(f.bitmaps).toHaveLength(10));
+  await waitFor(() => expect(f.bitmaps).toHaveLength(11));
   rerender({ preparation: undefined });
   await act(async () => f.pending.splice(0).forEach((resolve) => resolve()));
   await waitFor(() =>

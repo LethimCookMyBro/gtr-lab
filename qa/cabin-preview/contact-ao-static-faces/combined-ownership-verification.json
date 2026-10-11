@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "file": "r35-contact-ao-static-faces.glb",
+  "sha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+  "textureObjects": 62,
+  "images": 11,
+  "materials": 46,
+  "geometries": 309,
+  "aoPrimitives": 105,
+  "allocatedImageObjects": 11,
+  "deletedImageObjects": 11,
+  "remainingTextures": 0,
+  "allTextureMaterialGeometryDisposalsExactlyOnce": true,
+  "allBitmapClosesExactlyOnce": true,
+  "scope": "Actual application prepareVehicle/dispose and Three WebGLTextures bookkeeping with a CPU native-GL/ImageBitmap test double. No GPU, pixels, real upload, renderer compile or actual browser runtime tested."
+}

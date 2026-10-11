@@ -15,6 +15,27 @@ import { fileURLToPath } from "node:url";
 import { validateGlb } from "./prepare-models.mjs";
 export const CABIN_SHA256 =
   "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326";
+/** Separate current appearance increment; the baseline/proxy identity stays closed. */
+export const CABIN_CONTACT_AO_ASSET = Object.freeze({
+  path: "/models/r35-cabin-contact-ao-static-faces-8645956f.glb",
+  bytes: 20195752,
+  sha256: "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+  gzipBytes: 10194084,
+  gzipSha256:
+    "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
+});
+export function decodeCabinContactAo(gzip) {
+  if (
+    gzip.length !== CABIN_CONTACT_AO_ASSET.gzipBytes ||
+    digest(gzip) !== CABIN_CONTACT_AO_ASSET.gzipSha256
+  )
+    throw new Error("Cabin contact AO source checksum mismatch");
+  const bytes = gunzipSync(gzip, {
+    maxOutputLength: CABIN_CONTACT_AO_ASSET.bytes,
+  });
+  validateGlb(bytes, CABIN_CONTACT_AO_ASSET);
+  return bytes;
+}
 export const CABIN_PROXY_ASSET = Object.freeze({
   path: "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
   bytes: 956368,
@@ -271,8 +292,15 @@ export async function prepareCabin({
   root = fileURLToPath(new URL("../", import.meta.url)),
   log = console.log,
 } = {}) {
-  // Verify both inputs before writing either asset. The full model remains exact.
+  // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
+    {
+      source: "r35-cabin-contact-ao-static-faces.glb.gz",
+      gzipBytes: CABIN_CONTACT_AO_ASSET.gzipBytes,
+      filename: CABIN_CONTACT_AO_ASSET.path.slice("/models/".length),
+      decode: decodeCabinContactAo,
+      sha256: CABIN_CONTACT_AO_ASSET.sha256,
+    },
     {
       source: "r35-cabin-dashboard.glb.gz",
       gzipBytes: 9798606,

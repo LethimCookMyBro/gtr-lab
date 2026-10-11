@@ -17,6 +17,8 @@ export function ConfiguratorPanels({
   interactive: boolean;
 }) {
   const state = useConfigurator();
+  const selectedCamera =
+    state.cabin.phase === "active" ? "interior" : state.cameraPreset;
   const [lastPanel, setLastPanel] = useState(state.panel);
   useEffect(() => {
     if (state.panel) setLastPanel(state.panel);
@@ -50,6 +52,7 @@ export function ConfiguratorPanels({
             <button
               key={m.id}
               aria-label={`${m.shortName} ${m.tagline}`}
+              aria-current={m.id === model.id ? "page" : undefined}
               className={m.id === model.id ? "selected" : ""}
               onClick={() => {
                 audio.play();
@@ -95,13 +98,15 @@ export function ConfiguratorPanels({
             <p className="availability-note" id="cabin-preview-note">
               An original authored cabin, still in progress. Prepared with the
               vehicle so Interior opens directly when ready. Not a verified
-              factory interior.
+              factory interior. Displays and dial faces are static
+              illustrations.
             </p>
           )}
           <div className="camera-choices">
             {cameraPresets.map((p) => (
               <button
                 key={p.id}
+                aria-pressed={p.id === selectedCamera}
                 disabled={
                   !interactive ||
                   (p.id === "interior" &&
@@ -118,16 +123,7 @@ export function ConfiguratorPanels({
                       ? "cabin-availability"
                       : undefined
                 }
-                className={
-                  (
-                    p.id === "interior"
-                      ? state.cabin.phase === "active"
-                      : state.cameraPreset === p.id &&
-                        state.cabin.phase !== "active"
-                  )
-                    ? "selected"
-                    : ""
-                }
+                className={p.id === selectedCamera ? "selected" : ""}
                 onClick={() => {
                   if (p.id === "interior" && model.asset.cabinPreview)
                     state.beginCabin();
@@ -145,7 +141,7 @@ export function ConfiguratorPanels({
                 !model.asset.interior &&
                 !model.asset.cabinPreview ? (
                   <small>Detailed cabin required</small>
-                ) : state.cameraPreset === p.id ? (
+                ) : p.id === selectedCamera ? (
                   <Check size={17} />
                 ) : (
                   <ArrowRight size={17} />
@@ -214,6 +210,7 @@ export function ConfiguratorPanels({
             {environments.map((e) => (
               <button
                 key={e.id}
+                aria-pressed={state.selectedEnvironment === e.id}
                 disabled={!interactive}
                 className={state.selectedEnvironment === e.id ? "selected" : ""}
                 onClick={() => {

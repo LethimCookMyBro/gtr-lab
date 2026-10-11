@@ -8,7 +8,7 @@ import { createRequire } from 'node:module';
 import { gunzipSync } from 'node:zlib';
 import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { collectDistAssets } from './raster-cost-evidence.mjs';
-import { budgets, requiredCases, models, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages,
+import { budgets, requiredCases, models, cabinWire, cabinResourcePlan, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages,
   assertCurrentGeometry, assertDesktopFeatureGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertMobileContainment, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
 import { installCabinNetworkCapture } from './cabin-preparation-network.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from './cabin-preparation-observer.mjs';
@@ -38,7 +38,7 @@ export function assertModelRepresentation(receipt, encoding) {
   assert.equal(Number(receipt.headers['content-length']), receipt.body.length);
   const decoded = gzip ? gunzipSync(receipt.body, { maxOutputLength: models[0].bytes }) : receipt.body;
   assert.equal(decoded.length, models[0].bytes); assert.equal(sha256(decoded), models[0].sha256);
-  if (gzip) assert.ok(receipt.body.length < decoded.length);
+  if (gzip) { assert.equal(receipt.body.length, cabinWire.bytes); assert.equal(sha256(receipt.body), cabinWire.sha256); assert.ok(receipt.body.length < decoded.length); }
   return { acceptEncoding: encoding, status: receipt.status, contentEncoding: receipt.headers['content-encoding'] ?? 'identity', vary: receipt.headers.vary,
     wireEntityBytes: receipt.body.length, wireEntitySha256: sha256(receipt.body), decodedBytes: decoded.length, decodedSha256: sha256(decoded) };
 }
@@ -58,7 +58,7 @@ export async function main(env = process.env) {
   const images = acceptedCabinImages(bodies[0]), transform = independentExteriorTransform(bodies[1]);
   const output = resolve('cabin-preparation-results', target.name + '-' + target.lane + (target.quality === 'reduced' ? '-reduced' : '')); await mkdir(output, { recursive: true });
   const report = { result: 'running', sourceCommit: commit, sourceTree: source.sha256, contract: request.contract, viewport: target.name, lane: target.lane, requestedQuality: target.quality,
-    budgets, models, images, transport: [], cases: [], errors: [],
+    budgets, models, images, resourcePlan: cabinResourcePlan, transport: [], cases: [], errors: [],
     scope: 'Bounded functional preparation/residency proof on the actual built bundle and native-positive main completion. No historical causal/raster qualification is transferred.',
     limitations: ['SwiftShader timings describe this CI runner, not physical desktop/mobile speed.', 'DOM and native-event sampling plus bounded screenshots do not prove the absence of subframe compositor flicker.', 'Fetch/decode/native-positive-observation holds are explicit lifecycle fixtures, excluded from loading-speed claims.', 'Residency is checked for repeated entry in the same environment/quality. Environment changes can require legitimate preparation.'] };
   const save = () => writeFile(resolve(output, 'report.json'), JSON.stringify(report, null, 2));
@@ -188,7 +188,8 @@ export async function main(env = process.env) {
       await h.ready(deadline); const initial = await capture('01-initial-complete', deadline);
       row.initialPreparation = (await snapshot()).measures; assert.ok(row.initialPreparation.some(m => m.name === 'gtr-cabin-preparation-ready' && m.duration >= 0 && m.duration <= budgets.initial));
       const preparedOracle = createCabinOracle(transform); preparedOracle.reset('driver'); assertPreparationTimeline(await snapshot(), initial.certificate, { quality: target.quality, nativeDpr: target.deviceScaleFactor, driverPose: preparedOracle.expected(initial.certificate.snapshot.dimensions.renderWidth, initial.certificate.snapshot.dimensions.renderHeight).pose });
-      const resourceMark = { sequence: 0 }; const cohort = cabinResourceCohort(resourceMark, await resources(), images); row.residentCohort = cohort;
+      const resourceMark = { sequence: 0 }; const cohort = cabinResourceCohort(resourceMark, await resources(), images);
+      assert.equal(cohort.bitmapIds.length, cabinResourcePlan.imageCount); assert.deepEqual(cohort.decodedButNotUploaded, []); assert.deepEqual([...cohort.uploadedImageNames].sort(), images.map(image => image.name).sort()); row.residentCohort = cohort;
       const initialWork = (await snapshot()).totals; assert.equal(initialWork.fetches, 1); assert.equal(initialWork.gltfParses, 1); const owner = initial.certificate.owner;
       const enter = async (label, mobileViewport) => {
         await h.mark(label); await open('Camera'); const entryWindow = readinessWindow(budgets.functional); await armFunctionalCapture(page); await tap(dialog.getByRole('button', { name: 'Interior', exact: true })); await expect(dialog).toHaveCount(0);
@@ -257,9 +258,13 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
     const hold = await holdModel(h), deadline = await fresh(h); await hold.wait(deadline);
     const before = await h.snapshot(); assert.equal(before.ui.preparation.phase, 'loading');
     hold.cancel('trusted Back to models cancels this held cabin request'); const cancellationDeadline = readinessWindow(budgets.lifecycle);
-    try { await h.tap(h.page.getByRole('link', { name: 'Back to models', exact: true })); await expect(h.page).toHaveURL(/\/models$/); }
-    finally { await hold.release(cancellationDeadline); }
-    await expect(h.canvas).toHaveCount(0); await h.retire(1);
+    try {
+      await h.tap(h.page.getByRole('link', { name: 'Back to models', exact: true }));
+      await expect(h.page).toHaveURL(/\/models$/, { timeout: remainingBudget(cancellationDeadline) });
+      // The URL changes before the route's exit animation removes its resident canvas.
+      await expect(h.canvas).toHaveCount(0, { timeout: remainingBudget(cancellationDeadline) });
+    } finally { await hold.release(cancellationDeadline); }
+    await h.retire(1);
     const cancelled = await h.snapshot(); assert.equal(cancelled.totals.fetches, 1); assert.equal(cancelled.ui.cabinRail, false);
     await armFunctionalCapture(h.page, { replacement: true }); const returnedDeadline = readinessWindow(budgets.initial);
     const premiumLink = h.page.locator('.models-page .model-bands').getByRole('link', { name: 'Explore GT-R Premium', exact: true });

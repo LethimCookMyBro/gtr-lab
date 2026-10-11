@@ -1,5 +1,5 @@
 # Private/staged source proof only. No publication, deployment or write permissions.
-name: Staged unified cabin preparation proof
+name: Staged exact AO cabin preparation proof
 on:
   push:
     branches: [main]
@@ -66,7 +66,7 @@ jobs:
           node --test tests/cabin-preparation-contract.node.mjs
       - run: npm ci
       - name: Exact focused runtime preparation and ownership regressions
-        run: node node_modules/vitest/vitest.mjs run tests/renderer-preparation.test.ts tests/demand-render-backpressure.test.tsx tests/demand-render-resize.test.tsx tests/functional-render-observation.test.ts tests/async-renderer-disposal.test.tsx tests/cabin-preparation-steps.test.ts tests/cabin-resident-asset.test.tsx tests/cabin-resident-state.test.ts tests/cabin-runtime-preparation.test.tsx tests/cabin-preparation-ui.test.tsx --pool=threads --maxWorkers=1 --minWorkers=1
+        run: node node_modules/vitest/vitest.mjs run tests/renderer-preparation.test.ts tests/demand-render-backpressure.test.tsx tests/demand-render-resize.test.tsx tests/functional-render-observation.test.ts tests/async-renderer-disposal.test.tsx tests/cabin-preparation-steps.test.ts tests/cabin-resident-asset.test.tsx tests/cabin-resident-state.test.ts tests/cabin-runtime-preparation.test.tsx tests/cabin-preparation-ui.test.tsx tests/cabin-contact-ao-contract.test.mjs tests/cabin-contact-ao-resources.test.ts --pool=threads --maxWorkers=1 --minWorkers=1
       - run: node node_modules/typescript/bin/tsc --noEmit
       - run: npm run build
         timeout-minutes: 8
@@ -78,7 +78,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cabin-preparation-${{ matrix.viewport }}-${{ matrix.lane }}-${{ matrix.quality }}-${{ github.sha }}
+          name: cabin-preparation-ao-static-faces-${{ matrix.viewport }}-${{ matrix.lane }}-${{ matrix.quality }}-${{ github.sha }}
           path: cabin-preparation-results/
           retention-days: 14
           if-no-files-found: warn

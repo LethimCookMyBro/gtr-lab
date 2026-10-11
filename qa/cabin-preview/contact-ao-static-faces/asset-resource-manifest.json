@@ -1,0 +1,431 @@
+{
+  "scope": "Exact CPU resources and complete RGBA mip estimates only; no WebGL GPU acceptance",
+  "assets": {
+    "baseline": {
+      "sha256": "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
+      "bytes": 19170816,
+      "gzipBytes": 9798606,
+      "gzipSha256": "70036f4c17601909d4c382a0530501618dace139debb55cd966698e89b8b75f5",
+      "geometryResourceBytes": 17423324,
+      "estimatedRGBAWithMipsBytes": 18524848,
+      "estimatedGeometryAndTextureBytes": 35948172,
+      "estimatedGeometryAndTextureMiB": 34.2828483581543,
+      "images": [
+        {
+          "index": 0,
+          "name": "leather-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 366955,
+          "sha256": "1e420d96e2cf4af993ca150c3d3996477925aa18eec8cd0e2d92f985d637a8b6",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 1,
+          "name": "leather-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 182806,
+          "sha256": "53035c97fd410af47d89847c320f5095dad9d71878c851a43733edad5ff94d12",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 2,
+          "name": "console-twill-color",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 6786,
+          "sha256": "033909891e23687fce57cfdb30cce7984fb2a78d20b0954bf4358f83916b42e2",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 3,
+          "name": "console-twill-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 9946,
+          "sha256": "6c9bda19f4b809c62e32b7b3a45503ecacbc68953ed1b78d541c3a1d6f309741",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 4,
+          "name": "console-twill-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 5718,
+          "sha256": "864f57ae239671fb98d322d3a0e6f12d293e71050d8740bf7030635eea0c3bee",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 5,
+          "name": "fabric-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 341461,
+          "sha256": "8ac98729b7ac3d61dcdd3709b0d2fd0fb0fed6b2139a87995d312dffb422b494",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 6,
+          "name": "fabric-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 189775,
+          "sha256": "123c310ea9b13ef42be6be34eba2b2ea7af328cf8b140d0e985fa362b59f2f1b",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 7,
+          "name": "control-fascia-markings",
+          "width": 1024,
+          "height": 1024,
+          "encodedBytes": 15716,
+          "sha256": "2902307372ce50768de7cf6946202aac58d0cca63d1afff8f492d81789095410",
+          "rgbaMipBytes": 5592404
+        },
+        {
+          "index": 8,
+          "name": "control-fascia-orm",
+          "width": 256,
+          "height": 256,
+          "encodedBytes": 1824,
+          "sha256": "929e11da3d8e8bbc9a83ea09352abcb3e461488b76dedd99d8fe8d9dde30e749",
+          "rgbaMipBytes": 349524
+        },
+        {
+          "index": 9,
+          "name": "rim-continuous-seam",
+          "width": 2048,
+          "height": 256,
+          "encodedBytes": 4518,
+          "sha256": "7445f0aca2d0527e181c680002c09b243f0e0989a274adab846bbf432c70e717",
+          "rgbaMipBytes": 2796220
+        }
+      ]
+    },
+    "r35-contact-ao": {
+      "sha256": "b4ae7b677982b740acbcd878e1a5f90587ef64dcc09bc733f6864107637e08b3",
+      "bytes": 20040592,
+      "gzipBytes": 10088908,
+      "gzipSha256": "2b725cf301c7f39a37df8770bdf13af0dd397074717ae68744bbd42fc3819492",
+      "geometryResourceBytes": 18271180,
+      "estimatedRGBAWithMipsBytes": 18524848,
+      "estimatedGeometryAndTextureBytes": 36796028,
+      "estimatedGeometryAndTextureMiB": 35.091426849365234,
+      "images": [
+        {
+          "index": 0,
+          "name": "leather-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 366955,
+          "sha256": "1e420d96e2cf4af993ca150c3d3996477925aa18eec8cd0e2d92f985d637a8b6",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 1,
+          "name": "leather-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 182959,
+          "sha256": "993fe1a3606cb2ec8cb2c5d7c429e207aea58bb0a31631a2ad722fd2aefca2ca",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 2,
+          "name": "console-twill-color",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 6786,
+          "sha256": "033909891e23687fce57cfdb30cce7984fb2a78d20b0954bf4358f83916b42e2",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 3,
+          "name": "console-twill-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 9946,
+          "sha256": "6c9bda19f4b809c62e32b7b3a45503ecacbc68953ed1b78d541c3a1d6f309741",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 4,
+          "name": "console-twill-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 5718,
+          "sha256": "864f57ae239671fb98d322d3a0e6f12d293e71050d8740bf7030635eea0c3bee",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 5,
+          "name": "fabric-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 341461,
+          "sha256": "8ac98729b7ac3d61dcdd3709b0d2fd0fb0fed6b2139a87995d312dffb422b494",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 6,
+          "name": "fabric-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 189775,
+          "sha256": "123c310ea9b13ef42be6be34eba2b2ea7af328cf8b140d0e985fa362b59f2f1b",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 7,
+          "name": "control-fascia-markings",
+          "width": 1024,
+          "height": 1024,
+          "encodedBytes": 15716,
+          "sha256": "2902307372ce50768de7cf6946202aac58d0cca63d1afff8f492d81789095410",
+          "rgbaMipBytes": 5592404
+        },
+        {
+          "index": 8,
+          "name": "control-fascia-orm",
+          "width": 256,
+          "height": 256,
+          "encodedBytes": 1824,
+          "sha256": "929e11da3d8e8bbc9a83ea09352abcb3e461488b76dedd99d8fe8d9dde30e749",
+          "rgbaMipBytes": 349524
+        },
+        {
+          "index": 9,
+          "name": "rim-continuous-seam",
+          "width": 2048,
+          "height": 256,
+          "encodedBytes": 4518,
+          "sha256": "7445f0aca2d0527e181c680002c09b243f0e0989a274adab846bbf432c70e717",
+          "rgbaMipBytes": 2796220
+        }
+      ]
+    },
+    "static-faces-source": {
+      "sha256": "eeb932963006eb3bf33ff84d5c469da34b7a9dc87628e4ccb139b87b78793b57",
+      "bytes": 19325984,
+      "gzipBytes": 9902372,
+      "gzipSha256": "bff05e2247c1c243a3fff1c3844d37448c793f87908037cb30f9f53129a92857",
+      "geometryResourceBytes": 17475792,
+      "estimatedRGBAWithMipsBytes": 21321052,
+      "estimatedGeometryAndTextureBytes": 38796844,
+      "estimatedGeometryAndTextureMiB": 36.99955368041992,
+      "images": [
+        {
+          "index": 0,
+          "name": "leather-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 366955,
+          "sha256": "1e420d96e2cf4af993ca150c3d3996477925aa18eec8cd0e2d92f985d637a8b6",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 1,
+          "name": "leather-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 182806,
+          "sha256": "53035c97fd410af47d89847c320f5095dad9d71878c851a43733edad5ff94d12",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 2,
+          "name": "console-twill-color",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 6786,
+          "sha256": "033909891e23687fce57cfdb30cce7984fb2a78d20b0954bf4358f83916b42e2",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 3,
+          "name": "console-twill-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 9946,
+          "sha256": "6c9bda19f4b809c62e32b7b3a45503ecacbc68953ed1b78d541c3a1d6f309741",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 4,
+          "name": "console-twill-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 5718,
+          "sha256": "864f57ae239671fb98d322d3a0e6f12d293e71050d8740bf7030635eea0c3bee",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 5,
+          "name": "fabric-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 341461,
+          "sha256": "8ac98729b7ac3d61dcdd3709b0d2fd0fb0fed6b2139a87995d312dffb422b494",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 6,
+          "name": "fabric-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 189775,
+          "sha256": "123c310ea9b13ef42be6be34eba2b2ea7af328cf8b140d0e985fa362b59f2f1b",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 7,
+          "name": "control-fascia-markings",
+          "width": 1024,
+          "height": 1024,
+          "encodedBytes": 15716,
+          "sha256": "2902307372ce50768de7cf6946202aac58d0cca63d1afff8f492d81789095410",
+          "rgbaMipBytes": 5592404
+        },
+        {
+          "index": 8,
+          "name": "control-fascia-orm",
+          "width": 256,
+          "height": 256,
+          "encodedBytes": 1824,
+          "sha256": "929e11da3d8e8bbc9a83ea09352abcb3e461488b76dedd99d8fe8d9dde30e749",
+          "rgbaMipBytes": 349524
+        },
+        {
+          "index": 9,
+          "name": "rim-continuous-seam",
+          "width": 2048,
+          "height": 256,
+          "encodedBytes": 4518,
+          "sha256": "7445f0aca2d0527e181c680002c09b243f0e0989a274adab846bbf432c70e717",
+          "rgbaMipBytes": 2796220
+        },
+        {
+          "index": 10,
+          "name": "Original static cabin faces",
+          "width": 1024,
+          "height": 512,
+          "encodedBytes": 101642,
+          "sha256": "4255b5263a404cc7b0f04946996ad04e55fd0e461b2c25098e0ed033f51d5bb3",
+          "rgbaMipBytes": 2796204
+        }
+      ]
+    },
+    "r35-contact-ao-static-faces": {
+      "sha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+      "bytes": 20195752,
+      "gzipBytes": 10194084,
+      "gzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
+      "geometryResourceBytes": 18323648,
+      "estimatedRGBAWithMipsBytes": 21321052,
+      "estimatedGeometryAndTextureBytes": 39644700,
+      "estimatedGeometryAndTextureMiB": 37.80813217163086,
+      "images": [
+        {
+          "index": 0,
+          "name": "leather-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 366955,
+          "sha256": "1e420d96e2cf4af993ca150c3d3996477925aa18eec8cd0e2d92f985d637a8b6",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 1,
+          "name": "leather-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 182959,
+          "sha256": "993fe1a3606cb2ec8cb2c5d7c429e207aea58bb0a31631a2ad722fd2aefca2ca",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 2,
+          "name": "console-twill-color",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 6786,
+          "sha256": "033909891e23687fce57cfdb30cce7984fb2a78d20b0954bf4358f83916b42e2",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 3,
+          "name": "console-twill-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 9946,
+          "sha256": "6c9bda19f4b809c62e32b7b3a45503ecacbc68953ed1b78d541c3a1d6f309741",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 4,
+          "name": "console-twill-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 5718,
+          "sha256": "864f57ae239671fb98d322d3a0e6f12d293e71050d8740bf7030635eea0c3bee",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 5,
+          "name": "fabric-normal",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 341461,
+          "sha256": "8ac98729b7ac3d61dcdd3709b0d2fd0fb0fed6b2139a87995d312dffb422b494",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 6,
+          "name": "fabric-orm",
+          "width": 512,
+          "height": 512,
+          "encodedBytes": 189775,
+          "sha256": "123c310ea9b13ef42be6be34eba2b2ea7af328cf8b140d0e985fa362b59f2f1b",
+          "rgbaMipBytes": 1398100
+        },
+        {
+          "index": 7,
+          "name": "control-fascia-markings",
+          "width": 1024,
+          "height": 1024,
+          "encodedBytes": 15716,
+          "sha256": "2902307372ce50768de7cf6946202aac58d0cca63d1afff8f492d81789095410",
+          "rgbaMipBytes": 5592404
+        },
+        {
+          "index": 8,
+          "name": "control-fascia-orm",
+          "width": 256,
+          "height": 256,
+          "encodedBytes": 1824,
+          "sha256": "929e11da3d8e8bbc9a83ea09352abcb3e461488b76dedd99d8fe8d9dde30e749",
+          "rgbaMipBytes": 349524
+        },
+        {
+          "index": 9,
+          "name": "rim-continuous-seam",
+          "width": 2048,
+          "height": 256,
+          "encodedBytes": 4518,
+          "sha256": "7445f0aca2d0527e181c680002c09b243f0e0989a274adab846bbf432c70e717",
+          "rgbaMipBytes": 2796220
+        },
+        {
+          "index": 10,
+          "name": "Original static cabin faces",
+          "width": 1024,
+          "height": 512,
+          "encodedBytes": 101642,
+          "sha256": "4255b5263a404cc7b0f04946996ad04e55fd0e461b2c25098e0ed033f51d5bb3",
+          "rgbaMipBytes": 2796204
+        }
+      ]
+    }
+  }
+}

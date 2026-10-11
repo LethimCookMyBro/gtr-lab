@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "allNodesExact": true,
+  "allScenesExact": true,
+  "allIndicesExact": true,
+  "existingAttributeBuffersExact": 1037,
+  "newNormalizedUint16AOPrimitives": 105,
+  "materials": 46,
+  "images": 11,
+  "originalOtherTenEncodedImagesExact": true,
+  "ORMGreenBluePixelsExact": true,
+  "scope": "Private CPU/binary invariants only. Runtime GPU allocation and WebGL appearance untested."
+}

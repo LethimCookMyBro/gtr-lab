@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import { EventEmitter } from 'node:events';
 import { installCabinNetworkCapture, networkBuffers, failureBody } from '../scripts/cabin-preparation-network.mjs';
-import { preparationTree, preparationContract, models, budgets, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment,
+import { preparationTree, preparationContract, models, cabinWire, cabinResourcePlan, acceptedCabinImages, budgets, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment,
   assertResidentWorkUnchanged, assertCurrentGeometry, assertPreparationTimeline, assertReadableControls, assertRestoredExteriorPose, assertCaseSourceClosure } from '../scripts/cabin-preparation-policy.mjs';
 import { installFunctionalCaptureObserver } from '../scripts/cabin-preparation-readiness.generated.mjs';
 import { pins, buildPreparationReadiness } from '../scripts/build-cabin-preparation-readiness.mjs';
@@ -145,7 +145,7 @@ const networkEvidence = () => ({
   row: { name: 'direct-entry-residency', errors: [], pageErrors: [], requestFailures: [], expectedCancellations: [], expectedFailures: [], observation: { totals: { fetches: 1 } }, runtimeBodies: [], networkObserver: { buffers: { ...networkBuffers }, closed: true, fetchEnableCount: 0, fetchDisableCount: 0 },
     browserModelRequests: [{ requestId: 1, url: modelUrl, status: 200 }],
     modelBodies: [{ path: models[0].path, requestId: 'native-1', source: 'CDP.Network.getResponseBody', status: 200, bytes: models[0].bytes, sha256: models[0].sha256 }],
-    network: [{ requestId: 'native-1', sent: true, url: modelUrl, terminal: 'finished', wallTime: 1, status: 200, headers: { 'Content-Encoding': 'gzip', 'Content-Length': '9798606' }, encodedBodyBytes: 9798606, encodedTotalBytes: 9799000, cached: false }] }, wire: { wireEntityBytes: 9798606 },
+    network: [{ requestId: 'native-1', sent: true, url: modelUrl, terminal: 'finished', wallTime: 1, status: 200, headers: { 'Content-Encoding': 'gzip', 'Content-Length': String(cabinWire.bytes) }, encodedBodyBytes: cabinWire.bytes, encodedTotalBytes: cabinWire.bytes + 641, cached: false }] }, wire: { wireEntityBytes: cabinWire.bytes, wireEntitySha256: cabinWire.sha256 },
 });
 test('every successful model body requires complete exact one-to-one native transport evidence', () => {
   const { row, wire } = networkEvidence(); assert.equal(assertCaseSourceClosure(row, wire).verifiedDecodedBodies, 1);
@@ -217,7 +217,7 @@ test('frozen request and complete runtime identity bind only the independently r
   const frozen = JSON.parse(await read('qa/fixtures/cabin-preparation-identity.json'));
   assert.equal(frozen.sha256, preparationTree); assert.equal(sha256(JSON.stringify(frozen.files)), preparationTree); assert.equal(frozen.files.length, 100);
   assert.deepEqual(JSON.parse(await read('qa/cabin-preparation-request.json')), request);
-  assert.equal(pins['scripts/prepare-cabin.mjs'], '6a3d1b017accecffb8f6602bebabc3b871aa8a95b3df49d402e16836cfbd1db2');
+  assert.equal(pins['scripts/prepare-cabin.mjs'], 'bb1164b7fce0fc0618999cca8eef69f1d66d8fc10fc18dc1e47ba5a175f3092f');
 });
 test('new bounded workflow preserves closed staged publication and exact explicit checks', async () => {
   const workflow = String(await read('.github/workflows/cabin-preparation-diagnostic.yml'));
@@ -416,10 +416,75 @@ test('explicit Reduced comparison is isolated to one desktop feature cell and fi
 test('desktop quality comparison selects the same explicit radio step before releasing the original fetch hold', async () => {
   const source = (await read('scripts/diagnose-cabin-preparation.mjs')).toString(), workflow = (await read('.github/workflows/cabin-preparation-diagnostic.yml')).toString();
   assert.match(workflow, /fail-fast: false/); assert.match(workflow, /viewport: \[desktop, mobile\]\s+lane: \[feature, lifecycle\]\s+quality: \[standard\]\s+include:\s+- viewport: desktop\s+lane: feature\s+quality: reduced/);
-  assert.match(workflow, /R35_PREPARATION_QUALITY: \$\{\{ matrix.quality \}\}/); assert.match(workflow, /name: cabin-preparation-\$\{\{ matrix.viewport \}\}-\$\{\{ matrix.lane \}\}-\$\{\{ matrix.quality \}\}/);
+  assert.match(workflow, /R35_PREPARATION_QUALITY: \$\{\{ matrix.quality \}\}/); assert.match(workflow, /name: cabin-preparation-ao-static-faces-\$\{\{ matrix.viewport \}\}-\$\{\{ matrix.lane \}\}-\$\{\{ matrix.quality \}\}/);
   assert.match(source, /if \(target.name === 'desktop'\) \{\s+await open\('Environment'\); const radio = dialog.locator\(`input\[name="render-quality"\]\[value="\$\{target.quality\}"\]`\);\s+await tap\(radio\); await expect\(radio\).toBeChecked\(\); h.setQuality\(target.quality\); await close\(\);/);
   assert.match(source, /label: 'explicit-quality-before-preparation'[\s\S]*?finally \{ await hold.release\(deadline\); \}[\s\S]*?await h.ready\(deadline\)/);
   assert.ok(source.includes("target.name + '-' + target.lane + (target.quality === 'reduced' ? '-reduced' : '')"));
   assert.ok(source.includes('requestedQuality: target.quality')); assert.ok(source.includes('assertDesktopFeatureGeometry(certificate.snapshot, target.quality)'));
   assert.match(source, /const entryWindow = readinessWindow\(budgets.functional\); await armFunctionalCapture\(page\); await tap/);
+});
+
+test('route cancellation does not release its held fetch at URL acknowledgement before canvas removal', async () => {
+  const source = (await read('scripts/diagnose-cabin-preparation.mjs')).toString();
+  const start = source.indexOf("hold.cancel('trusted Back to models cancels this held cabin request')");
+  const code = source.slice(start, source.indexOf('await h.retire(1);', start));
+  assert.match(code, /toHaveURL\(\/\\\/models\$\/, \{ timeout: remainingBudget\(cancellationDeadline\) \}\)/);
+  assert.match(code, /toHaveCount\(0, \{ timeout: remainingBudget\(cancellationDeadline\) \}\)/);
+  const run = new Function('h', 'hold', 'readinessWindow', 'budgets', 'remainingBudget', 'expect', `return (async () => { ${code} })()`);
+  for (const expires of [false, true]) {
+    const events = []; let now = 100, resolveRemoval, window;
+    const removed = new Promise(resolve => { resolveRemoval = resolve; });
+    const page = { getByRole: () => 'Back to models' }, canvas = {};
+    const h = { page, canvas, tap: async value => { assert.equal(value, 'Back to models'); events.push('trusted navigation'); } };
+    const remaining = deadline => remainingBudget(deadline, now);
+    const hold = { cancel: () => events.push('declared cancellation'), release: async deadline => { remaining(deadline); events.push('release'); } };
+    const expect = target => target === page ? { toHaveURL: async (_pattern, options) => { assert.equal(options.timeout, budgets.lifecycle); events.push('URL acknowledged'); } } : { toHaveCount: async (count, options) => { assert.equal(target, canvas); assert.equal(count, 0); assert.equal(options.timeout, budgets.lifecycle); events.push('waiting for canvas removal'); await removed; remaining(window); events.push('canvas removed'); } };
+    const pending = run(h, hold, budget => (window = readinessWindow(budget, now)), budgets, remaining, expect);
+    await new Promise(setImmediate); assert.deepEqual(events, ['declared cancellation', 'trusted navigation', 'URL acknowledged', 'waiting for canvas removal']);
+    now += expires ? budgets.lifecycle : 300; resolveRemoval();
+    if (expires) { await assert.rejects(pending, /Original readiness deadline exceeded/); assert.equal(events.includes('release'), false); }
+    else { await pending; assert.deepEqual(events.slice(-2), ['canvas removed', 'release']); }
+  }
+});
+
+test('AO/static-face contract is independently closed and preserves ineligible historical source metadata', async () => {
+  const historical = JSON.parse(await read('qa/fixtures/cabin-preparation-5c0a-history.json'));
+  assert.equal(historical.historicalOnly, true); assert.equal(historical.commit, '8922b2ad736540139b70e919add042f73ee065c5');
+  assert.equal(historical.request.contract, 'premium-unified-cabin-preparation-residency-v1'); assert.equal(historical.request.sourceTree, historical.source.sha256);
+  assert.equal(sha256(JSON.stringify(historical.source.files)), historical.source.sha256); assert.equal(historical.source.files.length, 100);
+  assert.equal(historical.model.sha256, historical.request.modelSha256); assert.equal(historical.model.images, 10); assert.equal(historical.evidence.verdict, 'failed');
+  assert.equal(historical.evidence.cells.find(c => c.name === 'prove (desktop, feature, standard)').conclusion, 'failure');
+  assert.equal(preparationContract, 'premium-unified-cabin-preparation-ao-static-faces-v1');
+  assert.equal(preparationTree, '70263165c8e0daff8c9402c0d23af8647e9155bd4c605b875937c65b3b48237b');
+  assert.deepEqual(models[0], { path: '/models/r35-cabin-contact-ao-static-faces-8645956f.glb', bytes: 20195752, sha256: '8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452' });
+  for (const candidate of [historical.request, { ...request, contract: historical.request.contract }, { ...request, sourceTree: historical.source.sha256 }, { ...request, modelSha256: historical.model.sha256 }, { ...request, modelSha256: 'eeb932963006eb3bf33ff84d5c469da34b7a9dc87628e4ccb139b87b78793b57' }, { ...request, modelSha256: 'b4ae7b677982b740acbcd878e1a5f90587ef64dcc09bc733f6864107637e08b3' }]) assert.throws(() => resolvePreparationRequest(candidate, env));
+  assert.throws(() => validatePreparationEnvironment({ ...resolved(), R35_PREPARATION_CONTRACT: historical.request.contract }));
+  assert.throws(() => { models[0].path = historical.model.path; }, TypeError);
+  const { row, wire } = networkEvidence(); assert.throws(() => assertCaseSourceClosure(row, { ...wire, wireEntityBytes: historical.model.gzipBytes })); assert.throws(() => assertCaseSourceClosure(row, { ...wire, wireEntitySha256: historical.model.gzipSha256 }));
+});
+
+test('exact AO gzip decodes to eleven individually bound images and cannot accept the old cabin', async () => {
+  const { gunzipSync, gzipSync } = await import('node:zlib'), { assertModelRepresentation } = await import('../scripts/diagnose-cabin-preparation.mjs');
+  const gzip = await read('qa/cabin-preview/r35-cabin-contact-ao-static-faces.glb.gz'), raw = gunzipSync(gzip);
+  assert.equal(gzip.length, cabinWire.bytes); assert.equal(sha256(gzip), cabinWire.sha256);
+  const receipt = assertModelRepresentation({ status: 200, headers: { 'content-encoding': 'gzip', 'content-length': String(gzip.length), vary: 'Accept-Encoding' }, body: gzip }, 'gzip');
+  assert.equal(receipt.decodedBytes, models[0].bytes); assert.equal(receipt.decodedSha256, models[0].sha256);
+  const repacked = gzipSync(raw, { level: 1 }); assert.equal(sha256(gunzipSync(repacked)), models[0].sha256);
+  assert.throws(() => assertModelRepresentation({ status: 200, headers: { 'content-encoding': 'gzip', 'content-length': String(repacked.length), vary: 'Accept-Encoding' }, body: repacked }, 'gzip'));
+  const images = acceptedCabinImages(raw), asset = JSON.parse(await read('qa/cabin-preview/contact-ao-static-faces/asset-resource-manifest.json')).assets['r35-contact-ao-static-faces'];
+  assert.equal(images.length, 11); assert.deepEqual(images.map(image => ({ name: image.name, bytes: image.bytes, sha256: image.sha256 })), asset.images.map(image => ({ name: image.name, bytes: image.encodedBytes, sha256: image.sha256 })));
+  assert.equal(images.at(-1).sha256, '4255b5263a404cc7b0f04946996ad04e55fd0e461b2c25098e0ed033f51d5bb3');
+  assert.throws(() => acceptedCabinImages(raw.subarray(0, -1)));
+  const corrupt = Buffer.from(raw); corrupt[corrupt.length - 1] ^= 1; assert.throws(() => acceptedCabinImages(corrupt));
+  const old = await read('qa/cabin-preview/r35-cabin-dashboard.glb.gz'); assert.throws(() => acceptedCabinImages(gunzipSync(old)));
+  assert.throws(() => assertModelRepresentation({ status: 200, headers: { 'content-encoding': 'gzip', 'content-length': String(old.length), vary: 'Accept-Encoding' }, body: old }, 'gzip'));
+});
+
+test('all eleven real browser images require residency while CPU Texture/job counts stay separately labelled', async () => {
+  assert.deepEqual({ ...cabinResourcePlan, scope: undefined }, { imageCount: 11, textureObjects: 62, compileJobs: 78, textureJobs: 62, geometryJobs: 78, totalJobs: 218, scope: undefined });
+  assert.match(cabinResourcePlan.scope, /not native GPU allocation counts/); assert.equal(cabinResourcePlan.totalJobs, cabinResourcePlan.compileJobs + cabinResourcePlan.textureJobs + cabinResourcePlan.geometryJobs);
+  const source = String(await read('scripts/diagnose-cabin-preparation.mjs'));
+  for (const code of ['assert.equal(cohort.bitmapIds.length, cabinResourcePlan.imageCount)', 'assert.deepEqual(cohort.decodedButNotUploaded, [])', 'assert.deepEqual([...cohort.uploadedImageNames].sort(), images.map(image => image.name).sort())', 'resourcePlan: cabinResourcePlan']) assert.ok(source.includes(code), code);
+  const workflow = String(await read('.github/workflows/cabin-preparation-diagnostic.yml')); assert.match(workflow, /tests\/cabin-contact-ao-contract.test.mjs tests\/cabin-contact-ao-resources.test.ts/);
+  assert.match(workflow, /name: cabin-preparation-ao-static-faces-/);
 });

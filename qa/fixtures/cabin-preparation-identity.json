@@ -1,6 +1,6 @@
 {
   "contract": "r35-production-source-v2-with-index",
-  "sha256": "c30deae33d34aa0fa43883878143c3aa602362bf96da35e9092ec6e4d92a68fa",
+  "sha256": "70263165c8e0daff8c9402c0d23af8647e9155bd4c605b875937c65b3b48237b",
   "files": [
     {
       "path": "index.html",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/components/configurator/ConfiguratorPanels.tsx",
-      "sha256": "590198dbb2a035f7e7130b0a6b2ba317bf5c4c0a6a7e1306b0f2678bf1e1cfcf"
+      "sha256": "766e3fb004685b48259b1c45bb867a0987ba3aded52a94d2aa690099c1d73cbd"
     },
     {
       "path": "src/components/configurator/ModelDetails.tsx",
@@ -204,7 +204,7 @@
     },
     {
       "path": "src/components/three/cabinPreview.ts",
-      "sha256": "ef32b2077b6527f664def0e5fdd076a6584bd5559700c7773199bc9c545b808a"
+      "sha256": "7ffe4a4285086aabbb3c0a74ee9b8ccd29e2ee812c822d578ec27345e00a61df"
     },
     {
       "path": "src/components/three/coastalGeometry.ts",
@@ -316,7 +316,7 @@
     },
     {
       "path": "src/data/models.ts",
-      "sha256": "26318e7deb93dedb72969adef6096271cf483cdaf33df794a107c6aa7ff7b90a"
+      "sha256": "ed009cbde0d363f71392e8ecc7058efe04d0c1dbe93b006f6374536035eed2b6"
     },
     {
       "path": "src/data/specifications.json",
@@ -340,7 +340,7 @@
     },
     {
       "path": "src/pages/CreditsPage.tsx",
-      "sha256": "887996e88b8b85a04ed7ffd272c5c56c172c80a855476ae10d402ba2e37f8156"
+      "sha256": "27607abc6455caf6d972f6064bdcb4e96fb12f19a7c78fa37a5d855efae054b1"
     },
     {
       "path": "src/pages/HeritagePage.tsx",

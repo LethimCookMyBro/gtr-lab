@@ -1,6 +1,10 @@
-# Current incremental app candidate
+# Current combined appearance candidate
 
-The application candidate now uses the separately pinned `r35-cabin-dashboard.glb.gz` (expanded SHA-256 `5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326`). See [dashboard geometry provenance](DASHBOARD_GEOMETRY_PROVENANCE.md) for its exact source lineage, bounds and limitations. The material-only `r35-cabin-realism.glb.gz` and all earlier assets below remain unchanged historical inputs. The standalone inspector comparisons described below remain frozen; they are not rendered acceptance of the new app candidate.
+The private application candidate selects the separately pinned `r35-cabin-contact-ao-static-faces.glb.gz`, expanded SHA-256 `8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452`. See [combined provenance and resource boundary](contact-ao-static-faces/PROVENANCE.md). Static faces are original illustrations, not operating instruments. Exact-source application WebGL comparison remains required. The dashboard baseline and exterior proxy below remain recoverable and all historical capture contracts remain closed.
+
+# Retained dashboard app baseline
+
+The retained baseline used the separately pinned `r35-cabin-dashboard.glb.gz` (expanded SHA-256 `5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326`). See [dashboard geometry provenance](DASHBOARD_GEOMETRY_PROVENANCE.md) for its exact source lineage, bounds and limitations. The material-only `r35-cabin-realism.glb.gz` and all earlier assets below remain unchanged historical inputs. The standalone inspector comparisons described below remain frozen; they are not rendered acceptance of the new app candidate.
 
 The exterior-window-only static proxy is separately pinned in `r35-exterior-cabin-proxy.glb.gz` and prepared as `/models/r35-exterior-cabin-proxy-49d7c2ab.glb`. See [exterior proxy provenance](EXTERIOR_PROXY_PROVENANCE.md) for exact identities, original-source reduction, shared native coordinate frame, shadow/visibility contract and remaining runtime verification. It does not replace or change the full inside-view cabin.
 
