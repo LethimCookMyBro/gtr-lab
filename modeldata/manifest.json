@@ -179,5 +179,194 @@
         "sha256": "0fee015a77b84d81b8cba7edb4ec8dba25464dc2f85a624c0c2ce0bfd21d570a"
       }
     ]
+  },
+  {
+    "id": "ciasny-r35-brake-index-e9425289",
+    "path": "/models/ciasny-r35-brake-index-e9425289.glb",
+    "bytes": 8566388,
+    "sha256": "e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9",
+    "source": {
+      "title": "Nissan GTR R35",
+      "author": "Ciasny",
+      "url": "https://sketchfab.com/3d-models/nissan-gtr-r35-51c912a8310c4e00a82ad7673d84228a"
+    },
+    "license": {
+      "name": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "changes": [
+      "Inherited optimized-input history: Normalized scale and axes, separated lamp/window/exhaust material bindings, resized textures to 2K WebP, Meshopt compressed. Source exterior topology retained.",
+      "Candidate index-only topology reduction of exporter partitions 75\u201378 (Brakes_Plastic.001); these partitions include tire/wheel geometry, not four individual brakes. Source positions, normals, tangents, UVs, transforms, materials, textures and all other 78 meshes remain exact. Original optimized input and its URL remain available unchanged."
+    ],
+    "originalSha256": "c2bb4967ef2648f8f8bbb27ad1e97d99e3148e34d114f3c9f0cac4f27c690dc4",
+    "sourceSha256": "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d",
+    "triangles": 406341,
+    "chunks": [
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0000.bin",
+        "bytes": 262144,
+        "sha256": "d0bdcddc42ae2a9fc6aea387a762bab7bd56460ee3637f02f8ab2f37bb7b05ee"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0001.bin",
+        "bytes": 262144,
+        "sha256": "6690008cf8507b9cbc359fb93cb5491b73c5d150fa51b4f401adfbc94e372f4b"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0002.bin",
+        "bytes": 262144,
+        "sha256": "ca99dde3119ce2941aa7185c19aeadc0b3e5ef8eb01af0eb467b417e6bc3b1b6"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0003.bin",
+        "bytes": 262144,
+        "sha256": "fb5da2b1e08febc79f1674f8ed2b06144d9196073ca86812eb6a183944cf8b08"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0004.bin",
+        "bytes": 262144,
+        "sha256": "4bf2bd50eaa950dcbd3ab0dbcbb2fba3e1e7e9d28f06c22c4a6fa7d18d7a1c2b"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0005.bin",
+        "bytes": 262144,
+        "sha256": "4635549e05632c0d2d0ccc155fd431559b46128414fc4497aaaa8d757393b4ba"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0006.bin",
+        "bytes": 262144,
+        "sha256": "99c943c96e1796b1d11d999665f1a5e9b0cf990b6c25d6d156ac2cda0bcaa935"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0007.bin",
+        "bytes": 262144,
+        "sha256": "c062605a03acec06e55c70bb0bd60e790a021d014613a7ff01cc44871577f9ae"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0008.bin",
+        "bytes": 262144,
+        "sha256": "7113652902199322f116b0b34ebbe173ca750aaac99eb4131dab09c4f0bd99a0"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0009.bin",
+        "bytes": 262144,
+        "sha256": "aba01b30dff70ed92c05e6e9e4a13979908b1de5a8d9470eac5bdbd2f32db1b0"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0010.bin",
+        "bytes": 262144,
+        "sha256": "558473213fc1b4e579c4982d7b52a430eaee869c0166ddaf71345f2866698475"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0011.bin",
+        "bytes": 262144,
+        "sha256": "7d1a386da71d66ebe3186e9c0af047b62e9dc4b9c7b79a864581a84b0ab7075c"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0012.bin",
+        "bytes": 262144,
+        "sha256": "2fdc6e74fa6f4cfc4b347c7d21edb4890db78485bb8cf35200892f48d2b73901"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0013.bin",
+        "bytes": 262144,
+        "sha256": "9b350edc403d59efebddfa4e74cb672b05278d30f45c7175d6eca4e7dd0337e1"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0014.bin",
+        "bytes": 262144,
+        "sha256": "eb1af8911799eb2ee8101a20fed1a52b0fb9096e33f3fb743e46cea18e03d74c"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0015.bin",
+        "bytes": 262144,
+        "sha256": "71a14550561dd396fe63ee31da949442b316a355107a5fa341a151767670d0b3"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0016.bin",
+        "bytes": 262144,
+        "sha256": "5a0d1c3ff5a213be9514b81182aa620d155694a6aa279f269c433e85071988b6"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0017.bin",
+        "bytes": 262144,
+        "sha256": "41d8cc69b493b338a661ada609e4386ed46600e9b09f581b7aacd1a994a44f59"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0018.bin",
+        "bytes": 262144,
+        "sha256": "d1f49a87d1254fb222be3807b9b0c33c1d0c2800b82caaab8cbf0f9f957db88b"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0019.bin",
+        "bytes": 262144,
+        "sha256": "60a78e8f73c0e5d50f1604c3af59aa3169a8e45267294d558a78bd95d6429f53"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0020.bin",
+        "bytes": 262144,
+        "sha256": "d7105904cb21dea3b1fcaaac7546e5cc6f1647fddf862453bffb43d58882c855"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0021.bin",
+        "bytes": 262144,
+        "sha256": "06ef3d3b8ffc4b6bfad255e13845b878d8f8d962f1a5726664ed7cbc8003b84d"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0022.bin",
+        "bytes": 262144,
+        "sha256": "19ba563456d81a9d85395092e114040eb54dd55de1bd3eada0c4dd7a352cec84"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0023.bin",
+        "bytes": 262144,
+        "sha256": "f512e43dcc1fddc208a52268b7aa7b0f410c655d155e65f31e9870a88c25bd80"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0024.bin",
+        "bytes": 262144,
+        "sha256": "b6204fd8a13991aed842902061706b73699ad1788d338a27bf340d75d3f97f54"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0025.bin",
+        "bytes": 262144,
+        "sha256": "0f0089407febe2d56064ebad33f993973a2be134ccd97fb48d47dd57eb2bf1b3"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0026.bin",
+        "bytes": 262144,
+        "sha256": "0a4f8a4d322f5fea19b89f1f75e46ede2a4304843b3cf93b0ffdb9623f8a855d"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0027.bin",
+        "bytes": 262144,
+        "sha256": "279a22bff8161d545873d44baae4148af73dc70f968f8b3f26d4d473265c8c59"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0028.bin",
+        "bytes": 262144,
+        "sha256": "496ea779e2200bbac002c6156ca06c5253cb31786f8a66401bd9933644e82561"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0029.bin",
+        "bytes": 262144,
+        "sha256": "0077f9d7393e78e9e13aabb3fff5567e0bee9b8b19303bed656b8521eae2e50d"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0030.bin",
+        "bytes": 262144,
+        "sha256": "31f1d2863d6784ca49126dc22921e2043bb126f874bb007cf5f4114e7c68a79f"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0031.bin",
+        "bytes": 262144,
+        "sha256": "fd6105e40bf11a05c686a5813367481d53efb3ee82200737a242c95cd6365e5b"
+      },
+      {
+        "path": "ciasny-r35-brake-index-e9425289/0032.bin",
+        "bytes": 177780,
+        "sha256": "cb97731d7c9ab10a8662d89e020858bb92fb6914d455ccc60f5f70e8e4749d26"
+      }
+    ]
   }
 ]

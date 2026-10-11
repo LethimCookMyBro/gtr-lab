@@ -1,4 +1,4 @@
-name: Private normal-motion DPR diagnostic
+name: Staged normal-motion DPR diagnostic
 on:
   push:
     branches: [main]
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   motion:
-    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-dpr-motion]')
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-dpr-motion]') && contains(github.event.head_commit.message, '[stage-cabin-integration]')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:

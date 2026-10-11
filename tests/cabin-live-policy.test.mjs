@@ -65,7 +65,7 @@ describe('public cabin fault adapter without sockets', () => {
     expect(fault.kind).toBe('throttled-stream');
     expect(f.page.route).not.toHaveBeenCalled();
     expect(f.cdp.send).toHaveBeenCalledWith('Network.emulateNetworkConditions', expect.objectContaining({ offline: false, downloadThroughput: 65536 }));
-    f.adapter.onRequest({ ...f.request, id: 3, url: () => `${origin}/models/ciasny-r35.glb` });
+    f.adapter.onRequest({ ...f.request, id: 3, url: () => `${origin}/models/ciasny-r35-brake-index-e9425289.glb` });
     expect(fault.requestId).toBeUndefined();
     f.adapter.onRequest(f.request);
     expect(fault.requestId).toBe(4);
@@ -119,13 +119,13 @@ describe('exact public model preflight', () => {
         ? gunzipSync(await readFile('qa/cabin-preview/r35-exterior-cabin-proxy.glb.gz'))
         : path.includes('cabin')
         ? gunzipSync(await readFile('qa/cabin-preview/r35-cabin-dashboard.glb.gz'))
-        : Buffer.concat(await Promise.all(manifest[0].chunks.map(chunk => readFile(`modeldata/${chunk.path}`))));
+        : Buffer.concat(await Promise.all(manifest.find(entry => entry.path === path).chunks.map(chunk => readFile(`modeldata/${chunk.path}`))));
       return new Response(bytes, { status: 200, headers: { 'content-type': 'model/gltf-binary', 'content-length': String(bytes.length) } });
     };
     const report = await api('verifyPublicCabinModels')({ fetchImpl });
     expect(report).toHaveLength(3);
     expect(report[0]).toMatchObject({ path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19170816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' });
-    expect(report[1]).toMatchObject({ path: '/models/ciasny-r35.glb', bytes: 8296356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' });
+    expect(report[1]).toMatchObject({ path: '/models/ciasny-r35-brake-index-e9425289.glb', bytes: 8566388, sha256: 'e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9' });
     expect(report[2]).toEqual({ path: proxyPath, url: proxyUrl, bytes: 956368, sha256: '49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347' });
     expect(calls.every(({url, options}) => url.startsWith(`${origin}/models/`) && options.redirect === 'error' && options.signal instanceof AbortSignal)).toBe(true);
   });
@@ -202,7 +202,7 @@ describe('public proxy faults stay narrowly scoped', () => {
     await f.adapter.dispose();
     expect(f.page.unroute).toHaveBeenCalledWith(proxyUrl, handler);
   });
-  it.each(['/models/ciasny-r35.glb', '/models/unknown.glb', proxyPath + '?other'])('rejects substituted public fault path %s before effects', async path => {
+  it.each(['/models/ciasny-r35-brake-index-e9425289.glb', '/models/unknown.glb', proxyPath + '?other'])('rejects substituted public fault path %s before effects', async path => {
     const f = liveFixture();
     await expect(f.adapter.arm('missing', 'missing', path)).rejects.toThrow(/exact cabin or window proxy/);
     expect(f.page.route).not.toHaveBeenCalled();

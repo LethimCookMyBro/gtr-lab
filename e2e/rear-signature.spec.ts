@@ -82,7 +82,7 @@ test("published R35 renders from the rear and scroll dolly changes actual pixels
   expect(images[0]).not.toBe(images[1]);
   expect(images[1]).not.toBe(images[2]);
   expect(requests.length).toBeGreaterThan(0);
-  expect(requests.every((url) => url.endsWith("/models/ciasny-r35.glb"))).toBe(
+  expect(requests.every((url) => url.endsWith("/models/ciasny-r35-brake-index-e9425289.glb"))).toBe(
     true,
   );
   expect(
@@ -127,7 +127,7 @@ test("failed rear asset remains readable and retry loads the real model", async 
   page,
 }) => {
   let fail = true;
-  await page.route("**/models/ciasny-r35.glb", (route) =>
+  await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", (route) =>
     fail
       ? route.fulfill({ status: 503, body: "deliberate model failure" })
       : route.continue(),

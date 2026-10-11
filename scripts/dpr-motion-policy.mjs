@@ -12,6 +12,8 @@ const MSAA_OFF_CONTRACT = 'msaa-off-2m-v1';
 // Exact reviewed production source identity; no runtime overrides or wildcard.
 const STATIC_STUDIO_TREE = '6353f4929c3c9ef3387a0cedfa43d53e685d08592ca43a307304eac1e76a4261';
 const STATIC_STUDIO_CONTRACT = 'static-studio-batching-2m-msaa-v1';
+const BRAKE_INDEX_TREE = '6bdc7f056b9a0a58f37271423b020e4930b987ea43764620d95dd5bd2440795e';
+const BRAKE_INDEX_CONTRACT = 'brake-index-lod-2m-msaa-v1';
 const geometryRows = {
   desktop: {
     initial: { viewportWidth: 1440, viewportHeight: 900, cssWidth: 1440, cssHeight: 744, nativeDpr: 2, width: 1391, height: 718, attributeWidth: 1391, attributeHeight: 718 },
@@ -43,12 +45,27 @@ contracts[STATIC_STUDIO_CONTRACT] = { sourceTree: STATIC_STUDIO_TREE, maxBufferP
   contextCreation: { requestedAntialias: true, antialias: true, multisampled: true },
   rows: contracts[MSAA_OFF_CONTRACT].rows, captures: fullMotionCaptures,
 };
+contracts[BRAKE_INDEX_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: BRAKE_INDEX_TREE };
+// Historical source-pinned motion must not inherit the current runtime model URL.
+const originalMotionModels = [
+  { path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19_170_816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' },
+  { path: '/models/ciasny-r35.glb', bytes: 8_296_356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' },
+  { path: '/models/r35-exterior-cabin-proxy-49d7c2ab.glb', bytes: 956_368, sha256: '49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347' },
+];
+const brakeMotionModels = originalMotionModels.map((model, index) => index === 1
+  ? { path: '/models/ciasny-r35-brake-index-e9425289.glb', bytes: 8_566_388, sha256: 'e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9' } : model);
+export function motionModelsForSource(sourceTree) {
+  assert.match(sourceTree ?? '', /^[a-f0-9]{64}$/, 'Exact motion model source tree required');
+  return sourceTree === BRAKE_INDEX_TREE ? brakeMotionModels : originalMotionModels;
+}
 // Returned report geometry must never provide a mutation path into acceptance policy.
 function freezePolicy(value) {
   for (const child of Object.values(value)) if (child && typeof child === 'object') freezePolicy(child);
   return Object.freeze(value);
 }
 freezePolicy(contracts);
+freezePolicy(originalMotionModels);
+freezePolicy(brakeMotionModels);
 function validatedGeometryContract(name, sourceTree, mode, viewport) {
   const required = Object.entries(contracts).find(([, contract]) => contract.sourceTree === sourceTree)?.[0];
   if (required) assert.equal(name, required, 'This candidate requires its exact reviewed geometry contract');
@@ -124,6 +141,11 @@ export function validateMotionEnvironment(env) {
   assert.ok(['baseline', 'fixed'].includes(env.R35_DPR_MODE), 'Choose baseline or fixed mode');
   assert.ok(Object.hasOwn(motionViewports, env.R35_QA_VIEWPORT), 'Choose desktop or mobile viewport');
   assert.equal(env.R35_DPR_BASE_URL, undefined, 'Arbitrary/live target override forbidden');
+  if (env.R35_EXPECTED_APP_TREE === BRAKE_INDEX_TREE) {
+    assert.equal(env.GITHUB_EVENT_NAME, 'push', 'Brake candidate requires reviewed main push');
+    for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]'])
+      assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Brake candidate requires ${marker}`);
+  }
   const geometry = validatedGeometryContract(env.R35_DPR_GEOMETRY_CONTRACT, env.R35_EXPECTED_APP_TREE, env.R35_DPR_MODE, env.R35_QA_VIEWPORT);
   return { mode: env.R35_DPR_MODE, name: env.R35_QA_VIEWPORT, ...motionViewports[env.R35_QA_VIEWPORT], baseUrl: 'http://127.0.0.1:4178', geometryContract: env.R35_DPR_GEOMETRY_CONTRACT, geometry };
 }

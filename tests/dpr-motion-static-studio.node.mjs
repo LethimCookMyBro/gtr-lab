@@ -139,9 +139,10 @@ test('every exact capture label and phase is mandatory, ordered, and nonblank', 
 });
 
 test('candidate request and complete production identity match the new closed contract', async () => {
-  assert.deepEqual(JSON.parse(await readFile(new URL('../qa/dpr-motion-request.json', import.meta.url), 'utf8')), request);
-  const identity = await applicationIdentity(new URL('..', import.meta.url).pathname);
+  assert.deepEqual(JSON.parse(await readFile(new URL('../qa/dpr-motion-static-studio-request.json', import.meta.url), 'utf8')), request);
+  const identity = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-static-studio-identity.json', import.meta.url), 'utf8'));
   assert.equal(identity.sha256, tree);
+  assert.equal(hash(JSON.stringify(identity.files)), tree);
 });
 
 test('identity guard runs before any browser, server, or candidate runtime setup', async () => {

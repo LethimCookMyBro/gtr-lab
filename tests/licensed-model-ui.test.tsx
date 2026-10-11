@@ -26,7 +26,7 @@ beforeEach(() => {
     ...savedAsset,
     status: "ready",
     kind: "licensed-model",
-    url: "/models/ciasny-r35.glb",
+    url: "/models/ciasny-r35-brake-index-e9425289.glb",
     displayName: "GT-R R35 · Ciasny edition",
     referenceNote:
       "2017-era custom exterior; catalog specifications below describe the 2024 Premium separately.",

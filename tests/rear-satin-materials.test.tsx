@@ -434,7 +434,7 @@ it("binds the window fix and four emission profiles to the decoded published ass
   const { createHash } = await import("node:crypto");
   const manifest = JSON.parse(readFileSync("modeldata/manifest.json", "utf8"));
   const entry = manifest.find(
-    (item: { id: string }) => item.id === "ciasny-r35",
+    (item: { id: string }) => item.id === "ciasny-r35-brake-index-e9425289",
   );
   const bytes = Buffer.concat(
     entry.chunks.map((chunk: { path: string }) =>

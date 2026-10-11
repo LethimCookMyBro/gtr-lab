@@ -7,12 +7,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 const output = 'vehicle-material-results';
 const baseUrl = process.env.PREVIEW_BASE_URL || 'http://127.0.0.1:4176';
-const expectedModelHash = 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d';
+const expectedModelHash = 'e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const report = {
   commit: process.env.GITHUB_SHA,
   baseUrl,
-  scope: 'Actual built configurator; existing unchanged licensed GLB; production camera and lamp controls. No cabin or six-model completion claim.',
+  scope: 'Actual built configurator; exact licensed brake-index derivative; production camera and lamp controls. No cabin or six-model completion claim.',
   expectedModelHash,
   result: 'running',
   views: [],
@@ -53,13 +53,13 @@ try {
       if (message.type() === 'warning') view.warnings.push(message.text());
     });
     try {
-      const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === '/models/ciasny-r35.glb', { timeout: 90_000 });
+      const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === '/models/ciasny-r35-brake-index-e9425289.glb', { timeout: 90_000 });
       await page.goto(`${baseUrl}/configurator/premium`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       const response = await responsePromise;
       assert.equal(response.status(), 200, 'Published model responds successfully');
       const modelBytes = await response.body();
       view.model = { bytes: modelBytes.length, sha256: hash(modelBytes) };
-      assert.equal(view.model.sha256, expectedModelHash, 'Runtime uses the unchanged licensed GLB');
+      assert.equal(view.model.sha256, expectedModelHash, 'Runtime uses the exact reviewed licensed derivative');
       await expect(page.getByRole('button', { name: 'Ultimate Silver', exact: true })).toBeEnabled({ timeout: 90_000 });
       await expect(page.locator('.scene-loading, .scene-notice, .render-error')).toHaveCount(0);
       const canvas = page.locator('.scene-stage canvas');

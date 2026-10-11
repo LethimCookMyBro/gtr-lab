@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-const model = "**/models/ciasny-r35.glb";
+const model = "**/models/ciasny-r35-brake-index-e9425289.glb";
 const gate = (page: Page) => page.locator(".home-loading-gate");
 const rear = (page: Page) => page.locator(".home-signature-runway");
 async function ready(page: Page) {
@@ -585,7 +585,7 @@ test("unsupported WebGL exposes explicit recovery and a usable non-3D route", as
   );
   let requests = 0;
   page.on("request", (request) => {
-    if (request.url().endsWith("/models/ciasny-r35.glb")) requests++;
+    if (request.url().endsWith("/models/ciasny-r35-brake-index-e9425289.glb")) requests++;
   });
   await page.addInitScript(() =>
     Object.defineProperty(window, "WebGLRenderingContext", {

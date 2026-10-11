@@ -5,7 +5,7 @@ import type { Page, TestInfo } from "@playwright/test";
 // Keep this layout suite independent of GPU/model transfer: explicitly continue
 // without 3D after a deliberate asset failure. Loading/render acceptance is separate.
 test.beforeEach(async ({ page }) => {
-  await page.route("**/models/ciasny-r35.glb", (route) =>
+  await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", (route) =>
     route.fulfill({
       status: 503,
       contentType: "text/plain",

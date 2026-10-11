@@ -4,6 +4,11 @@ Author: https://sketchfab.com/Ciasny
 Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
 
-Changes: Adapted for web by baking transforms, centering and grounding, normalization to 4.7 m length with +Y up/+Z front, separating exhaust metal from body paint, splitting window and lamp glass and front/rear emitter materials into exact semantic roles, generating MikkTSpace tangents, resizing textures to a maximum 2048 pixels with WebP encoding, and Meshopt geometry compression. No exterior mesh simplification. Original downloadable asset is preserved unchanged.
+Changes: Adapted for web by baking transforms, centering and grounding, normalization to 4.7 m length with +Y up/+Z front, separating exhaust metal from body paint, splitting window and lamp glass and front/rear emitter materials into exact semantic roles, generating MikkTSpace tangents, resizing textures to a maximum 2048 pixels with WebP encoding, and Meshopt geometry compression. The original optimized asset /models/ciasny-r35.glb retains its source exterior topology and remains available unchanged.
 
 The original model has no cabin. Any subsequently added cabin must be identified separately as an authored study fitted to the licensed exterior. This artist model depicts custom aero and is not represented as an exact 2024 Premium model or an official Nissan asset.
+
+Candidate brake-index derivative: /models/ciasny-r35-brake-index-e9425289.glb
+SHA-256: e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9
+Optimized input SHA-256: fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d
+Changes: Index-only topology reduction of exporter partitions 75–78, named Brakes_Plastic.001_0 through .003. These include tire/wheel geometry and are not four individual brakes. Original position, normal, tangent and UV buffers, materials, textures, node transforms and the other 78 meshes are exact. Four compressed index streams are appended; all original binary ranges remain. Exterior triangles: 566,475 to 406,341. Download size increases; physical-device performance is unverified. No endorsement by Ciasny or Nissan is implied.

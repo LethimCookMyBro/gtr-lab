@@ -28,14 +28,14 @@ describe('cabin integration network fault classification', () => {
     ['unmarked 404', { ...missing, injectedFault: undefined }],
     ['different request', { ...missing, requestId: 8 }],
     ['wrong status', { ...missing, status: 500 }],
-    ['different asset', { ...missing, path: '/models/ciasny-r35.glb' }],
+    ['different asset', { ...missing, path: '/models/ciasny-r35-brake-index-e9425289.glb' }],
   ])('rejects an abort associated with %s', (_label, response) => {
     expect(isExpectedCabinRequestFailure(aborted, [response])).toBe(false);
   });
 
   it.each([
     ['a non-abort network error', { ...aborted, failure: 'net::ERR_CONNECTION_RESET' }],
-    ['another asset', { ...aborted, path: '/models/ciasny-r35.glb' }],
+    ['another asset', { ...aborted, path: '/models/ciasny-r35-brake-index-e9425289.glb' }],
     ['a missing request ID', { ...aborted, requestId: undefined }],
   ])('does not excuse %s', (_label, failure) => {
     expect(isExpectedCabinRequestFailure(failure, [missing])).toBe(false);
@@ -66,7 +66,7 @@ it('allows only the correlated public throttled request during cancellation', ()
 
 const bodyBytes = [
   gunzipSync(readFileSync('qa/cabin-preview/r35-cabin-dashboard.glb.gz')),
-  Buffer.concat(JSON.parse(readFileSync('modeldata/manifest.json', 'utf8'))[0].chunks.map(chunk => readFileSync(`modeldata/${chunk.path}`))),
+  Buffer.concat(JSON.parse(readFileSync('modeldata/manifest.json', 'utf8')).find(entry => entry.path === policy.cabinModels[1].path).chunks.map(chunk => readFileSync(`modeldata/${chunk.path}`))),
   gunzipSync(readFileSync('qa/cabin-preview/r35-exterior-cabin-proxy.glb.gz')),
 ];
 

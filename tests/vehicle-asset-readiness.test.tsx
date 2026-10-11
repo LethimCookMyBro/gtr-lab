@@ -10,7 +10,7 @@ import { URL as NodeURL } from "node:url";
 import { useVehicleAsset } from "../src/components/three/useVehicleAsset";
 import type { HomeSceneLoadState } from "../src/components/home/homeReadiness";
 // Reconstruct the checksum-pinned published fixture entirely from tracked chunks.
-const model = manifest.find((entry) => entry.id === "ciasny-r35")!;
+const model = manifest.find((entry) => entry.id === "ciasny-r35-brake-index-e9425289")!;
 const bytes = new Uint8Array(
   Buffer.concat(
     model.chunks.map((chunk) => {

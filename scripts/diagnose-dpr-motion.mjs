@@ -1,4 +1,4 @@
-/** Private CI-only normal-motion proof against an exact npm-built source checkout. */
+/** Staged CI-only normal-motion proof against an exact npm-built source checkout. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
@@ -6,7 +6,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { validateMotionEnvironment, assessMotionEvidence, summarizeScenePixels, assertPointerMotionPixels } from './dpr-motion-policy.mjs';
+import { validateMotionEnvironment, assessMotionEvidence, summarizeScenePixels, assertPointerMotionPixels, motionModelsForSource } from './dpr-motion-policy.mjs';
 import { installDprMotionObserver } from './dpr-motion-observer.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export async function applicationIdentity(directory = '.') {
@@ -55,7 +55,7 @@ export async function main(env = process.env) {
   assert.equal(sourceCommit, env.R35_SOURCE_SHA, 'Candidate checkout is not the exact approved source commit');
   assert.equal(execFileSync('git', ['-C', root, 'status', '--porcelain', '--', 'src', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'server.mjs'], { encoding: 'utf8' }).trim(), '', 'Candidate production source must be clean');
   const harness = dirname(fileURLToPath(import.meta.url));
-  const { cabinModels } = await import(pathToFileURL(resolve(harness, 'cabin-integration-policy.mjs')));
+  const cabinModels = motionModelsForSource(source.sha256);
   const bundles = new Map([['/index.html', hash(await readFile(resolve(root, 'dist/index.html')))]]);
   for (const name of await readdir(resolve(root, 'dist/assets'))) if (/\.(?:js|css)$/.test(name)) bundles.set(`/assets/${name}`, hash(await readFile(resolve(root, 'dist/assets', name))));
   for (const model of cabinModels) {

@@ -49,7 +49,7 @@ test('fixed cannot pass a stable phase with missing dimension evidence', () => {
   assert.ok(policy.assessMotionEvidence({ mode: 'fixed', observation, pixels: [] }).failures.some(x => /missing buffer dimensions/.test(x)));
 });
 const request = { version: 1, allow: true, mode: 'baseline', sourceSha: 'b'.repeat(40), sourceTree: 'c'.repeat(64) };
-const pushEnv = { ...approved, GITHUB_EVENT_NAME: 'push', R35_DPR_COMMIT_MESSAGE: 'Reviewed CI-only [stage-dpr-motion]' };
+const pushEnv = { ...approved, GITHUB_EVENT_NAME: 'push', R35_DPR_COMMIT_MESSAGE: 'Reviewed CI-only [stage-dpr-motion] [stage-cabin-integration]' };
 test('reviewed main-push request needs exact repository/ref, marker and explicit allow', () => {
   assert.equal(typeof policy.resolveMotionRequest, 'function');
   const resolved = policy.resolveMotionRequest(request, pushEnv); assert.equal(resolved.R35_SOURCE_SHA, request.sourceSha); assert.equal(resolved.R35_ALLOW_DPR_MOTION_PROBE, '1');

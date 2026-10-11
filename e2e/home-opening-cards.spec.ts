@@ -51,7 +51,7 @@ test("opening keeps authentic identity visible until real scene readiness or exp
   await page.route("https://media.flixel.com/**", (route) => {
     release = route;
   });
-  await page.route("**/models/ciasny-r35.glb", () => {});
+  await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", () => {});
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const opening = page.locator(".home-opening");
   await expect(opening).toHaveAttribute("data-state", "loading");
@@ -476,7 +476,7 @@ test("opening keeps the preloaded player and modal focus until entry", async ({
       body: "<!doctype html><title>Early provider document</title><body>Document readiness only, not playback evidence.</body>",
     });
   });
-  await page.route("**/models/ciasny-r35.glb", () => {});
+  await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", () => {});
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const film = page.locator(".home-film--hero");
   const frame = film.locator("iframe");
@@ -517,7 +517,7 @@ test("opening player deadline starts after gate release and retry restores the p
   await page.route("https://media.flixel.com/**", () => {
     requests++;
   });
-  await page.route("**/models/ciasny-r35.glb", () => {});
+  await page.route("**/models/ciasny-r35-brake-index-e9425289.glb", () => {});
   await page.clock.install();
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const film = page.locator(".home-film--hero");
