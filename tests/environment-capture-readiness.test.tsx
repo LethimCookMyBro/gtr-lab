@@ -3,7 +3,6 @@
  * Only the WebGL device and browser RAF scheduling are substituted.
  * No server, socket, browser or screenshot is created.
  */
-import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { afterEach, expect, it, vi } from "vitest";
 import { act, advance, createRoot, extend, _roots } from "@react-three/fiber";
@@ -95,7 +94,7 @@ async function fixture() {
   return { canvas, store, frame, recover, renders };
 }
 
-it("settled does not release a late AdaptiveDpr regression after Home", async () => {
+it("the legacy full-resolution helper does not release a late AdaptiveDpr regression after Home", async () => {
   const f = await fixture();
   const key = (key: string) =>
     act(async () =>
@@ -133,60 +132,13 @@ it("settled does not release a late AdaptiveDpr regression after Home", async ()
     });
     return 1;
   });
-  const source = await readFile("scripts/capture-environments.mjs", "utf8");
-  const body = source.slice(
-    source.indexOf("  async function settled() {"),
-    source.indexOf("  async function graphicsHealth()"),
-  );
-  const assertion = () => ({
-    toHaveCount: async () => {},
-    toBeEnabled: async () => {},
-  });
-  const page = {
-    getByRole: () => ({}),
-    locator: () => ({}),
-    waitForFunction: async (
-      fn: (options?: unknown) => unknown,
-      argument: unknown,
-      opts: { timeout: number },
-    ) => {
-      expect(opts.timeout).toBe(15000);
-      if (fn === waitForFullResolutionFrames) {
-        expect(argument).toEqual({ timeoutMs: 15000 });
-        const result = await fn(argument);
-        return { jsonValue: async () => result, dispose: async () => {} };
-      }
-      for (let n = 0; n < 15_000 / 16; n++) {
-        const full = fn();
-        observations.push({ phase: "dpr-check", width: f.canvas.width, full });
-        if (full) return;
-        await act(async () => vi.advanceTimersByTimeAsync(16));
-        await f.frame();
-      }
-      throw new Error("Readiness exceeded its existing budget");
-    },
-    evaluate: async (fn: (options: unknown) => unknown, options: unknown) =>
-      fn(options),
-  };
-  const run = new Function(
-    "expect",
-    "canvas",
-    "page",
-    "waitForFullResolutionFrames",
-    `${body};return settled();`,
-  );
-  const result = await run(
-    assertion,
-    f.canvas,
-    page,
-    waitForFullResolutionFrames,
-  );
+  const result = await waitForFullResolutionFrames({ timeoutMs: 15000 });
   expect(result).toMatchObject({ drawingBuffer: [390, 392], fullFrames: 3 });
   expect(result.regressedFrames).toBeGreaterThan(0);
   console.log("REAL_DPR_TRACE", JSON.stringify(observations));
   // The real AdaptiveDpr regression is withheld until recovery is stable.
   expect(
     f.canvas.width,
-    "settled() released a 60% DPR canvas after accepting full DPR",
+    "The legacy full-resolution helper released a 60% DPR canvas after accepting full DPR",
   ).toBe(390);
 });

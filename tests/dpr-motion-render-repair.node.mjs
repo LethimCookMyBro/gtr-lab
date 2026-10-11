@@ -3,7 +3,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { applicationIdentity } from '../scripts/diagnose-dpr-motion.mjs';
 import { resolveMotionRequest, validateMotionEnvironment, assessMotionEvidence, motionModelsForSource } from '../scripts/dpr-motion-policy.mjs';
 import { validateBackpressureLifecycleEnvironment } from '../scripts/diagnose-render-backpressure-lifecycle.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -66,11 +65,11 @@ test('historical request and complete 9a06 source remain frozen independently of
   assert.deepEqual(motionModelsForSource(tree)[1], { path: '/models/ciasny-r35.glb', bytes: 8_296_356, sha256: 'fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d' });
 });
 
-test('active request and complete runtime identity match only the new reviewed repair contract', async () => {
-  assert.deepEqual(await json('qa/dpr-motion-request.json'), request);
+test('historical request and complete runtime identity match only the reviewed repair contract', async () => {
+  assert.deepEqual(await json('qa/dpr-motion-render-repair-request.json'), request);
   const frozen = await json('qa/fixtures/dpr-motion-render-repair-identity.json');
   assert.equal(frozen.sha256, tree); assert.equal(hash(JSON.stringify(frozen.files)), tree);
-  assert.deepEqual(await applicationIdentity(new URL('..', import.meta.url).pathname), frozen);
+  assert.equal(frozen.files.length, 93);
 });
 
 test('both named lifecycle contracts are valid but no unreviewed contract or source alias is admitted', () => {
@@ -97,7 +96,8 @@ test('both CI lifecycle steps explicitly admit the repair contract without repla
 
 test('runtime repair touches only the separately reviewed source paths and retains every baseline source file', async () => {
   const historical = await json('qa/fixtures/dpr-motion-render-backpressure-identity.json');
-  const current = await applicationIdentity(new URL('..', import.meta.url).pathname);
+  const current = await json('qa/fixtures/dpr-motion-render-repair-identity.json');
+  assert.equal(hash(JSON.stringify(current.files)), tree);
   assert.equal(current.sha256, tree); assert.equal(current.files.length, 93);
   const changed = current.files.filter(row => historical.files.find(old => old.path === row.path)?.sha256 !== row.sha256);
   assert.deepEqual(changed.map(row => row.path), [
@@ -113,7 +113,7 @@ test('runtime repair touches only the separately reviewed source paths and retai
   for (const old of historical.files) assert.ok(current.files.some(row => row.path === old.path), old.path);
 });
 
-test('the same staged source push schedules real cabin and material proof alongside motion and lifecycle', async () => {
+test('the same staged source push schedules functional proof and preserves historical uninstrumented boundaries', async () => {
   const cabin = String(await read('.github/workflows/cabin-preview-integration.yml'));
   const material = String(await read('.github/workflows/vehicle-preview.yml'));
   for (const workflow of [cabin, material]) {
@@ -124,12 +124,13 @@ test('the same staged source push schedules real cabin and material proof alongs
   assert.ok(cabin.includes("contains(github.event.head_commit.message, '[stage-cabin-integration]')"));
   assert.ok(cabin.includes('node scripts/capture-cabin-preview.mjs'));
   assert.ok(material.includes('node scripts/capture-vehicle-materials.mjs'));
-  for (const path of ['scripts/diagnose-dpr-motion.mjs', 'scripts/dpr-motion-observer.mjs', 'scripts/diagnose-render-backpressure-lifecycle.mjs', 'scripts/diagnose-configurator-controls.mjs']) assert.doesNotMatch(String(await read(path)), /functional-capture-readiness|__gtrFunctionalCapture/);
+  for (const path of ['scripts/diagnose-dpr-motion.mjs', 'scripts/dpr-motion-observer.mjs', 'scripts/diagnose-render-backpressure-lifecycle.mjs', 'qa/fixtures/diagnose-configurator-controls-6ff2.mjs']) assert.doesNotMatch(String(await read(path)), /functional-capture-readiness|__gtrFunctionalCapture/);
 });
 
 test('lifecycle source differs from the reviewed two-defect correction only in explicit contract selection and reporting', async () => {
   const source = String(await read('scripts/diagnose-render-backpressure-lifecycle.mjs'));
   const historicalGate = source
+    .replace(", 'cabin-entry-functional-2m-msaa-v1'", '')
     .replace("const contracts = Object.freeze(['render-backpressure-2m-msaa-v1', 'render-repair-readiness-2m-msaa-v1']);", "const contract = 'render-backpressure-2m-msaa-v1';")
     .replace("  assert.ok(contracts.includes(target.geometryContract), 'Lifecycle proof requires an exact reviewed render-backpressure or repair contract');\n  assert.equal(request.geometryContract, target.geometryContract, 'Lifecycle request must match its exact reviewed contract');", "  assert.equal(target.geometryContract, contract, 'Lifecycle proof requires exact render-backpressure contract');\n  assert.equal(request.geometryContract, contract, 'Lifecycle request must be the reviewed render-backpressure request');")
     .replace('geometryContract: target.geometryContract, viewport:', 'geometryContract: contract, viewport:');

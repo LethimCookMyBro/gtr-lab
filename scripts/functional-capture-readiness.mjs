@@ -8,7 +8,25 @@ export function installFunctionalCaptureObserver() {
   let request = null,
     certificate = null;
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  // Providers may unregister/re-register without changing the rendered state.
+  // Compare every JSON value, ignoring only object-key insertion order.
+  const equal = (a, b) => {
+    if (a === b) return true;
+    if (!a || !b || typeof a !== "object" || typeof b !== "object")
+      return false;
+    if (Array.isArray(a) || Array.isArray(b))
+      return (
+        Array.isArray(a) &&
+        Array.isArray(b) &&
+        a.length === b.length &&
+        a.every((value, index) => equal(value, b[index]))
+      );
+    const keys = Object.keys(a);
+    return (
+      keys.length === Object.keys(b).length &&
+      keys.every((key) => Object.hasOwn(b, key) && equal(a[key], b[key]))
+    );
+  };
   const now = () => performance.now();
   const current = () => {
     const canvas = document.querySelector(".scene-stage canvas");

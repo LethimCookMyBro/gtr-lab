@@ -3,7 +3,8 @@ import { chromium } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { waitForEnvironmentReady } from './vehicle-preview-readiness.mjs';
+import { installFunctionalCaptureObserver, armFunctionalCapture, verifyFunctionalCapture } from './functional-capture-readiness.mjs';
+import { waitForEnvironmentReady, waitForExteriorCapture, readFunctionalCaptureFailure } from './vehicle-preview-readiness.mjs';
 const sharedHdrPath = '/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr';
 const directory='vehicle-preview-results';await mkdir(directory,{recursive:true});
 const baseUrl=process.env.PREVIEW_BASE_URL||'http://127.0.0.1:4175';
@@ -14,7 +15,7 @@ try{
  for(let attempt=0;attempt<50;attempt++){if(await fetch(baseUrl).then(r=>r.ok).catch(()=>false))break;await new Promise(r=>setTimeout(r,100));}
  browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader']});
  for(const [name,viewport]of[['desktop',{width:1440,height:900}],['mobile',{width:390,height:844}]]){
-  const context=await browser.newContext({viewport,deviceScaleFactor:1,reducedMotion:'reduce',...(name==='mobile'?{isMobile:true,hasTouch:true}:{})});const page=await context.newPage();page.setDefaultTimeout(15000);
+  const context=await browser.newContext({viewport,deviceScaleFactor:1,reducedMotion:'reduce',...(name==='mobile'?{isMobile:true,hasTouch:true}:{})});await context.addInitScript(installFunctionalCaptureObserver);const page=await context.newPage();page.setDefaultTimeout(15000);
   const view={name,viewport,ready:false,errors:[],console:[]};report.views.push(view);await save();
   page.on('pageerror',e=>view.errors.push(e.message));page.on('console',m=>{if(['error','warning'].includes(m.type()))view.console.push({type:m.type(),text:m.text()});});
   const hdrRequests = [];
@@ -31,31 +32,35 @@ try{
   await save();console.log(`[preview] ${name} ready=${view.ready}`);
   try{await page.screenshot({path:`${directory}/${name}-licensed-r35.png`,animations:'disabled',scale:'css',timeout:15000});}catch(e){view.errors.push(`Screenshot: ${e}`);}
   if(view.ready){
-   view.interactions=[];
+   view.interactions=[];view.frames=[];
+   let expectedEnvironment='studio', captureArmed=true;
+   const armCapture=async(options={})=>{await armFunctionalCapture(page,options);captureArmed=true;};
    const frameHash = async label => {
-    await page.waitForFunction(() => { const canvas = document.querySelector('.scene-stage canvas'); return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.5, Math.sqrt(2_000_000 / Math.max(1, canvas.clientWidth * canvas.clientHeight)))) < .02; }, {}, { timeout: 15000 });
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    if(!captureArmed)await armCapture({allowUnchanged:true});
+    await waitForExteriorCapture(page,{preset:'hero',environment:expectedEnvironment,timeout:15000});
     const bytes = await page.locator('.scene-stage canvas').screenshot({ path: `${directory}/${name}-${label}.png`, timeout: 45000 });
+    const readiness=await verifyFunctionalCapture(page);captureArmed=false;view.frames.push({label,readiness});
     return createHash('sha256').update(bytes).digest('hex');
    };
    try{
     await page.getByRole('button',{name:'Vibrant Red',exact:true}).scrollIntoViewIfNeeded();
-    await page.getByRole('button',{name:'Vibrant Red',exact:true}).click();
+    await armCapture();await page.getByRole('button',{name:'Vibrant Red',exact:true}).click();
     if(await page.getByRole('button',{name:'Vibrant Red',exact:true}).getAttribute('aria-pressed')!=='true')throw new Error('Paint selection did not update');
     view.interactions.push('Paint selection updates');
     await page.getByRole('button',{name:'Ultimate Silver',exact:true}).scrollIntoViewIfNeeded();
-    await page.getByRole('button',{name:'Ultimate Silver',exact:true}).click();
-    await page.getByRole('button',{name:'Lights',exact:true}).click();
+    await armCapture();await page.getByRole('button',{name:'Ultimate Silver',exact:true}).click();
+    await armCapture();await page.getByRole('button',{name:'Lights',exact:true}).click();
     if(await page.getByRole('button',{name:'Lights',exact:true}).getAttribute('aria-pressed')!=='true')throw new Error('Lamp control did not update');
-    await page.getByRole('button',{name:'Lights',exact:true}).click();
+    await armCapture();await page.getByRole('button',{name:'Lights',exact:true}).click();
     view.interactions.push('Lamp control updates');
     const resetCamera = async () => {
+     await armCapture({cameraRequest:true});
      await page.getByRole('button', { name: 'Camera', exact: true }).click();
      await page.getByRole('dialog').getByRole('button', { name: 'Front ¾', exact: true }).click();
      await page.getByRole('dialog').waitFor({ state: 'hidden' });
     };
     await resetCamera(); const canonical = await frameHash('canonical-view');
-    await page.locator('.scene-stage canvas').focus(); await page.locator('.scene-stage canvas').press('ArrowLeft');
+    await page.locator('.scene-stage canvas').focus(); await armCapture(); await page.locator('.scene-stage canvas').press('ArrowLeft');
     const manual = await frameHash('manual-orbit');
     await resetCamera(); const restored = await frameHash('restored-view');
     if (manual === canonical || restored !== canonical) throw new Error('Repeated camera request did not restore the canonical rendered view');
@@ -66,7 +71,7 @@ try{
     await page.getByRole('dialog').waitFor({state:'visible'});
     await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});
     view.interactions.push('Detail panel opens and closes');
-   }catch(e){view.errors.push(`Interaction: ${e}`);}
+   }catch(e){view.functionalCapture = await readFunctionalCaptureFailure(page);view.errors.push(`Interaction: ${e}`);}
    view.environments=[];
    let sharedHdr;
    for(const [environment,label]of[['forest','Test paddock'],['coast','Coastal road']]){
@@ -74,6 +79,7 @@ try{
     try{
      const before = await frameHash(`before-environment-${environment}`);
      const select = async () => {
+      await armCapture();expectedEnvironment=environment;
       await page.getByRole('button',{name:'Environment',exact:true}).click();
       await page.getByRole('dialog').getByRole('button',{name:new RegExp('^'+label)}).click();
       await page.getByRole('dialog').waitFor({state:'hidden'});
@@ -97,17 +103,14 @@ try{
      }
      // A cached sky does not mean coast's separate rock assets are decoded/rendered yet.
      await waitForEnvironmentReady(page, environment);
-     // Keep render settling and pixel evidence after the actual readiness condition.
-     await page.evaluate(()=>new Promise(resolve=>{let remaining=24;function frame(){if(--remaining<=0)resolve();else requestAnimationFrame(frame);}requestAnimationFrame(frame);}));
      if (!(await page.locator('main.configurator').getAttribute('class')).split(/\s+/).includes(`environment-${environment}`)) throw new Error('Environment selection did not update');
-     if(await page.locator('.scene-loading, .scene-notice, .render-error').count())throw new Error('Environment did not finish rendering cleanly');
      const after = await frameHash(`environment-${environment}-canvas`);
      if (after === before) throw new Error('Environment selection did not change rendered canvas pixels');
      Object.assign(state,{before,after,pixelsChanged:true,hdrRequests:[...hdrRequests]});
      if (hdrRequests.length !== 1 || hdrRequests[0] !== sharedHdrPath) throw new Error('Outdoor environments must fetch one shared sky and reuse its cached texture');
      await page.screenshot({path:`${directory}/${name}-${environment}-licensed-r35.png`,animations:'disabled',scale:'css',timeout:40000});
      state.ready=true;
-    }catch(e){state.error=String(e);view.errors.push(`${environment}: ${e}`);}
+    }catch(e){state.functionalCapture=await readFunctionalCaptureFailure(page);state.error=String(e);view.errors.push(`${environment}: ${e}`);}
     await save();console.log(`[preview] ${name} ${environment} ready=${state.ready}`);
    }
   }

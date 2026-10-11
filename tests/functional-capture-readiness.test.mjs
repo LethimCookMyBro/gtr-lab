@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import orderFailures from "./fixtures/functional-readiness-order-failure.json";
 import {
   installFunctionalCaptureObserver,
   waitForFunctionalCapture,
@@ -255,20 +256,23 @@ it("observer cleanup drops hooks and references", () => {
   expect(globalThis.__gtrFunctionalCaptureObserver).toBeUndefined();
   expect(api()).toBeUndefined();
 });
-it("the combined dimension/state/native readiness uses the original budget", async () => {
-  main();
-  fence();
-  signal();
-  const page = {
-    evaluate: async (fn, arg) => fn(arg),
-    waitForFunction: vi.fn(async (fn, arg, opts) => {
-      expect(opts).toEqual({ timeout: 20000, polling: 16 });
-      expect(fn(arg)).toBeTruthy();
-    }),
-  };
-  await waitForFunctionalCapture(page, { preset: "hero", timeout: 20000 });
-  expect(page.waitForFunction).toHaveBeenCalledOnce();
-});
+it.each([20000, 30000])(
+  "the combined dimension/state/native readiness uses the original %s budget",
+  async (timeout) => {
+    main();
+    fence();
+    signal();
+    const page = {
+      evaluate: async (fn, arg) => fn(arg),
+      waitForFunction: vi.fn(async (fn, arg, opts) => {
+        expect(opts).toEqual({ timeout, polling: 16 });
+        expect(fn(arg)).toBeTruthy();
+      }),
+    };
+    await waitForFunctionalCapture(page, { preset: "hero", timeout });
+    expect(page.waitForFunction).toHaveBeenCalledOnce();
+  },
+);
 
 it("replacement intent cannot reuse the old completed owner and binds the next owner", () => {
   main();
@@ -406,4 +410,138 @@ it("preset selection must apply a newer camera request even when the preset labe
   fence(2, [2]);
   signal(2);
   expect(poll()).toMatchObject({ mainDrawId: 2 });
+});
+
+// Source-bound desktop/mobile reports from CI run 38136396803. Native events
+// below replay observed main/fence IDs and status; no browser or GPU is started.
+it.each(orderFailures)(
+  "$viewport completed unchanged pixels survive provider registration order",
+  ({ expected: wanted, failure }) => {
+    state = copy(failure.lastMain.snapshot);
+    main(failure.lastMain.id);
+    fence(
+      failure.lastBatch.id,
+      failure.lastBatch.draws,
+      failure.lastBatch.previous,
+    );
+    signal(failure.lastBatch.id, failure.lastBatch.status);
+    api().arm({ allowUnchanged: true });
+    state = copy(failure.current);
+    expect(state).toEqual(failure.lastMain.snapshot);
+    expect(JSON.stringify(state)).not.toBe(
+      JSON.stringify(failure.lastMain.snapshot),
+    );
+    expect(api().poll({ expected: wanted, deadline: 20000 })).toMatchObject({
+      mainDrawId: 14,
+      fenceId: 16,
+      nativeStatus: 0x911c,
+      drainFenceId: 16,
+      reusedUnchanged: true,
+      snapshot: failure.current,
+    });
+    expect(api().verify().snapshot).toEqual(failure.current);
+  },
+);
+const reverseObjectKeys = (value) => {
+  if (Array.isArray(value)) return value.map(reverseObjectKeys);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .reverse()
+      .map(([key, child]) => [key, reverseObjectKeys(child)]),
+  );
+};
+it("object-key order is irrelevant through new draws, revisions and capture verification", () => {
+  main();
+  fence();
+  signal();
+  const revision = poll().appliedRevision;
+  state = reverseObjectKeys(state);
+  expect(api().verify().appliedRevision).toBe(revision);
+  main(2);
+  fence(2, [2]);
+  signal(2);
+  expect(poll()).toMatchObject({
+    mainDrawId: 2,
+    appliedRevision: revision,
+    reusedUnchanged: false,
+  });
+  state = reverseObjectKeys(state);
+  expect(api().verify().mainDrawId).toBe(2);
+});
+it.each([
+  ["camera request", (s) => s.camera.requestId++],
+  ["camera target", (s) => (s.camera.target[0] += 0.000001)],
+  ["pose", (s) => (s.pose.position[0] += 0.000001)],
+  ["lamp emissive", (s) => (s.vehicle.lamps[0].emissive[0] += 0.000001)],
+  ["lamp intensity", (s) => s.vehicle.lamps[0].intensity++],
+  ["geometry", (s) => s.dimensions.height++],
+  ["array order", (s) => s.pose.position.reverse()],
+  ["array length", (s) => s.pose.position.push(0)],
+  [
+    "array versus object",
+    (s) => {
+      s.pose.position = { ...s.pose.position };
+    },
+  ],
+  [
+    "missing key",
+    (s) => {
+      delete s.camera.targetFov;
+    },
+  ],
+  [
+    "extra key",
+    (s) => {
+      s.camera.extra = null;
+    },
+  ],
+  [
+    "null versus missing",
+    (s) => {
+      delete s.vehicle.cabinSeat;
+    },
+  ],
+  [
+    "scalar type",
+    (s) => {
+      s.camera.requestId = String(s.camera.requestId);
+    },
+  ],
+])("key-order tolerance still rejects changed %s", (_name, change) => {
+  main();
+  fence();
+  signal();
+  api().arm({ allowUnchanged: true });
+  expect(poll()).not.toBeNull();
+  state = reverseObjectKeys(state);
+  change(state);
+  expect(poll()).toBeNull();
+  expect(() => api().verify()).toThrow(/changed during capture/);
+});
+it("provider reordering does not create a pre-arm completion or allow implicit reuse", () => {
+  main();
+  fence();
+  api().arm({ allowUnchanged: true });
+  signal();
+  state = reverseObjectKeys(state);
+  expect(poll()).toBeNull();
+  api().arm();
+  expect(poll()).toBeNull();
+});
+it("provider reordering cannot bypass a pending later native drain", () => {
+  main();
+  fence();
+  signal();
+  api().arm({ allowUnchanged: true });
+  state = reverseObjectKeys(state);
+  fence(2, []);
+  expect(poll()).toBeNull();
+  signal(2);
+  expect(poll()).toMatchObject({
+    mainDrawId: 1,
+    fenceId: 1,
+    drainFenceId: 2,
+    reusedUnchanged: true,
+  });
 });

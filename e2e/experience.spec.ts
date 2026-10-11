@@ -1,5 +1,6 @@
 import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
+import { waitForVehicleInitialization } from "./helpers/vehicle-initialization";
 const variants = ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"];
 test("homepage to models to details and back", async ({ page }, info) => {
   const errors: string[] = [];
@@ -34,10 +35,13 @@ test("homepage to models to details and back", async ({ page }, info) => {
       () => document.documentElement.scrollWidth <= window.innerWidth + 1,
     ),
   ).toBe(true);
+  const vehicleEntryStarted = performance.now();
   await page
     .getByRole("link", { name: "Explore GT-R Premium", exact: true })
     .click();
   await expect(page).toHaveURL(/\/configurator\/premium$/);
+  await test.step("Initialize the real 3D viewer", () =>
+    waitForVehicleInitialization(page, info, vehicleEntryStarted));
   await expect(
     page.getByRole("button", { name: "Ultimate Silver", exact: true }),
   ).toBeEnabled();

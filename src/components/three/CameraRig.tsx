@@ -54,6 +54,7 @@ export function CameraRig({
   const gl = useThree((state) => state.gl);
   const controls = useRef<OrbitControlsImpl>(null);
   const moving = useRef(true);
+  const cabinEntryCut = useRef(false);
   const transitionClock = useMemo(() => createTargetTransitionClock(), []);
   const manuallyStopped = useRef(false);
   const wasInterior = useRef(preset === "interior");
@@ -142,6 +143,10 @@ export function CameraRig({
       camera.near = exteriorSnapshot.current.near;
       camera.far = exteriorSnapshot.current.far;
     }
+    // Keep entry pending across retargets/effect replay until an admitted frame
+    // can present the complete cabin pose. Later seat changes retain their look.
+    cabinEntryCut.current =
+      Boolean(cabinView) && (cabinEntryCut.current || !wasPreview.current);
     wasPreview.current = Boolean(cabinView);
     transitionClock.reset();
     moving.current = true;
@@ -217,7 +222,13 @@ export function CameraRig({
     const orbit = controls.current;
     if (!orbit) return;
     if (moving.current) {
-      const alpha = transitionClock.sampleAlpha(reducedMotion);
+      // The exterior direction can point into upholstery from the cabin eye.
+      // Cut the whole pose before this admitted main draw; never present that
+      // intermediate view. Exterior and subsequent seat transitions still ease.
+      const alpha = cabinEntryCut.current
+        ? 1
+        : transitionClock.sampleAlpha(reducedMotion);
+      cabinEntryCut.current = false;
       const lookDistance = camera.position.distanceTo(orbit.target);
       camera.position.lerp(destination.position, alpha);
       if (leavingInterior.current) {
@@ -273,6 +284,7 @@ export function CameraRig({
   }, -2);
 
   function stopForManualInput() {
+    cabinEntryCut.current = false;
     moving.current = false;
     manuallyStopped.current = true;
     if (controls.current) {

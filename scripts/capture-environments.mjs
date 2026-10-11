@@ -18,7 +18,8 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { chromium, expect } from "@playwright/test";
-import { waitForFullResolutionFrames } from "./environment-capture-readiness.mjs";
+import { installFunctionalCaptureObserver, armFunctionalCapture, verifyFunctionalCapture } from "./functional-capture-readiness.mjs";
+import { waitForExteriorCapture, readFunctionalCaptureFailure } from "./vehicle-preview-readiness.mjs";
 
 import {
   canvasPixelHash,
@@ -214,10 +215,16 @@ async function runViewport(name, viewport) {
     reducedMotion: "reduce",
     ...(name.startsWith("mobile") ? { isMobile: true, hasTouch: true } : {}),
   });
+  await context.addInitScript(installFunctionalCaptureObserver);
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
   const canvas = page.locator(".scene-stage canvas");
   let initialCanvas;
+  let expectedPreset = "hero", expectedEnvironment = "studio", captureArmed = true;
+  const armCapture = async (options = {}) => {
+    await armFunctionalCapture(page, options);
+    captureArmed = true;
+  };
   const comparisonsByHash = new Map();
   const assertPixelChanges = (hashes, message) =>
     assertDistinctScenePixels(
@@ -264,26 +271,23 @@ async function runViewport(name, viewport) {
   };
   async function settled() {
     await expect(canvas).toHaveCount(1);
+    // Keep the original allowance limited to model/control availability.
+    // Notice clearing and selected/native state share the 15s gate below.
     await expect(
       page.getByRole("button", { name: "Ultimate Silver", exact: true }),
     ).toBeEnabled({ timeout: 90000 });
-    await expect(
-      page.locator(
-        ".scene-loading, .scene-notice, .render-error, vite-error-overlay",
-      ),
-    ).toHaveCount(0);
-    // Check every concluding frame: Home can queue an OrbitControls change
-    // that lowers AdaptiveDpr after the old full-resolution canvas was observed.
-    const stable = await page.waitForFunction(
-      waitForFullResolutionFrames,
-      { timeoutMs: 15000 },
-      { timeout: 15000 },
-    );
-    try {
-      return await stable.jsonValue();
-    } finally {
-      await stable.dispose();
-    }
+    if (!captureArmed) await armCapture({ allowUnchanged: true });
+    // Replace the old full-DPR + three-RAF gate with genuine completion in its
+    // existing 15s budget. Full dimensions are part of this same certificate.
+    await waitForExteriorCapture(page, { preset: expectedPreset, environment: expectedEnvironment, timeout: 15000 });
+    const readiness = await page.evaluate(() => globalThis.__gtrFunctionalCapture.snapshot().certificate);
+    const dimensions = readiness.snapshot.dimensions;
+    return {
+      css: [dimensions.cssWidth, dimensions.cssHeight],
+      drawingBuffer: [dimensions.width, dimensions.height],
+      expectedDpr: dimensions.pixelRatio,
+      readiness,
+    };
   }
 
   async function graphicsHealth() {
@@ -307,6 +311,8 @@ async function runViewport(name, viewport) {
     return health;
   }
   async function camera(label) {
+    await armCapture({ cameraRequest: true });
+    expectedPreset = ({ "Front ¾": "hero", Front: "front", Rear: "rear", Side: "side", "Top detail": "top" })[label];
     await page.getByRole("button", { name: "Camera", exact: true }).click();
     await dialog.getByRole("button", { name: label, exact: true }).click();
     await expect(dialog).toHaveCount(0);
@@ -327,6 +333,8 @@ async function runViewport(name, viewport) {
       new RegExp(`^${item.label}(?:\\s|$)`),
     );
     await expect(option).toBeEnabled();
+    await armCapture();
+    expectedEnvironment = item.id;
     await option.click();
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
@@ -342,6 +350,9 @@ async function runViewport(name, viewport) {
     await expect(trigger).toBeFocused();
   }
   async function press(key, count) {
+    // Zoom limits can legitimately leave the certified pose unchanged. Arm
+    // before input, and allow only that exact pre-action completed baseline.
+    await armCapture({ allowUnchanged: ["+", "-"].includes(key) });
     await canvas.focus();
     const shifted = key.startsWith("Shift+");
     const physicalKey = shifted ? key.slice("Shift+".length) : key;
@@ -449,7 +460,10 @@ async function runViewport(name, viewport) {
           await persist();
         },
         validate: async () => {
-          await settled();
+          const revalidated = await settled();
+          for (const key of ['owner', 'mainDrawId', 'fenceId', 'drainFenceId', 'snapshot']) {
+            assert.deepEqual(revalidated.readiness[key], resolution.readiness[key], 'Cannot retry screenshot after certified scene/native evidence changed');
+          }
           await graphicsHealth();
           assert(
             await canvas.evaluate(
@@ -477,6 +491,8 @@ async function runViewport(name, viewport) {
         },
       },
     );
+    const readiness = await verifyFunctionalCapture(page);
+    captureArmed = false;
     const screenshotFinished = performance.now();
     assert.deepEqual(
       await page.evaluate(observeOverlayRectangles),
@@ -491,6 +507,7 @@ async function runViewport(name, viewport) {
       canvasBounds: bounds,
       selectedEnvironment: item.id,
       resolution,
+      readiness,
       sha256: createHash("sha256").update(bytes).digest("hex"),
       canvasSha256: comparison.sha256,
       comparisonBounds: comparison.bounds,
@@ -689,6 +706,7 @@ async function runViewport(name, viewport) {
           step: currentStep,
           message: String(error),
           stack: error.stack,
+          functionalCapture: await readFunctionalCaptureFailure(page),
         });
         // Preserve partial results and continue other environments when usable.
         await page.keyboard.press("Escape").catch(() => {});
@@ -754,6 +772,7 @@ async function runViewport(name, viewport) {
             step: currentStep,
             message: String(error),
             stack: error.stack,
+          functionalCapture: await readFunctionalCaptureFailure(page),
           });
           await page.keyboard.press("Escape").catch(() => {});
         }
@@ -825,11 +844,14 @@ async function runViewport(name, viewport) {
       };
       const setLamps = async (enabled) => {
         await expect(lamps).toBeEnabled();
-        if ((await lamps.getAttribute("aria-pressed")) !== String(enabled))
+        if ((await lamps.getAttribute("aria-pressed")) !== String(enabled)) {
+          await armCapture();
           await lamps.click();
+        }
         await expect(lamps).toHaveAttribute("aria-pressed", String(enabled));
       };
       try {
+        await armCapture();
         await paintGroup
           .getByRole("button", { name: "Jet Black", exact: true })
           .click();
@@ -881,9 +903,11 @@ async function runViewport(name, viewport) {
           step: currentStep,
           message: String(error),
           stack: error.stack,
+          functionalCapture: await readFunctionalCaptureFailure(page),
         });
       } finally {
         try {
+          await armCapture();
           await paintGroup
             .getByRole("button", { name: originalPaint, exact: true })
             .click();
@@ -902,6 +926,7 @@ async function runViewport(name, viewport) {
             step: "night/paint-restoration",
             message: String(error),
             stack: error.stack,
+          functionalCapture: await readFunctionalCaptureFailure(page),
           });
         }
         await writeFile(
@@ -918,6 +943,7 @@ async function runViewport(name, viewport) {
       step: currentStep,
       message: String(error),
       stack: error.stack,
+          functionalCapture: await readFunctionalCaptureFailure(page),
     });
   } finally {
     // Warning-level WebGL failures must fail too. SwiftShader GPU-stall/perf

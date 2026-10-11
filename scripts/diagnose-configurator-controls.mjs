@@ -5,6 +5,8 @@ import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { installFunctionalCaptureObserver, armFunctionalCapture, verifyFunctionalCapture } from './functional-capture-readiness.mjs';
+import { waitForExteriorCapture, readFunctionalCaptureFailure } from './vehicle-preview-readiness.mjs';
 const sharedHdrPath = '/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr';
 // Retry only screenshot readback timeouts, once, without rerunning any controls.
 // Exported independently of the CLI so recovery is tested without starting a browser.
@@ -53,13 +55,14 @@ try {
   browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
   for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) {
     const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', ...(name === 'mobile' ? { isMobile: true, hasTouch: true } : {}) });
+    await context.addInitScript(installFunctionalCaptureObserver);
     await context.addInitScript(() => {
       window.__audioStarts = 0;
       const start = OscillatorNode.prototype.start;
       OscillatorNode.prototype.start = function (...args) { window.__audioStarts++; return start.apply(this, args); };
     });
     const page = await context.newPage(); page.setDefaultTimeout(45000);
-    const result = { name, viewport, controls: [], screenshotRetries: [], errors: [], warnings: [] }; report.browsers.push(result);
+    const result = { name, viewport, controls: [], frames: [], screenshotRetries: [], errors: [], warnings: [] }; report.browsers.push(result);
     page.on('pageerror', error => result.errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error') result.errors.push(message.text()); if (message.type() === 'warning') result.warnings.push(message.text()); });
     const hdrRequests = [];
@@ -70,14 +73,13 @@ try {
       if (path === '/models/r35-cabin-dashboard-5c0a9dca.glb') cabinRequests.push(path);
     });
     const canvas = page.locator('.scene-stage canvas');
+    let expectedPreset = 'hero', expectedEnvironment = 'studio', captureArmed = true;
+    const armCapture = async (options = {}) => { await armFunctionalCapture(page, options); captureArmed = true; };
     const shot = async label => {
       // Match the established vehicle suite: deterministic static pixel readback.
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      await page.waitForFunction(() => {
-        const canvas = document.querySelector('.scene-stage canvas');
-        return canvas && Math.abs(canvas.width / canvas.clientWidth - Math.min(devicePixelRatio, 1.5, Math.sqrt(2_000_000 / Math.max(1, canvas.clientWidth * canvas.clientHeight)))) < 0.02;
-      }, {}, { timeout: 15000 });
-      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      if (!captureArmed) await armCapture({ allowUnchanged: true });
+      await waitForExteriorCapture(page, { preset: expectedPreset, environment: expectedEnvironment, timeout: 15000 });
       const bounds = await canvas.boundingBox();
       assert(bounds && bounds.width > 200 && bounds.height > 200, 'Viewer is missing or collapsed');
       assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= viewport.width && bounds.y + bounds.height <= viewport.height, 'Viewer canvas must be fully visible for pixel comparison');
@@ -86,33 +88,37 @@ try {
       // Read the verified canvas rectangle without locator scrolling/stability waits.
       // A single timeout retry keeps the same stopped camera, viewport, clip and path.
       const options = { path: `${directory}/${name}-${label}.png`, timeout: 45000, clip: bounds };
+      let readiness;
       const bytes = await captureWithTimeoutRetry(async () => {
         assert.deepEqual(await canvas.boundingBox(), bounds, 'Canvas bounds changed during screenshot capture');
         assert.equal(await rotate.getAttribute('aria-pressed'), 'false', 'Rotation resumed during screenshot capture');
-        return await page.screenshot(options);
+        const pixels = await page.screenshot(options);
+        readiness = await verifyFunctionalCapture(page);
+        captureArmed = false;
+        return pixels;
       }, async error => {
         const retry = { label, attempt: 2, maxAttempts: 2, timeoutMs: options.timeout, reason: error.message, sameState: true, clip: bounds };
         result.screenshotRetries.push(retry);
         console.log(JSON.stringify({ captureRetry: { viewport: name, ...retry } }));
         await save();
       });
+      result.frames.push({ label, readiness });
       return createHash('sha256').update(bytes).digest('hex');
     };
-    const pause = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const check = async (label, action) => {
       const row = { control: label };
       result.controls.push(row);
       try { Object.assign(row, await action()); row.passed = true; }
-      catch (error) { row.passed = false; row.error = String(error); report.failures.push(`${name}: ${label}: ${error.message}`); await page.screenshot({ path: `${directory}/${name}-failure-${result.controls.length}.png`, timeout: 45000 }).catch(() => {}); }
+      catch (error) { row.passed = false; row.error = String(error); row.functionalCapture = await readFunctionalCaptureFailure(page); report.failures.push(`${name}: ${label}: ${error.message}`); await page.screenshot({ path: `${directory}/${name}-failure-${result.controls.length}.png`, timeout: 45000 }).catch(() => {}); }
       console.log(JSON.stringify(row)); await save();
     };
     const open = async label => { await page.getByRole('button', { name: label, exact: true }).click(); await page.getByRole('dialog').waitFor(); };
     const close = async () => { await page.keyboard.press('Escape'); await page.getByRole('dialog').waitFor({ state: 'hidden' }); };
-    const chooseCamera = async label => { await open('Camera'); await page.getByRole('dialog').getByRole('button', { name: label, exact: true }).click(); await page.getByRole('dialog').waitFor({ state: 'hidden' }); await pause(); };
+    const chooseCamera = async label => { await armCapture({ cameraRequest: true }); expectedPreset = ({ 'Front ¾': 'hero', Front: 'front', Side: 'side', 'Rear ¾': 'rear-quarter', Rear: 'rear', 'Wheel detail': 'wheel', 'Top detail': 'top' })[label]; await open('Camera'); await page.getByRole('dialog').getByRole('button', { name: label, exact: true }).click(); await page.getByRole('dialog').waitFor({ state: 'hidden' }); };
     try {
       await page.goto(baseURL + '/configurator/premium', { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => { const button = document.querySelector('button[aria-label="Ultimate Silver"]'); return !!button && !button.disabled; }, {}, { timeout: 90000 });
-      assert.equal(await canvas.count(), 1); await pause();
+      assert.equal(await canvas.count(), 1);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.screenshot({ path: `${directory}/${name}-initial-page.png`, timeout: 45000 });
       for (const label of ['Camera', 'Environment', 'Model detail', 'Switch model', 'Model provenance & limitations', 'Asset information']) {
@@ -131,7 +137,7 @@ try {
       }
       await check('Reselect the same camera after manual exploration', async () => {
         await chooseCamera('Front ¾'); const canonical = await shot('camera-canonical');
-        await canvas.focus(); await canvas.press('ArrowLeft'); await pause(); const manual = await shot('camera-manual'); assert.notEqual(manual, canonical);
+        await canvas.focus(); await armCapture(); await canvas.press('ArrowLeft'); const manual = await shot('camera-manual'); assert.notEqual(manual, canonical);
         await chooseCamera('Front ¾'); const restored = await shot('camera-reselected');
         assert.equal(restored, canonical, 'Reselecting a camera must restore its exact canonical perspective after manual orbit');
         return { canonical, manual, restored, pixelsChanged: true };
@@ -139,12 +145,12 @@ try {
       await check('Cabin preview is an explicitly disclosed opt-in', async () => auditCabinPreviewAvailability({ page, open, close, cabinRequests, screenshotPath: `${directory}/${name}-cabin-preview-available.png` }));
       let paintPixels = await shot('paint-start');
       for (const label of ['Gun Metallic', 'Pearl White', 'Jet Black', 'Vibrant Red', 'Deep Blue', 'Stealth Gray', 'Midnight Violet', 'Dark Metal Gray', 'Ultimate Silver']) {
-        await check(`Paint ${label}`, async () => { const before = paintPixels; const button = page.getByRole('button', { name: label, exact: true }); await button.scrollIntoViewIfNeeded(); await button.click(); await pause(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); const after = await shot('paint-after-' + result.controls.length); assert.notEqual(after, before); paintPixels = after; return { pressed: true, pixelsChanged: true, before, after }; });
+        await check(`Paint ${label}`, async () => { const before = paintPixels; const button = page.getByRole('button', { name: label, exact: true }); await button.scrollIntoViewIfNeeded(); await armCapture(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); const after = await shot('paint-after-' + result.controls.length); assert.notEqual(after, before); paintPixels = after; return { pressed: true, pixelsChanged: true, before, after }; });
       }
       await chooseCamera('Front');
-      await check('Lights on and off', async () => { const button = page.getByRole('button', { name: 'Lights', exact: true }); const off = await shot('lights-off'); await button.click(); await pause(); const on = await shot('lights-on'); assert.equal(await button.getAttribute('aria-pressed'), 'true'); assert.notEqual(on, off); await button.click(); await pause(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); return { off, on, pixelsChanged: true }; });
+      await check('Lights on and off', async () => { const button = page.getByRole('button', { name: 'Lights', exact: true }); const off = await shot('lights-off'); await armCapture(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); const on = await shot('lights-on'); assert.notEqual(on, off); await armCapture(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); return { off, on, pixelsChanged: true }; });
       await chooseCamera('Rear');
-      await check('Rear lamp rings on and off', async () => { const button = page.getByRole('button', { name: 'Lights', exact: true }); const off = await shot('rear-lights-off'); await button.click(); await pause(); const on = await shot('rear-lights-on'); assert.notEqual(on, off); await button.click(); return { off, on, pixelsChanged: true }; });
+      await check('Rear lamp rings on and off', async () => { const button = page.getByRole('button', { name: 'Lights', exact: true }); const off = await shot('rear-lights-off'); await armCapture(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); const on = await shot('rear-lights-on'); assert.notEqual(on, off); await armCapture(); await button.click(); return { off, on, pixelsChanged: true }; });
       await chooseCamera('Front ¾');
       let environmentPixels = await shot('environment-start');
       let sharedHdr;
@@ -152,6 +158,7 @@ try {
         await check(`Environment ${label}`, async () => {
           const before = environmentPixels;
           const select = async () => {
+            await armCapture(); expectedEnvironment = id;
             await open('Environment');
             await page.getByRole('dialog').getByRole('button', { name: new RegExp('^' + label) }).click();
             await page.getByRole('dialog').waitFor({ state: 'hidden' });
@@ -173,11 +180,7 @@ try {
             await select();
             if (id === 'coast') asset = { ...sharedHdr, source: 'cache' };
           }
-          // Let decode, PMREM generation and the selected venue finish before comparing pixels.
-          await page.evaluate(() => new Promise(resolve => { let n=24; const frame=()=> --n <= 0 ? resolve() : requestAnimationFrame(frame); requestAnimationFrame(frame); }));
-          await pause();
           assert.match(await page.locator('main.configurator').getAttribute('class'), new RegExp('(?:^|\\s)environment-' + id + '(?:\\s|$)'));
-          assert.equal(await page.locator('.scene-loading, .scene-notice, .render-error').count(), 0);
           const after = await shot('environment-' + id);
           assert.notEqual(after, before);
           assert.deepEqual(hdrRequests, sharedHdr ? [sharedHdrPath] : [], 'Outdoor environments must reuse one shared sky request');
@@ -185,12 +188,12 @@ try {
           return { environment: id, before, after, pixelsChanged: true, asset, hdrRequests: [...hdrRequests] };
         });
       }
-      await check('Rotate on, visible movement, and stop', async () => { const before = await shot('rotate-before'); await page.emulateMedia({ reducedMotion: 'no-preference' }); const button = page.getByRole('button', { name: 'Rotate', exact: true }); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); await page.evaluate(() => new Promise(resolve => { let n=24; const frame=()=> --n <= 0 ? resolve() : requestAnimationFrame(frame); requestAnimationFrame(frame); })); await button.click({ timeout: 60000 }); assert.equal(await button.getAttribute('aria-pressed'), 'false'); await pause(); const after = await shot('rotate-after'); assert.notEqual(after, before); return { before, after, pixelsChanged: true }; });
+      await check('Rotate on, visible movement, and stop', async () => { const before = await shot('rotate-before'); await page.emulateMedia({ reducedMotion: 'no-preference' }); const button = page.getByRole('button', { name: 'Rotate', exact: true }); await armCapture(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); await page.evaluate(() => new Promise(resolve => { let n=24; const frame=()=> --n <= 0 ? resolve() : requestAnimationFrame(frame); requestAnimationFrame(frame); })); await armCapture(); await button.click({ timeout: 60000 }); assert.equal(await button.getAttribute('aria-pressed'), 'false'); const after = await shot('rotate-after'); assert.notEqual(after, before); return { before, after, pixelsChanged: true }; });
       await check('Sound is an opt-in interface cue', async () => { const button = page.locator('.config-toolbar .sound-button'); const count = await page.evaluate(() => window.__audioStarts); await button.click(); await page.waitForTimeout(300); const starts = await page.evaluate(() => window.__audioStarts); assert.ok(starts > count); const enabledText = await button.innerText(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); return { enabledText, actualOscillatorStarts: starts - count, soundType: 'interface cue, not engine audio' }; });
       for (const [id, label] of [['nismo', 'NISMO'], ['tspec', 'T-spec'], ['gtr50', 'GT-R50'], ['gt3', 'GT3'], ['gt500', 'GT500']]) {
         await check(`${label} remains an honest photo fallback`, async () => { await page.goto(baseURL + '/configurator/' + id, { waitUntil: 'domcontentloaded' }); await page.getByRole('button', { name: 'Photo reference · 3D asset pending', exact: true }).waitFor(); assert.equal(await canvas.count(), 0); assert.equal(await page.getByRole('button', { name: 'Photo reference · 3D asset pending', exact: true }).isVisible(), true); assert.equal(await page.getByRole('button', { name: 'Ultimate Silver', exact: true }).isDisabled(), true); await open('Camera'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: 'Front', exact: true }).isDisabled(), true); await close(); await open('Environment'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: /^Pit garage/ }).isDisabled(), true); await close(); return { canvas: false, photoFallback: true, cameraDisabled: true, environmentDisabled: true }; });
       }
-    } catch (error) { result.errors.push(String(error)); report.failures.push(`${name}: ${error.message}`); }
+    } catch (error) { result.functionalCapture = await readFunctionalCaptureFailure(page); result.errors.push(String(error)); report.failures.push(`${name}: ${error.message}`); }
     if (result.errors.length) report.failures.push(`${name}: unexpected browser errors`);
     await save(); await context.close();
   }

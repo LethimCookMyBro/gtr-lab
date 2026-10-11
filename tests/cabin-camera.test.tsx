@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render } from "@testing-library/react";
+import { StrictMode } from "react";
 import { PerspectiveCamera, Vector3 } from "three";
+import {
+  CABIN_SEATS,
+  cabinCameraView,
+} from "../src/components/three/cabinPreview";
 import type { OrbitControls as Controls } from "three-stdlib";
 import { CameraRig } from "../src/components/three/CameraRig";
 import {
@@ -598,5 +603,177 @@ describe("target-relative wall-clock transitions", () => {
       1 - Math.exp(-7 / 60),
     );
     expect(host.state.camera.position.distanceTo(expected)).toBeLessThan(1e-10);
+  });
+});
+
+describe("deliberate first-entry cabin cut", () => {
+  const props = {
+    preset: "hero",
+    autoRotate: false,
+    reducedMotion: false,
+    onManual() {},
+  };
+  const exterior = {
+    scale: 1.12,
+    position: [0, -0.04, 0] as [number, number, number],
+  };
+  const preview = cabinCameraView("driver", exterior);
+
+  function expectCompletedPose(view = preview) {
+    const camera = host.state.camera;
+    const expected = new PerspectiveCamera(
+      view.fov,
+      camera.aspect,
+      view.near,
+      view.far,
+    );
+    expected.position.set(...view.position);
+    expected.lookAt(...view.target);
+    expect(camera.position.distanceTo(expected.position)).toBeLessThan(1e-10);
+    expect(host.controls!.target.toArray()).toEqual(view.target);
+    expect(camera.quaternion.angleTo(expected.quaternion)).toBeLessThan(1e-7);
+    expect(camera.fov).toBe(view.fov);
+    expect(camera.near).toBe(view.near);
+    expect(camera.far).toBe(view.far);
+    expect(camera.projectionMatrix.toArray()).toEqual(
+      expected.projectionMatrix.toArray(),
+    );
+    expect(host.controls!.enabled).toBe(false);
+    expect(host.controls!.autoRotate).toBe(false);
+  }
+
+  it.each(
+    CABIN_SEATS.flatMap((seat) =>
+      [false, true].map((reducedMotion) => ({ seat, reducedMotion })),
+    ),
+  )(
+    "cuts to the complete $seat pose on its first admitted frame, reduced motion $reducedMotion",
+    ({ seat, reducedMotion }) => {
+      const result = render(<CameraRig {...props} reducedMotion />);
+      frame();
+      key("ArrowLeft", 8);
+      const view = cabinCameraView(seat, exterior);
+      result.rerender(
+        <CameraRig {...props} reducedMotion={reducedMotion} cabinView={view} />,
+      );
+      // Zero elapsed time proves entry is an intentional cut, not fast easing.
+      frame(0, 0);
+      expectCompletedPose(view);
+      vi.mocked(host.state.invalidate).mockClear();
+      frame();
+      expectCompletedPose(view);
+      expect(host.state.invalidate).not.toHaveBeenCalled();
+    },
+  );
+
+  it("cuts after exterior auto-rotation and clears retained damping before the first draw", () => {
+    const result = render(<CameraRig {...props} autoRotate />);
+    for (let i = 0; i < 240; i++) frame();
+    expect(host.controls!.autoRotate).toBe(true);
+    result.rerender(<CameraRig {...props} autoRotate cabinView={preview} />);
+    frame(0, 0);
+    expectCompletedPose();
+  });
+
+  it("keeps the pending entry cut when the seat retargets before an admitted frame", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    result.rerender(<CameraRig {...props} cabinView={preview} />);
+    const rear = cabinCameraView("rear", exterior);
+    result.rerender(<CameraRig {...props} cabinView={rear} />);
+    frame(0, 0);
+    expectCompletedPose(rear);
+  });
+
+  it("lets manual keyboard input supersede a pending cut and later seats still ease", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    result.rerender(<CameraRig {...props} cabinView={preview} />);
+    key("ArrowRight", 6);
+    key("ArrowUp", 3);
+    const manual = host.state.camera.quaternion.clone();
+    frame(0, 0);
+    expect(host.state.camera.quaternion.angleTo(manual)).toBeLessThan(1e-7);
+    const rear = cabinCameraView("rear", exterior);
+    result.rerender(<CameraRig {...props} cabinView={rear} />);
+    frame(0, 0);
+    expect(host.state.camera.quaternion.angleTo(manual)).toBeLessThan(1e-7);
+    frame(0.1, 3.5);
+    expectCompletedPose(rear);
+  });
+
+  it("supports touch look immediately after the cut without a pointer-down jump or a later camera override", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    result.rerender(<CameraRig {...props} cabinView={preview} />);
+    frame(0, 0);
+    expectCompletedPose();
+    const canvas = host.state.gl.domElement;
+    let captured: number | null = null;
+    canvas.setPointerCapture = (id) => {
+      captured = id;
+    };
+    canvas.hasPointerCapture = (id) => captured === id;
+    canvas.releasePointerCapture = () => {
+      captured = null;
+    };
+    function pointer(type: string, x: number, y: number) {
+      const event = new Event(type);
+      Object.assign(event, {
+        pointerId: 7,
+        pointerType: "touch",
+        clientX: x,
+        clientY: y,
+      });
+      canvas.dispatchEvent(event);
+    }
+    const start = host.state.camera.quaternion.clone();
+    pointer("pointerdown", 100, 100);
+    expect(host.state.camera.quaternion.angleTo(start)).toBeLessThan(1e-7);
+    expect(captured).toBe(7);
+    pointer("pointermove", 145, 120);
+    const manual = host.state.camera.quaternion.clone();
+    expect(manual.angleTo(start)).toBeGreaterThan(0.1);
+    pointer("pointercancel", 145, 120);
+    expect(captured).toBeNull();
+    frame(0.1, 3.5);
+    expect(host.state.camera.quaternion.angleTo(manual)).toBeLessThan(1e-7);
+    expect(host.state.camera.position.toArray()).toEqual(preview.position);
+  });
+
+  it("cuts again on re-entry after restoring the exact manual exterior pose and lens", () => {
+    const result = render(<CameraRig {...props} reducedMotion />);
+    frame();
+    key("ArrowLeft", 8);
+    const saved = host.state.camera.clone();
+    const target = host.controls!.target.clone();
+    for (let visit = 0; visit < 2; visit++) {
+      result.rerender(<CameraRig {...props} cabinView={preview} />);
+      frame(0, 0);
+      expectCompletedPose();
+      key("ArrowRight", 10);
+      result.rerender(<CameraRig {...props} />);
+      frame(0.1, 3.5);
+      expect(
+        host.state.camera.position.distanceTo(saved.position),
+      ).toBeLessThan(1e-10);
+      expect(
+        host.state.camera.quaternion.angleTo(saved.quaternion),
+      ).toBeLessThan(1e-7);
+      expect(host.controls!.target.distanceTo(target)).toBeLessThan(1e-10);
+      expect(host.state.camera.fov).toBe(saved.fov);
+      expect(host.state.camera.near).toBe(saved.near);
+      expect(host.state.camera.far).toBe(saved.far);
+    }
+  });
+
+  it("retains the pending cut through StrictMode effect replay", () => {
+    render(
+      <StrictMode>
+        <CameraRig {...props} cabinView={preview} />
+      </StrictMode>,
+    );
+    frame(0, 0);
+    expectCompletedPose();
   });
 });

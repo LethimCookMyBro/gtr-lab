@@ -20,6 +20,9 @@ const RENDER_BACKPRESSURE_CONTRACT = 'render-backpressure-2m-msaa-v1';
 // Separately reviewed resize, since-target timing and opt-in functional observation repair.
 const RENDER_REPAIR_TREE = '814ff47e781f112127596422caad0413c176331f892e9dc5697e10a1c36923c1';
 const RENDER_REPAIR_CONTRACT = 'render-repair-readiness-2m-msaa-v1';
+// First cabin entry cut; functional-consumer repair cannot replace full native-motion evidence.
+const CABIN_ENTRY_FUNCTIONAL_TREE = '387e680e590c1bf1d0f420b7405b7e3bb9ed4d62b7fc46c58129c178e82512f5';
+const CABIN_ENTRY_FUNCTIONAL_CONTRACT = 'cabin-entry-functional-2m-msaa-v1';
 const geometryRows = {
   desktop: {
     initial: { viewportWidth: 1440, viewportHeight: 900, cssWidth: 1440, cssHeight: 744, nativeDpr: 2, width: 1391, height: 718, attributeWidth: 1391, attributeHeight: 718 },
@@ -54,6 +57,7 @@ contracts[STATIC_STUDIO_CONTRACT] = { sourceTree: STATIC_STUDIO_TREE, maxBufferP
 contracts[BRAKE_INDEX_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: BRAKE_INDEX_TREE };
 contracts[RENDER_BACKPRESSURE_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: RENDER_BACKPRESSURE_TREE };
 contracts[RENDER_REPAIR_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: RENDER_REPAIR_TREE };
+contracts[CABIN_ENTRY_FUNCTIONAL_CONTRACT] = { ...contracts[STATIC_STUDIO_CONTRACT], sourceTree: CABIN_ENTRY_FUNCTIONAL_TREE };
 // Historical source-pinned motion must not inherit the current runtime model URL.
 const originalMotionModels = [
   { path: '/models/r35-cabin-dashboard-5c0a9dca.glb', bytes: 19_170_816, sha256: '5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326' },
@@ -154,7 +158,7 @@ export function validateMotionEnvironment(env) {
     for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]'])
       assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Brake candidate requires ${marker}`);
   }
-  if ([RENDER_BACKPRESSURE_TREE, RENDER_REPAIR_TREE].includes(env.R35_EXPECTED_APP_TREE)) {
+  if ([RENDER_BACKPRESSURE_TREE, RENDER_REPAIR_TREE, CABIN_ENTRY_FUNCTIONAL_TREE].includes(env.R35_EXPECTED_APP_TREE)) {
     assert.equal(env.GITHUB_EVENT_NAME, 'push', 'Pacing candidate requires reviewed main push');
     for (const marker of ['[stage-dpr-motion]', '[stage-cabin-integration]'])
       assert.ok((env.R35_DPR_COMMIT_MESSAGE ?? '').includes(marker), `Pacing candidate requires ${marker}`);

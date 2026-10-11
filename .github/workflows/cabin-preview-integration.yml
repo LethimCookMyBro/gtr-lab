@@ -7,6 +7,11 @@ on:
       - 'scripts/capture-cabin-preview.mjs'
       - 'scripts/cabin-integration-policy.mjs'
       - 'scripts/cabin-capture-readiness.mjs'
+      - 'scripts/functional-capture-readiness.mjs'
+      - 'tests/functional-capture-readiness.test.mjs'
+      - 'tests/functional-render-observation.test.ts'
+      - 'tests/fixtures/functional-readiness-order-failure.json'
+      - 'tests/cabin-functional-workflow.node.mjs'
       - 'tests/cabin-capture-readiness.test.mjs'
       - 'tests/prepare-cabin-proxy.test.mjs'
       - 'qa/cabin-preview/r35-exterior-cabin-proxy.glb.gz'
@@ -68,6 +73,9 @@ jobs:
           node --check scripts/capture-cabin-preview.mjs
           node --check scripts/cabin-integration-policy.mjs
           node --check scripts/cabin-capture-readiness.mjs
+          node --check scripts/functional-capture-readiness.mjs
+          node --test tests/cabin-functional-workflow.node.mjs
+          node node_modules/vitest/vitest.mjs run tests/functional-capture-readiness.test.mjs tests/functional-render-observation.test.ts --pool=threads --maxWorkers=1 --minWorkers=1
           npx vitest run tests/cabin-integration-network.test.mjs tests/cabin-live-policy.test.mjs tests/cabin-capture-readiness.test.mjs tests/verify-release-assets.test.mjs --pool=threads --maxWorkers=1 --minWorkers=1
       - run: npx playwright install --with-deps chromium
         timeout-minutes: 5

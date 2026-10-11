@@ -3,6 +3,6 @@
   "allow": true,
   "mode": "fixed",
   "sourceSha": "current",
-  "sourceTree": "814ff47e781f112127596422caad0413c176331f892e9dc5697e10a1c36923c1",
-  "geometryContract": "render-repair-readiness-2m-msaa-v1"
+  "sourceTree": "387e680e590c1bf1d0f420b7405b7e3bb9ed4d62b7fc46c58129c178e82512f5",
+  "geometryContract": "cabin-entry-functional-2m-msaa-v1"
 }

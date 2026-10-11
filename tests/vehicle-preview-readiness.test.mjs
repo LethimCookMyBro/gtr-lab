@@ -52,9 +52,32 @@ describe("production smoke environment readiness", () => {
     expect(settled).toBe(true);
     expect(page.waitForFunction).toHaveBeenCalledTimes(1);
     expect(page.waitForFunction.mock.calls[0].slice(1)).toEqual([
-      "coast",
+      { environment: "coast", functional: undefined },
       { timeout: 90000, polling: 100 },
     ]);
+  });
+
+  it("keeps the known rendering-delay notice pending until real readiness, without resetting the budget", async () => {
+    const page = fakePage();
+    let settled = false;
+    document.querySelector("main").insertAdjacentHTML("beforeend", '<div role="status" aria-live="polite" class="scene-notice"><p>Rendering is taking longer than usual. You can keep waiting or retry the viewer.</p><button>Retry viewer</button></div>');
+    const waiting = waitForEnvironmentReady(page, "coast", { timeout: 1500 }).then(() => { settled = true; });
+    const outcome = waiting.catch(error => error);
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(settled).toBe(false);
+    scene({ ready: true });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(await outcome).toBeUndefined();
+    expect(settled).toBe(true);
+    expect(page.waitForFunction).toHaveBeenCalledOnce();
+  });
+
+  it("fails at the original budget if the nonfatal rendering-delay notice never clears", async () => {
+    document.querySelector("main").insertAdjacentHTML("beforeend", '<div role="status" aria-live="polite" class="scene-notice"><p>Rendering is taking longer than usual. You can keep waiting or retry the viewer.</p><button>Retry viewer</button></div>');
+    const waiting = waitForEnvironmentReady(fakePage(), "coast", { timeout: 500 });
+    const outcome = waiting.catch(error => error);
+    await vi.advanceTimersByTimeAsync(500);
+    expect((await outcome).message).toMatch(/timed out after 500ms/);
   });
 
   it("does not mistake a ready previous environment for the requested one", async () => {
@@ -141,6 +164,12 @@ describe("production smoke environment readiness", () => {
     },
   );
 
+  it("never hides a real render failure behind the recognized pending notice", async () => {
+    scene({ ready: true });
+    document.querySelector("main").insertAdjacentHTML("beforeend", '<div role="status" aria-live="polite" class="scene-notice"><p>Rendering is taking longer than usual. You can keep waiting or retry the viewer.</p><button>Retry viewer</button></div><div class="render-error">WebGL context lost</div>');
+    await expect(waitForEnvironmentReady(fakePage(), "coast")).rejects.toThrow(/WebGL context lost/);
+  });
+
   it("propagates an error appearing while delayed assets are still loading", async () => {
     const page = fakePage();
     const waiting = waitForEnvironmentReady(page, "coast");
@@ -162,13 +191,13 @@ describe("production smoke environment readiness", () => {
     expect(page.waitForFunction).toHaveBeenCalledTimes(1);
   });
 
-  it("waits for readiness before preserving frame, pixel and shared-HDR checks", async () => {
+  it("waits for readiness before preserving native completion, pixel and shared-HDR checks", async () => {
     const source = await readFile(
       "scripts/capture-vehicle.mjs",
       "utf8",
     );
     expect(source).toMatch(
-      /await waitForEnvironmentReady\(page, environment\);[\s\S]*remaining=24[\s\S]*after === before[\s\S]*hdrRequests\.length !== 1/,
+      /await waitForEnvironmentReady\(page, environment\);[\s\S]*frameHash[\s\S]*after === before[\s\S]*hdrRequests\.length !== 1/,
     );
   });
 });
