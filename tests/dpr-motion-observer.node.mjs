@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { installDprMotionObserver } from '../scripts/dpr-motion-observer.mjs';
-function setup(options = {}, prepareCanvas = () => {}) {
+function setup(options = {}, prepareCanvas = () => {}, contextAttributes = { antialias: false, alpha: true }) {
   let now = 0; const queue = new Map(); let id = 0;
   class Element extends EventTarget {
     setAttribute(name, value) { if (name === 'width' || name === 'height') this[`_${name}`] = +value; return 'attribute'; }
@@ -20,7 +20,7 @@ function setup(options = {}, prepareCanvas = () => {}) {
     requestAnimationFrame(cb) { queue.set(++id, cb); return id; }, cancelAnimationFrame(id) { queue.delete(id); } };
   vm.runInNewContext(`(${installDprMotionObserver.toString()})(${JSON.stringify(options)})`, world);
   const canvas = new Canvas(); prepareCanvas(canvas);
-  return { world, canvas, gl: canvas.getContext('webgl2', { antialias: false, alpha: true }), observer: world.__r35DprMotion, tick(t) { now = t; const copy = [...queue.values()]; queue.clear(); for (const cb of copy) cb.call(world, t); }, queue };
+  return { world, canvas, gl: canvas.getContext('webgl2', contextAttributes), observer: world.__r35DprMotion, tick(t) { now = t; const copy = [...queue.values()]; queue.clear(); for (const cb of copy) cb.call(world, t); }, queue };
 }
 test('standalone observer does not schedule rendering, preserves getters, native returns and errors', () => {
   const h = setup(); assert.ok(h.observer); assert.equal(h.queue.size, 0); assert.equal(h.canvas.getContext('webgl2'), h.gl); assert.throws(() => h.canvas.getContext('throw'), /native context/);
@@ -92,4 +92,31 @@ test('native evidence query failure preserves the original context return and fa
   h.observer.mark('exterior-orbit', true);
   assert.equal(h.canvas.getContext('webgl2'), h.gl);
   assert.equal(h.canvas.reads.length, 0);
+});
+
+test('antialias-on observation preserves native options and reads arbitrary integer sample counts once before every phase', () => {
+  for (const samples of [2, 4, 8, 16]) {
+    const options = { antialias: true, alpha: true };
+    const h = setup({ observeContextCreation: true }, canvas => {
+      canvas.gl.getContextAttributes = () => { canvas.reads.push('attributes'); return { antialias: true, alpha: true }; };
+      canvas.gl.getParameter = key => { canvas.reads.push(key); return key === canvas.gl.FRAMEBUFFER_BINDING ? null : key === canvas.gl.SAMPLES ? samples : 1; };
+      const nativeGetContext = canvas.getContext;
+      canvas.getContext = function (name, attributes) { this.lastOptions = attributes; return nativeGetContext.call(this, name, attributes); };
+    }, options);
+    assert.equal(h.canvas.lastOptions, options);
+    const proof = h.observer.snapshot().contexts[0].creation;
+    assert.equal(proof.requestedAntialias, true); assert.equal(proof.antialias, true);
+    assert.equal(proof.samples, samples); assert.equal(proof.sampleBuffers, 1);
+    assert.equal(proof.phase, 'setup'); assert.equal(proof.reads, 1); assert.equal(proof.defaultFramebufferBound, true);
+    for (const name of ['exterior-idle-before', 'exterior-orbit', 'exterior-controls-rotating', 'exterior-idle-after', 'cabin-entry', 'cabin-look', 'cabin-seat-controls', 'cabin-idle', 'viewport-change', 'resized-cabin-look', 'resized-cabin-idle']) {
+      const phase = h.observer.mark(name, name !== 'viewport-change');
+      assert.ok(phase.sequence > proof.sequence); assert.ok(phase.time >= proof.time);
+      assert.equal(h.canvas.getContext('webgl2', { antialias: false }), h.gl);
+      h.canvas.width = h.canvas.width;
+      h.world.requestAnimationFrame(() => {}); h.tick(phase.sequence);
+      assert.equal(h.canvas.reads.length, 4);
+      assert.deepEqual(h.observer.snapshot().contexts[0].creation, proof);
+    }
+    assert.equal(h.queue.size, 0);
+  }
 });

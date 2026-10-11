@@ -199,6 +199,10 @@ async function setup() {
   };
 }
 
+// Exact equivalent grouping: each of the studio's four doors changes 15→1
+// submissions. Gallery/night and every reflection/contact capture stay unchanged.
+const STUDIO_SHADOW_DRAWS = 386 - 4 * (15 - 1);
+
 it("does not recapture lighting or restart contact shadows for unchanged environment inputs", async () => {
   const { root, frame, counts } = await setup();
   const ready = vi.fn();
@@ -217,14 +221,22 @@ it("does not recapture lighting or restart contact shadows for unchanged environ
   await renderLighting();
   await frame();
   await frame();
-  expect(counts()).toEqual({ reflection: 6, shadow: 1, directional: 386 });
+  expect(counts()).toEqual({
+    reflection: 6,
+    shadow: 1,
+    directional: STUDIO_SHADOW_DRAWS,
+  });
   expect(ready).toHaveBeenCalledTimes(1);
   // Panel, paint, camera, download progress and cabin seat updates all pass
   // these same environment inputs while their own scene components update.
   for (let update = 0; update < 5; update++) {
     await renderLighting();
     await frame();
-    expect(counts()).toEqual({ reflection: 6, shadow: 1, directional: 386 });
+    expect(counts()).toEqual({
+      reflection: 6,
+      shadow: 1,
+      directional: STUDIO_SHADOW_DRAWS,
+    });
   }
   expect(fallback).not.toHaveBeenCalled();
 });
@@ -248,32 +260,58 @@ it("captures each new environment and light, but only refreshes depth at actual 
     );
   await renderLighting("studio");
   await frame();
-  expect(counts()).toEqual({ reflection: 6, shadow: 1, directional: 386 });
+  expect(counts()).toEqual({
+    reflection: 6,
+    shadow: 1,
+    directional: STUDIO_SHADOW_DRAWS,
+  });
   store.getState().camera.position.y = 3.8;
   await frame();
-  expect(counts().directional).toBe(386);
+  expect(counts().directional).toBe(STUDIO_SHADOW_DRAWS);
   store.getState().camera.position.y = 3.81;
   await frame();
-  expect(counts()).toEqual({ reflection: 6, shadow: 1, directional: 744 });
+  expect(counts()).toEqual({
+    reflection: 6,
+    shadow: 1,
+    directional: STUDIO_SHADOW_DRAWS * 2 - 28,
+  });
   store.getState().camera.position.y = 10;
   await frame();
-  expect(counts().directional).toBe(744);
+  expect(counts().directional).toBe(STUDIO_SHADOW_DRAWS * 2 - 28);
   store.getState().camera.position.y = 3.8;
   await frame();
-  expect(counts()).toEqual({ reflection: 6, shadow: 1, directional: 1130 });
+  expect(counts()).toEqual({
+    reflection: 6,
+    shadow: 1,
+    directional: STUDIO_SHADOW_DRAWS * 3 - 28,
+  });
   await renderLighting("gallery");
   await frame();
-  expect(counts()).toEqual({ reflection: 12, shadow: 2, directional: 1182 });
+  expect(counts()).toEqual({
+    reflection: 12,
+    shadow: 2,
+    directional: STUDIO_SHADOW_DRAWS * 3 - 28 + 52,
+  });
   await frame();
-  expect(counts().directional).toBe(1182);
+  expect(counts().directional).toBe(STUDIO_SHADOW_DRAWS * 3 - 28 + 52);
   await renderLighting("night");
   await frame();
-  expect(counts()).toEqual({ reflection: 18, shadow: 3, directional: 1580 });
+  expect(counts()).toEqual({
+    reflection: 18,
+    shadow: 3,
+    directional: STUDIO_SHADOW_DRAWS * 3 - 28 + 52 + 398,
+  });
   await renderLighting("night", 1);
   await frame();
-  expect(counts()).toEqual({ reflection: 24, shadow: 4, directional: 1978 });
+  expect(counts()).toEqual({
+    reflection: 24,
+    shadow: 4,
+    directional: STUDIO_SHADOW_DRAWS * 3 - 28 + 52 + 398 * 2,
+  });
   await frame();
-  expect(counts().directional).toBe(1978);
+  expect(counts().directional).toBe(
+    STUDIO_SHADOW_DRAWS * 3 - 28 + 52 + 398 * 2,
+  );
 });
 
 it("waits for suspended coast rocks before the first cached main shadow capture", async () => {

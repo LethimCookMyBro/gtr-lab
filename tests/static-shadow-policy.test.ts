@@ -196,11 +196,18 @@ function setup() {
     lights,
   };
 }
-const FULL = { draws: 468, triangles: 581763, stage: 386 };
+// Four authored 15-slat doors become four submissions. All caster triangles,
+// material/side rules, visibility and other meshes remain unchanged.
+const SLAT_DRAW_SAVING = 4 * (15 - 1);
+const FULL = {
+  draws: 468 - SLAT_DRAW_SAVING,
+  triangles: 581763,
+  stage: 386 - SLAT_DRAW_SAVING,
+};
 const EMPTY = { draws: 0, triangles: 0, stage: 0 };
 
 describe("explicit main-camera directional shadow cache", () => {
-  it("prevents the contact-camera pass consuming first capture, then caches exactly 468 draws", () => {
+  it("prevents the contact-camera pass consuming first capture, then caches exactly 412 equivalent draws", () => {
     const h = setup();
     expect(h.frame(h.contact, {})).toEqual(EMPTY);
     expect(h.frame()).toEqual(FULL);
@@ -258,7 +265,11 @@ describe("explicit main-camera directional shadow cache", () => {
     mesh.position.y = 1;
     h.scene.add(mesh);
     invalidateSceneShadows(h.scene);
-    expect(h.frame()).toEqual({ ...FULL, draws: 469, triangles: 581775 });
+    expect(h.frame()).toEqual({
+      ...FULL,
+      draws: FULL.draws + 1,
+      triangles: 581775,
+    });
     expect(h.frame()).toEqual(EMPTY);
     mesh.removeFromParent();
     invalidateSceneShadows(h.scene);
@@ -292,7 +303,11 @@ describe("explicit main-camera directional shadow cache", () => {
     inspection(3.8);
     expect(h.frame()).toEqual(EMPTY);
     inspection(3.81);
-    expect(h.frame()).toEqual({ draws: 440, triangles: 580275, stage: 358 });
+    expect(h.frame()).toEqual({
+      draws: 440 - SLAT_DRAW_SAVING,
+      triangles: 580275,
+      stage: 358 - SLAT_DRAW_SAVING,
+    });
     inspection(10);
     expect(h.frame()).toEqual(EMPTY);
     inspection(3.8);
@@ -331,7 +346,11 @@ describe("explicit main-camera directional shadow cache", () => {
     expect(h.frame()).toEqual(FULL);
     expect(h.frame()).toEqual(FULL);
     invalidateSceneShadows(h.scene);
-    expect(h.frame()).toEqual({ draws: 936, triangles: 1163526, stage: 772 });
+    expect(h.frame()).toEqual({
+      draws: FULL.draws * 2,
+      triangles: 1163526,
+      stage: FULL.stage * 2,
+    });
     expect(h.frame()).toEqual(FULL);
     expect(dynamic.shadow.autoUpdate).toBe(true);
     h.stop();

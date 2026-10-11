@@ -1,0 +1,354 @@
+{
+  "contract": "r35-production-source-v2-with-index",
+  "sha256": "0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8",
+  "files": [
+    {
+      "path": "index.html",
+      "sha256": "b43ed9f13cdd0eba8a79ad8572482c88604eb1fb09162a686a3d8685cab7d08c"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "7770fc28b365de56c3ea2529b2c274898e76a86a1b7a17027de3f78d0d1cce01"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f51edad24995a0a6bb70654d2a0e7ab29291e8456f39d50258354e83f7ed94f2"
+    },
+    {
+      "path": "server.mjs",
+      "sha256": "794b2c1882f7cb8f5f7e6b4d646f57c521c3ab419b0f72d46a45e9d1bb656fa5"
+    },
+    {
+      "path": "src/App.tsx",
+      "sha256": "be09291fe25ad2f39374d9ebaf721ccfe8216f0264f553131a00d6f101905e64"
+    },
+    {
+      "path": "src/audio/r35AudioController.ts",
+      "sha256": "1c9a931efff69f28bf5ac51cfc25858b7028d442c70361d5c626e9b4ffbedc8f"
+    },
+    {
+      "path": "src/audio/r35Recording.ts",
+      "sha256": "32a038cbaad0332aaa5822e6f7166711ab84111d7fb713d1e4a42ea57ad0b0eb"
+    },
+    {
+      "path": "src/audio/useR35Audio.ts",
+      "sha256": "bb7ef09b975eb22bdf5b3717ae36ffa70a06cefeb4478c37599855c07548087c"
+    },
+    {
+      "path": "src/components/R35SoundPreview.tsx",
+      "sha256": "10c6ece85bc9ce852cacde170f4952ff1fd812911f4941f5b906dece6db2979c"
+    },
+    {
+      "path": "src/components/configurator/AssetDisclosure.tsx",
+      "sha256": "3c45aa827b50c1a2d7867ec056059178b9f53ab3893e17a2b95ff52ee1723373"
+    },
+    {
+      "path": "src/components/configurator/CabinPreviewControls.tsx",
+      "sha256": "7fed4c1bc2f98bc3b15c6a9807a0dad990e63238637ef736f1a5c61bb5628ef5"
+    },
+    {
+      "path": "src/components/configurator/ConfiguratorPanels.tsx",
+      "sha256": "36db771b5dcbcb6ce9bd0be4243a53aa13f4c7d7e41cf07a78b8583b0b0ee740"
+    },
+    {
+      "path": "src/components/configurator/ModelDetails.tsx",
+      "sha256": "bdcd72fd4d4c1e4288f61dbb56a2ac116c23646267191a2dd13c427ad54ac317"
+    },
+    {
+      "path": "src/components/home/EditorialOverlap.tsx",
+      "sha256": "f9ec50498791ada6a288f4d811ec9d3ae3223d5c762d0805ee205bbfd3dabbe5"
+    },
+    {
+      "path": "src/components/home/ExpandingFilm.tsx",
+      "sha256": "6861b82db4ed5ff5b23f67ec4e23b54ae7263bc4bc81b5d94b87328b9bdf63c3"
+    },
+    {
+      "path": "src/components/home/Film.tsx",
+      "sha256": "332b29f9421fa734014eff9dc2f68a4b2c627650d8f799b04d3a369722512a42"
+    },
+    {
+      "path": "src/components/home/FilmDialog.tsx",
+      "sha256": "c7feb471e66e0e2a48c9893f53602b719bfe1d9fc0a96a9f4ff53efd98f4a950"
+    },
+    {
+      "path": "src/components/home/GtrWordmark.tsx",
+      "sha256": "92b5a1924bfff76208cafdbb204c42aec4894ee4236c3b24c730598dc62dc3ae"
+    },
+    {
+      "path": "src/components/home/HeritageJourney.tsx",
+      "sha256": "540e283da94e4b0a5530439cc553dda13efda005f2867e50896d4757d2f0d247"
+    },
+    {
+      "path": "src/components/home/HeroFilm.tsx",
+      "sha256": "085665c69d0fdfb86043f726f886ed63607fa1925c4d6baa57f6aec32c077d84"
+    },
+    {
+      "path": "src/components/home/ModelInvitations.tsx",
+      "sha256": "367a85aa384f3226a31c46bb39c77f8c1b62a3e6dae2bc8a81ce37a9f13beb03"
+    },
+    {
+      "path": "src/components/home/OpeningMark.tsx",
+      "sha256": "d71a887be144c1047e4499f1446820ce855133c2d2fb61f630873e8afc793689"
+    },
+    {
+      "path": "src/components/home/RearPixelDensity.tsx",
+      "sha256": "5b2115d38b2c85a9341e9bd13f2dc7d5199d12741e0f408b554cf65bc08c9460"
+    },
+    {
+      "path": "src/components/home/RearSignature.tsx",
+      "sha256": "887f0b0d4421235ca1b8d7e03f7ac185111121c831e8b5d8a713acc1f5428076"
+    },
+    {
+      "path": "src/components/home/RearVehicleScene.tsx",
+      "sha256": "096fd4eaf6d7a22aa82bd3c31e5e49c4169128469365b877c6ce65999c99ef6b"
+    },
+    {
+      "path": "src/components/home/campaignMedia.ts",
+      "sha256": "3187c3715f1ae287c5e74638a3372c199adb31e277d2b8254fee67b9f95a6c3c"
+    },
+    {
+      "path": "src/components/home/compileRearScene.ts",
+      "sha256": "005cea6e6aa8c26cf9d359adb280d74beb7f7d8f77407beb3793f8605400d31e"
+    },
+    {
+      "path": "src/components/home/homeReadiness.ts",
+      "sha256": "7e7d969952b99f19f52f99ad4f43c93687e23a10c2026e3432cb3378ae77d577"
+    },
+    {
+      "path": "src/components/home/motion.ts",
+      "sha256": "920c36b228069a4f6856bd9f373dcd933a56174cb07e5bd6fc11d37d54b75a41"
+    },
+    {
+      "path": "src/components/home/storyMedia.ts",
+      "sha256": "9d539ffa1d7add699dc7690ba19db8dc975f8b72e1b15dd40a503bac733f0d46"
+    },
+    {
+      "path": "src/components/home/useHomeMotion.ts",
+      "sha256": "bbd09a03a17a58385ae522031e5ef32ce475de39d8097e39ca43f62e15d6aad2"
+    },
+    {
+      "path": "src/components/home/useRearRenderPreparation.ts",
+      "sha256": "61924effc9cfc3ebdd01b57472191367abfb027cc0d72fd84713473c658e6cf1"
+    },
+    {
+      "path": "src/components/layout/SiteLayout.tsx",
+      "sha256": "5d755cc9c7ef2fe1fc58838f6952f770c0e5cf206d554ad78121eebe27766581"
+    },
+    {
+      "path": "src/components/three/CabinAttachment.tsx",
+      "sha256": "862da60c6431b149b7916ae51aee54cf22793f1adaa346153bb2495893f9e633"
+    },
+    {
+      "path": "src/components/three/CameraRig.tsx",
+      "sha256": "df969ecfedf1e1f3eb8add59ac3d573b7bf175eaa61319095dcca9b202acd331"
+    },
+    {
+      "path": "src/components/three/CoastalWater.tsx",
+      "sha256": "67941e81315ea874ca530684456aa7723908210ae877770652d764bb10305c4f"
+    },
+    {
+      "path": "src/components/three/EnvironmentBoundary.tsx",
+      "sha256": "04eb437173d1d8cf6b0cfb0dc1b27f479aae39b083a8c008c0cccee78ed2f7f9"
+    },
+    {
+      "path": "src/components/three/RecoverableEnvironment.tsx",
+      "sha256": "72f4f494d13a50b7c4597af12dc36750b355803ce653ce7991791e92906af09b"
+    },
+    {
+      "path": "src/components/three/RoadsideRocks.tsx",
+      "sha256": "1866eb65373311a5158df865520b76925fc3e8aa0caf43a9d64750fecffe034b"
+    },
+    {
+      "path": "src/components/three/SceneBoundary.tsx",
+      "sha256": "19df7aaa485528849a08219606699976f3ea0c64022e88ab083ae04b898d02a2"
+    },
+    {
+      "path": "src/components/three/StageGeometry.tsx",
+      "sha256": "bd11c2dfb623d62aa52dbd1e7d3e2c4ca0b8f1e34e6a8c9032277a61fbc8d93f"
+    },
+    {
+      "path": "src/components/three/StudioLighting.tsx",
+      "sha256": "6ac0ad2b61779ad8d533455d8f06f1fe25e56048823cb2e201f015878d9488d7"
+    },
+    {
+      "path": "src/components/three/VehiclePixelDensity.tsx",
+      "sha256": "ab89d42e872cdbdc5b364b2baf81da2091b043dd20c416be4f0f0add9e6fd21a"
+    },
+    {
+      "path": "src/components/three/VehicleScene.tsx",
+      "sha256": "e83b98698728fce2245e1e0d26727e97b7506124ab5c28830a2fbe67539b49a1"
+    },
+    {
+      "path": "src/components/three/asyncRendererDisposal.ts",
+      "sha256": "32cfc1b83099072d31af78439fbc985f9710fdff3061d89ace9eea3cb495f8bd"
+    },
+    {
+      "path": "src/components/three/cabinPreview.ts",
+      "sha256": "e5c17f9df26e1712a5a17ffe5cda404d0f7e5be2aa27100716159a86d1a4060a"
+    },
+    {
+      "path": "src/components/three/coastalGeometry.ts",
+      "sha256": "861d2e6ee1747d1f4b0cd7c5a63ab4f5f011bec2f7376052763ec3935aabd3e5"
+    },
+    {
+      "path": "src/components/three/createVehicleLoader.ts",
+      "sha256": "20399d6f48d3caecf37948ee1be4622373b3cc70f596b8ea7d04c4ce6de21ce0"
+    },
+    {
+      "path": "src/components/three/keyboardControls.ts",
+      "sha256": "22e139dc0282cab457e8099debec05800ad1a58f131b8d600a878fe018e84e98"
+    },
+    {
+      "path": "src/components/three/materialAdapter.ts",
+      "sha256": "7218d1951dc9747d354ab62563b9fd290baafc03f79274a2e9c43d84cc159fdd"
+    },
+    {
+      "path": "src/components/three/releasedOrbitDamping.ts",
+      "sha256": "65ad081c9ddccf22469b4f8ad1c89170b001c31738d1a894fca1d569ea3292a8"
+    },
+    {
+      "path": "src/components/three/sceneHelpers.ts",
+      "sha256": "98f31452ca23631cf1098fb193f554d26954d1daa254024db6f029c57ddc1474"
+    },
+    {
+      "path": "src/components/three/stageLayers.ts",
+      "sha256": "2f994526ac77ebf91f0475e5b593d0f4c8e8a0302e8a3459a6571a4206f11584"
+    },
+    {
+      "path": "src/components/three/staticShadowPolicy.ts",
+      "sha256": "2ebf5c26482a445c7fd97d94e6d2c790b706f0d6cdfb490b0c8f0bc06c6db07f"
+    },
+    {
+      "path": "src/components/three/types.ts",
+      "sha256": "523b81fb0cc8c64adf6bfee6d03c94dd17a2b870e85b6c29657a336106b5c667"
+    },
+    {
+      "path": "src/components/three/useInteriorLook.ts",
+      "sha256": "bf287a659618ef7dd5338092913ba89a7f7e45dc953461f8c64243a9ad8705d1"
+    },
+    {
+      "path": "src/components/three/useReleasedOrbitDamping.ts",
+      "sha256": "063dfc84ee5967d9b06219d143696aa93ab8908d43589dfe71f00c4f2458f7a7"
+    },
+    {
+      "path": "src/components/three/useSceneReadiness.ts",
+      "sha256": "5d739c002e065af21c8d23e6c48f2a634ae2cabf16ce02112a299dcf9d664dfc"
+    },
+    {
+      "path": "src/components/three/useVehicleAsset.ts",
+      "sha256": "ccac24d452d795a0d2484c29c6198219d07942382f6f9ebc9c714c48e71d6a83"
+    },
+    {
+      "path": "src/components/three/venueGeometry.ts",
+      "sha256": "78439fe658959e48ccafd18c93676c1322af015b17959b7a47916c2184f6e0b7"
+    },
+    {
+      "path": "src/components/ui/Drawer.tsx",
+      "sha256": "dc31eb9554eafe09397e659809d0e0ff72addc64c7c085b6488186d22812a945"
+    },
+    {
+      "path": "src/data/configuration.ts",
+      "sha256": "f3383e7f56f1389d40e12f7e59651255d3607793469885c174df2bbccfada4e3"
+    },
+    {
+      "path": "src/data/films.ts",
+      "sha256": "fc9ec8cd3c85e817100ce84b2418ae53561583c645a4fb7c09c96fb3b969c11e"
+    },
+    {
+      "path": "src/data/home-media-credits.json",
+      "sha256": "9ffc5b32eda5ce27ced2a1aca7ba7251fa9e05b4f15e88b144471eb7f0b695e7"
+    },
+    {
+      "path": "src/data/image-credits.json",
+      "sha256": "2ffdf39385cd00fd610908da2c2db8b2ecea472f9d047dbe61b309d7070ba1de"
+    },
+    {
+      "path": "src/data/models.ts",
+      "sha256": "26318e7deb93dedb72969adef6096271cf483cdaf33df794a107c6aa7ff7b90a"
+    },
+    {
+      "path": "src/data/specifications.json",
+      "sha256": "5ec0a2003cefee876ebc038eb684e6eccb2e772d8520377f8d005bb0231895af"
+    },
+    {
+      "path": "src/hooks/useAudio.tsx",
+      "sha256": "5a9a2df1911a64f253404a9e1cee12da721251d28d5ce03868e55f7bdeb3bf42"
+    },
+    {
+      "path": "src/hooks/useReducedMotion.ts",
+      "sha256": "5a4819bf97c6e5e001d397a27843cb2112e780e15f47afe4e8cb589260eefc35"
+    },
+    {
+      "path": "src/main.tsx",
+      "sha256": "ec25b38fd8ff4b673ed3083f48564dbe9887b0050882663af718cb463243bc29"
+    },
+    {
+      "path": "src/pages/ConfiguratorPage.tsx",
+      "sha256": "b4d194354139281b45de02c132c18a098acce71969608d710464e3530397ef9e"
+    },
+    {
+      "path": "src/pages/CreditsPage.tsx",
+      "sha256": "887996e88b8b85a04ed7ffd272c5c56c172c80a855476ae10d402ba2e37f8156"
+    },
+    {
+      "path": "src/pages/HeritagePage.tsx",
+      "sha256": "3ab2ec1504b94a5b3c3eb8f5a62c0d2f0e11aafcc51f1b91f70cbba7d57d825e"
+    },
+    {
+      "path": "src/pages/HomePage.tsx",
+      "sha256": "1f6502641d231feef0f3c8351b6edaa4281e54c62e3ca6644804aef258139fe9"
+    },
+    {
+      "path": "src/pages/ModelsPage.tsx",
+      "sha256": "2ef82ee4578a4f5558002db549d8cd8fa0d194c13908f01861bb0b1c8c952fa4"
+    },
+    {
+      "path": "src/stores/configurator.ts",
+      "sha256": "0ad05cffedaf2b0af824ab9d5ee3622391d38acea5ea64a0093c92dfdbb7afa8"
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "114a3595b2d680b44ef436c623c0a864b1e0c545579c5326eea82dbd0f05bb6e"
+    },
+    {
+      "path": "src/styles/cabin-preview.css",
+      "sha256": "65ad4c181dd0d1f1272db960ffdbe1bd2c6d525ccee44f8ee34f5df37b37628c"
+    },
+    {
+      "path": "src/styles/home-audio.css",
+      "sha256": "0db71ba3fcd85325e5f31c7c2f1667194b20a176e1eee935793e4db612375703"
+    },
+    {
+      "path": "src/styles/home-film-entry.css",
+      "sha256": "15c909d3292e8090553c87b45b3bc519b15df492af3c03b31b115a3069f601cd"
+    },
+    {
+      "path": "src/styles/home-heritage.css",
+      "sha256": "9352d34aadedd6a2413bcd9854ae7112d96beabe2ae12e5fb09ba6786b4d8347"
+    },
+    {
+      "path": "src/styles/home-hero-exit.css",
+      "sha256": "1ac9cc107b883e220cc1872d9469bf84aa8e2f3a279e25475fd60fd597668a5e"
+    },
+    {
+      "path": "src/styles/home-loading.css",
+      "sha256": "0bfb424169fa703cf6e605819b1fbdc159b914ed0c4e355679f63430cf378951"
+    },
+    {
+      "path": "src/styles/home-opening-cards.css",
+      "sha256": "69fdfd2ca3da7d7a153d19410d30d2d7ff86258a3b0f93329a6a9f3c93d22093"
+    },
+    {
+      "path": "src/styles/home-rear.css",
+      "sha256": "c80ffbfce6a5f28abd68913c9f445bb6b4e72cbbb1e2b55b31a554753b14eecf"
+    },
+    {
+      "path": "src/styles/home.css",
+      "sha256": "fe54dd3a198efbe93a87163a0fc2a7ab35d712380306405993f46f19c035acab"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "d410822515c0688e57633d36b7fd73d699532cd6b4cc2064119aa9a075a700a3"
+    }
+  ]
+}

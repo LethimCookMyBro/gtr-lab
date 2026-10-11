@@ -9,6 +9,9 @@ const PIXEL_BUDGET_TREE = '60c442f0d379d3c111393eda9337921b6df853ecf5b6e4024f7ce
 const PIXEL_BUDGET_CONTRACT = 'pixel-budget-1m-v1';
 const MSAA_OFF_TREE = '8c35f77f0d20e5679dade1e7dd8197ef493deef165b990672b510e9ea7e76145';
 const MSAA_OFF_CONTRACT = 'msaa-off-2m-v1';
+// Exact reviewed production source identity; no runtime overrides or wildcard.
+const STATIC_STUDIO_TREE = '6353f4929c3c9ef3387a0cedfa43d53e685d08592ca43a307304eac1e76a4261';
+const STATIC_STUDIO_CONTRACT = 'static-studio-batching-2m-msaa-v1';
 const geometryRows = {
   desktop: {
     initial: { viewportWidth: 1440, viewportHeight: 900, cssWidth: 1440, cssHeight: 744, nativeDpr: 2, width: 1391, height: 718, attributeWidth: 1391, attributeHeight: 718 },
@@ -20,6 +23,12 @@ const geometryRows = {
   },
 };
 const geometryPhases = ['exterior-idle-before', 'exterior-orbit', 'exterior-controls-rotating', 'exterior-idle-after', 'cabin-entry', 'cabin-look', 'cabin-seat-controls', 'cabin-idle', 'viewport-change', 'resized-cabin-look', 'resized-cabin-idle'];
+const fullMotionCaptures = [
+  ['01-exterior-before', 'exterior-idle-before'], ['02-orbit-mid', 'exterior-orbit'], ['03-orbit-end', 'exterior-orbit'],
+  ['04-controls-mid', 'exterior-controls-rotating'], ['05-controls-end', 'exterior-controls-rotating'], ['06-exterior-idle', 'exterior-idle-after'],
+  ['07-cabin-driver', 'cabin-entry'], ['08-cabin-look-mid', 'cabin-look'], ['09-cabin-look-end', 'cabin-look'],
+  ['10-cabin-seats', 'cabin-seat-controls'], ['11-cabin-idle', 'cabin-idle'], ['12-resized-look', 'resized-cabin-look'], ['13-resized-idle', 'resized-cabin-idle'],
+];
 const contracts = {
   [PIXEL_BUDGET_CONTRACT]: { sourceTree: PIXEL_BUDGET_TREE, maxBufferPixels: 1_000_000, rows: geometryRows },
   [MSAA_OFF_CONTRACT]: { sourceTree: MSAA_OFF_TREE, maxBufferPixels: 2_000_000,
@@ -30,6 +39,16 @@ const contracts = {
     } },
   },
 };
+contracts[STATIC_STUDIO_CONTRACT] = { sourceTree: STATIC_STUDIO_TREE, maxBufferPixels: 2_000_000,
+  contextCreation: { requestedAntialias: true, antialias: true, multisampled: true },
+  rows: contracts[MSAA_OFF_CONTRACT].rows, captures: fullMotionCaptures,
+};
+// Returned report geometry must never provide a mutation path into acceptance policy.
+function freezePolicy(value) {
+  for (const child of Object.values(value)) if (child && typeof child === 'object') freezePolicy(child);
+  return Object.freeze(value);
+}
+freezePolicy(contracts);
 function validatedGeometryContract(name, sourceTree, mode, viewport) {
   const required = Object.entries(contracts).find(([, contract]) => contract.sourceTree === sourceTree)?.[0];
   if (required) assert.equal(name, required, 'This candidate requires its exact reviewed geometry contract');
@@ -41,6 +60,7 @@ function validatedGeometryContract(name, sourceTree, mode, viewport) {
   assert.ok(Object.hasOwn(contract.rows, viewport), 'Geometry contract viewport required');
   return { name, sourceTree, maxBufferPixels: contract.maxBufferPixels, maxDpr: 1.5,
     ...(contract.contextCreation ? { contextCreation: contract.contextCreation } : {}),
+    ...(contract.captures ? { captures: contract.captures } : {}),
     originalQualitySource: { sourceCommit: 'b3f72d6de048941ce7b21c94b13f2896849b01db', sourceTree: '0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8', maxBufferPixels: 2_000_000, maxDpr: 1.5 },
     ...contract.rows[viewport] };
 }
@@ -48,11 +68,29 @@ function creationFailures(observation, contract) {
   if (!contract?.contextCreation) return [];
   const scene = observation.contexts.filter(context => context.sceneCanvas);
   const proof = scene.length === 1 ? scene[0].creation : null;
-  const fixed = { ...contract.contextCreation, phase: 'setup', contextType: 'webgl2', defaultFramebufferBound: true, reads: 1 };
-  if (!proof || Object.entries(fixed).some(([key, value]) => proof[key] !== value) ||
+  const { multisampled, ...expectedCreation } = contract.contextCreation;
+  const fixed = { ...expectedCreation, phase: 'setup', contextType: 'webgl2', defaultFramebufferBound: true, reads: 1 };
+  const invalidMultisampling = multisampled && (!Number.isSafeInteger(proof?.samples) || proof.samples < 2 || !Number.isSafeInteger(proof?.sampleBuffers) || proof.sampleBuffers < 1);
+  const invalidSourceBinding = multisampled && (scene.length !== 1 || !Number.isSafeInteger(scene[0].id) || scene[0].id < 1 ||
+    scene[0].connected !== true || scene[0].lostEvents !== 0 || scene[0].restoredEvents !== 0 ||
+    !Number.isSafeInteger(proof?.sequence) || proof?.time < 0 ||
+    observation.dimensions.some(d => d.contextId !== scene[0].id) ||
+    observation.phases.some((p, i) => p.contextId !== scene[0].id ||
+      (p.stable && p.dimensions?.contextId !== scene[0].id) || !Number.isSafeInteger(p.sequence) ||
+      (i > 0 && (p.sequence <= observation.phases[i - 1].sequence || p.time < observation.phases[i - 1].time))));
+  if (!proof || invalidMultisampling || invalidSourceBinding || Object.entries(fixed).some(([key, value]) => proof[key] !== value) ||
       !Number.isFinite(proof.time) || !Number.isInteger(proof.sequence) || proof.sequence < 1 ||
       !observation.phases.length || observation.phases.some(p => !Number.isFinite(p.time) || !Number.isInteger(p.sequence) || p.time < proof.time || p.sequence <= proof.sequence)) {
-    return ['MSAA context creation evidence must prove one native no-MSAA default buffer in untimed setup before every measured phase'];
+    return [multisampled
+      ? 'MSAA context creation evidence must prove native requested and returned antialias with integer multisampling in untimed setup before every measured phase'
+      : 'MSAA context creation evidence must prove one native no-MSAA default buffer in untimed setup before every measured phase'];
+  }
+  return [];
+}
+function captureFailures(pixels, contract) {
+  if (!contract?.captures) return [];
+  if (JSON.stringify(pixels.map(p => [p?.label, p?.phase])) !== JSON.stringify(contract.captures) || pixels.some(p => p.blank !== false)) {
+    return ['Static studio contract requires all 13 original nonblank captures once, in order, in their exact phases'];
   }
   return [];
 }
@@ -115,7 +153,7 @@ export function resolveMotionRequest(request, env) {
 export function assessMotionEvidence({ mode, observation, pixels, geometryContract, sourceTree, viewport }) {
   assert.ok(['baseline', 'fixed'].includes(mode));
   const geometry = validatedGeometryContract(geometryContract, sourceTree, mode, viewport);
-  const failures = [...observation.issues, ...geometryFailures(observation, geometry), ...creationFailures(observation, geometry)];
+  const failures = [...observation.issues, ...geometryFailures(observation, geometry), ...creationFailures(observation, geometry), ...captureFailures(pixels, geometry)];
   const stable = new Map(observation.phases.filter(p => p.stable).map(p => [p.name, p]));
   const stableWrites = observation.events.filter(e => e.kind === 'canvas-write' && stable.has(e.phase));
   const blankSamples = pixels.filter(p => p.blank);

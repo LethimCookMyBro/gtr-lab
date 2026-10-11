@@ -176,7 +176,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
           far: 700,
         }}
         gl={{
-          antialias: false,
+          antialias: true,
           alpha: false,
           powerPreference: "high-performance",
           failIfMajorPerformanceCaveat: true,

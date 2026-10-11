@@ -3,6 +3,6 @@
   "allow": true,
   "mode": "fixed",
   "sourceSha": "current",
-  "sourceTree": "8c35f77f0d20e5679dade1e7dd8197ef493deef165b990672b510e9ea7e76145",
-  "geometryContract": "msaa-off-2m-v1"
+  "sourceTree": "6353f4929c3c9ef3387a0cedfa43d53e685d08592ca43a307304eac1e76a4261",
+  "geometryContract": "static-studio-batching-2m-msaa-v1"
 }

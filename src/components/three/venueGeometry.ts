@@ -23,6 +23,7 @@ import {
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { StudioEnvironment } from "./types";
 import { coastBend, createCoastalOceanGeometry } from "./coastalGeometry";
+import { batchStaticStudioMeshes } from "./staticStudioBatching";
 
 type SurfaceName = "floor" | "wall" | "asphalt" | "rock";
 export type SurfaceTextures = Record<
@@ -213,6 +214,7 @@ export function createVenue(
   const group = new Group();
   group.name = `venue-${environment}`;
   const geometries = new Set<BufferGeometry>();
+  const staticStudioGroups: Mesh[][] = [];
   const materials = new Set<MeshStandardMaterial>();
   const textures = new Set<Texture>();
   const indoors = !["forest", "coast"].includes(environment);
@@ -529,12 +531,16 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
         shutter,
         "pit-door",
       );
+      const doorSlats: Mesh[] = [];
       for (let n = 0; n < 15; n++)
-        box(
-          [4.25, 0.022, 0.045],
-          [bx, 0.22 + n * 0.24, z + depth / 2 + 0.065],
-          dark,
+        doorSlats.push(
+          box(
+            [4.25, 0.022, 0.045],
+            [bx, 0.22 + n * 0.24, z + depth / 2 + 0.065],
+            dark,
+          ),
         );
+      if (environment === "studio") staticStudioGroups.push(doorSlats);
       box(
         [1.35, 0.17, 0.28],
         [bx, 4.3, z + depth / 2 + 0.19],
@@ -875,6 +881,16 @@ float venueNoise(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return m
     } else {
       mesh(terrainGeometry, rock, [104, -2, -10], "landscape-terrain");
     }
+  }
+  if (environment === "studio") {
+    for (const name of ["floor-expansion-joint", "bay-line"])
+      staticStudioGroups.push(
+        group.children.filter(
+          (object): object is Mesh =>
+            object instanceof Mesh && object.name === name,
+        ),
+      );
+    batchStaticStudioMeshes(group, geometries, staticStudioGroups);
   }
   group.updateMatrixWorld(true);
   return {

@@ -72,7 +72,7 @@ test('the historical 1M desktop buffer and a smaller-than-reviewed substitute bo
   }
 });
 test('staged request and driver use the full unchanged capture path with the additive contract', async () => {
-  const actual = JSON.parse(await readFile(new URL('../qa/dpr-motion-request.json', import.meta.url), 'utf8'));
+  const actual = JSON.parse(await readFile(new URL('../qa/dpr-motion-msaa-off-2m-request.json', import.meta.url), 'utf8'));
   assert.deepEqual(actual, request);
   const driver = await readFile(new URL('../scripts/diagnose-dpr-motion.mjs', import.meta.url), 'utf8');
   assert.match(driver, /geometryContract: target\.geometryContract, sourceTree: source\.sha256, viewport: target\.name/);
@@ -101,17 +101,18 @@ test('the two reviewed contracts cannot be mixed or converted to a legacy bypass
   const historicalTree = '60c442f0d379d3c111393eda9337921b6df853ecf5b6e4024f7ce05d958ab930';
   for (const bad of [{ sourceTree: historicalTree }, { geometryContract: 'pixel-budget-1m-v1' }]) assert.throws(() => resolveMotionRequest({ ...request, ...bad }, env));
 });
-test('candidate differs from byte-verified original production identity only in creation-time antialias', async () => {
+test('archived no-MSAA identity retains its exact original production lineage', async () => {
   const { createHash } = await import('node:crypto');
   const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-  const { applicationIdentity } = await import('../scripts/diagnose-dpr-motion.mjs');
-  const identity = await applicationIdentity(new URL('..', import.meta.url).pathname);
+  const identity = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-msaa-off-2m-identity.json', import.meta.url), 'utf8'));
+  const original = JSON.parse(await readFile(new URL('../qa/fixtures/dpr-motion-original-2m-msaa-identity.json', import.meta.url), 'utf8'));
   assert.equal(identity.sha256, tree); assert.equal(identity.files.length, 87);
-  const path = 'src/components/three/VehicleScene.tsx';
-  const scene = await readFile(new URL('../' + path, import.meta.url), 'utf8');
-  assert.equal(scene.split('antialias: false,').length, 2);
-  const restored = identity.files.map(file => file.path === path ? { ...file, sha256: hash(scene.replace('antialias: false,', 'antialias: true,')) } : file);
-  assert.equal(hash(JSON.stringify(restored)), '0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8');
+  assert.equal(hash(JSON.stringify(identity.files)), tree);
+  assert.equal(hash(JSON.stringify(original.files)), '0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8');
+  const changed = identity.files.filter(file => original.files.find(o => o.path === file.path)?.sha256 !== file.sha256);
+  assert.deepEqual(changed.map(file => file.path), ['src/components/three/VehicleScene.tsx']);
+  const restored = identity.files.map(file => original.files.find(o => o.path === file.path));
+  assert.equal(hash(JSON.stringify(restored)), original.sha256);
 });
 test('all original capture, native input, settle, and timeout source is byte-identical', async () => {
   const { createHash } = await import('node:crypto');

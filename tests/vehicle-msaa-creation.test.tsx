@@ -150,13 +150,13 @@ it("exercises the installed R3F 9.8.1 and Three 0.180.0 creation path", () => {
   expect(THREE.REVISION).toBe("180");
 });
 
-it("forwards VehicleScene antialias:false through R3F to native-context creation options", async () => {
+it("forwards VehicleScene antialias:true through R3F to native-context creation options", async () => {
   const { store, context, getContext } = await setup();
   const renderer = store.getState().gl;
   expect(renderer).toBeInstanceOf(THREE.WebGLRenderer);
   expect(renderer.getContext()).toBe(context);
   expect(host.canvas.gl).toEqual({
-    antialias: false,
+    antialias: true,
     alpha: false,
     powerPreference: "high-performance",
     failIfMajorPerformanceCaveat: true,
@@ -167,7 +167,7 @@ it("forwards VehicleScene antialias:false through R3F to native-context creation
     alpha: true,
     depth: true,
     stencil: false,
-    antialias: false,
+    antialias: true,
     premultipliedAlpha: true,
     preserveDrawingBuffer: false,
     powerPreference: "high-performance",
@@ -214,7 +214,7 @@ it("does not recreate the renderer, re-request context, or rewrite antialias on 
     await configure();
     expect(store.getState().gl).toBe(renderer);
     expect(renderer.getPixelRatio()).toBe(initialDpr);
-    expect(antialias).toBe(false);
+    expect(antialias).toBe(true);
   }
   expect(getContext).toHaveBeenCalledTimes(1);
   expect(setAntialias).not.toHaveBeenCalled();

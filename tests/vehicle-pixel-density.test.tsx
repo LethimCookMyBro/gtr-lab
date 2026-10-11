@@ -221,7 +221,7 @@ it.each([
     ]);
     expect(bufferWidth * bufferHeight).toBeLessThanOrEqual(2_000_000);
     expect(ratio).toBeLessThanOrEqual(Math.min(nativeDpr, 1.5));
-    expect(host.canvas.gl.antialias).toBe(false);
+    expect(host.canvas.gl.antialias).toBe(true);
   },
 );
 it("starts with the original 2M cap before the actual canvas is measured", () => {
