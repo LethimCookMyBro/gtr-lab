@@ -1,0 +1,72 @@
+name: Private bounded GPU frame completion
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnose-gpu-frames.mjs'
+      - 'scripts/gpu-frame-*.mjs'
+      - 'tests/gpu-frame-*.node.mjs'
+      - 'qa/gpu-frame-request.json'
+      - '.github/workflows/gpu-frame-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: gpu-frames-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  measure:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-gpu-frames]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      R35_GPU_FRAME_APP_ROOT: candidate
+      R35_GPU_FRAME_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Resolve exact reviewed opt-in before setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,appendFile,mkdir,writeFile} from 'node:fs/promises';
+          import {resolveGpuFrameRequest} from './scripts/gpu-frame-policy.mjs';
+          const request=JSON.parse(await readFile('qa/gpu-frame-request.json','utf8'));
+          const values=resolveGpuFrameRequest(request,process.env);
+          await appendFile(process.env.GITHUB_ENV,Object.entries(values).map(([key,value])=>`${key}=${value}\n`).join(''));
+          await mkdir('gpu-frame-results',{recursive:true});
+          await writeFile('gpu-frame-results/request.json',JSON.stringify({request,resolved:values,harnessSha:process.env.GITHUB_SHA},null,2));
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.R35_GPU_FRAME_SOURCE_SHA }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify source pin and socket-free diagnostic tests
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "$R35_GPU_FRAME_SOURCE_SHA"
+          node --input-type=module -e "import assert from 'node:assert/strict'; import {applicationIdentity} from './scripts/diagnose-dpr-motion.mjs'; assert.equal((await applicationIdentity('candidate')).sha256,process.env.R35_GPU_FRAME_SOURCE_TREE)"
+          node --check scripts/diagnose-gpu-frames.mjs
+          node --check scripts/gpu-frame-observer.mjs
+          node --test tests/gpu-frame-policy.node.mjs tests/gpu-frame-observer.node.mjs
+      - run: npm ci
+      - name: Build exact immutable candidate
+        working-directory: candidate
+        run: npm ci && npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: One bounded desktop lane, no screenshot requests
+        run: timeout --signal=TERM --kill-after=10s 360s node scripts/diagnose-gpu-frames.mjs
+        timeout-minutes: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gpu-frames-${{ github.sha }}
+          path: gpu-frame-results/
+          retention-days: 14
+          if-no-files-found: warn
