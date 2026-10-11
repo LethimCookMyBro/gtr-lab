@@ -9,13 +9,35 @@ import { gunzipSync } from 'node:zlib';
 import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { collectDistAssets } from './raster-cost-evidence.mjs';
 import { budgets, requiredCases, models, cabinWire, cabinResourcePlan, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages,
-  assertCurrentGeometry, assertDesktopFeatureGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertMobileContainment, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
+  assertCurrentGeometry, assertDesktopFeatureGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertMobileContainment, assertPreparationErrorLayout, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
 import { installCabinNetworkCapture } from './cabin-preparation-network.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from './cabin-preparation-observer.mjs';
 import { buildPreparationReadiness } from './build-cabin-preparation-readiness.mjs';
 import { independentExteriorTransform } from './causal-motion-preflight.mjs';
 import { createCabinOracle } from './causal-cabin-model.mjs';
 import { cabinResourceCohort, assertCabinResourcesReleased } from './cabin-resource-assertions.mjs';
+
+/** Passive DOM geometry and hit-testing, sampled around the same certified screenshot. */
+export function observePreparationErrorLayout() {
+  const rect = element => { const r = element?.getBoundingClientRect(); return r && { x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height, visible: element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) }; };
+  const text = element => element?.textContent.replace(/\s+/g, ' ').trim();
+  const measured = element => element && ({ ...rect(element), text: text(element), fontSize: parseFloat(getComputedStyle(element).fontSize), scrollWidth: element.scrollWidth, clientWidth: element.clientWidth, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight });
+  const card = document.querySelector('.cabin-preparation-error'), message = card?.querySelector('p'), retry = card?.querySelector('button'), canvas = document.querySelector('.scene-stage canvas');
+  const range = document.createRange(); if (message) range.selectNodeContents(message);
+  const lines = message ? [...range.getClientRects()].filter(r => r.width > 0 && r.height > 0).map(r => ({ x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height, hit: message.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) })) : [];
+  const paintRail = document.querySelector('.paint-rail'), paintGroup = paintRail?.querySelector('.paint-swatches');
+  const groupBox = paintGroup?.getBoundingClientRect();
+  const paint = { rail: rect(paintRail), group: { ...rect(paintGroup), scrollWidth: paintGroup?.scrollWidth, clientWidth: paintGroup?.clientWidth, scrollLeft: paintGroup?.scrollLeft }, overflowX: paintGroup && getComputedStyle(paintGroup).overflowX,
+    labels: [...document.querySelectorAll('.paint-label > *')].map(element => { const r = document.createRange(); r.selectNodeContents(element); return { ...measured(element), lines: [...r.getClientRects()].filter(b => b.width > 0 && b.height > 0).map(b => ({ x: b.x, y: b.y, right: b.right, bottom: b.bottom, width: b.width, height: b.height })) }; }),
+    controls: [...document.querySelectorAll('.paint-swatches button')].map(element => { const b = element.getBoundingClientRect(); const complete = Boolean(groupBox && b.x >= groupBox.x && b.right <= groupBox.right); return { ...rect(element), name: element.getAttribute('aria-label'), enabled: !element.disabled, complete, hit: complete && b.bottom <= innerHeight ? element.contains(document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2)) : null }; }) };
+  const box = retry?.getBoundingClientRect();
+  const hits = box ? [[.5, .5], [.1, .1], [.9, .1], [.1, .9], [.9, .9]].map(([x, y]) => retry.contains(document.elementFromPoint(box.x + box.width * x, box.y + box.height * y))) : [];
+  return { width: innerWidth, height: innerHeight, documentHeight: document.documentElement.scrollHeight, scrollY, documentOverflowY: getComputedStyle(document.documentElement).overflowY, bodyOverflowY: getComputedStyle(document.body).overflowY, paint, overflow: document.documentElement.scrollWidth > innerWidth, count: document.querySelectorAll('.cabin-preparation-error').length, phase: document.querySelector('main[data-cabin-preparation]')?.getAttribute('data-cabin-preparation'), role: card?.getAttribute('role'),
+    main: rect(document.querySelector('main[data-cabin-preparation]')), card: measured(card), message: { ...measured(message), lines }, retry: { ...measured(retry), enabled: Boolean(retry && !retry.disabled), hits },
+    stage: rect(document.querySelector('.scene-stage')), canvas: rect(canvas), backingWidth: canvas?.width, backingHeight: canvas?.height,
+    headerControls: [...document.querySelectorAll('.config-header a, .config-header button')].map(element => { const r = element.getBoundingClientRect(); return { ...rect(element), name: element.getAttribute('aria-label') || text(element), hit: element.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) }; }),
+    blockers: [['Switch model', '.scene-bottom .switch-model'], ['Interaction hint', '.scene-bottom .interaction-hint'], ['Scene tools', '.config-toolbar']].map(([name, selector]) => ({ name, ...rect(document.querySelector(selector)) })) };
+}
 
 /** A raw same-origin transport receipt is separate from Playwright's decoded response body. */
 export async function readModelRepresentation(baseUrl, encoding) {
@@ -123,7 +145,7 @@ export async function main(env = process.env) {
         headerControls: [...document.querySelectorAll('.config-header a, .config-header button')].map(control),
         items: [...document.querySelectorAll('footer[aria-label="Cabin preview controls"] button')].map(control) };
     });
-    const capture = async (label, window, mobileViewport) => {
+    const capture = async (label, window, mobileViewport, errorViewport) => {
       const timeout = remainingBudget(window);
       assert.ok(row.captures.length < 12, 'Bounded screenshots per case');
       await waitForFunctionalCapture(page, { preset: 'hero', timeout, quality }); remainingBudget(window);
@@ -132,10 +154,13 @@ export async function main(env = process.env) {
       const bounds = await canvas.boundingBox(); assert.ok(bounds && bounds.width > 200 && bounds.height > 150);
       const overlays = await page.evaluate(observeOverlayRectangles), rail = page.locator('footer[aria-label="Cabin preview controls"]'); if (await rail.count()) overlays.push({ name: 'cabin-rail', ...await rail.boundingBox() });
       const layoutBefore = mobileViewport && await containment();
+      const errorBefore = errorViewport && await page.evaluate(observePreparationErrorLayout);
       const png = await page.screenshot({ path: resolve(output, `${name}-${label}.png`), timeout: budgets.screenshot, scale: 'css' });
       const layoutAfter = mobileViewport && await containment();
+      const errorAfter = errorViewport && await page.evaluate(observePreparationErrorLayout);
       const certificate = await verifyFunctionalCapture(page); assert.ok(certificate.readyAt - certificate.armedAt <= window.budget, 'Readiness budget includes the initiating action'); assertCurrentGeometry(certificate.snapshot, quality, target.deviceScaleFactor); if (target.name === 'desktop' && target.lane === 'feature') assertDesktopFeatureGeometry(certificate.snapshot, target.quality); assert.equal(certificate.reusedUnchanged, false); assert.deepEqual(await canvas.boundingBox(), bounds);
       if (mobileViewport) { assert.deepEqual(layoutAfter, layoutBefore, 'Mobile geometry must remain unchanged across the certified screenshot'); assertMobileContainment(layoutAfter, certificate, mobileViewport); row.layouts.push({ label, value: layoutAfter, owner: certificate.owner, mainDrawId: certificate.mainDrawId, fenceId: certificate.fenceId }); }
+      if (errorViewport) { row.layouts.push({ label, errorBefore, errorLayout: errorAfter, screenshotSha256: sha256(png), owner: certificate.owner, mainDrawId: certificate.mainDrawId, fenceId: certificate.fenceId }); assert.deepEqual(errorAfter, errorBefore, 'Error layout must remain unchanged across the certified screenshot'); assertPreparationErrorLayout(errorAfter, certificate, errorViewport); }
       const pixels = summarizeScenePixels(PNG.sync.read(png), bounds, overlays); assert.equal(pixels.blank, false);
       const record = { label, quality, readinessWindow: window, screenshotStartedAt, screenshotEndedAt: performance.now(), certificate, pixels, scene: canvasPixelHash(png, bounds, overlays), sha256: sha256(png) }; row.captures.push(record); await save(); return record;
     };
@@ -311,11 +336,24 @@ async function runLifecycleCases({ runCase, target, output, transform, expect, a
     await h.modelNetwork.failOnce();
     const failedDeadline = await fresh(h); await expect(h.page.locator('.cabin-preparation-error')).toBeVisible({ timeout: budgets.initial });
     await expect(h.page.locator('.scene-loading')).toHaveCount(0); await expect(h.page.getByRole('button', { name: 'Retry interior preparation', exact: true })).toBeEnabled();
-    await h.capture('failed-interior-usable-exterior', failedDeadline);
+    await h.capture('failed-interior-usable-exterior', failedDeadline, undefined, target.viewport);
+    if (target.name === 'mobile') {
+      const resizeWindow = readinessWindow(budgets.functional); await armFunctionalCapture(h.page); await h.page.setViewportSize({ width: 320, height: 844 });
+      await h.capture('failed-interior-layout-320', resizeWindow, undefined, { width: 320, height: 844 });
+      assert.equal((await h.snapshot()).totals.fetches, 1, 'Layout inspection must not trigger a model retry');
+    }
     await h.open('Camera'); await expect(h.dialog.getByRole('button', { name: 'Interior', exact: true })).toBeDisabled(); await h.close();
     await armFunctionalCapture(h.page); const retryDeadline = readinessWindow(budgets.initial);
     await h.tap(h.page.getByRole('button', { name: 'Retry interior preparation', exact: true })); await h.ready(retryDeadline);
-    await h.capture('interior-retry-restored', retryDeadline); assert.equal((await h.snapshot()).totals.fetches, 2);
+    const recovered = await h.capture('interior-retry-restored', retryDeadline);
+    if (target.name === 'mobile') {
+      const geometry = recovered.certificate.snapshot.dimensions;
+      assert.deepEqual({ cssWidth: geometry.cssWidth, cssHeight: geometry.cssHeight, width: geometry.width, height: geometry.height }, { cssWidth: 320, cssHeight: 302, width: 480, height: 453 }, 'Successful retry restores the existing normal320 geometry');
+      assert.equal(await h.page.evaluate(() => scrollY), 0); await expect(h.page.locator('.cabin-preparation-error')).toHaveCount(0);
+    }
+    const retried = await h.snapshot(); assert.equal(retried.totals.fetches, 2);
+    const retryClick = retried.clicks.findLast(click => click.label === 'Retry interior preparation'); assert.equal(retryClick?.trusted, true); assert.equal(retryClick.ui.preparation.phase, 'error');
+    assert.equal(retried.ui.preparation.phase, 'ready'); assert.equal(retried.ui.maskCount, 0);
     await h.switchModel('nismo'); await h.retire(1);
   }, { networkFailure: true });
   await runCase('native-viewer-retry-retires-residency', async h => {

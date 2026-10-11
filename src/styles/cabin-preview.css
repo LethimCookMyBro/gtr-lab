@@ -229,3 +229,102 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* A failed preparation is recoverable: message and actions need their own
+   content-sized rows, not competing overlays above the exterior controls.
+   The intrinsic minimum lets short viewports grow with the complete copy. */
+.configurator[data-cabin-preparation="error"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(300px, 1fr) auto auto auto 156px;
+  min-height: min-content;
+}
+.configurator[data-cabin-preparation="error"] .scene-stage {
+  position: relative;
+  inset: auto;
+  grid-row: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.configurator[data-cabin-preparation="error"] .cabin-preparation-error {
+  position: relative;
+  inset: auto;
+  transform: none;
+  grid-row: 2;
+  justify-self: center;
+  overflow-wrap: anywhere;
+}
+.configurator[data-cabin-preparation="error"] .cabin-preparation-error .text-link {
+  min-height: 44px;
+  max-width: 100%;
+  text-align: left;
+}
+.configurator[data-cabin-preparation="error"] .scene-bottom {
+  position: relative;
+  inset: auto;
+  grid-row: 3;
+  margin: 12px var(--gutter) 24px;
+  flex-wrap: wrap;
+}
+.configurator[data-cabin-preparation="error"] .interaction-hint {
+  position: static;
+  transform: none;
+  white-space: normal;
+  max-width: 100%;
+}
+.configurator[data-cabin-preparation="error"] .config-toolbar {
+  position: relative;
+  inset: auto;
+  grid-row: 4;
+  flex-direction: row;
+  justify-self: center;
+  width: min(640px, calc(100% - 32px));
+  min-width: 0;
+  margin-bottom: 16px;
+  border-left: 0;
+}
+.configurator[data-cabin-preparation="error"] .config-toolbar > button {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-height: 760px) and (min-width: 761px) {
+  .configurator[data-cabin-preparation="error"] {
+    grid-template-rows: minmax(300px, 1fr) auto auto auto 130px;
+  }
+}
+@media (max-width: 760px) {
+  .configurator[data-cabin-preparation="error"] {
+    height: 100svh;
+    min-height: min-content;
+    grid-template-rows: 230px minmax(160px, 1fr) auto auto auto auto;
+  }
+  .configurator[data-cabin-preparation="error"] .scene-stage {
+    grid-row: 2;
+  }
+  .configurator[data-cabin-preparation="error"] .cabin-preparation-error {
+    grid-row: 3;
+    margin-top: 8px;
+    padding: 12px;
+  }
+  .configurator[data-cabin-preparation="error"] .cabin-preparation-error .text-link {
+    margin-top: 8px;
+  }
+  .configurator[data-cabin-preparation="error"] .scene-bottom {
+    grid-row: 4;
+    margin: 8px 16px;
+  }
+  .configurator[data-cabin-preparation="error"] .config-toolbar {
+    position: relative;
+    inset: auto;
+    grid-row: 5;
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .configurator[data-cabin-preparation="error"] .paint-rail {
+    position: relative;
+    inset: auto;
+    grid-row: 6;
+    height: auto;
+    min-height: 155px;
+  }
+}

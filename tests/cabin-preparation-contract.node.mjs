@@ -455,7 +455,7 @@ test('AO/static-face contract is independently closed and preserves ineligible h
   assert.equal(historical.model.sha256, historical.request.modelSha256); assert.equal(historical.model.images, 10); assert.equal(historical.evidence.verdict, 'failed');
   assert.equal(historical.evidence.cells.find(c => c.name === 'prove (desktop, feature, standard)').conclusion, 'failure');
   assert.equal(preparationContract, 'premium-unified-cabin-preparation-ao-static-faces-v1');
-  assert.equal(preparationTree, '70263165c8e0daff8c9402c0d23af8647e9155bd4c605b875937c65b3b48237b');
+  assert.equal(preparationTree, 'bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5');
   assert.deepEqual(models[0], { path: '/models/r35-cabin-contact-ao-static-faces-8645956f.glb', bytes: 20195752, sha256: '8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452' });
   for (const candidate of [historical.request, { ...request, contract: historical.request.contract }, { ...request, sourceTree: historical.source.sha256 }, { ...request, modelSha256: historical.model.sha256 }, { ...request, modelSha256: 'eeb932963006eb3bf33ff84d5c469da34b7a9dc87628e4ccb139b87b78793b57' }, { ...request, modelSha256: 'b4ae7b677982b740acbcd878e1a5f90587ef64dcc09bc733f6864107637e08b3' }]) assert.throws(() => resolvePreparationRequest(candidate, env));
   assert.throws(() => validatePreparationEnvironment({ ...resolved(), R35_PREPARATION_CONTRACT: historical.request.contract }));
@@ -487,4 +487,63 @@ test('all eleven real browser images require residency while CPU Texture/job cou
   for (const code of ['assert.equal(cohort.bitmapIds.length, cabinResourcePlan.imageCount)', 'assert.deepEqual(cohort.decodedButNotUploaded, [])', 'assert.deepEqual([...cohort.uploadedImageNames].sort(), images.map(image => image.name).sort())', 'resourcePlan: cabinResourcePlan']) assert.ok(source.includes(code), code);
   const workflow = String(await read('.github/workflows/cabin-preparation-diagnostic.yml')); assert.match(workflow, /tests\/cabin-contact-ao-contract.test.mjs tests\/cabin-contact-ao-resources.test.ts/);
   assert.match(workflow, /name: cabin-preparation-ao-static-faces-/);
+});
+
+test('error layout requires complete visible text, enabled hit targets and separated controls at390 and320', async () => {
+  const { assertPreparationErrorLayout } = await import('../scripts/cabin-preparation-policy.mjs');
+  const fixture = width => {
+    const rect = (x, y, width, height) => ({ x, y, right: x + width, bottom: y + height, width, height, visible: true });
+    const text = (x, y, width, height) => ({ ...rect(x, y, width, height), scrollWidth: width, clientWidth: width, scrollHeight: height, clientHeight: height, fontSize: 13 });
+    const layout = { width, height: 844, documentHeight: 1000, scrollY: 0, documentOverflowY: 'visible', bodyOverflowY: 'visible', overflow: false, count: 1, phase: 'error', role: 'alert',
+      main: rect(0, 0, width, 1000), card: text(18, 450, width - 36, 130), message: { ...text(34, 466, width - 68, 32), text: 'Interior preparation couldn’t finish. The model could not be loaded (HTTP 503).', lines: [{ ...rect(34, 466, width - 68, 16), hit: true }, { ...rect(34, 482, 180, 16), hit: true }] },
+      retry: { ...text(34, 520, width - 68, 44), text: 'Retry interior preparation', enabled: true, hits: [true, true, true, true, true] },
+      stage: rect(0, 230, width, 200), canvas: rect(0, 230, width, 200), backingWidth: width * 1.5, backingHeight: 300,
+      blockers: [{ name: 'Switch model', ...rect(16, 600, 111, 44) }, { name: 'Interaction hint', ...rect(140, 607, width - 156, 30) }, { name: 'Scene tools', ...rect(0, 660, width, 73) }],
+      headerControls: ['Back to models', 'GT-R LAB home', 'Model detail'].map((name, i) => ({ name, ...rect(10 + i * 100, 20, 90, 30), hit: true })),
+      paint: { rail: rect(0, 750, width, 240), group: { ...rect(10, 920, width - 20, 60), scrollWidth: 450, clientWidth: width - 20, scrollLeft: 0 }, overflowX: 'auto',
+        labels: ['Exterior / Concept palette', 'Ultimate Silver', 'Illustrative finish, not an official paint catalog'].map((label, i) => ({ ...text(10, 760 + i * 50, width - 20, 45), text: label, lines: [rect(10, 760 + i * 50, width - 20, 15)] })),
+        controls: ['Ultimate Silver', 'Gun Metallic', 'Pearl White', 'Jet Black', 'Vibrant Red', 'Deep Blue', 'Stealth Gray', 'Midnight Violet', 'Dark Metal Gray'].map((name, i) => ({ ...rect(12 + i * 50, 926, 44, 44), name, enabled: true, complete: 56 + i * 50 <= width - 10, hit: null })) } };
+    const certificate = { nativeStatus: 0x911c, reusedUnchanged: false, snapshot: { dimensions: { cssWidth: width, cssHeight: 200, renderWidth: width, renderHeight: 200, width: width * 1.5, height: 300 } } };
+    return { layout, certificate, viewport: { width, height: 844 } };
+  };
+  for (const width of [390, 320]) { const e = fixture(width); assertPreparationErrorLayout(e.layout, e.certificate, e.viewport); }
+  const overlap = fixture(390); Object.assign(overlap.layout.blockers[0], { y: 541, bottom: 585 }); assert.throws(() => assertPreparationErrorLayout(overlap.layout, overlap.certificate, overlap.viewport), /overlaps Switch model/);
+  for (const mutate of [
+    e => { delete e.layout.card; }, e => { e.layout.card.x = NaN; }, e => { e.layout.documentHeight = NaN; }, e => { e.layout.scrollY = 1; }, e => { e.layout.bodyOverflowY = 'hidden'; }, e => { e.layout.count = 0; }, e => { e.layout.phase = 'ready'; }, e => { e.layout.role = 'status'; },
+    e => { e.layout.message.text = 'Interior preparation couldn’t finish.'; }, e => { e.layout.message.visible = false; }, e => { e.layout.message.scrollHeight = 1000; }, e => { delete e.layout.message.clientWidth; },
+    e => { e.layout.message.lines = []; }, e => { e.layout.message.lines = Array(1); }, e => { e.layout.message.lines[0].x = NaN; }, e => { e.layout.message.lines[0].hit = false; }, e => { e.layout.message.lines[0].right = 500; },
+    e => { e.layout.retry.enabled = false; }, e => { e.layout.retry.hits[2] = false; }, e => { e.layout.retry.hits = Array(5); }, e => { delete e.layout.retry.hits[1]; }, e => { e.layout.retry.hits[0] = 'true'; },
+    e => { e.layout.retry.y = 830; e.layout.retry.bottom = 874; }, e => { e.layout.retry.x = 350; e.layout.retry.right = 602; }, e => { e.layout.retry.scrollWidth = 1000; },
+    e => { e.layout.blockers[2].y = 520; e.layout.blockers[2].bottom = 593; }, e => { e.layout.blockers.pop(); }, e => { e.layout.blockers[0].visible = false; },
+    e => { e.layout.headerControls[0].hit = false; }, e => { e.layout.headerControls[0].y = -1; }, e => { e.layout.headerControls.pop(); },
+    e => { e.layout.main.bottom = 844; e.layout.main.height = 844; }, e => { e.layout.paint.labels[0] = { ...e.layout.paint.labels[1], text: e.layout.paint.labels[0].text }; }, e => { Object.assign(e.layout.paint.labels[0], { y: 920, bottom: 965, lines: [{ x: 10, y: 920, right: 100, bottom: 935, width: 90, height: 15 }] }); },
+    e => { e.layout.paint.controls = Array(9); }, e => { e.layout.paint.controls[0].enabled = false; }, e => { e.layout.paint.controls[0].complete = false; }, e => { e.layout.paint.controls[0].hit = true; }, e => { e.layout.paint.controls[0].width = NaN; }, e => { e.layout.paint.group.bottom = 1001; }, e => { delete e.layout.paint.group.scrollWidth; }, e => { e.layout.paint.group.scrollLeft = 44; }, e => { e.layout.paint.controls[8].x += 500; e.layout.paint.controls[8].right += 500; }, e => { e.layout.paint.labels[0].lines = Array(1); }, e => { e.layout.paint.labels[0].scrollWidth = 1000; }, e => { e.layout.paint.labels[0].lines[0].right = 900; },
+    e => { e.layout.backingWidth++; }, e => { e.certificate.snapshot.dimensions.renderWidth = 390; }, e => { e.certificate.nativeStatus = 0x911b; }, e => { e.certificate.reusedUnchanged = true; },
+  ]) { const e = fixture(320); mutate(e); assert.throws(() => assertPreparationErrorLayout(e.layout, e.certificate, e.viewport)); }
+});
+
+test('error-state resize and single trusted retry retain native screenshot and original action clocks', async () => {
+  const source = String(await read('scripts/diagnose-cabin-preparation.mjs'));
+  assert.match(source, /const errorBefore = errorViewport && await page.evaluate\(observePreparationErrorLayout\);[\s\S]*?await page.screenshot[\s\S]*?const errorAfter = errorViewport && await page.evaluate\(observePreparationErrorLayout\);[\s\S]*?await verifyFunctionalCapture\(page\)/);
+  assert.match(source, /row.layouts.push\(\{ label, errorBefore, errorLayout: errorAfter, screenshotSha256: sha256\(png\)[^\n]*?assert.deepEqual\(errorAfter, errorBefore/); assert.ok(source.includes('assert.deepEqual(errorAfter, errorBefore')); assert.ok(source.includes('assertPreparationErrorLayout(errorAfter, certificate, errorViewport)'));
+  const start = source.indexOf("await runCase('network-failure-exterior-and-retry'"); const scenario = source.slice(start, source.indexOf("await runCase('native-viewer-retry", start));
+  assert.match(scenario, /const resizeWindow = readinessWindow\(budgets.functional\); await armFunctionalCapture\(h.page\); await h.page.setViewportSize\(\{ width: 320, height: 844 \}\)/);
+  assert.ok(scenario.includes("await h.capture('failed-interior-usable-exterior', failedDeadline, undefined, target.viewport)"));
+  assert.ok(scenario.includes("await h.capture('failed-interior-layout-320', resizeWindow, undefined, { width: 320, height: 844 })"));
+  assert.match(scenario, /const retryDeadline = readinessWindow\(budgets.initial\);\s+await h.tap\(h.page.getByRole\('button', \{ name: 'Retry interior preparation', exact: true \}\)\); await h.ready\(retryDeadline\)/);
+  assert.equal((scenario.match(/await h.tap\(h.page.getByRole\('button', \{ name: 'Retry interior preparation'/g) ?? []).length, 1);
+  for (const code of ['assert.equal(retryClick?.trusted, true)', "assert.equal(retryClick.ui.preparation.phase, 'error')", 'assert.equal(retried.totals.fetches, 2)', "await h.capture('interior-retry-restored', retryDeadline)", 'await h.retire(1)']) assert.ok(scenario.includes(code), code);
+  assert.ok(scenario.includes('cssWidth: 320, cssHeight: 302, width: 480, height: 453'));
+  assert.match(source, /range.getClientRects\(\)/); assert.match(source, /document.elementFromPoint/); assert.doesNotMatch(source.slice(source.indexOf('export function observePreparationErrorLayout'), source.indexOf('/** A raw same-origin')), /style\.|scrollIntoView|\.click\(|\.tap\(/);
+});
+
+
+test('prior AO run remains historical source metadata with its open error-layout finding', async () => {
+  const old = JSON.parse(await read('qa/fixtures/cabin-preparation-702631-history.json'));
+  assert.equal(old.historicalOnly, true); assert.equal(old.commit, '9fba7d2377ae52d9ae6ffbb80a61f677b91fd3ba');
+  assert.equal(old.request.sourceTree, '70263165c8e0daff8c9402c0d23af8647e9155bd4c605b875937c65b3b48237b');
+  assert.equal(old.source.sha256, old.request.sourceTree); assert.equal(sha256(JSON.stringify(old.source.files)), old.source.sha256); assert.equal(old.source.files.length, 100);
+  assert.equal(old.model.sha256, models[0].sha256); assert.equal(old.evidence.runId, 38167159928); assert.equal(old.evidence.archives.length, 5);
+  assert.equal(old.evidence.verdict, 'five-terminal-CI-passes-with-mobile503-error-layout-visual-release-hold'); assert.equal(old.evidence.visualFinding.screenshotIncluded, false);
+  assert.throws(() => resolvePreparationRequest(old.request, env));
 });

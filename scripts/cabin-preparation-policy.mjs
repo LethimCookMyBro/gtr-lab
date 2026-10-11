@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 export const preparationContract = 'premium-unified-cabin-preparation-ao-static-faces-v1';
 // Exact independently reviewed runtime, including the route accessibility and transport layers.
-export const preparationTree = '70263165c8e0daff8c9402c0d23af8647e9155bd4c605b875937c65b3b48237b';
+export const preparationTree = 'bc1ac6ce3c3a97bf683a6b0bdc057e73f47800544e913b675db583b65f1605b5';
 export const budgets = Object.freeze({ initial: 90_000, functional: 20_000, lifecycle: 30_000, screenshot: 45_000 });
 export const requiredCases = Object.freeze({ feature: Object.freeze(['direct-entry-residency']), lifecycle: Object.freeze([
   'resize-quality-during-preparation', 'trusted-route-cancels-fetch', 'trusted-model-cancels-native-decode-delivery',
@@ -188,6 +188,73 @@ export function assertMobileContainment(layout, certificate, viewport) {
   for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
     const a = all[i], b = all[j]; assert.ok(a.right <= b.x || b.right <= a.x || a.bottom <= b.y || b.bottom <= a.y, 'Mobile controls overlap');
   }
+}
+
+
+/** Actual error message and Retry must remain visible without covering scene controls. */
+export function assertPreparationErrorLayout(layout, certificate, viewport) {
+  assert.equal(layout.width, viewport.width); assert.equal(layout.height, viewport.height); assert.equal(layout.overflow, false);
+  assert.ok(Number.isFinite(layout.width) && layout.width > 0 && Number.isFinite(layout.height) && layout.height > 0);
+  assert.equal(layout.count, 1); assert.equal(layout.phase, 'error'); assert.equal(layout.role, 'alert');
+  assert.ok(Number.isFinite(layout.documentHeight) && layout.documentHeight >= layout.height); assert.equal(layout.scrollY, 0);
+  for (const overflow of [layout.documentOverflowY, layout.bodyOverflowY]) assert.ok(['visible', 'auto', 'scroll'].includes(overflow), 'Error rows must remain scroll reachable');
+  const rect = (value, name, limit = layout.height) => {
+    for (const key of ['x', 'y', 'right', 'bottom', 'width', 'height']) assert.ok(Number.isFinite(value?.[key]), `Missing ${name} rectangle ${key}`);
+    assert.ok(value.width > 0 && value.height > 0 && value.x >= 0 && value.y >= 0 && value.right <= layout.width && value.bottom <= limit, `${name} exceeds viewport`);
+    assert.ok(Math.abs(value.x + value.width - value.right) < 1e-8 && Math.abs(value.y + value.height - value.bottom) < 1e-8, `Inconsistent ${name} rectangle`);
+  };
+  const inside = (a, b) => a.x >= b.x && a.y >= b.y && a.right <= b.right && a.bottom <= b.bottom;
+  const apart = (a, b) => a.right <= b.x || b.right <= a.x || a.bottom <= b.y || b.bottom <= a.y;
+  for (const name of ['card', 'message', 'retry', 'stage', 'canvas']) { rect(layout[name], name); assert.equal(layout[name].visible, true, `Hidden ${name}`); }
+  for (const name of ['card', 'message', 'retry']) {
+    for (const key of ['scrollWidth', 'clientWidth', 'scrollHeight', 'clientHeight', 'fontSize']) assert.ok(Number.isFinite(layout[name][key]) && layout[name][key] > 0, `Missing ${name} typography ${key}`);
+    assert.ok(layout[name].scrollWidth <= layout[name].clientWidth + 1 && layout[name].scrollHeight <= layout[name].clientHeight + 1, `Clipped ${name}`);
+  }
+  assert.ok(inside(layout.message, layout.card) && inside(layout.retry, layout.card)); assert.ok(apart(layout.message, layout.retry), 'Message and Retry overlap');
+  assert.equal(layout.message.text, 'Interior preparation couldn’t finish. The model could not be loaded (HTTP 503).');
+  assert.equal(layout.retry.text, 'Retry interior preparation'); assert.equal(layout.retry.enabled, true); assert.ok(layout.retry.height >= 44);
+  assert.ok(Array.isArray(layout.message.lines) && layout.message.lines.length > 0 && layout.message.lines.length <= 20);
+  for (const line of layout.message.lines) { rect(line, 'Message line'); assert.ok(inside(line, layout.message) && inside(line, layout.card)); assert.equal(line.hit, true, 'Message is obscured'); }
+  assert.ok(Array.isArray(layout.retry.hits)); assert.equal(layout.retry.hits.length, 5);
+  for (const index of [0, 1, 2, 3, 4]) assert.equal(layout.retry.hits[index], true, 'Retry hit target is obscured');
+  assert.deepEqual(layout.blockers.map(b => b.name).sort(), ['Switch model', 'Interaction hint', 'Scene tools'].sort());
+  for (const blocker of layout.blockers) { rect(blocker, blocker.name, layout.documentHeight); assert.equal(blocker.visible, true); assert.ok(apart(layout.card, blocker), `Error card overlaps ${blocker.name}`); }
+  assert.deepEqual(layout.headerControls.map(control => control.name).sort(), ['Back to models', 'GT-R LAB home', 'Model detail'].sort());
+  for (const control of layout.headerControls) { rect(control, control.name); assert.equal(control.visible, true); assert.equal(control.hit, true); assert.ok(apart(layout.card, control), 'Error card obscures navigation'); }
+  rect(layout.main, 'Main container', layout.documentHeight); assert.equal(layout.main.visible, true);
+  for (const value of [layout.card, layout.stage, ...layout.blockers, ...layout.headerControls]) assert.ok(inside(value, layout.main), 'Error row clips outside main');
+  const paint = layout.paint;
+  for (const name of ['rail', 'group']) { rect(paint?.[name], 'Paint ' + name, layout.documentHeight); assert.equal(paint[name].visible, true); assert.ok(apart(layout.card, paint[name])); }
+  assert.ok(inside(paint.rail, layout.main), 'Paint rail clips outside main'); assert.ok(inside(paint.group, paint.rail)); assert.ok(['auto', 'scroll'].includes(paint.overflowX));
+  assert.ok(Number.isFinite(paint.group.scrollWidth) && Number.isFinite(paint.group.clientWidth) && paint.group.clientWidth > 0 && paint.group.scrollWidth >= paint.group.clientWidth); assert.equal(paint.group.scrollLeft, 0);
+  assert.deepEqual(paint.labels.map(label => label.text), ['Exterior / Concept palette', 'Ultimate Silver', 'Illustrative finish, not an official paint catalog']);
+  for (const label of paint.labels) {
+    rect(label, 'Paint label', layout.documentHeight); assert.ok(inside(label, paint.rail)); assert.ok(apart(label, paint.group), 'Paint label overlaps swatches'); assert.equal(label.visible, true);
+    for (const key of ['fontSize', 'scrollWidth', 'clientWidth', 'scrollHeight', 'clientHeight']) assert.ok(Number.isFinite(label[key]) && label[key] > 0);
+    assert.ok(label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1, 'Clipped paint label');
+    assert.ok(Array.isArray(label.lines) && label.lines.length > 0 && label.lines.length <= 10);
+    for (const line of label.lines) { rect(line, 'Paint label line', layout.documentHeight); assert.ok(inside(line, label)); }
+  }
+  for (let i = 0; i < paint.labels.length; i++) for (let j = i + 1; j < paint.labels.length; j++) assert.ok(apart(paint.labels[i], paint.labels[j]), 'Paint labels overlap');
+  assert.deepEqual(paint.controls.map(control => control.name), ['Ultimate Silver', 'Gun Metallic', 'Pearl White', 'Jet Black', 'Vibrant Red', 'Deep Blue', 'Stealth Gray', 'Midnight Violet', 'Dark Metal Gray']);
+  let complete = 0;
+  for (const control of paint.controls) {
+    for (const key of ['x', 'y', 'right', 'bottom', 'width', 'height']) assert.ok(Number.isFinite(control[key]));
+    assert.ok(control.width >= 44 && control.height >= 44 && Math.abs(control.x + control.width - control.right) < 1e-8 && Math.abs(control.y + control.height - control.bottom) < 1e-8);
+    assert.ok(control.y >= paint.group.y && control.bottom <= paint.group.bottom); assert.ok(control.x >= paint.group.x && control.right <= paint.group.x + paint.group.scrollWidth, 'Paint control is not scroll reachable'); assert.equal(control.visible, true); assert.equal(control.enabled, true);
+    const full = control.x >= paint.group.x && control.right <= paint.group.right; assert.equal(control.complete, full);
+    assert.equal(control.hit, full && control.bottom <= layout.height ? true : null);
+    if (full) { complete++; rect(control, 'Visible paint control', layout.documentHeight); }
+  }
+  assert.ok(complete > 0, 'No complete paint control is reachable');
+  const regions = [layout.card, ...layout.blockers, paint.rail];
+  for (let i = 0; i < regions.length; i++) for (let j = i + 1; j < regions.length; j++) assert.ok(apart(regions[i], regions[j]), 'Error rows overlap');
+  for (let i = 0; i < paint.controls.length; i++) for (let j = i + 1; j < paint.controls.length; j++) assert.ok(apart(paint.controls[i], paint.controls[j]), 'Paint controls overlap');
+  const d = certificate.snapshot.dimensions;
+  for (const key of ['x', 'y', 'right', 'bottom', 'width', 'height']) assert.equal(layout.canvas[key], layout.stage[key]);
+  assert.equal(d.cssWidth, layout.canvas.width); assert.equal(d.cssHeight, layout.canvas.height); assert.equal(d.renderWidth, layout.canvas.width); assert.equal(d.renderHeight, layout.canvas.height);
+  assert.equal(layout.backingWidth, d.width); assert.equal(layout.backingHeight, d.height);
+  assert.ok([0x911a, 0x911c].includes(certificate.nativeStatus)); assert.equal(certificate.reusedUnchanged, false);
 }
 
 /** Fail closed. Cabin bodies and fixtures share the browser's native CDP request ID. */
