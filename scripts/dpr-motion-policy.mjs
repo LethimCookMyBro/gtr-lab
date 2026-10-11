@@ -7,6 +7,8 @@ export const motionViewports = Object.freeze({
 // Closed, source-bound geometry experiment. Historical v1 requests retain their original policy.
 const PIXEL_BUDGET_TREE = '60c442f0d379d3c111393eda9337921b6df853ecf5b6e4024f7ce05d958ab930';
 const PIXEL_BUDGET_CONTRACT = 'pixel-budget-1m-v1';
+const MSAA_OFF_TREE = '8c35f77f0d20e5679dade1e7dd8197ef493deef165b990672b510e9ea7e76145';
+const MSAA_OFF_CONTRACT = 'msaa-off-2m-v1';
 const geometryRows = {
   desktop: {
     initial: { viewportWidth: 1440, viewportHeight: 900, cssWidth: 1440, cssHeight: 744, nativeDpr: 2, width: 1391, height: 718, attributeWidth: 1391, attributeHeight: 718 },
@@ -18,16 +20,41 @@ const geometryRows = {
   },
 };
 const geometryPhases = ['exterior-idle-before', 'exterior-orbit', 'exterior-controls-rotating', 'exterior-idle-after', 'cabin-entry', 'cabin-look', 'cabin-seat-controls', 'cabin-idle', 'viewport-change', 'resized-cabin-look', 'resized-cabin-idle'];
+const contracts = {
+  [PIXEL_BUDGET_CONTRACT]: { sourceTree: PIXEL_BUDGET_TREE, maxBufferPixels: 1_000_000, rows: geometryRows },
+  [MSAA_OFF_CONTRACT]: { sourceTree: MSAA_OFF_TREE, maxBufferPixels: 2_000_000,
+    contextCreation: { requestedAntialias: false, antialias: false, samples: 0, sampleBuffers: 0 },
+    rows: { ...geometryRows, desktop: {
+      initial: { ...geometryRows.desktop.initial, width: 1967, height: 1016, attributeWidth: 1967, attributeHeight: 1016 },
+      resized: { ...geometryRows.desktop.resized, width: 1920, height: 966, attributeWidth: 1920, attributeHeight: 966 },
+    } },
+  },
+};
 function validatedGeometryContract(name, sourceTree, mode, viewport) {
-  if (sourceTree === PIXEL_BUDGET_TREE) assert.equal(name, PIXEL_BUDGET_CONTRACT, 'This candidate requires its exact reviewed geometry contract');
+  const required = Object.entries(contracts).find(([, contract]) => contract.sourceTree === sourceTree)?.[0];
+  if (required) assert.equal(name, required, 'This candidate requires its exact reviewed geometry contract');
   if (name === undefined) return null;
-  assert.equal(name, PIXEL_BUDGET_CONTRACT, 'Unknown geometry contract');
-  assert.equal(sourceTree, PIXEL_BUDGET_TREE, 'Geometry contract source tree mismatch');
+  assert.ok(Object.hasOwn(contracts, name), 'Unknown geometry contract');
+  const contract = contracts[name];
+  assert.equal(sourceTree, contract.sourceTree, 'Geometry contract source tree mismatch');
   assert.equal(mode, 'fixed', 'Geometry experiment requires fixed acceptance');
-  assert.ok(Object.hasOwn(geometryRows, viewport), 'Geometry contract viewport required');
-  return { name, sourceTree, maxBufferPixels: 1_000_000, maxDpr: 1.5,
+  assert.ok(Object.hasOwn(contract.rows, viewport), 'Geometry contract viewport required');
+  return { name, sourceTree, maxBufferPixels: contract.maxBufferPixels, maxDpr: 1.5,
+    ...(contract.contextCreation ? { contextCreation: contract.contextCreation } : {}),
     originalQualitySource: { sourceCommit: 'b3f72d6de048941ce7b21c94b13f2896849b01db', sourceTree: '0f78e2163e516652d976adb6ceccad0c8820016798a44b17d620e93d2701a0a8', maxBufferPixels: 2_000_000, maxDpr: 1.5 },
-    ...geometryRows[viewport] };
+    ...contract.rows[viewport] };
+}
+function creationFailures(observation, contract) {
+  if (!contract?.contextCreation) return [];
+  const scene = observation.contexts.filter(context => context.sceneCanvas);
+  const proof = scene.length === 1 ? scene[0].creation : null;
+  const fixed = { ...contract.contextCreation, phase: 'setup', contextType: 'webgl2', defaultFramebufferBound: true, reads: 1 };
+  if (!proof || Object.entries(fixed).some(([key, value]) => proof[key] !== value) ||
+      !Number.isFinite(proof.time) || !Number.isInteger(proof.sequence) || proof.sequence < 1 ||
+      !observation.phases.length || observation.phases.some(p => !Number.isFinite(p.time) || !Number.isInteger(p.sequence) || p.time < proof.time || p.sequence <= proof.sequence)) {
+    return ['MSAA context creation evidence must prove one native no-MSAA default buffer in untimed setup before every measured phase'];
+  }
+  return [];
 }
 function geometryFailures(observation, contract) {
   if (!contract) return [];
@@ -73,7 +100,7 @@ export function resolveMotionRequest(request, env) {
   const fields = ['allow', 'mode', 'sourceSha', 'sourceTree', 'version'];
   if (request.version === 2) fields.push('geometryContract');
   assert.deepEqual(Object.keys(request).sort(), fields.sort(), 'Only reviewed diagnostic request fields are allowed');
-  if (request.version === 2) assert.equal(request.geometryContract, PIXEL_BUDGET_CONTRACT, 'Known geometry contract required');
+  if (request.version === 2) assert.ok(Object.hasOwn(contracts, request.geometryContract), 'Known geometry contract required');
   assert.equal(request.allow, true, 'Explicit request allow=true required');
   if (request.sourceSha === 'current') assert.equal(request.mode, 'fixed', 'current is allowed only for a reviewed fixed request');
   const resolved = {
@@ -88,7 +115,7 @@ export function resolveMotionRequest(request, env) {
 export function assessMotionEvidence({ mode, observation, pixels, geometryContract, sourceTree, viewport }) {
   assert.ok(['baseline', 'fixed'].includes(mode));
   const geometry = validatedGeometryContract(geometryContract, sourceTree, mode, viewport);
-  const failures = [...observation.issues, ...geometryFailures(observation, geometry)];
+  const failures = [...observation.issues, ...geometryFailures(observation, geometry), ...creationFailures(observation, geometry)];
   const stable = new Map(observation.phases.filter(p => p.stable).map(p => [p.name, p]));
   const stableWrites = observation.events.filter(e => e.kind === 'canvas-write' && stable.has(e.phase));
   const blankSamples = pixels.filter(p => p.blank);

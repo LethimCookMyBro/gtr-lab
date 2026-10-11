@@ -2,14 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { installDprMotionObserver } from '../scripts/dpr-motion-observer.mjs';
-function setup(options = {}) {
+function setup(options = {}, prepareCanvas = () => {}) {
   let now = 0; const queue = new Map(); let id = 0;
   class Element extends EventTarget {
     setAttribute(name, value) { if (name === 'width' || name === 'height') this[`_${name}`] = +value; return 'attribute'; }
     removeAttribute(name) { this[`_${name}`] = 300; }
   }
   class Canvas extends Element {
-    constructor() { super(); this._width = 1200; this._height = 750; this.isConnected = true; this.gl = { canvas: this, get drawingBufferWidth() { return this.canvas.width; }, get drawingBufferHeight() { return this.canvas.height; } }; }
+    constructor() { super(); this._width = 1200; this._height = 750; this.isConnected = true; this.reads = []; this.gl = { canvas: this, SAMPLES: 0x80a9, SAMPLE_BUFFERS: 0x80a8, FRAMEBUFFER_BINDING: 0x8ca6, getContextAttributes: () => { this.reads.push('attributes'); return { antialias: false, alpha: true }; }, getParameter: key => { this.reads.push(key); return key === 0x8ca6 ? null : 0; }, get drawingBufferWidth() { return this.canvas.width; }, get drawingBufferHeight() { return this.canvas.height; } }; }
     get width() { return this._width; } set width(value) { if (value === 'throw') throw new Error('native setter'); this._width = value; }
     get height() { return this._height; } set height(value) { this._height = value; }
     matches(selector) { return selector === '.scene-stage canvas'; }
@@ -19,8 +19,8 @@ function setup(options = {}) {
   const world = { HTMLCanvasElement: Canvas, Element, WeakRef, performance: { now: () => now }, devicePixelRatio: 2, innerWidth: 1440, innerHeight: 900,
     requestAnimationFrame(cb) { queue.set(++id, cb); return id; }, cancelAnimationFrame(id) { queue.delete(id); } };
   vm.runInNewContext(`(${installDprMotionObserver.toString()})(${JSON.stringify(options)})`, world);
-  const canvas = new Canvas();
-  return { world, canvas, gl: canvas.getContext('webgl2'), observer: world.__r35DprMotion, tick(t) { now = t; const copy = [...queue.values()]; queue.clear(); for (const cb of copy) cb.call(world, t); }, queue };
+  const canvas = new Canvas(); prepareCanvas(canvas);
+  return { world, canvas, gl: canvas.getContext('webgl2', { antialias: false, alpha: true }), observer: world.__r35DprMotion, tick(t) { now = t; const copy = [...queue.values()]; queue.clear(); for (const cb of copy) cb.call(world, t); }, queue };
 }
 test('standalone observer does not schedule rendering, preserves getters, native returns and errors', () => {
   const h = setup(); assert.ok(h.observer); assert.equal(h.queue.size, 0); assert.equal(h.canvas.getContext('webgl2'), h.gl); assert.throws(() => h.canvas.getContext('throw'), /native context/);
@@ -51,4 +51,45 @@ test('context loss does not get suppressed and evidence overflow fails closed', 
 test('detached old canvases remain part of the context-churn evidence', () => {
   const h = setup(); h.observer.mark('orbit', true); h.canvas.isConnected = false; h.canvas.matches = () => false;
   const [context] = h.observer.snapshot().contexts; assert.equal(context.sceneCanvas, true); assert.equal(context.connected, false);
+});
+
+test('MSAA evidence reads actual attributes and default-buffer samples once, only at setup creation', () => {
+  const h = setup({ observeContextCreation: true });
+  assert.equal(h.canvas.reads.length, 4);
+  const proof = h.observer.snapshot().contexts[0].creation;
+  assert.equal(proof.phase, 'setup'); assert.equal(proof.contextType, 'webgl2');
+  assert.equal(proof.requestedAntialias, false); assert.equal(proof.antialias, false); assert.equal(proof.alpha, true);
+  assert.equal(proof.samples, 0); assert.equal(proof.sampleBuffers, 0); assert.equal(proof.defaultFramebufferBound, true);
+  assert.equal(proof.reads, 1);
+  h.observer.mark('exterior-orbit', true);
+  h.canvas.getContext('webgl2', { antialias: true }); h.canvas.width = 1200;
+  h.world.requestAnimationFrame(() => {}); h.tick(10); h.observer.snapshot();
+  assert.equal(h.canvas.reads.length, 4);
+  assert.deepEqual(h.observer.snapshot().contexts[0].creation, proof);
+  assert.equal(h.queue.size, 0);
+});
+test('historical observer never adds GL queries unless the new contract opts in', () => {
+  const h = setup(); h.observer.mark('exterior-orbit', true); h.canvas.getContext('webgl2');
+  assert.equal(h.canvas.reads.length, 0); assert.equal(h.observer.snapshot().contexts[0].creation, undefined);
+});
+
+test('a new context during motion fails closed without adding any GL queries', () => {
+  const h = setup({ observeContextCreation: true }); h.observer.mark('exterior-orbit', true);
+  const replacement = new h.canvas.constructor(); const native = replacement.gl;
+  assert.equal(replacement.getContext('webgl2', { antialias: false }), native);
+  assert.equal(replacement.reads.length, 0);
+  const snapshot = h.observer.snapshot();
+  assert.equal(snapshot.contexts.length, 2); assert.equal(snapshot.contexts[1].creation, undefined);
+  assert.ok(snapshot.issues.some(issue => /outside untimed setup/.test(issue)));
+});
+test('native evidence query failure preserves the original context return and fails closed', () => {
+  const h = setup({ observeContextCreation: true }, canvas => {
+    canvas.gl.getContextAttributes = () => { throw new Error('device query unavailable'); };
+  });
+  assert.equal(h.gl, h.canvas.gl);
+  assert.ok(h.observer.snapshot().issues.some(issue => /device query unavailable/.test(issue)));
+  assert.equal(h.observer.snapshot().contexts[0].creation, undefined);
+  h.observer.mark('exterior-orbit', true);
+  assert.equal(h.canvas.getContext('webgl2'), h.gl);
+  assert.equal(h.canvas.reads.length, 0);
 });

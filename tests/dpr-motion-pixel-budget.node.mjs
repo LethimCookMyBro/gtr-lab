@@ -72,7 +72,7 @@ test('the original 2M desktop buffer and a smaller-than-reviewed substitute both
   }
 });
 test('staged request and driver use the full unchanged capture path with the additive contract', async () => {
-  const actual = JSON.parse(await readFile(new URL('../qa/dpr-motion-request.json', import.meta.url), 'utf8'));
+  const actual = JSON.parse(await readFile(new URL('../qa/dpr-motion-pixel-budget-1m-request.json', import.meta.url), 'utf8'));
   assert.deepEqual(actual, request);
   const driver = await readFile(new URL('../scripts/diagnose-dpr-motion.mjs', import.meta.url), 'utf8');
   assert.match(driver, /geometryContract: target\.geometryContract, sourceTree: source\.sha256, viewport: target\.name/);

@@ -66,7 +66,7 @@ export async function main(env = process.env) {
   const report = { mode: target.mode, viewport: target.name, sourceCommit, harnessCommit: env.GITHUB_SHA, sourceTree: source.sha256,
     geometryContract: target.geometryContract ?? null, expectedGeometry: target.geometry,
     renderer: 'Chromium ANGLE SwiftShader software WebGL only', reducedMotion: 'no-preference', nativeDeviceScaleFactor: target.deviceScaleFactor,
-    scope: 'Actual production bundle; no app test hooks, app source changes, frame forcing, readPixels, GL state changes, or device-performance pass threshold.',
+    scope: 'Actual production bundle; no app test hooks, app source changes, frame forcing, readPixels, GL state changes, or device-performance pass threshold. For the no-MSAA contract only, actual attributes and default-buffer samples are queried once immediately after native context creation in untimed setup.',
     limitations: ['SwiftShader timings cannot establish physical-device FPS or lag improvement.', 'Bounded composited screenshots can miss subframe or between-sample flicker; buffer-write/context observations run throughout.', 'Screenshots add readback overhead. Phase timing is descriptive; draw/triangle and backing-pixel changes are reported separately.'],
     steps: [], captures: [], screenshotRetries: [], console: [], pageErrors: [], requestFailures: [], runtimeBodies: [], runtimeBundleBodies: [], errors: [], result: 'running' };
   await writeFile(`${output}/identity.json`, JSON.stringify({ sourceCommit, harnessCommit: env.GITHUB_SHA, source, bundles: Object.fromEntries(bundles), models: cabinModels }, null, 2));
@@ -91,7 +91,7 @@ export async function main(env = process.env) {
     const { viewport, deviceScaleFactor, isMobile, hasTouch } = target;
     context = await browser.newContext({ viewport, deviceScaleFactor, isMobile: Boolean(isMobile), hasTouch: Boolean(hasTouch), reducedMotion: 'no-preference', serviceWorkers: 'block' });
     // One init script guarantees wrap ordering; neither observer schedules rendering.
-    await context.addInitScript({ content: `(${installCabinResourceObserver.toString()})({maxFrames:8192});(${installDprMotionObserver.toString()})({maxRecords:8192});` });
+    await context.addInitScript({ content: `(${installCabinResourceObserver.toString()})({maxFrames:8192});(${installDprMotionObserver.toString()})({maxRecords:8192,observeContextCreation:${Boolean(target.geometry?.contextCreation)}});` });
     page = await context.newPage(); page.setDefaultTimeout(15_000); page.setDefaultNavigationTimeout(45_000);
     const cdp = await context.newCDPSession(page); const requests = new Map();
     await cdp.send('Network.enable', { maxResourceBufferSize: 64 * 1024 * 1024, maxTotalBufferSize: 256 * 1024 * 1024 });
@@ -196,6 +196,7 @@ export async function main(env = process.env) {
         const { observation, resources } = await page.evaluate(() => ({ observation: window.__r35DprMotion.snapshot(), resources: window.__cabinResourceObserver.snapshot() }));
         await writeFile(`${output}/buffer-events.json`, JSON.stringify(observation, null, 2)); await writeFile(`${output}/resource-frames.json`, JSON.stringify(resources, null, 2));
         report.phaseSummary = summarizePhases(observation, resources);
+        report.contextCreationEvidence = observation.contexts.filter(c => c.sceneCanvas).map(c => ({ contextId: c.id, creation: c.creation ?? null }));
         report.assessment = assessMotionEvidence({ mode: target.mode, observation, pixels: report.captures, geometryContract: target.geometryContract, sourceTree: source.sha256, viewport: target.name });
         report.baselineChurnObserved = target.mode === 'baseline' ? report.assessment.stableWrites.length > 0 : null;
         if (resources.issues.length) report.assessment.failures.push(...resources.issues);

@@ -1,5 +1,5 @@
-/** External init script. Observe native buffer writes; never request GL reads or frames. */
-export function installDprMotionObserver({ maxRecords = 8192 } = {}) {
+/** External init script. Observe native buffer writes; never request frames. Optional creation-only GL queries precede timed phases. */
+export function installDprMotionObserver({ maxRecords = 8192, observeContextCreation = false } = {}) {
   if (globalThis.__r35DprMotion) return;
   const contexts = [], events = [], dimensions = [], phases = [], issues = [], covered = [];
   const ids = new WeakMap(), canvasIds = new WeakMap();
@@ -26,11 +26,24 @@ export function installDprMotionObserver({ maxRecords = 8192 } = {}) {
     else push(dimensions, record);
     return d;
   };
-  const register = (canvas, gl) => {
+  const register = (canvas, gl, args) => {
     if (!gl || ids.has(gl)) return;
     if (contexts.length >= 16) { issue('Context capacity exceeded'); return; }
     const context = { id: contexts.length + 1, gl: new WeakRef(gl), canvas: new WeakRef(canvas), createdPhase: phase, lostEvents: 0, restoredEvents: 0 };
     contexts.push(context); ids.set(gl, context.id); canvasIds.set(canvas, context.id);
+    if (observeContextCreation) {
+      // The original getContext has just returned, before Three initializes GL state.
+      // Never query during motion, on later getContext calls, or from snapshot/RAF hooks.
+      if (phase !== 'setup') issue('Context creation outside untimed setup');
+      else {
+        const attributes = gl.getContextAttributes();
+        context.creation = { phase, time: performance.now(), sequence: ++sequence, reads: 1,
+          contextType: args[0], requestedAntialias: args[1]?.antialias,
+          antialias: attributes?.antialias, alpha: attributes?.alpha,
+          samples: gl.getParameter(gl.SAMPLES), sampleBuffers: gl.getParameter(gl.SAMPLE_BUFFERS),
+          defaultFramebufferBound: gl.getParameter(gl.FRAMEBUFFER_BINDING) === null };
+      }
+    }
     for (const [eventName, key] of [['webglcontextlost', 'lostEvents'], ['webglcontextrestored', 'restoredEvents']]) canvas.addEventListener(eventName, () => {
       context[key]++; push(events, { kind: eventName, phase, contextId: context.id, time: performance.now(), sequence: ++sequence });
     });
@@ -46,7 +59,7 @@ export function installDprMotionObserver({ maxRecords = 8192 } = {}) {
       safe(() => observe(this, args, result)); return result;
     } }); covered.push(name); return true;
   };
-  method(HTMLCanvasElement.prototype, 'getContext', (canvas, args, result) => { if (['webgl', 'experimental-webgl', 'webgl2'].includes(args[0])) register(canvas, result); });
+  method(HTMLCanvasElement.prototype, 'getContext', (canvas, args, result) => { if (['webgl', 'experimental-webgl', 'webgl2'].includes(args[0])) register(canvas, result, args); });
   const recordWrite = (canvas, property, before, via) => {
     if (!isScene(canvas)) return;
     const id = canvasIds.get(canvas), context = id ? contexts[id - 1] : null;
@@ -95,7 +108,7 @@ export function installDprMotionObserver({ maxRecords = 8192 } = {}) {
     snapshot() { return {
       version: 1, phase, issues: [...issues], covered: [...covered], phases: phases.map(p => ({ ...p })),
       events: events.map(e => ({ ...e })), dimensions: dimensions.map(d => ({ ...d })),
-      contexts: contexts.map(c => ({ id: c.id, createdPhase: c.createdPhase, sceneCanvas: Boolean(c.everScene) || isScene(c.canvas.deref()), connected: c.canvas.deref()?.isConnected ?? false, lostEvents: c.lostEvents, restoredEvents: c.restoredEvents })),
+      contexts: contexts.map(c => ({ id: c.id, createdPhase: c.createdPhase, sceneCanvas: Boolean(c.everScene) || isScene(c.canvas.deref()), connected: c.canvas.deref()?.isConnected ?? false, lostEvents: c.lostEvents, restoredEvents: c.restoredEvents, ...(c.creation ? { creation: { ...c.creation } } : {}) })),
     }; },
   }), configurable: false, writable: false });
 }

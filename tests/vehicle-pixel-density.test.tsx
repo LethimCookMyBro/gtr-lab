@@ -151,7 +151,7 @@ it.each([
     const { store } = await setup(width, height);
     const dpr = store.getState().viewport.dpr;
     expect(dpr).toBeLessThanOrEqual(Math.min(nativeDpr, 1.5));
-    expect(width * height * dpr * dpr).toBeLessThanOrEqual(1_000_001);
+    expect(width * height * dpr * dpr).toBeLessThanOrEqual(2_000_001);
     if (width === 390) expect(dpr).toBe(Math.min(nativeDpr, 1.5));
   },
 );
@@ -198,16 +198,16 @@ it("tracks display-density media changes without a resize and detaches listeners
 // Golden dimensions use the installed renderer's floor-per-axis contract.
 // These are CPU/store regressions; browser buffer observations remain required.
 it.each([
-  [1440, 744, 2, 1391, 718],
-  [1280, 644, 2, 1409, 709],
+  [1440, 744, 2, 1967, 1016],
+  [1280, 644, 2, 1920, 966],
   [390, 372, 3, 585, 558],
   [430, 428, 3, 645, 642],
   [390, 844, 3, 585, 1266],
   [390, 372, 1, 390, 372],
   [640, 360, 1, 640, 360],
   [1280, 720, 0.75, 960, 540],
-  [1920, 1080, 1, 1333, 750],
-  [3840, 2160, 2, 1333, 750],
+  [1920, 1080, 1, 1885, 1060],
+  [3840, 2160, 2, 1885, 1060],
 ])(
   "sets exact %sx%s native DPR%s backing dimensions %sx%s",
   async (width, height, nativeDpr, bufferWidth, bufferHeight) => {
@@ -219,21 +219,21 @@ it.each([
       bufferWidth,
       bufferHeight,
     ]);
-    expect(bufferWidth * bufferHeight).toBeLessThanOrEqual(1_000_000);
+    expect(bufferWidth * bufferHeight).toBeLessThanOrEqual(2_000_000);
     expect(ratio).toBeLessThanOrEqual(Math.min(nativeDpr, 1.5));
-    expect(host.canvas.gl.antialias).toBe(true);
+    expect(host.canvas.gl.antialias).toBe(false);
   },
 );
-it("starts with the same 1M cap before the actual canvas is measured", () => {
+it("starts with the original 2M cap before the actual canvas is measured", () => {
   const ratio = initialVehiclePixelRatio();
-  expect(ratio).toBe(Math.sqrt(1_000_000 / (1440 * 900)));
+  expect(ratio).toBe(Math.sqrt(2_000_000 / (1440 * 900)));
   expect([Math.floor(1440 * ratio), Math.floor(900 * ratio)]).toEqual([
-    1264, 790,
+    1788, 1118,
   ]);
 });
 
 it.each([
-  [1440, 744, 1280, 644, 2, 1409, 709],
+  [1440, 744, 1280, 644, 2, 1920, 966],
   [390, 372, 430, 428, 3, 645, 642],
 ])(
   "resizes %sx%s to %sx%s at native DPR%s once, then keeps the %sx%s backing size stable",
