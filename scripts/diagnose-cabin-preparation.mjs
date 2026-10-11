@@ -9,7 +9,7 @@ import { gunzipSync } from 'node:zlib';
 import { applicationIdentity } from './diagnose-dpr-motion.mjs';
 import { collectDistAssets } from './raster-cost-evidence.mjs';
 import { budgets, requiredCases, models, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment, acceptedCabinImages,
-  assertCurrentGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
+  assertCurrentGeometry, assertResidentWorkUnchanged, assertPreparationTimeline, assertReadableControls, assertRestoredExteriorPose, assertCaseSourceClosure } from './cabin-preparation-policy.mjs';
 import { installCabinNetworkCapture } from './cabin-preparation-network.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from './cabin-preparation-observer.mjs';
 import { buildPreparationReadiness } from './build-cabin-preparation-readiness.mjs';
@@ -189,7 +189,7 @@ export async function main(env = process.env) {
         const seatWindow = readinessWindow(budgets.functional); await armFunctionalCapture(page); await tap(page.getByRole('button', { name: label, exact: true })); const record = await capture('03-seat-' + seat, seatWindow); checkSeat(seat, record);
       }
       const exitWindow = readinessWindow(budgets.functional); await armFunctionalCapture(page); await tap(page.getByRole('button', { name: 'Back to exterior', exact: true })); const restored = await capture('04-exterior-restored', exitWindow);
-      assert.deepEqual(restored.certificate.snapshot.pose, initial.certificate.snapshot.pose); assert.deepEqual(restored.scene, initial.scene);
+      assertRestoredExteriorPose(restored.certificate.snapshot.pose, initial.certificate.snapshot.pose); assert.deepEqual(restored.scene, initial.scene);
       const beforeRepeat = (await snapshot()).totals; checkSeat('driver', await enter('05-repeat-entry')); assertResidentWorkUnchanged(beforeRepeat, (await snapshot()).totals);
       if (target.name === 'mobile') { const resizeWindow = readinessWindow(budgets.functional); await armFunctionalCapture(page); await page.setViewportSize({ width: 320, height: 844 }); await capture('06-layout-320', resizeWindow); await layout('320px-seat-and-back'); }
       const beforeExit = await resources(); for (const id of cohort.bitmapIds) assert.equal(beforeExit.bitmaps.find(b => b.id === id).closeCalls, 0);

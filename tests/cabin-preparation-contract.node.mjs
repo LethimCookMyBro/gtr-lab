@@ -6,7 +6,7 @@ import vm from 'node:vm';
 import { EventEmitter } from 'node:events';
 import { installCabinNetworkCapture, networkBuffers, failureBody } from '../scripts/cabin-preparation-network.mjs';
 import { preparationTree, preparationContract, models, budgets, sha256, readinessWindow, remainingBudget, resolvePreparationRequest, validatePreparationEnvironment,
-  assertResidentWorkUnchanged, assertCurrentGeometry, assertPreparationTimeline, assertReadableControls, assertCaseSourceClosure } from '../scripts/cabin-preparation-policy.mjs';
+  assertResidentWorkUnchanged, assertCurrentGeometry, assertPreparationTimeline, assertReadableControls, assertRestoredExteriorPose, assertCaseSourceClosure } from '../scripts/cabin-preparation-policy.mjs';
 import { installFunctionalCaptureObserver } from '../scripts/cabin-preparation-readiness.generated.mjs';
 import { pins, buildPreparationReadiness } from '../scripts/build-cabin-preparation-readiness.mjs';
 import { installPreparationObserver, installPreparationDecodeFixture } from '../scripts/cabin-preparation-observer.mjs';
@@ -215,7 +215,7 @@ test('decode cancellation fixture identifies and tracks closure of the exact nat
 
 test('frozen request and complete runtime identity bind only the independently reviewed source', async () => {
   const frozen = JSON.parse(await read('qa/fixtures/cabin-preparation-identity.json'));
-  assert.equal(frozen.sha256, preparationTree); assert.equal(sha256(JSON.stringify(frozen.files)), preparationTree); assert.equal(frozen.files.length, 97);
+  assert.equal(frozen.sha256, preparationTree); assert.equal(sha256(JSON.stringify(frozen.files)), preparationTree); assert.equal(frozen.files.length, 100);
   assert.deepEqual(JSON.parse(await read('qa/cabin-preparation-request.json')), request);
   assert.equal(pins['scripts/prepare-cabin.mjs'], '6a3d1b017accecffb8f6602bebabc3b871aa8a95b3df49d402e16836cfbd1db2');
 });
@@ -308,4 +308,29 @@ test('a pre-existing native abort cannot be relabeled as an upcoming trusted can
   row.network.unshift({ requestId: 'native-abort', sent: true, url: modelUrl, wallTime: .5, terminalSequence: 2, terminal: 'failed', failed: { error: 'net::ERR_ABORTED', cancelled: true }, interception: { kind: 'hold', pausedSequence: 1, abortObserved: true, requestId: 'native-abort', fetchId: 'fetch-abort', url: modelUrl } });
   row.expectedCancellations.push({ requestId: 'native-abort', fetchId: 'fetch-abort', declaredSequence: 3 }); row.browserModelRequests.unshift({ requestId: 2, url: modelUrl, failed: 'net::ERR_ABORTED' });
   assert.throws(() => assertCaseSourceClosure(row, wire), /declaration must precede/);
+});
+
+test('exterior restoration admits only oracle-scale floating roundoff and keeps pixel equality exact', async () => {
+  const expected = { position: [5.215500000000001, 2.1199500000000002, 6.2219999999999995], quaternion: [-.08013820504802704, .3405368084800212, .02914489763511814, .9363563024318041], projection: Array.from({length:16}, (_,i) => i%5===0 ? 1 : 0) };
+  const roundoff = structuredClone(expected); roundoff.position[0] = 5.215500000000003; roundoff.position[2] = 6.222000000000002; roundoff.quaternion[1] = .34053680848002127;
+  assertRestoredExteriorPose(roundoff, expected); assertRestoredExteriorPose({ ...roundoff, quaternion: roundoff.quaternion.map(v=>-v) }, expected);
+  for (const name of ['position','quaternion','projection']) {
+    const wrong = structuredClone(expected); wrong[name][0] += 2e-8; assert.throws(() => assertRestoredExteriorPose(wrong, expected));
+    const invalid = structuredClone(expected); invalid[name][0] = NaN; assert.throws(() => assertRestoredExteriorPose(invalid, expected));
+    const truncated = structuredClone(expected); truncated[name].pop(); assert.throws(() => assertRestoredExteriorPose(truncated, expected));
+  }
+  const driver = String(await read('scripts/diagnose-cabin-preparation.mjs'));
+  assert.ok(driver.includes('assertRestoredExteriorPose(restored.certificate.snapshot.pose, initial.certificate.snapshot.pose); assert.deepEqual(restored.scene, initial.scene);'));
+});
+
+test('physical pose comparison rejects sparse/coercible tuples before quaternion sign equivalence', () => {
+  const valid = { position: [0, 0, 0], quaternion: [0, 0, 0, 1], projection: Array(16).fill(0) };
+  for (const name of ['position', 'quaternion', 'projection']) for (const side of ['actual', 'expected']) {
+    const pair = { actual: structuredClone(valid), expected: structuredClone(valid) }; pair[side][name] = Array(valid[name].length);
+    assert.throws(() => assertRestoredExteriorPose(pair.actual, pair.expected));
+    pair[side][name] = structuredClone(valid[name]); delete pair[side][name][0]; assert.throws(() => assertRestoredExteriorPose(pair.actual, pair.expected));
+  }
+  for (const malformed of [['0','0','0','1'], [null,null,null,1], [undefined,0,0,1], [0,0,0,Infinity]]) {
+    for (const sign of [1,-1]) assert.throws(() => assertRestoredExteriorPose({ ...valid, quaternion: [0,0,0,sign] }, { ...valid, quaternion: malformed }));
+  }
 });

@@ -139,42 +139,61 @@ afterEach(() => {
 });
 
 describe("released exterior damping React/DOM ownership", () => {
-  it("guards the installed Drei frame owner and CameraRig integration order", () => {
-    const drei = readFileSync(
-      "node_modules/@react-three/drei/core/OrbitControls.js",
+  it("guards the application frame owner and CameraRig integration order", () => {
+    const bridge = readFileSync(
+      "src/components/three/DemandOrbitControls.tsx",
       "utf8",
     );
-    expect(drei.match(/controls\.update\(\)/g)).toHaveLength(1);
-    expect(drei).toMatch(
+    expect(bridge).toContain(
+      'import { OrbitControls as NativeOrbitControls } from "three-stdlib";',
+    );
+    expect(bridge.match(/controls\.update\(\)/g)).toHaveLength(1);
+    expect(bridge).toMatch(
       /useFrame\(\(\) => \{\s*if \(controls\.enabled\) controls\.update\(\);\s*\}, -1\)/,
     );
+    const damping = readFileSync(
+      "src/components/three/useReleasedOrbitDamping.ts",
+      "utf8",
+    );
+    expect(damping.match(/useFrame\(/g)).toHaveLength(2);
+    expect(damping).toContain("}, -1.5);");
+    expect(damping).toContain("}, -0.5);");
+    expect(damping.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "")).not.toMatch(
+      /controls(?:\.current)?\??\.update\(/,
+    );
     const rig = readFileSync("src/components/three/CameraRig.tsx", "utf8");
+    expect(rig).toContain(
+      'import { OrbitControls } from "./DemandOrbitControls";',
+    );
     expect(rig).toContain("useReleasedOrbitDamping({");
     expect(rig).toContain("}, -2);");
-    const terminalInterior = `        // The earlier update used the interpolated target. Disabled interior
-        // controls skip Drei's later update, so finish their exact look now.
-        if (preset === "interior") {
-          orbit.update();
-          // Native spherical normalization must not translate the fixed eye.
-          camera.position.copy(destination.position);
-        }
-`;
-    expect(rig.split(terminalInterior)).toHaveLength(2);
+    const terminalMatch =
+      /if \(preset === "interior" \|\| ownsPresentedPose\) \{\s*orbit\.update\(\);\s*\/\/ Native spherical normalization must not translate the fixed eye\.\s*if \(preset === "interior"\)\s*camera\.position\.copy\(destination\.position\);\s*\}/;
+    expect(rig.match(terminalMatch)).not.toBeNull();
+    const terminalUpdate = rig.match(terminalMatch)![0];
+    expect(rig.split(terminalUpdate)).toHaveLength(2);
     const terminal = rig.slice(
       rig.indexOf("camera.position.distanceToSquared(destination.position)"),
       rig.indexOf("orbit.enableDamping = !reducedMotion && !moving.current;"),
     );
-    expect(terminal).toContain(terminalInterior);
-    expect(terminal.indexOf(terminalInterior)).toBeGreaterThan(
-      terminal.indexOf("moving.current = false;"),
-    );
-    expect(terminal.indexOf(terminalInterior)).toBeGreaterThan(
-      terminal.indexOf("orbit.target.copy(destination.target);"),
-    );
-    expect(terminal.indexOf(terminalInterior)).toBeGreaterThan(
-      terminal.indexOf("orbit.maxPolarAngle = Math.PI / 2 - 0.025;"),
-    );
-    expect(rig.replace(terminalInterior, "").match(/orbit\.update\(\)/g)).toHaveLength(2); // Existing cabin drain and transition remain exact outside the reviewed interior terminal correction.
+    expect(terminal).toContain(terminalUpdate);
+    for (const before of [
+      "camera.position.copy(destination.position);",
+      "orbit.target.copy(destination.target);",
+      "camera.updateProjectionMatrix();",
+      "moving.current = false;",
+      "orbit.maxPolarAngle = Math.PI / 2 - 0.025;",
+    ]) {
+      expect(terminal.indexOf(terminalUpdate)).toBeGreaterThan(
+        terminal.indexOf(before),
+      );
+      expect(terminal.indexOf(before)).toBeGreaterThanOrEqual(0);
+    }
+    // Existing cabin drain and transition remain the only updates outside the
+    // reviewed final interior/cabin-return synchronization.
+    expect(
+      rig.replace(terminalUpdate, "").match(/orbit\.update\(\)/g),
+    ).toHaveLength(2);
   });
   it("adds no updater and brackets the existing Drei callback", () => {
     render(<Harness />);

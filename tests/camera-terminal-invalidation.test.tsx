@@ -9,7 +9,7 @@ import { OrbitControls } from "three-stdlib";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, createRoot, useFrame, _roots } from "@react-three/fiber";
 import type { RootState } from "@react-three/fiber";
-import type { WebGLRenderer } from "three";
+import { PerspectiveCamera, type WebGLRenderer } from "three";
 import { installDemandRenderBackpressure } from "../src/components/three/demandFrameAdmission";
 
 import { DemandRenderBackpressure } from "../src/components/three/DemandRenderBackpressure";
@@ -435,3 +435,362 @@ it.each(
     expect(f.poses.at(-1)).toEqual(actual);
   },
 );
+
+it.each([false, true])(
+  "an exact driver entry consumes one admitted target draw without a replay, reduced=%s",
+  async (reducedMotion) => {
+    const f = await fixture();
+    await f.mount(rig(0));
+    await drain(f);
+    const count = f.draws.length;
+    await f.mount(
+      <CameraRig
+        preset="hero"
+        requestId={0}
+        cabinView={cabinCameraView("driver", { scale: 1, position: [0, 0, 0] })}
+        autoRotate={false}
+        reducedMotion={reducedMotion}
+        onManual={() => {}}
+      />,
+    );
+    f.complete();
+    await frame();
+    expect(f.draws.length).toBe(count + 1);
+    const presented = f.poses.at(-1);
+    expect(f.state.internal.frames).toBe(0);
+    await drain(f);
+    expect(f.draws.length).toBe(count + 1);
+    expect(f.poses.at(-1)).toEqual(presented);
+  },
+);
+it("unmasking settled exterior controls and motion policy creates no render demand", async () => {
+  const f = await fixture();
+  const outside = (interactive: boolean, reducedMotion: boolean) => (
+    <CameraRig
+      preset="hero"
+      requestId={0}
+      interactive={interactive}
+      autoRotate={false}
+      reducedMotion={reducedMotion}
+      onManual={() => {}}
+    />
+  );
+  await f.mount(outside(false, true));
+  await drain(f);
+  const count = f.draws.length;
+  await f.mount(outside(true, false));
+  expect(f.state.internal.frames).toBe(0);
+  await drain(f);
+  expect(f.draws.length).toBe(count);
+});
+it("keeps independently requested work while the same entry frame updates its controls", async () => {
+  let next = false;
+  const f = await fixture({
+    step: (state) => {
+      if (next) {
+        next = false;
+        state.invalidate();
+      }
+    },
+  });
+  await f.mount(rig(0));
+  await drain(f);
+  const count = f.draws.length;
+  await f.mount(
+    <CameraRig
+      preset="hero"
+      cabinView={cabinCameraView("driver", { scale: 1, position: [0, 0, 0] })}
+      autoRotate={false}
+      reducedMotion
+      onManual={() => {}}
+    />,
+  );
+  next = true;
+  f.complete();
+  await frame();
+  expect(f.state.internal.frames).toBe(1);
+  await drain(f);
+  expect(f.draws.length).toBe(count + 2);
+});
+
+it("completes the masked exterior return once and then unmasks without replay", async () => {
+  const f = await fixture();
+  const view = cabinCameraView("driver", { scale: 1, position: [0, 0, 0] });
+  const target = (
+    inside: boolean,
+    interactive = false,
+    reducedMotion = true,
+  ) => (
+    <CameraRig
+      preset="hero"
+      requestId={0}
+      cabinView={inside ? view : undefined}
+      interactive={interactive}
+      autoRotate={false}
+      reducedMotion={reducedMotion}
+      onManual={() => {}}
+    />
+  );
+  await f.mount(target(false));
+  await drain(f);
+  const outside = f.poses.at(-1);
+  await f.mount(target(true));
+  await drain(f);
+  const count = f.draws.length;
+  await f.mount(target(false));
+  f.complete();
+  await frame();
+  expect(f.state.internal.frames).toBe(0);
+  expect(f.poses.at(-1)).toEqual(outside);
+  await drain(f);
+  expect(f.draws.length).toBe(count + 1);
+  await f.mount(target(false, true, false));
+  expect(f.state.internal.frames).toBe(0);
+  await drain(f);
+  expect(f.draws.length).toBe(count + 1);
+});
+
+it("reconnects native input under StrictMode and restores only its own default controls", async () => {
+  const f = await fixture();
+  // Native controls import ESM Three; the installed R3F fixture uses CJS Three.
+  // Use the native module's real class for instanceof-based wheel handling.
+  const camera = new PerspectiveCamera(34, 1920 / 924, 0.02, 700);
+  camera.position.set(4.275, 1.8675, 5.1);
+  await act(async () => f.state.set({ camera }));
+  const prior = new OrbitControls(camera);
+  await act(async () => f.state.set({ controls: prior }));
+  await f.mount(rig(0));
+  await drain(f);
+  const owned = f.state.get().controls as OrbitControls;
+  expect(owned).not.toBe(prior);
+  const before = camera.position.clone();
+  f.renderer.domElement.dispatchEvent(
+    new WheelEvent("wheel", { deltaY: -100, cancelable: true }),
+  );
+  expect(camera.position.distanceTo(before)).toBeGreaterThan(0);
+  expect(f.state.internal.frames).toBeGreaterThan(0);
+  await drain(f);
+  await f.mount(null);
+  expect(f.state.get().controls).toBe(prior);
+  await drain(f);
+  const retiredPose = camera.position.clone();
+  f.renderer.domElement.dispatchEvent(
+    new WheelEvent("wheel", { deltaY: -100, cancelable: true }),
+  );
+  expect(camera.position).toEqual(retiredPose);
+  expect(f.state.internal.frames).toBe(0);
+  await f.mount(rig(0));
+  await drain(f);
+  const replacement = new OrbitControls(camera);
+  await act(async () => f.state.set({ controls: replacement }));
+  await f.mount(null);
+  expect(f.state.get().controls).toBe(replacement);
+  prior.dispose();
+  replacement.dispose();
+});
+it("replaces a native camera owner without reusing options or old element listeners", async () => {
+  const f = await fixture();
+  await f.mount(rig(0));
+  await drain(f);
+  const first = f.state.get().controls as OrbitControls;
+  const dispose = vi.spyOn(first, "dispose");
+  const camera = new PerspectiveCamera(34, 1920 / 924, 0.02, 700);
+  camera.position.set(4.275, 1.8675, 5.1);
+  await act(async () => f.state.set({ camera }));
+  await drain(f);
+  const next = f.state.get().controls as OrbitControls;
+  expect(next).not.toBe(first);
+  expect(next.object).toBe(camera);
+  expect(next.enablePan).toBe(false);
+  expect(next.dampingFactor).toBe(0.09);
+  expect(dispose).toHaveBeenCalledTimes(1);
+  const oldPose = first.object.position.clone();
+  const pose = camera.position.clone();
+  f.renderer.domElement.dispatchEvent(
+    new WheelEvent("wheel", { deltaY: -100, cancelable: true }),
+  );
+  expect(camera.position.distanceTo(pose)).toBeGreaterThan(0);
+  expect(first.object.position).toEqual(oldPose);
+  dispose.mockRestore();
+});
+it("does not restore exterior limits on an unrelated rerender during a cabin exit", async () => {
+  const f = await fixture();
+  const view = cabinCameraView("driver", { scale: 1, position: [0, 0, 0] });
+  await f.mount(
+    <CameraRig
+      preset="hero"
+      cabinView={view}
+      autoRotate={false}
+      reducedMotion={false}
+      onManual={() => {}}
+    />,
+  );
+  await drain(f);
+  const outside = () => (
+    <CameraRig
+      preset="hero"
+      autoRotate={false}
+      reducedMotion={false}
+      onManual={() => {}}
+    />
+  );
+  await f.mount(outside());
+  const controls = f.state.get().controls as OrbitControls;
+  expect(controls.minPolarAngle).toBe(0);
+  expect(controls.maxPolarAngle).toBe(Math.PI);
+  await f.mount(outside());
+  expect(controls.minPolarAngle).toBe(0);
+  expect(controls.maxPolarAngle).toBe(Math.PI);
+});
+
+function pointer(type: string, id: number, x = 10, y = 10) {
+  const event = new MouseEvent(type, {
+    clientX: x,
+    clientY: y,
+    button: 0,
+    bubbles: true,
+  });
+  Object.defineProperties(event, {
+    pointerId: { value: id },
+    pointerType: { value: "mouse" },
+  });
+  return event;
+}
+it("retires a held native gesture on camera replacement and accepts fresh pointer/keyboard input", async () => {
+  const f = await fixture();
+  Object.defineProperty(f.renderer.domElement, "clientHeight", { value: 924 });
+  f.renderer.domElement.releasePointerCapture = vi.fn();
+  await f.mount(rig(0));
+  await drain(f);
+  const first = f.state.get().controls as OrbitControls;
+  f.renderer.domElement.dispatchEvent(pointer("pointerdown", 1));
+  const camera = new PerspectiveCamera(34, 1920 / 924, 0.02, 700);
+  camera.position.set(4.275, 1.8675, 5.1);
+  await act(async () => f.state.set({ camera }));
+  await drain(f);
+  const next = f.state.get().controls as OrbitControls;
+  const retired = first.object.position.clone();
+  const stable = camera.position.clone();
+  document.dispatchEvent(pointer("pointermove", 1, 90, 90));
+  expect(camera.position).toEqual(stable);
+  expect(first.object.position).toEqual(retired);
+  f.renderer.domElement.dispatchEvent(pointer("pointerdown", 2));
+  document.dispatchEvent(pointer("pointermove", 2, 100, 80));
+  expect(camera.position.distanceTo(stable)).toBeGreaterThan(0);
+  document.dispatchEvent(pointer("pointerup", 2));
+  await drain(f);
+  const beforeKey = camera.position.clone();
+  f.renderer.domElement.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "ArrowRight", cancelable: true }),
+  );
+  expect(camera.position.distanceTo(beforeKey)).toBeGreaterThan(0);
+  expect(next.object).toBe(camera);
+  expect(first.object.position).toEqual(retired);
+});
+it("stops rotating on reduced-motion policy while retaining an independently pending draw", async () => {
+  const f = await fixture();
+  const target = (reducedMotion: boolean) => (
+    <CameraRig
+      preset="hero"
+      autoRotate
+      reducedMotion={reducedMotion}
+      onManual={() => {}}
+    />
+  );
+  await f.mount(target(false));
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(3500));
+  await frame();
+  const controls = f.state.get().controls as OrbitControls;
+  expect(controls.autoRotate).toBe(true);
+  const position = f.state.camera.position.clone();
+  const count = f.draws.length;
+  f.input(77);
+  await f.mount(target(true));
+  expect(f.state.internal.frames).toBeGreaterThan(0);
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(16));
+  await frame();
+  expect(controls.autoRotate).toBe(false);
+  // Native damping drains its pre-existing residual once when disabled.
+  // Preserve that necessary movement and its existing follow-on demand.
+  expect(f.state.camera.position.distanceTo(position)).toBeGreaterThan(0);
+  expect(f.draws.at(-1)).toBe(77);
+  await drain(f);
+  expect(f.draws.length).toBeGreaterThanOrEqual(count + 1);
+  const settled = f.state.camera.position.clone();
+  const completed = f.draws.length;
+  await drain(f);
+  expect(f.draws.length).toBe(completed);
+  expect(f.state.camera.position).toEqual(settled);
+  expect({
+    pose: f.poses.at(-1),
+    finalDraws: f.draws.length - count,
+  }).toMatchSnapshot("native-reduced-motion-drain");
+});
+it("keeps the legacy non-cabin interior terminal orientation update", async () => {
+  const f = await fixture();
+  await f.mount(rig(0));
+  await drain(f);
+  await f.mount(rig(1, "interior", false));
+  for (let index = 0; index < 30; index++) {
+    f.complete();
+    await act(async () => vi.advanceTimersByTimeAsync(100));
+    await frame();
+  }
+  await drain(f);
+  const controls = f.state.get().controls as OrbitControls;
+  const reference = new THREE.PerspectiveCamera();
+  reference.position.copy(f.state.camera.position);
+  reference.lookAt(controls.target);
+  expect(
+    Math.max(
+      ...f.state.camera.quaternion
+        .toArray()
+        .map((value, index) =>
+          Math.abs(value - reference.quaternion.toArray()[index]),
+        ),
+    ),
+  ).toBeLessThan(1e-14);
+});
+
+it("replaces the canvas-owned viewer during a held gesture without old pointer or keyboard listeners", async () => {
+  const first = await fixture();
+  Object.defineProperty(first.renderer.domElement, "clientHeight", {
+    value: 924,
+  });
+  first.renderer.domElement.releasePointerCapture = vi.fn();
+  await first.mount(rig(0));
+  await drain(first);
+  const retiredControls = first.state.get().controls as OrbitControls;
+  first.renderer.domElement.dispatchEvent(pointer("pointerdown", 1));
+  await first.mount(null);
+  await drain(first);
+  const retiredPose = first.state.camera.position.clone();
+  const next = await fixture();
+  Object.defineProperty(next.renderer.domElement, "clientHeight", {
+    value: 924,
+  });
+  next.renderer.domElement.releasePointerCapture = vi.fn();
+  await next.mount(rig(0));
+  await drain(next);
+  expect(next.state.get().controls).not.toBe(retiredControls);
+  const initial = next.state.camera.position.clone();
+  document.dispatchEvent(pointer("pointermove", 1, 100, 80));
+  first.renderer.domElement.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "ArrowRight" }),
+  );
+  expect(first.state.camera.position).toEqual(retiredPose);
+  expect(next.state.camera.position).toEqual(initial);
+  next.renderer.domElement.dispatchEvent(pointer("pointerdown", 2));
+  document.dispatchEvent(pointer("pointermove", 2, 100, 80));
+  expect(next.state.camera.position.distanceTo(initial)).toBeGreaterThan(0);
+  document.dispatchEvent(pointer("pointerup", 2));
+  await drain(next);
+  const beforeKey = next.state.camera.position.clone();
+  next.renderer.domElement.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "ArrowRight" }),
+  );
+  expect(next.state.camera.position.distanceTo(beforeKey)).toBeGreaterThan(0);
+  expect(first.state.camera.position).toEqual(retiredPose);
+});

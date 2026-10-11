@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 export const preparationContract = 'premium-unified-cabin-preparation-residency-v1';
 // Exact independently reviewed runtime, including the route accessibility and transport layers.
-export const preparationTree = 'f1a85dab956b213641c6d866a3393b8af3f6b908413dea1707d5d600240284cf';
+export const preparationTree = '71e40ce4d1f3158809e00256eefcebf3b0d67d08e7d7b3b9d72aeef098d6e55c';
 export const budgets = Object.freeze({ initial: 90_000, functional: 20_000, lifecycle: 30_000, screenshot: 45_000 });
 export const requiredCases = Object.freeze({ feature: Object.freeze(['direct-entry-residency']), lifecycle: Object.freeze([
   'resize-quality-during-preparation', 'trusted-route-cancels-fetch', 'trusted-model-cancels-native-decode-delivery',
@@ -117,6 +117,14 @@ export function assertPreparationTimeline(observation, ready, { quality, nativeD
   for (const e of observation.dom.filter(e => e.ready && e.at <= ready.readyAt)) {
     assert.equal(e.maskCount, 0); assert.equal(e.legacyLoading, false);
   }
+}
+/** Same strict physical tolerance as the pinned cabin oracle; pixels remain exact separately. */
+export function assertRestoredExteriorPose(actual, expected) {
+  const tuple = (value, size) => Array.isArray(value) && value.length === size && Array.from({ length: size }, (_, index) => Object.hasOwn(value, index) && Number.isFinite(value[index])).every(Boolean);
+  const near = (a, b, size) => tuple(a, size) && tuple(b, size) && a.every((value, index) => Math.abs(value - b[index]) <= 1e-8);
+  assert.ok(near(actual?.position, expected?.position, 3), 'Restored exterior position differs');
+  assert.ok(near(actual?.projection, expected?.projection, 16), 'Restored exterior projection differs');
+  assert.ok(near(actual?.quaternion, expected?.quaternion, 4) || (tuple(expected?.quaternion, 4) && near(actual?.quaternion, expected.quaternion.map(value => -value), 4)), 'Restored exterior orientation differs');
 }
 export function assertReadableControls(layout) {
   assert.equal(layout.overflow, false); assert.ok(Number.isFinite(layout.width) && Number.isFinite(layout.height) && layout.width > 0 && layout.height > 0);

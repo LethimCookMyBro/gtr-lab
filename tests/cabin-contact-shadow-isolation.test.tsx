@@ -5,7 +5,8 @@ import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { gunzipSync } from "node:zlib";
 import { act, advance, createRoot, extend, _roots } from "@react-three/fiber";
-import { ContactShadows } from "@react-three/drei/core/ContactShadows";
+import { ContactShadows as OriginalContactShadows } from "@react-three/drei/core/ContactShadows";
+import { OwnedContactShadows } from "../src/components/three/OwnedContactShadows";
 import { Frustum, Matrix4, Mesh, Texture, Vector3 } from "three";
 import type {
   Camera,
@@ -164,6 +165,7 @@ async function setup(
   kind: "proxy" | "full",
   warm: boolean,
   order: "exterior-first" | "cabin-first",
+  ContactShadows = OwnedContactShadows,
 ) {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const [first, second] =
@@ -175,6 +177,10 @@ async function setup(
   const canvas = document.createElement("canvas");
   let target: WebGLRenderTarget | null = null;
   const captures: ReturnType<typeof captureList>[] = [];
+  const passes: unknown[] = [];
+  const targets = new Map<WebGLRenderTarget, number>();
+  const hash = (value: unknown) =>
+    createHash("sha256").update(JSON.stringify(value)).digest("hex");
   const renderer = {
     isWebGLRenderer: true,
     domElement: canvas,
@@ -194,12 +200,48 @@ async function setup(
     getRenderTarget: () => target,
     setRenderTarget: (next: WebGLRenderTarget | null) => {
       target = next;
+      if (next && !targets.has(next)) targets.set(next, targets.size + 1);
+      passes.push({ target: next ? targets.get(next) : null });
     },
     render(scene: Scene, camera: Camera) {
       if (scene.isScene && scene.overrideMaterial) {
         expect(scene.overrideMaterial.depthTest).toBe(false);
         expect(scene.overrideMaterial.depthWrite).toBe(false);
         captures.push(captureList(scene, camera));
+        const shader = {
+          uniforms: {},
+          fragmentShader:
+            "void main() {\nvec4( vec3( 1.0 - fragCoordZ ), opacity );",
+        };
+        scene.overrideMaterial.onBeforeCompile(
+          shader as never,
+          renderer as unknown as WebGLRenderer,
+        );
+        passes.push({
+          depth: hash(shader),
+          camera: camera.projectionMatrix.toArray(),
+          size: [target?.width, target?.height],
+          mipmaps: target?.texture.generateMipmaps,
+        });
+      } else if ((scene as unknown as Mesh).isMesh) {
+        const mesh = scene as unknown as Mesh,
+          material = mesh.material as import("three").ShaderMaterial;
+        passes.push({
+          blur: hash([material.vertexShader, material.fragmentShader]),
+          attributes: hash(
+            Object.fromEntries(
+              Object.entries(mesh.geometry.attributes).map(([key, attr]) => [
+                key,
+                Array.from((attr as import("three").BufferAttribute).array),
+              ]),
+            ),
+          ),
+          index: hash(Array.from(mesh.geometry.index!.array)),
+          h: material.uniforms.h?.value,
+          v: material.uniforms.v?.value,
+          depthTest: material.depthTest,
+          camera: camera.projectionMatrix.toArray(),
+        });
       }
     },
     renderLists: { dispose() {} },
@@ -277,7 +319,7 @@ async function setup(
     }
   });
   expect(cabinMeshes).toBeGreaterThan(0);
-  return { capture: captures[0], exterior, store, cabin };
+  return { capture: captures[0], exterior, store, cabin, passes };
 }
 
 it.each(["proxy", "full"] as const)(
@@ -325,4 +367,16 @@ it("retains exact exterior contact ordering across original BLEND glass and owne
   } finally {
     owner.dispose();
   }
+});
+
+it("preserves byte-identical contact geometry/shader inputs and exact pass order from installed Drei", async () => {
+  const original = await setup(
+    "proxy",
+    false,
+    "exterior-first",
+    OriginalContactShadows,
+  );
+  const owned = await setup("proxy", false, "exterior-first");
+  expect(owned.passes).toEqual(original.passes);
+  expect(owned.capture).toEqual(original.capture);
 });

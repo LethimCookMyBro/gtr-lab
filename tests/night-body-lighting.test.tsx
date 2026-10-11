@@ -22,10 +22,13 @@ vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useMemo: (factory: () => unknown) => factory(),
   useEffect: () => {},
+  useLayoutEffect: () => {},
+  useRef: () => ({ current: null }),
 }));
 vi.mock("@react-three/fiber", async (original) => ({
   ...(await original<typeof import("@react-three/fiber")>()),
   useFrame: () => {},
+  useThree: (select: (state: { gl: object }) => unknown) => select({ gl: {} }),
 }));
 vi.mock("@react-three/drei/core/Texture", () => ({
   useTexture: () => Array.from({ length: 13 }, () => new Texture()),
@@ -58,6 +61,12 @@ type Element = { type: unknown; props: Record<string, any> };
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!isValidElement<Record<string, any>>(node)) return [];
+  // Resolve only the studio's ownership wrapper. Assertions below still
+  // identify the exact installed Drei Lightformer and inspect all its props.
+  if (typeof node.type === "function" && node.type.name === "Lightformer") {
+    const render = node.type as (props: Record<string, any>) => ReactNode;
+    return elements(render(node.props));
+  }
   return [node, ...elements(node.props.children)];
 }
 function declaration() {

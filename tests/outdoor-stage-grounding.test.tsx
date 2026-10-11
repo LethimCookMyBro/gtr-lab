@@ -115,8 +115,8 @@ vi.mock("@react-three/drei/core/Environment", () => ({
     return null;
   },
 }));
-vi.mock("@react-three/drei/core/ContactShadows", () => ({
-  ContactShadows: (props: any) => {
+vi.mock("../src/components/three/OwnedContactShadows", () => ({
+  OwnedContactShadows: (props: any) => {
     runtime.contact = props;
     return null;
   },
@@ -128,6 +128,7 @@ beforeEach(() => {
   runtime.venue = null;
   runtime.texture = new Texture({ width: 2048, height: 1024 } as any);
   runtime.state = {
+    gl: {},
     camera: new PerspectiveCamera(),
     scene: new Scene(),
     size: { width: 1440, height: 900 },

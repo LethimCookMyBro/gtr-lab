@@ -1,6 +1,6 @@
 {
   "contract": "r35-production-source-v2-with-index",
-  "sha256": "f1a85dab956b213641c6d866a3393b8af3f6b908413dea1707d5d600240284cf",
+  "sha256": "71e40ce4d1f3158809e00256eefcebf3b0d67d08e7d7b3b9d72aeef098d6e55c",
   "files": [
     {
       "path": "index.html",
@@ -8,11 +8,11 @@
     },
     {
       "path": "package-lock.json",
-      "sha256": "7770fc28b365de56c3ea2529b2c274898e76a86a1b7a17027de3f78d0d1cce01"
+      "sha256": "4d2bcfb70191f05aa9ad2a85de12c338d1adda68d501d7cc314d504ec57356a9"
     },
     {
       "path": "package.json",
-      "sha256": "f51edad24995a0a6bb70654d2a0e7ab29291e8456f39d50258354e83f7ed94f2"
+      "sha256": "90f7ce7a5e6cdfd52c524540241044e706ccf2e11fc26155a30dc673022fd985"
     },
     {
       "path": "server.mjs",
@@ -144,11 +144,15 @@
     },
     {
       "path": "src/components/three/CameraRig.tsx",
-      "sha256": "766a2df9c1d1f0545be6c2ee201367b3964ce2b1211b9fb27c6ec657ad48cd90"
+      "sha256": "38ad1ee0010a8f653c891b2ff185065108dd5dfbc43bfd8ba7088bdfff923bf3"
     },
     {
       "path": "src/components/three/CoastalWater.tsx",
       "sha256": "67941e81315ea874ca530684456aa7723908210ae877770652d764bb10305c4f"
+    },
+    {
+      "path": "src/components/three/DemandOrbitControls.tsx",
+      "sha256": "cfc342d4ae338916d0e1a28c8280c1044e2dd2ccfa12ac1c218d73f757544b16"
     },
     {
       "path": "src/components/three/DemandRenderBackpressure.tsx",
@@ -157,6 +161,10 @@
     {
       "path": "src/components/three/EnvironmentBoundary.tsx",
       "sha256": "04eb437173d1d8cf6b0cfb0dc1b27f479aae39b083a8c008c0cccee78ed2f7f9"
+    },
+    {
+      "path": "src/components/three/OwnedContactShadows.tsx",
+      "sha256": "1d334c7499b10586d17d7f66ebf3acc170122acc5719d85a430e42e85bc36d75"
     },
     {
       "path": "src/components/three/RecoverableEnvironment.tsx",
@@ -176,7 +184,7 @@
     },
     {
       "path": "src/components/three/StudioLighting.tsx",
-      "sha256": "6ac0ad2b61779ad8d533455d8f06f1fe25e56048823cb2e201f015878d9488d7"
+      "sha256": "793f453137b1f5798cdb203708e80c267e8c775544a1751c7ad9597124b37295"
     },
     {
       "path": "src/components/three/VehiclePixelDensity.tsx",
@@ -188,7 +196,7 @@
     },
     {
       "path": "src/components/three/asyncRendererDisposal.ts",
-      "sha256": "32cfc1b83099072d31af78439fbc985f9710fdff3061d89ace9eea3cb495f8bd"
+      "sha256": "281e89a204d85dd806625770f317915ac022bfdbb3d2161c74163b8e18012e26"
     },
     {
       "path": "src/components/three/cabinPreparationSteps.ts",
@@ -233,6 +241,10 @@
     {
       "path": "src/components/three/rendererPreparation.ts",
       "sha256": "cb3e4aef1fcc4a9e120ac9d35de657c88c94ad2f3924753c315df6a0e9284d1e"
+    },
+    {
+      "path": "src/components/three/rendererResourceOwnership.ts",
+      "sha256": "bdbc5c104b2b7528de9fbba9a3fc3b244dd42470ced7a5246385f569fc6e4f53"
     },
     {
       "path": "src/components/three/sceneHelpers.ts",

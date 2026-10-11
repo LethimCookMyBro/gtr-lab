@@ -1,4 +1,9 @@
 import type { WebGLRenderer } from "three";
+import {
+  prepareRendererResourceOwnership,
+  releaseRendererResourceOwners,
+  releaseRemainingRendererPrograms,
+} from "./rendererResourceOwnership";
 
 const prepared = new WeakSet<WebGLRenderer>();
 const POLL_MS = 16;
@@ -16,6 +21,7 @@ export function prepareAsyncRendererDisposal(
 ): void {
   if (prepared.has(renderer)) return;
   prepared.add(renderer);
+  prepareRendererResourceOwnership(renderer);
   const dispose = renderer.dispose.bind(renderer);
   let disposal: Promise<void> | undefined;
   renderer.dispose = () => {
@@ -47,11 +53,22 @@ export function prepareAsyncRendererDisposal(
         // Canvas can retire before its outer model loader's passive cleanup.
         // Texture.dispose must run while Three still retains native handles;
         // renderer.dispose clears that allocation cache without deleting them.
-        try {
-          releaseOwnedResources?.();
-        } finally {
-          dispose();
+        const cleanupErrors: unknown[] = [];
+        for (const release of [
+          () => releaseRendererResourceOwners(renderer),
+          () => releaseOwnedResources?.(),
+          dispose,
+          () => releaseRemainingRendererPrograms(renderer),
+        ]) {
+          try {
+            release();
+          } catch (error) {
+            cleanupErrors.push(error);
+          }
         }
+        if (cleanupErrors.length === 1) throw cleanupErrors[0];
+        if (cleanupErrors.length)
+          throw new AggregateError(cleanupErrors, "Renderer cleanup failed.");
         const gl = renderer.getContext();
         if (gl.isContextLost()) {
           finish();

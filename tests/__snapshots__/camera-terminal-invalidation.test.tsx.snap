@@ -407,3 +407,40 @@ exports[`preserves the exact settled top pose through native final control updat
   ],
 }
 `;
+
+exports[`stops rotating on reduced-motion policy while retaining an independently pending draw > native-reduced-motion-drain 1`] = `
+{
+  "finalDraws": 2,
+  "pose": {
+    "position": [
+      4.270993151261081,
+      1.8675,
+      5.1033560038352155,
+    ],
+    "projection": [
+      1.5740978226454927,
+      0,
+      0,
+      0,
+      0,
+      3.2708526184841404,
+      0,
+      0,
+      0,
+      0,
+      -1.0000571444898425,
+      -1,
+      0,
+      0,
+      -0.04000114288979685,
+      0,
+    ],
+    "quaternion": [
+      -0.08014964404311126,
+      0.3401690759718367,
+      0.029113425189140923,
+      0.9364899587213872,
+    ],
+  },
+}
+`;

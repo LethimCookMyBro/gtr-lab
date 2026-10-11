@@ -300,7 +300,7 @@ test("licensed production asset loads and all nine paints change rendered pixels
   ).toBe(true);
 });
 
-test("actual exterior cameras render and cabin preview remains an explicit WIP opt-in", async ({
+test("actual exterior cameras render and prepared Interior retains WIP disclosure", async ({
   page,
 }, info) => {
   await openVehicle(page);
@@ -319,10 +319,14 @@ test("actual exterior cameras render and cabin preview remains an explicit WIP o
   await page.getByRole("button", { name: "Camera", exact: true }).click();
   const interior = page
     .getByRole("dialog")
-    .getByRole("button", { name: /Cabin preview · work in progress/ });
+    .getByRole("button", { name: "Interior", exact: true });
   await expect(interior).toBeEnabled();
-  await expect(page.locator("#cabin-preview-note")).toContainText("Not a verified factory interior");
-  await capture(page, info, "vehicle-cabin-opt-in");
+  await expect(interior).toHaveAttribute("aria-describedby", "cabin-preview-note");
+  const disclosure = page.locator("#cabin-preview-note");
+  await expect(disclosure).toBeVisible();
+  await expect(disclosure).toContainText("still in progress");
+  await expect(disclosure).toContainText("Not a verified factory interior");
+  await capture(page, info, "vehicle-interior-disclosure");
 });
 
 test("separate lamps and real environments affect the licensed vehicle", async ({

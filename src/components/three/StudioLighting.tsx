@@ -1,7 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef, type ComponentProps } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { ThreeElements } from "@react-three/fiber";
-import type { DirectionalLight, Group } from "three";
+import type { DirectionalLight, Group, Mesh } from "three";
 import {
   cacheDirectionalShadow,
   invalidateSceneShadows,
@@ -9,8 +9,12 @@ import {
 import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 RectAreaLightUniformsLib.init();
 import { Environment } from "@react-three/drei/core/Environment";
-import { Lightformer } from "@react-three/drei/core/Lightformer";
-import { ContactShadows } from "@react-three/drei/core/ContactShadows";
+import { Lightformer as DreiLightformer } from "@react-three/drei/core/Lightformer";
+import { OwnedContactShadows as ContactShadows } from "./OwnedContactShadows";
+import {
+  registerRendererResourceOwner,
+  disposeOwnedResources,
+} from "./rendererResourceOwnership";
 import { useEnvironment } from "@react-three/drei/core/useEnvironment";
 import { useTexture } from "@react-three/drei/core/Texture";
 import { StageGeometry } from "./StageGeometry";
@@ -24,6 +28,21 @@ import {
 } from "./venueGeometry";
 import type { SurfaceTextures } from "./venueGeometry";
 import type { StudioEnvironment } from "./types";
+
+/** Studio uses only locally constructed rectangular Lightformers. Own their
+ * geometry/material instead of Fiber 9.8.1's deferred idle disposal. */
+function Lightformer(props: ComponentProps<typeof DreiLightformer>) {
+  const mesh = useRef<Mesh>(null);
+  const gl = useThree((state) => state.gl);
+  useLayoutEffect(() => {
+    const value = mesh.current!;
+    const resources = [value.geometry, ...[value.material].flat()];
+    return registerRendererResourceOwner(gl, () =>
+      disposeOwnedResources(resources),
+    );
+  }, [gl]);
+  return <DreiLightformer {...props} ref={mesh} dispose={null} />;
+}
 
 const SURFACES = [
   "garage_floor",
@@ -89,7 +108,11 @@ export function StudioLighting({
   }, [venue]);
   const visibleOcean = venue.group.getObjectByName("ocean");
   if (visibleOcean) visibleOcean.visible = false;
-  useEffect(() => () => venue.dispose(), [venue]);
+  const gl = useThree((state) => state.gl);
+  useLayoutEffect(
+    () => registerRendererResourceOwner(gl, () => venue.dispose()),
+    [gl, venue],
+  );
   useFrame(({ camera, scene }) => {
     if (setVenueInspectionCutaway(venue.group, camera.position.y))
       invalidateSceneShadows(scene);
@@ -334,6 +357,14 @@ function CachedDirectionalLight(props: ThreeElements["directionalLight"]) {
 
 /** Asset-free fallback cannot suspend on the same missing texture as the selected scene. */
 export function FallbackStudio() {
+  const mesh = useRef<Mesh>(null);
+  const gl = useThree((state) => state.gl);
+  useLayoutEffect(() => {
+    const value = mesh.current!;
+    return registerRendererResourceOwner(gl, () =>
+      disposeOwnedResources([value.geometry, ...[value.material].flat()]),
+    );
+  }, [gl]);
   return (
     <>
       <color attach="background" args={["#282d31"]} />
@@ -341,6 +372,8 @@ export function FallbackStudio() {
       <directionalLight position={[3, 7, 5]} intensity={3} />
       <StageGeometry>
         <mesh
+          ref={mesh}
+          dispose={null}
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -0.002, 0]}
           receiveShadow

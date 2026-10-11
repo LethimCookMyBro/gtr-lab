@@ -47,7 +47,7 @@ vi.mock("@react-three/fiber", async () => {
     },
   };
 });
-vi.mock("@react-three/drei/core/OrbitControls", async () => {
+vi.mock("../src/components/three/DemandOrbitControls", async () => {
   const React = await import("react");
   const { OrbitControls } = await import("three-stdlib");
   const { useFrame } = await import("@react-three/fiber");

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei/core/OrbitControls";
+import { OrbitControls } from "./DemandOrbitControls";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Matrix4, PerspectiveCamera, Quaternion, Vector3 } from "three";
 import {
@@ -60,6 +60,7 @@ export function CameraRig({
   const gl = useThree((state) => state.gl);
   const controls = useRef<OrbitControlsImpl>(null);
   const moving = useRef(true);
+  const cameraUpdateDepth = useRef(0);
   const cabinEntryCut = useRef(false);
   const transitionClock = useMemo(() => createTargetTransitionClock(), []);
   const manuallyStopped = useRef(false);
@@ -218,7 +219,7 @@ export function CameraRig({
   useEffect(() => {
     // User can deliberately enable rotation again after a drag cancelled it.
     if (autoRotate) manuallyStopped.current = false;
-    invalidate();
+    if (moving.current || (autoRotate && !reducedMotion)) invalidate();
   }, [autoRotate, reducedMotion, invalidate]);
 
   useReleasedOrbitDamping({
@@ -235,63 +236,71 @@ export function CameraRig({
     const orbit = controls.current;
     if (!orbit) return;
     if (moving.current) {
-      // The exterior direction can point into upholstery from the cabin eye.
-      // Cut the whole pose before this admitted main draw; never present that
-      // intermediate view. Exterior and subsequent seat transitions still ease.
-      const alpha = cabinEntryCut.current
-        ? 1
-        : transitionClock.sampleAlpha(reducedMotion);
-      cabinEntryCut.current = false;
-      const lookDistance = camera.position.distanceTo(orbit.target);
-      camera.position.lerp(destination.position, alpha);
-      if (leavingInterior.current) {
-        // A nearby cabin target and a distant exterior target can swing the
-        // view abruptly even when their positions lerp. Blend the look rotation
-        // itself, then rebuild a matching target for OrbitControls.
-        lookTransition.matrix.lookAt(
-          camera.position,
-          destination.target,
-          camera.up,
-        );
-        lookTransition.rotation.setFromRotationMatrix(lookTransition.matrix);
-        camera.quaternion.slerp(lookTransition.rotation, alpha);
-        const radius =
-          lookDistance +
-          (camera.position.distanceTo(destination.target) - lookDistance) *
-            alpha;
-        orbit.target
-          .copy(camera.getWorldDirection(lookTransition.direction))
-          .multiplyScalar(radius)
-          .add(camera.position);
-      } else {
-        orbit.target.lerp(destination.target, alpha);
-      }
-      camera.fov += (targetFov - camera.fov) * alpha;
-      camera.updateProjectionMatrix();
-      orbit.update();
-      if (
-        camera.position.distanceToSquared(destination.position) < 0.00001 &&
-        orbit.target.distanceToSquared(destination.target) < 0.00001 &&
-        Math.abs(camera.fov - targetFov) < 0.01
-      ) {
-        camera.position.copy(destination.position);
-        orbit.target.copy(destination.target);
-        camera.fov = targetFov;
-        camera.updateProjectionMatrix();
-        moving.current = false;
-        orbit.minDistance = view.minDistance;
-        orbit.maxDistance = destination.maxDistance;
-        orbit.minPolarAngle = 0.005;
-        orbit.maxPolarAngle = Math.PI / 2 - 0.025;
-        // The earlier update used the interpolated target. Disabled interior
-        // controls skip Drei's later update, so finish their exact look now.
-        if (preset === "interior") {
-          orbit.update();
-          // Native spherical normalization must not translate the fixed eye.
-          camera.position.copy(destination.position);
+      const ownsPresentedPose =
+        Boolean(cabinView) || restoring || leavingInterior.current;
+      if (ownsPresentedPose) cameraUpdateDepth.current++;
+      try {
+        // The exterior direction can point into upholstery from the cabin eye.
+        // Cut the whole pose before this admitted main draw; never present that
+        // intermediate view. Exterior and subsequent seat transitions still ease.
+        const alpha = cabinEntryCut.current
+          ? 1
+          : transitionClock.sampleAlpha(reducedMotion);
+        cabinEntryCut.current = false;
+        const lookDistance = camera.position.distanceTo(orbit.target);
+        camera.position.lerp(destination.position, alpha);
+        if (leavingInterior.current) {
+          // A nearby cabin target and a distant exterior target can swing the
+          // view abruptly even when their positions lerp. Blend the look rotation
+          // itself, then rebuild a matching target for OrbitControls.
+          lookTransition.matrix.lookAt(
+            camera.position,
+            destination.target,
+            camera.up,
+          );
+          lookTransition.rotation.setFromRotationMatrix(lookTransition.matrix);
+          camera.quaternion.slerp(lookTransition.rotation, alpha);
+          const radius =
+            lookDistance +
+            (camera.position.distanceTo(destination.target) - lookDistance) *
+              alpha;
+          orbit.target
+            .copy(camera.getWorldDirection(lookTransition.direction))
+            .multiplyScalar(radius)
+            .add(camera.position);
+        } else {
+          orbit.target.lerp(destination.target, alpha);
         }
+        camera.fov += (targetFov - camera.fov) * alpha;
+        camera.updateProjectionMatrix();
+        orbit.update();
+        if (
+          camera.position.distanceToSquared(destination.position) < 0.00001 &&
+          orbit.target.distanceToSquared(destination.target) < 0.00001 &&
+          Math.abs(camera.fov - targetFov) < 0.01
+        ) {
+          camera.position.copy(destination.position);
+          orbit.target.copy(destination.target);
+          camera.fov = targetFov;
+          camera.updateProjectionMatrix();
+          moving.current = false;
+          orbit.minDistance = view.minDistance;
+          orbit.maxDistance = destination.maxDistance;
+          orbit.minPolarAngle = 0.005;
+          orbit.maxPolarAngle = Math.PI / 2 - 0.025;
+          // The earlier update used the interpolated target. Disabled interior
+          // controls skip Drei's later update, so finish their exact look now.
+          if (preset === "interior" || ownsPresentedPose) {
+            orbit.update();
+            // Native spherical normalization must not translate the fixed eye.
+            if (preset === "interior")
+              camera.position.copy(destination.position);
+          }
+        }
+        if (moving.current) invalidate();
+      } finally {
+        if (ownsPresentedPose) cameraUpdateDepth.current--;
       }
-      if (moving.current) invalidate();
     }
     orbit.enableDamping = !reducedMotion && !moving.current;
     orbit.autoRotate =
@@ -352,6 +361,7 @@ export function CameraRig({
 
   return (
     <OrbitControls
+      cameraUpdateDepth={cameraUpdateDepth}
       enabled={interactive && preset !== "interior"}
       ref={controls}
       makeDefault
