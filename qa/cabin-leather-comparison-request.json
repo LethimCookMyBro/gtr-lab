@@ -862,7 +862,7 @@
     }
   },
   "helperPins": {
-    ".github/workflows/cabin-leather-comparison.yml": "dffea1ca8a150c47462948a06747992d932217633312f0987a033f746265db36",
+    ".github/workflows/cabin-leather-comparison.yml": "f46c81019ab283e89421838ad4e1225bfc5e097816af9743d23def940e6b3b1b",
     "scripts/cabin-capture-readiness.mjs": "67accafd0ae7aa55620571318f910c607e9eaaf3b792ba6bc947e093cba80056",
     "scripts/cabin-leather-comparison-policy.mjs": "035961b80e71c49ed455e1c9da36659da62a6041c12cf85632bd66f2ef0c6a2c",
     "scripts/cabin-preparation-checkpoint.mjs": "4fe9c71291c32e2363ce1efa892ded92c3348beadacad519e4c2daeff3563b34",
@@ -886,6 +886,6 @@
     "scripts/render-backpressure-lifecycle-fixture.mjs": "33dfc365a070a4fceb1d1c73e0b6e7eb0c7b1c6c9a0842f75add6a65d138422d",
     "scripts/vehicle-preview-readiness.mjs": "7005f0acc335ddfd2784a3f3ce6f0f4615447636074bc85e36e30259a0cbd17a",
     "scripts/verify-cabin-leather-pairs.mjs": "be90fff88ac6f9433001607c691428f04cd87248c0991e0bf61d45f6670508de",
-    "tests/cabin-leather-comparison.node.mjs": "fe94708dbfec314f835583268de732afbb92979e820a3a4b83be280172f2b288"
+    "tests/cabin-leather-comparison.node.mjs": "e967fe480471a18135d542e3860a34b9cc879c530fd5ef2b605ecc13ea9d7626"
   }
 }

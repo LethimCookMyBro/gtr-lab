@@ -36,3 +36,33 @@ test('both lanes disabling MSAA cannot qualify together',()=>{const {r,rows}=rep
 test('shared HDR or texture change cannot qualify as a leather-only pair',()=>{const {r,rows}=reports();for(const [i,row] of rows.entries())row.runtimeBodyLedger.requests.push({path:'/environments/studio.hdr',status:200,bytes:42,sha256:(i?'d':'c').repeat(64),state:'body-completed'});assert.throws(()=>assertMatchedPair(...rows,r),/actually requested/);});
 
 test('both lanes dropping image identities cannot qualify together',()=>{const {r,rows}=reports();for(const row of rows)row.material.images=[];assert.throws(()=>assertMatchedPair(...rows,r));});
+
+// Removing the post-install dependency link must reproduce the two-checkout CI failure.
+// The on-disk package exercises Node's actual resolver before CI installs npm packages.
+// CI additionally imports the unchanged full collector against the real installed package.
+import { mkdtemp, mkdir, writeFile, rm, readlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+test('two-checkout ESM createRequire resolves the app install only after the workflow link', async () => {
+  const root=await mkdtemp(join(tmpdir(),'r35-leather-two-roots-'));
+  try {
+    await mkdir(join(root,'app/node_modules/playwright-core/lib'),{recursive:true});
+    await mkdir(join(root,'harness/scripts'),{recursive:true});
+    await writeFile(join(root,'app/node_modules/playwright-core/package.json'),JSON.stringify({name:'playwright-core',type:'commonjs',exports:{'./lib/utilsBundle':'./lib/utilsBundle.js'}}));
+    await writeFile(join(root,'app/node_modules/playwright-core/lib/utilsBundle.js'),'exports.PNG = { resolverFixture: "verified-app-install" };\n');
+    const helper=join(root,'harness/scripts/environment-pixel-comparison.mjs');
+    await writeFile(helper,'import assert from "node:assert/strict"; import {createRequire} from "node:module"; const {PNG}=createRequire(import.meta.url)("playwright-core/lib/utilsBundle"); assert.equal(PNG.resolverFixture,"verified-app-install"); console.log("resolved verified app install");\n');
+    const env={...process.env,NODE_PATH:''};
+    const run=()=>spawnSync(process.execPath,[...process.execArgv.filter(v=>v!=='--test'),helper],{cwd:root,env,encoding:'utf8',timeout:15000});
+    const before=run();assert.notEqual(before.status,0);assert.match(before.stderr,/Cannot find module 'playwright-core\/lib\/utilsBundle'/);
+    const workflow=await readFile(new URL('../.github/workflows/cabin-leather-comparison.yml',import.meta.url),'utf8');
+    const commands=workflow.split('\n').map(line=>line.trim()).filter(line=>line.startsWith('ln -s '));
+    assert.deepEqual(commands,['ln -s ../app/node_modules harness/node_modules'],'The verified app dependency link is missing');
+    const afterInstall=workflow.indexOf('run: npm ci'),linkAt=workflow.indexOf(commands[0]),captureAt=workflow.indexOf('run: node harness/scripts/collect-cabin-leather-comparison.mjs app');
+    assert.ok(afterInstall>=0&&linkAt>afterInstall&&captureAt>linkAt,'Dependency link must follow npm ci and precede collector execution');
+    const link=spawnSync('sh',['-eu','-c',commands[0]],{cwd:root,env,encoding:'utf8',timeout:15000});assert.equal(link.status,0,link.stderr);
+    assert.equal(await readlink(join(root,'harness/node_modules')),'../app/node_modules');
+    const after=run();assert.equal(after.status,0,after.stderr);assert.match(after.stdout,/resolved verified app install/);
+  }finally{await rm(root,{recursive:true,force:true});}
+});

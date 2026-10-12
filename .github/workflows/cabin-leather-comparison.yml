@@ -70,6 +70,12 @@ jobs:
       - name: Install the exact application dependencies
         working-directory: app
         run: npm ci
+      - name: Expose the verified app install to unchanged harness helpers
+        run: |
+          test -d app/node_modules
+          test ! -e harness/node_modules
+          ln -s ../app/node_modules harness/node_modules
+          node --input-type=module -e "const { main } = await import('./harness/scripts/collect-cabin-leather-comparison.mjs'); if (typeof main !== 'function') throw new Error('Collector import failed');"
       - name: Focused existing preparation and ownership checks
         working-directory: app
         run: node node_modules/vitest/vitest.mjs run tests/cabin-preparation-steps.test.ts tests/cabin-resident-asset.test.tsx tests/cabin-resident-state.test.ts tests/cabin-runtime-preparation.test.tsx tests/cabin-contact-ao-resources.test.ts tests/functional-render-observation.test.ts --pool=threads --maxWorkers=1 --minWorkers=1
