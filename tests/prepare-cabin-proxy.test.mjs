@@ -202,6 +202,7 @@ test("offline preparation emits byte-identical full and proxy assets on repeated
   await mkdir(join(root, "qa/cabin-preview"), { recursive: true });
   for (const name of [
     "r35-contact-ao-static-faces-roughness-control.glb.gz",
+    "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
     "r35-cabin-dashboard.glb.gz",
     "r35-cabin-contact-ao-static-faces.glb.gz",
     "r35-exterior-cabin-proxy.glb.gz",
@@ -226,6 +227,8 @@ test("offline preparation emits byte-identical full and proxy assets on repeated
       "r35-cabin-contact-ao-static-faces-8645956f.glb.gz",
       "r35-cabin-dashboard-5c0a9dca.glb",
       "r35-cabin-dashboard-5c0a9dca.glb.gz",
+      "r35-cabin-fine-roughness-ed88ad0e.glb",
+      "r35-cabin-fine-roughness-ed88ad0e.glb.gz",
       "r35-cabin-roughness-control-6e7642a6.glb",
       "r35-cabin-roughness-control-6e7642a6.glb.gz",
       "r35-exterior-cabin-proxy-49d7c2ab.glb",

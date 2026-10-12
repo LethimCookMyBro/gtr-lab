@@ -5,9 +5,11 @@ on:
     paths:
       - 'qa/cabin-leather-comparison-request.json'
       - 'qa/cabin-roughness-comparison-request.json'
+      - 'qa/cabin-fine-roughness-comparison-request.json'
       - 'scripts/*cabin-leather*.mjs'
       - 'tests/cabin-leather-comparison.node.mjs'
       - 'tests/cabin-roughness-comparison.node.mjs'
+      - 'tests/cabin-fine-roughness-comparison.node.mjs'
       - '.github/workflows/cabin-leather-comparison.yml'
 permissions:
   contents: read
@@ -16,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   capture:
-    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && (contains(github.event.head_commit.message, '[stage-cabin-leather-comparison]') || contains(github.event.head_commit.message, '[stage-cabin-roughness-comparison]'))
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && (contains(github.event.head_commit.message, '[stage-cabin-leather-comparison]') || contains(github.event.head_commit.message, '[stage-cabin-roughness-comparison]') || contains(github.event.head_commit.message, '[stage-cabin-fine-roughness-comparison]'))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -50,7 +52,7 @@ jobs:
           await verifyFilePins('harness',request.helperPins,comparisonProfile(request.contract).helperPaths);
           await appendFile(process.env.GITHUB_ENV,`APP_COMMIT=${target.commit}\n`);
           NODE
-          node --test harness/tests/cabin-leather-comparison.node.mjs harness/tests/cabin-roughness-comparison.node.mjs
+          node --test harness/tests/cabin-leather-comparison.node.mjs harness/tests/cabin-roughness-comparison.node.mjs harness/tests/cabin-fine-roughness-comparison.node.mjs
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.APP_COMMIT }}

@@ -29,9 +29,9 @@ const baseline = gunzipSync(
 );
 const digest = (b) => createHash("sha256").update(b).digest("hex");
 const document = (b) => JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)));
-test("binds only the diagnostic cabin URL to the pinned roughness control", () => {
+test("preserves the rejected constant diagnostic identity separately from the active cabin", () => {
   expect(preparation.CABIN_ROUGHNESS_CONTROL_ASSET).toEqual(asset);
-  expect(CABIN_URL).toBe(asset.path);
+  expect(CABIN_URL).not.toBe(asset.path);
   expect(preparation.CABIN_CONTACT_AO_ASSET.sha256).toBe(digest(baseline));
 });
 test("decodes only the exact compressed and raw diagnostic identity", () => {
@@ -86,6 +86,7 @@ test("ordinary preparation writes exact diagnostic raw and gzip alongside preser
     mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
     for (const name of [
       sourceName,
+      "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
       "r35-cabin-contact-ao-static-faces.glb.gz",
       "r35-cabin-dashboard.glb.gz",
       "r35-exterior-cabin-proxy.glb.gz",

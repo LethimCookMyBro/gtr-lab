@@ -57,6 +57,27 @@ export function decodeCabinRoughnessControl(gzip) {
   validateGlb(bytes, CABIN_ROUGHNESS_CONTROL_ASSET);
   return bytes;
 }
+/** Fine-scale original roughness, isolated to the six red leather materials. */
+export const CABIN_FINE_ROUGHNESS_ASSET = Object.freeze({
+  path: "/models/r35-cabin-fine-roughness-ed88ad0e.glb",
+  bytes: 20196108,
+  sha256: "ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0",
+  gzipBytes: 10194113,
+  gzipSha256:
+    "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5",
+});
+export function decodeCabinFineRoughness(gzip) {
+  if (
+    gzip.length !== CABIN_FINE_ROUGHNESS_ASSET.gzipBytes ||
+    digest(gzip) !== CABIN_FINE_ROUGHNESS_ASSET.gzipSha256
+  )
+    throw new Error("Cabin fine roughness source checksum mismatch");
+  const bytes = gunzipSync(gzip, {
+    maxOutputLength: CABIN_FINE_ROUGHNESS_ASSET.bytes,
+  });
+  validateGlb(bytes, CABIN_FINE_ROUGHNESS_ASSET);
+  return bytes;
+}
 export const CABIN_PROXY_ASSET = Object.freeze({
   path: "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
   bytes: 956368,
@@ -315,6 +336,13 @@ export async function prepareCabin({
 } = {}) {
   // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
+    {
+      source: "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
+      gzipBytes: CABIN_FINE_ROUGHNESS_ASSET.gzipBytes,
+      filename: CABIN_FINE_ROUGHNESS_ASSET.path.slice("/models/".length),
+      decode: decodeCabinFineRoughness,
+      sha256: CABIN_FINE_ROUGHNESS_ASSET.sha256,
+    },
     {
       source: "r35-contact-ao-static-faces-roughness-control.glb.gz",
       gzipBytes: CABIN_ROUGHNESS_CONTROL_ASSET.gzipBytes,

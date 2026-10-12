@@ -1,0 +1,93 @@
+{
+  "privateCandidate": true,
+  "source": {
+    "sha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+    "bytes": 20195752,
+    "canonicalGzipBytes": 10194084,
+    "canonicalGzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16"
+  },
+  "output": {
+    "sha256": "ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0",
+    "bytes": 20196108,
+    "canonicalGzipBytes": 10194113,
+    "canonicalGzipSha256": "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5"
+  },
+  "gzip": {
+    "python": "3.12.14",
+    "zlib": "1.3.2",
+    "runtimeZlib": "1.3.2",
+    "level": 9,
+    "mtime": 0
+  },
+  "treatment": {
+    "textureScale": [
+      4,
+      4
+    ],
+    "physicalRepeatMetres": 0.016,
+    "originalRepeatMetres": 0.064,
+    "originalRoughnessFactor": 0.98,
+    "originalNormalScale": 0.55
+  },
+  "materialInsertions": [
+    {
+      "materialIndex": 0,
+      "name": "Red Amber | original constant-color approximation",
+      "path": "materials/0/pbrMetallicRoughness/metallicRoughnessTexture/extensions",
+      "originalJsonOffset": 321125,
+      "insertedBytes": 55,
+      "insertedText": ",\"extensions\":{\"KHR_texture_transform\":{\"scale\":[4,4]}}"
+    },
+    {
+      "materialIndex": 10,
+      "name": "Original approximate Red Amber door leather",
+      "path": "materials/10/pbrMetallicRoughness/metallicRoughnessTexture/extensions",
+      "originalJsonOffset": 324386,
+      "insertedBytes": 55,
+      "insertedText": ",\"extensions\":{\"KHR_texture_transform\":{\"scale\":[4,4]}}"
+    },
+    {
+      "materialIndex": 13,
+      "name": "Lower dashboard | Red Amber approximate",
+      "path": "materials/13/pbrMetallicRoughness/metallicRoughnessTexture/extensions",
+      "originalJsonOffset": 325868,
+      "insertedBytes": 55,
+      "insertedText": ",\"extensions\":{\"KHR_texture_transform\":{\"scale\":[4,4]}}"
+    },
+    {
+      "materialIndex": 32,
+      "name": "CTRL | Red Amber rim and selector leather approximate",
+      "path": "materials/32/pbrMetallicRoughness/metallicRoughnessTexture/extensions",
+      "originalJsonOffset": 332541,
+      "insertedBytes": 55,
+      "insertedText": ",\"extensions\":{\"KHR_texture_transform\":{\"scale\":[4,4]}}"
+    },
+    {
+      "materialIndex": 34,
+      "name": "REAR | approximate Red Amber leather",
+      "path": "materials/34/pbrMetallicRoughness/metallicRoughnessTexture/extensions",
+      "originalJsonOffset": 333324,
+      "insertedBytes": 55,
+      "insertedText": ",\"extensions\":{\"KHR_texture_transform\":{\"scale\":[4,4]}}"
+    },
+    {
+      "materialIndex": 35,
+      "name": "REAR | Red Amber sculpted center panels",
+      "path": "materials/35/pbrMetallicRoughness/metallicRoughnessTexture/extensions",
+      "originalJsonOffset": 333948,
+      "insertedBytes": 55,
+      "insertedText": ",\"extensions\":{\"KHR_texture_transform\":{\"scale\":[4,4]}}"
+    }
+  ],
+  "extensionRegistration": {
+    "originalJsonOffset": 683,
+    "insertedText": ",\"KHR_texture_transform\""
+  },
+  "jsonChunkBytes": {
+    "before": 644760,
+    "after": 645116
+  },
+  "binSha256": "1841f691a20d599205c5810482e65cc90591b9958dc34631996689554296c6e2",
+  "allOriginalJsonBytesPreservedInOrderExceptAlignmentPadding": true,
+  "binChunkIncludingHeaderExact": true
+}
