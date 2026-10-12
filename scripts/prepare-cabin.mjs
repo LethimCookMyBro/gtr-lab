@@ -78,7 +78,7 @@ export function decodeCabinFineRoughness(gzip) {
   validateGlb(bytes, CABIN_FINE_ROUGHNESS_ASSET);
   return bytes;
 }
-/** Original shifter cap normals; unchanged geometry, materials and images. */
+/** Rejected cap-normal diagnostic; never emitted by ordinary preparation. */
 export const CABIN_SHIFTER_NORMAL_ASSET = Object.freeze({
   path: "/models/r35-cabin-shifter-cap-normals-e4956add.glb",
   bytes: 20196104,
@@ -357,13 +357,6 @@ export async function prepareCabin({
 } = {}) {
   // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
-    {
-      source: "r35-cabin-shifter-cap-normals.glb.gz",
-      gzipBytes: CABIN_SHIFTER_NORMAL_ASSET.gzipBytes,
-      filename: CABIN_SHIFTER_NORMAL_ASSET.path.slice("/models/".length),
-      decode: decodeCabinShifterNormal,
-      sha256: CABIN_SHIFTER_NORMAL_ASSET.sha256,
-    },
     {
       source: "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
       gzipBytes: CABIN_FINE_ROUGHNESS_ASSET.gzipBytes,

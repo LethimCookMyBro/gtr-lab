@@ -201,7 +201,6 @@ test("offline preparation emits only byte-identical accepted cabin and proxy ass
   directories.push(root);
   await mkdir(join(root, "qa/cabin-preview"), { recursive: true });
   for (const name of [
-    "r35-cabin-shifter-cap-normals.glb.gz",
     "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
     "r35-cabin-dashboard.glb.gz",
     "r35-cabin-contact-ao-static-faces.glb.gz",
@@ -223,10 +222,6 @@ test("offline preparation emits only byte-identical accepted cabin and proxy ass
     );
     expect((await readFile(join(root, "public", path))).equals(raw)).toBe(true);
     for (const [source, filename] of [
-      [
-        "r35-cabin-shifter-cap-normals.glb.gz",
-        "r35-cabin-shifter-cap-normals-e4956add.glb",
-      ],
       [
         "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
         "r35-cabin-fine-roughness-ed88ad0e.glb",
@@ -255,8 +250,6 @@ test("offline preparation emits only byte-identical accepted cabin and proxy ass
       "r35-cabin-dashboard-5c0a9dca.glb.gz",
       "r35-cabin-fine-roughness-ed88ad0e.glb",
       "r35-cabin-fine-roughness-ed88ad0e.glb.gz",
-      "r35-cabin-shifter-cap-normals-e4956add.glb",
-      "r35-cabin-shifter-cap-normals-e4956add.glb.gz",
       "r35-exterior-cabin-proxy-49d7c2ab.glb",
       "r35-exterior-cabin-proxy-49d7c2ab.glb.gz",
     ]);

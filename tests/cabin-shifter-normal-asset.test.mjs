@@ -6,6 +6,8 @@ import {
   copyFileSync,
   rmSync,
   readdirSync,
+  existsSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -31,9 +33,10 @@ const baseline = gunzipSync(
   ),
 );
 const hash = (b) => createHash("sha256").update(b).digest("hex");
-test("binds the current candidate URL to its exact independent model identity", () => {
+test("retains the rejected historical candidate identity while the active cabin is accepted fine", () => {
   expect(preparation.CABIN_SHIFTER_NORMAL_ASSET).toEqual(asset);
-  expect(CABIN_URL).toBe(asset.path);
+  expect(CABIN_URL).toBe(preparation.CABIN_FINE_ROUGHNESS_ASSET.path);
+  expect(CABIN_URL).not.toBe(asset.path);
   expect(preparation.CABIN_FINE_ROUGHNESS_ASSET.sha256).toBe(hash(baseline));
 });
 test("decodes only exact compressed and raw shifter identities", () => {
@@ -79,32 +82,51 @@ test("changes only the exact 115 cap normals and necessary extrema", () => {
   });
   expect(proof.images).toHaveLength(11);
 });
-test("ordinary preparation writes the exact candidate pair without restoring the unused control", async () => {
-  const root = mkdtempSync(join(tmpdir(), "r35-shifter-prepare-"));
-  try {
-    mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
-    for (const n of [
-      sourceName,
-      "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
-      "r35-cabin-contact-ao-static-faces.glb.gz",
-      "r35-cabin-dashboard.glb.gz",
-      "r35-exterior-cabin-proxy.glb.gz",
-    ])
-      copyFileSync("qa/cabin-preview/" + n, join(root, "qa/cabin-preview", n));
-    await preparation.prepareCabin({ root, log: () => {} });
-    expect(readFileSync(join(root, "public", asset.path)).equals(raw)).toBe(
-      true,
-    );
-    expect(
-      readFileSync(join(root, "public", asset.path + ".gz")).equals(compressed),
-    ).toBe(true);
-    expect(readdirSync(join(root, "public/models"))).toHaveLength(10);
-    expect(
-      readdirSync(join(root, "public/models")).some((n) =>
-        n.includes("roughness-control"),
-      ),
-    ).toBe(false);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
+test.each(["present", "absent", "corrupt"])(
+  "ordinary preparation omits the rejected candidate when its diagnostic fixture is %s",
+  async (fixture) => {
+    const root = mkdtempSync(join(tmpdir(), "r35-shifter-diagnostic-"));
+    try {
+      mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
+      for (const name of [
+        "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
+        "r35-cabin-contact-ao-static-faces.glb.gz",
+        "r35-cabin-dashboard.glb.gz",
+        "r35-exterior-cabin-proxy.glb.gz",
+      ])
+        copyFileSync(
+          "qa/cabin-preview/" + name,
+          join(root, "qa/cabin-preview", name),
+        );
+      const diagnosticPath = join(root, "qa/cabin-preview", sourceName);
+      const fixtureBytes =
+        fixture === "present"
+          ? compressed
+          : Buffer.from("unused rejected diagnostic");
+      if (fixture !== "absent") writeFileSync(diagnosticPath, fixtureBytes);
+      await preparation.prepareCabin({ root, log: () => {} });
+      expect(existsSync(join(root, "public", asset.path))).toBe(false);
+      expect(existsSync(join(root, "public", asset.path + ".gz"))).toBe(false);
+      expect(
+        readFileSync(
+          join(root, "public", preparation.CABIN_FINE_ROUGHNESS_ASSET.path),
+        ).equals(baseline),
+      ).toBe(true);
+      expect(readdirSync(join(root, "public/models")).sort()).toEqual([
+        "r35-cabin-contact-ao-static-faces-8645956f.glb",
+        "r35-cabin-contact-ao-static-faces-8645956f.glb.gz",
+        "r35-cabin-dashboard-5c0a9dca.glb",
+        "r35-cabin-dashboard-5c0a9dca.glb.gz",
+        "r35-cabin-fine-roughness-ed88ad0e.glb",
+        "r35-cabin-fine-roughness-ed88ad0e.glb.gz",
+        "r35-exterior-cabin-proxy-49d7c2ab.glb",
+        "r35-exterior-cabin-proxy-49d7c2ab.glb.gz",
+      ]);
+      if (fixture !== "absent")
+        expect(readFileSync(diagnosticPath).equals(fixtureBytes)).toBe(true);
+      else expect(existsSync(diagnosticPath)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
