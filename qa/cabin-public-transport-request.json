@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "r35-fixed-public-transport-v1",
+  "release": "04b8422dbb447552db231c75dc700f87183df10d",
+  "sourceTree": "7632e86545bdd559e38cac1133245b5b284b5bbb1b97d2fc6100ad66d021011b",
+  "comparisonFileSha256": "53add7d9533c6f2216675bfc1b2e6b19b09130a2d9693d41e374755434ab8c52",
+  "helperPins": {
+    "scripts/cabin-public-transport-policy.mjs": "796571eeb6c4367c7abe5cfd7138a36af7b44393e432eaa6d1ae8238e669f32b",
+    "scripts/cabin-public-transport.mjs": "0c90949b5697c0da1352b5c64f065c6e131bc2681ee87118e013c0238d71ed15",
+    "tests/cabin-public-transport.node.mjs": "73c3628541a5040bb1fe80fc6f9a00fd017e6b816ebabe6d7b6beeb869134075",
+    ".github/workflows/cabin-public-transport.yml": "1e54a4a154ee9904c539b549aea9ef5ec2faa03c0a773d1910ee2d7ca208a093",
+    "scripts/diagnose-dpr-motion.mjs": "b56d962004c4d0a65e0080eec5f9138c76f18e5b22602ea455bc5f64ecf97110",
+    "scripts/dpr-motion-policy.mjs": "33a69e394835ac5592c54c4b1dd278c80b42f3fb8335ee2821a075d5d66ba36b",
+    "scripts/dpr-motion-observer.mjs": "ba4364c76024cd543435fd578b3fdc2def691f935ec30fbf7e3e20f669169aa8",
+    "scripts/verify-release-assets.mjs": "103a51e60690cc690a8221930a51e2986e6ab78e9e0d756a964fe9ecc01de86f",
+    "scripts/wait-railway.mjs": "c71f69b51e898991f1efe3bb4f379f92228ba474a8e978c971b43a5389751e90",
+    "qa/cabin-fine-roughness-comparison-request.json": "53add7d9533c6f2216675bfc1b2e6b19b09130a2d9693d41e374755434ab8c52"
+  }
+}

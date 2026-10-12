@@ -1,0 +1,65 @@
+name: Fixed public cabin transport diagnostic
+on:
+  push:
+    branches: [main]
+    paths: ['qa/cabin-public-transport-request.json']
+permissions:
+  contents: read
+concurrency:
+  group: fixed-public-cabin-transport
+  cancel-in-progress: false
+jobs:
+  six-transfers:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && contains(github.event.head_commit.message, '[diagnose-cabin-public-transport]') && !contains(github.event.head_commit.message, '[release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      R35_ALLOW_TRANSPORT_PROBE: '1'
+      R35_TRANSPORT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 04b8422dbb447552db231c75dc700f87183df10d
+          path: app
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Verify fixed release and QA-only source closure before setup
+        working-directory: harness
+        run: node scripts/cabin-public-transport.mjs --check-source
+      - name: Focused fake-stream contracts only
+        working-directory: harness
+        run: node --test tests/cabin-public-transport.node.mjs
+      - run: npm ci
+        working-directory: app
+      - name: Build unchanged fixed release
+        working-directory: app
+        run: npm run build
+        timeout-minutes: 8
+      - name: Verify deployment of the fixed release
+        working-directory: app
+        run: node scripts/wait-railway.mjs
+        env:
+          GITHUB_SHA: '04b8422dbb447552db231c75dc700f87183df10d'
+        timeout-minutes: 6
+      - name: Exact public build and six independent bounded transfers
+        working-directory: harness
+        run: node scripts/cabin-public-transport.mjs
+        timeout-minutes: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fixed-public-transport-${{ github.run_id }}-${{ github.run_attempt }}
+          path: harness/cabin-public-transport-results/
+          retention-days: 14
+          if-no-files-found: warn
