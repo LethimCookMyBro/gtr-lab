@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "allow": true,
+  "allow": false,
   "contract": "r35-cabin-leather-material-comparison-v1",
   "baseline": {
     "commit": "4e29206e5844c62c7280e1c889f2f90a56b51add",

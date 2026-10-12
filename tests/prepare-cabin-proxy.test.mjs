@@ -203,7 +203,6 @@ test("offline preparation emits byte-identical full and proxy assets on repeated
   for (const name of [
     "r35-cabin-dashboard.glb.gz",
     "r35-cabin-contact-ao-static-faces.glb.gz",
-    "r35-cabin-contact-ao-static-faces-leather.glb.gz",
     "r35-exterior-cabin-proxy.glb.gz",
   ]) {
     await copyFile(
@@ -224,8 +223,6 @@ test("offline preparation emits byte-identical full and proxy assets on repeated
     expect((await readdir(join(root, "public/models"))).sort()).toEqual([
       "r35-cabin-contact-ao-static-faces-8645956f.glb",
       "r35-cabin-contact-ao-static-faces-8645956f.glb.gz",
-      "r35-cabin-contact-ao-static-faces-leather-da354db8.glb",
-      "r35-cabin-contact-ao-static-faces-leather-da354db8.glb.gz",
       "r35-cabin-dashboard-5c0a9dca.glb",
       "r35-cabin-dashboard-5c0a9dca.glb.gz",
       "r35-exterior-cabin-proxy-49d7c2ab.glb",

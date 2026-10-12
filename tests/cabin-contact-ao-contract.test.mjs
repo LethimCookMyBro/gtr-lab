@@ -13,7 +13,7 @@ const source = readFileSync(
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const raw = gunzipSync(source),
   json = JSON.parse(raw.subarray(20, 20 + raw.readUInt32LE(12)));
-test("retains the original combined asset identity beneath the separate active leather increment", () => {
+test("binds the active model URL to the separately reviewed combined asset, retaining the old full and proxy identities", () => {
   expect(preparation.CABIN_CONTACT_AO_ASSET).toEqual({
     path: "/models/r35-cabin-contact-ao-static-faces-8645956f.glb",
     bytes: 20195752,
@@ -22,8 +22,7 @@ test("retains the original combined asset identity beneath the separate active l
     gzipSha256:
       "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
   });
-  expect(CABIN_URL).toBe(preparation.CABIN_LEATHER_ASSET.path);
-  expect(CABIN_URL).not.toBe(preparation.CABIN_CONTACT_AO_ASSET.path);
+  expect(CABIN_URL).toBe(preparation.CABIN_CONTACT_AO_ASSET.path);
   expect(CABIN_PROXY_URL).toBe(preparation.CABIN_PROXY_ASSET.path);
   expect(preparation.CABIN_SHA256).toBe(
     "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
