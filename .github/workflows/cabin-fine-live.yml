@@ -1,0 +1,59 @@
+# Read-only exact public fine cabin proof. Marker activation is a separate parent action.
+name: Public exact fine cabin verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release-cabin-realism-approved-20261007-1640.approved'
+permissions:
+  contents: read
+concurrency:
+  group: cabin-fine-live-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  public-fine-cabin:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-cabin-fine-roughness]') && !contains(github.event.head_commit.message, '[stage-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+    env:
+      R35_ALLOW_FINE_CABIN_LIVE: '1'
+      R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      R35_FINE_CABIN_LIVE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify exact clean release, ancestry, archive, request and marker before setup
+        run: node scripts/cabin-fine-live.mjs --check-release
+      - run: npm ci
+      - name: Focused source-bound and historical-closure contracts without browser or server
+        run: node --test tests/cabin-fine-live.node.mjs tests/cabin-leather-comparison.node.mjs tests/cabin-roughness-comparison.node.mjs tests/cabin-fine-roughness-comparison.node.mjs tests/cabin-preparation-live.node.mjs
+      - name: Build this exact release for byte comparison
+        run: npm run build
+        timeout-minutes: 8
+      - name: Wait for this exact Railway revision
+        run: node scripts/wait-railway.mjs
+        timeout-minutes: 6
+      - name: Install Chromium for CI only
+        run: node node_modules/playwright/cli.js install --with-deps chromium
+        timeout-minutes: 5
+      - name: Verify actual public bytes and the original five native captures and retirement
+        run: node scripts/cabin-fine-live.mjs
+        timeout-minutes: 16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-fine-cabin-${{ matrix.viewport }}-${{ github.sha }}
+          path: cabin-fine-live-results/
+          retention-days: 14
+          if-no-files-found: warn

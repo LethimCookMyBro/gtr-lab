@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "allow": true,
+  "allow": false,
   "contract": "r35-cabin-fine-roughness-comparison-v1",
   "baseline": {
     "commit": "e546526c9c7be993dce0e9d5dfb1a2b17cd0c373",

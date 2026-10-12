@@ -1,12 +1,15 @@
 {
   "version": 1,
   "allow": true,
-  "contract": "ui-optimization-public-candidate-v1",
-  "stagedSource": "f975d55468504b8c52151f9d89cf37cf2f988957",
-  "sourceTree": "f530e2009115310a5c229d7024d3dc99dcb0d5ff0939d76cba4f9aeb947942c0",
-  "modelSha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
-  "release": "[release-ui-optimization]",
-  "modelBytes": 20195752,
-  "modelGzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
-  "modelGzipBytes": 10194084
+  "contract": "r35-cabin-fine-roughness-public-v1",
+  "release": "[release-cabin-fine-roughness]",
+  "stagedSource": "1a667aa902aa45f160b3526476fefd588f84e243",
+  "sourceTree": "7632e86545bdd559e38cac1133245b5b284b5bbb1b97d2fc6100ad66d021011b",
+  "comparisonRequestSha256": "eb257e48f9feb273ccb1f75e884e0db031fa4139706372ea12875f698c49bf73",
+  "liveRequestSha256": "f18cac3b4aa54c641df7f9a2be5710ece5e919145b09bb36a39972e9ded2b813",
+  "modelPath": "/models/r35-cabin-fine-roughness-ed88ad0e.glb",
+  "modelSha256": "ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0",
+  "modelBytes": 20196108,
+  "modelGzipSha256": "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5",
+  "modelGzipBytes": 10194113
 }
