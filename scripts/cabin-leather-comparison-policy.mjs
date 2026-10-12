@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { assertComparisonModelReceipt } from './cabin-leather-model-body.mjs';
 import { sharedAssetBodies } from './raster-cost-evidence.mjs';
 import { assertCabinResourcesReleased } from './cabin-resource-assertions.mjs';
 import { budgets, readinessWindow, remainingBudget, sha256, models, acceptedCabinImages, assertCurrentGeometry, assertDesktopFeatureGeometry } from './cabin-preparation-policy.mjs';
@@ -88,7 +89,7 @@ export function assertNativeCertificate(certificate, observation, target, seat) 
 }
 export function assertMatchedPair(baseline,candidate,request) {
   assertSourcePair(request); assert.equal(request.allow,true);
-  for(const [name,row] of [['baseline',baseline],['candidate',candidate]]) { assert.equal(row.result,'passed');assert.equal(row.lane,name);assert.equal(row.contract,contract);assert.deepEqual(row.source,request[name].source);assert.deepEqual(row.model,request[name].model);assert.deepEqual(row.budgets,budgets);assert.equal(row.quality,'standard');assert.ok(['desktop','mobile'].includes(row.viewport));assert.deepEqual(row.settings,comparisonSettings(row.viewport));assert.equal(row.resourceRetirement.closedBitmapIds.length,11);assert.equal(row.material.images.length,11);assert.deepEqual(row.errors,[]);assert.deepEqual(row.pageErrors,[]);assert.deepEqual(row.console,[]); assert.deepEqual(row.cleanup,{receipts:'passed',context:'closed',browser:'closed',server:'closed'}); assert.equal(row.sourceCommit,name==='baseline'?baselineCommit:row.harnessCommit); assert.equal(row.runtimeBodyLedger.state,'finished');assert.deepEqual(row.runtimeBodyLedger.errors,[]);assert.deepEqual(row.runtimeBodyLedger.lateEvents,[]);assert.deepEqual(assertCabinResourcesReleased(row.residentCohort,row.resources),row.resourceRetirement);const modelBodies=row.runtimeBodyLedger.requests.filter(r=>r.path===row.model.path);assert.equal(modelBodies.length,1);assert.equal(modelBodies[0].sha256,row.model.sha256);assert.equal(modelBodies[0].bytes,row.model.bytes);assert.equal(modelBodies[0].state,'body-completed'); }
+  for(const [name,row] of [['baseline',baseline],['candidate',candidate]]) { assert.equal(row.result,'passed');assert.equal(row.lane,name);assert.equal(row.contract,contract);assert.deepEqual(row.source,request[name].source);assert.deepEqual(row.model,request[name].model);assert.deepEqual(row.budgets,budgets);assert.equal(row.quality,'standard');assert.ok(['desktop','mobile'].includes(row.viewport));assert.deepEqual(row.settings,comparisonSettings(row.viewport));assert.equal(row.resourceRetirement.closedBitmapIds.length,11);assert.equal(row.material.images.length,11);assert.deepEqual(row.errors,[]);assert.deepEqual(row.pageErrors,[]);assert.deepEqual(row.console,[]); assert.deepEqual(row.cleanup,{receipts:'passed',context:'closed',browser:'closed',server:'closed'}); assert.equal(row.sourceCommit,name==='baseline'?baselineCommit:row.harnessCommit); assert.equal(row.runtimeBodyLedger.state,'finished');assert.deepEqual(row.runtimeBodyLedger.errors,[]);assert.deepEqual(row.runtimeBodyLedger.lateEvents,[]);assert.deepEqual(assertCabinResourcesReleased(row.residentCohort,row.resources),row.resourceRetirement);const modelBodies=row.runtimeBodyLedger.requests.filter(r=>r.path===row.model.path);assert.equal(modelBodies.length,1);assert.equal(modelBodies[0].sha256,row.model.sha256);assert.equal(modelBodies[0].bytes,row.model.bytes);assert.equal(modelBodies[0].state,'body-completed');assertComparisonModelReceipt(row.nativeModelReceipt,row.model,row.runtimeBodyLedger.requests); }
   assert.deepEqual(baseline.material.changes,[]);assert.deepEqual(candidate.material.changes.map(({index,before,after})=>({index,before,after})),materialIndices.map(index=>({index,before:.55,after:.35})));
   const shared=row=>sharedAssetBodies(row.runtimeBodyLedger.requests.filter(body=>body.path!==row.model.path)).sort((a,b)=>a.path.localeCompare(b.path));
   assert.deepEqual(shared(baseline),shared(candidate),'All actually requested CSS/fonts/exterior/proxy/environment/surface bodies must match');
@@ -102,7 +103,9 @@ export const helperPaths = Object.freeze([
   ".github/workflows/cabin-leather-comparison.yml",
   "scripts/cabin-capture-readiness.mjs",
   "scripts/cabin-leather-comparison-policy.mjs",
+  "scripts/cabin-leather-model-body.mjs",
   "scripts/cabin-preparation-checkpoint.mjs",
+  "scripts/cabin-preparation-network.mjs",
   "scripts/cabin-preparation-observer.mjs",
   "scripts/cabin-preparation-policy.mjs",
   "scripts/cabin-preparation-readiness.generated.mjs",

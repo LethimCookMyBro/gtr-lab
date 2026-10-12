@@ -864,8 +864,10 @@
   "helperPins": {
     ".github/workflows/cabin-leather-comparison.yml": "f46c81019ab283e89421838ad4e1225bfc5e097816af9743d23def940e6b3b1b",
     "scripts/cabin-capture-readiness.mjs": "67accafd0ae7aa55620571318f910c607e9eaaf3b792ba6bc947e093cba80056",
-    "scripts/cabin-leather-comparison-policy.mjs": "035961b80e71c49ed455e1c9da36659da62a6041c12cf85632bd66f2ef0c6a2c",
+    "scripts/cabin-leather-comparison-policy.mjs": "302547aa413ad8368c29139b70404094b1b2c80baaf23aa861b1d65ba030d0e1",
+    "scripts/cabin-leather-model-body.mjs": "36d645367ff8706aa6d721ff397b0d34a7ace32e704f6f89ac75f2fe4cfdc66c",
     "scripts/cabin-preparation-checkpoint.mjs": "4fe9c71291c32e2363ce1efa892ded92c3348beadacad519e4c2daeff3563b34",
+    "scripts/cabin-preparation-network.mjs": "110ae32fe3008b7604fcb06cf5c2d8f1319596d9d6d9ba351170cd2543458d7e",
     "scripts/cabin-preparation-observer.mjs": "eedea2eb6ae690266006d125fe7a2ce4ae155fdc138e33c6d3b2ac6ab921a85d",
     "scripts/cabin-preparation-policy.mjs": "f62c8eed6f18e465ce98721961343ef54bb82d0a13f51e20c3e8eb8e0f3b37cb",
     "scripts/cabin-preparation-readiness.generated.mjs": "9a3b09e5592058214e65715edc8f3c7039acf335fd9210c5b4428142cac343c6",
@@ -874,7 +876,7 @@
     "scripts/cabin-runtime-body-ledger.mjs": "356ec061cdea91e834d9a060e1837d06e2cc2d9977bb4232aae3c0d2a239703b",
     "scripts/causal-cabin-model.mjs": "d2204b1d4e0a5168eed051dd6d964ee7c5dd170fe5cc5448f305c3c894057a16",
     "scripts/causal-motion-preflight.mjs": "35215e7b7cbb376c492349c374101055622deb3cc32d991fc1a9e94703349143",
-    "scripts/collect-cabin-leather-comparison.mjs": "985ae628ebdd1a7613ee366f9146fc8bb444e20e46fd5b8b0ddac1677c9e2bae",
+    "scripts/collect-cabin-leather-comparison.mjs": "40195562a9a1cb409676b2bd6456a04abf3fa905331d25d6d179fbf7cb241c93",
     "scripts/diagnose-configurator-controls.mjs": "3261ecc44eb8ca0a473d4047229c832f6ce655ee065806c4060b508e9078ff0d",
     "scripts/diagnose-dpr-motion.mjs": "b56d962004c4d0a65e0080eec5f9138c76f18e5b22602ea455bc5f64ecf97110",
     "scripts/diagnose-render-backpressure-lifecycle.mjs": "6e9a43f7046ea586b79d91d7bea6e00f346ed72fd8ed13505e147e380a81a9c6",
@@ -886,6 +888,6 @@
     "scripts/render-backpressure-lifecycle-fixture.mjs": "33dfc365a070a4fceb1d1c73e0b6e7eb0c7b1c6c9a0842f75add6a65d138422d",
     "scripts/vehicle-preview-readiness.mjs": "7005f0acc335ddfd2784a3f3ce6f0f4615447636074bc85e36e30259a0cbd17a",
     "scripts/verify-cabin-leather-pairs.mjs": "be90fff88ac6f9433001607c691428f04cd87248c0991e0bf61d45f6670508de",
-    "tests/cabin-leather-comparison.node.mjs": "e967fe480471a18135d542e3860a34b9cc879c530fd5ef2b605ecc13ea9d7626"
+    "tests/cabin-leather-comparison.node.mjs": "6983e253bf1a1c6e3410ab04bda2e5e1f79137fa7279637f6d12928a00dcde2e"
   }
 }

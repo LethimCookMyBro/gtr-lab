@@ -27,7 +27,7 @@ function native(seat='driver'){
 test('complete stable native main and drain certificate qualifies',()=>{const n=native();assertNativeCertificate(n.certificate,n.observation,{name:'desktop',deviceScaleFactor:2},'driver');});
 for(const kind of ['main','fence','wait'])test(`missing actual ${kind} cannot qualify`,()=>{const n=native();n.observation.events=n.observation.events.filter(e=>e.kind!==kind);assert.throws(()=>assertNativeCertificate(n.certificate,n.observation,{name:'desktop',deviceScaleFactor:2},'driver'));});
 for(const mutate of [n=>n.certificate.reusedUnchanged=true,n=>n.certificate.nativeStatus=0x911b,n=>n.observation.events[0].stable=false,n=>n.observation.events[1].draws=[],n=>n.observation.events.at(-1).at=7,n=>n.certificate.snapshot.vehicle.lights=true,n=>n.certificate.snapshot.dimensions.pixelRatio=1])test('invalid native completion/settings cannot qualify',()=>{const n=native();mutate(n);assert.throws(()=>assertNativeCertificate(n.certificate,n.observation,{name:'desktop',deviceScaleFactor:2},'driver'));});
-function reports(){const r=enabledRequest(),rows=['baseline','candidate'].map(lane=>{const first=native('driver'),second=native('passenger');second.certificate.mainDrawId=6;second.certificate.fenceId=7;second.certificate.drainFenceId=8;second.certificate.readyAt=16;for(const e of second.observation.events){e.at+=10;e.id+=4;if(e.draws)e.draws=e.draws.map(v=>v+4);}const bitmapIds=Array.from({length:11},(_,i)=>i+1);return{result:'passed',lane,contract:r.contract,source:r[lane].source,model:r[lane].model,budgets,quality:'standard',viewport:'desktop',harnessCommit:env.GITHUB_SHA,sourceCommit:lane==='baseline'?baselineCommit:env.GITHUB_SHA,settings:comparisonSettings('desktop'),errors:[],pageErrors:[],console:[],cleanup:{receipts:'passed',context:'closed',browser:'closed',server:'closed'},runtimeBodyLedger:{state:'finished',errors:[],lateEvents:[],requests:[{path:r[lane].model.path,sha256:r[lane].model.sha256,bytes:r[lane].model.bytes,state:'body-completed'}]},residentCohort:{bitmapIds,textureIds:[1]},resources:{issues:[],pendingBitmapDecodes:0,pendingIdentities:0,bitmaps:bitmapIds.map(id=>({id,closeCalls:1})),textures:[{id:1,bitmapIds,deleteCalls:1,deletedWhileLive:true}]},resourceRetirement:{closedBitmapIds:bitmapIds,deletedTextureIds:[1]},material:{images:Array.from({length:11},(_,i)=>({name:'image-'+i,sha256:'a'.repeat(64),bytes:10})),changes:lane==='candidate'?[0,10,13,32,34,35].map(index=>({index,before:.55,after:.35})):[],binarySha256:'a',normalizedDocumentSha256:'b'},observation:{issues:[],events:[...first.observation.events,...second.observation.events]},captures:[['driver',first],['passenger',second]].map(([label,n])=>({label,file:label+'.png',sha256:'c'.repeat(64),certificate:n.certificate,bounds:{x:0,y:100,width:1440,height:744},renderer:{renderer:'SwiftShader',antialias:true,samples:4,sampleBuffers:1}}))};});return{r,rows};}
+function reports(){const r=enabledRequest(),rows=['baseline','candidate'].map(lane=>{const first=native('driver'),second=native('passenger');second.certificate.mainDrawId=6;second.certificate.fenceId=7;second.certificate.drainFenceId=8;second.certificate.readyAt=16;for(const e of second.observation.events){e.at+=10;e.id+=4;if(e.draws)e.draws=e.draws.map(v=>v+4);}const bitmapIds=Array.from({length:11},(_,i)=>i+1);return{result:'passed',lane,contract:r.contract,source:r[lane].source,model:r[lane].model,budgets,quality:'standard',viewport:'desktop',harnessCommit:env.GITHUB_SHA,sourceCommit:lane==='baseline'?baselineCommit:env.GITHUB_SHA,settings:comparisonSettings('desktop'),errors:[],pageErrors:[],console:[],cleanup:{receipts:'passed',context:'closed',browser:'closed',server:'closed'},runtimeBodyLedger:{state:'finished',errors:[],lateEvents:[],requests:[{requestId:28,generation:1,url:'http://127.0.0.1:4178'+r[lane].model.path,path:r[lane].model.path,status:200,sha256:r[lane].model.sha256,bytes:r[lane].model.bytes,state:'body-completed'}]},nativeModelReceipt:receiptFixture(r[lane].model),residentCohort:{bitmapIds,textureIds:[1]},resources:{issues:[],pendingBitmapDecodes:0,pendingIdentities:0,bitmaps:bitmapIds.map(id=>({id,closeCalls:1})),textures:[{id:1,bitmapIds,deleteCalls:1,deletedWhileLive:true}]},resourceRetirement:{closedBitmapIds:bitmapIds,deletedTextureIds:[1]},material:{images:Array.from({length:11},(_,i)=>({name:'image-'+i,sha256:'a'.repeat(64),bytes:10})),changes:lane==='candidate'?[0,10,13,32,34,35].map(index=>({index,before:.55,after:.35})):[],binarySha256:'a',normalizedDocumentSha256:'b'},observation:{issues:[],events:[...first.observation.events,...second.observation.events]},captures:[['driver',first],['passenger',second]].map(([label,n])=>({label,file:label+'.png',sha256:'c'.repeat(64),certificate:n.certificate,bounds:{x:0,y:100,width:1440,height:744},renderer:{renderer:'SwiftShader',antialias:true,samples:4,sampleBuffers:1}}))};});return{r,rows};}
 test('exact independent lane evidence permits a matched pair',()=>{const {r,rows}=reports();assert.equal(assertMatchedPair(...rows,r).matched,true);});
 for(const change of [row=>row.result='failed',row=>row.captures[0].certificate.snapshot.pose.position[0]=99,row=>row.captures[0].renderer.samples=0,row=>row.model={...row.model,sha256:'b'.repeat(64)},row=>row.resources.bitmaps[0].closeCalls=0,row=>row.budgets={...budgets,functional:40000},row=>row.cleanup.context='open'])test('unmatched/failed/deadline-widened or leaked evidence cannot become a matched pair',()=>{const {r,rows}=reports();change(rows[1]);assert.throws(()=>assertMatchedPair(...rows,r));});
 
@@ -65,4 +65,83 @@ test('two-checkout ESM createRequire resolves the app install only after the wor
     assert.equal(await readlink(join(root,'harness/node_modules')),'../app/node_modules');
     const after=run();assert.equal(after.status,0,after.stderr);assert.match(after.stdout,/resolved verified app install/);
   }finally{await rm(root,{recursive:true,force:true});}
+});
+
+import { EventEmitter } from 'node:events';
+import { captureActualComparisonCabinResponse, assertComparisonModelReceipt } from '../scripts/cabin-leather-model-body.mjs';
+const bodyBytes=Buffer.from('Exact real-response fixture bytes');
+const bodyPin={path:'/models/r35-cabin-fixture.glb',bytes:bodyBytes.length,sha256:sha256(bodyBytes),gzipBytes:24,gzipSha256:'a'.repeat(64)};
+const origin='http://127.0.0.1:4178';
+class NativeBodySession extends EventEmitter {
+  commands=[];response={body:bodyBytes.toString('base64'),base64Encoded:true};failure=null;
+  async send(method,params){this.commands.push({method,params});if(method==='Network.getResponseBody'){if(this.failure)throw this.failure;return this.response;}return{};}
+}
+const nativeRequest=(cdp,id='native-28',extra={})=>cdp.emit('Network.requestWillBeSent',{requestId:id,request:{url:origin+bodyPin.path,method:'GET'},...extra});
+const nativeResponse=(cdp,id='native-28',extra={})=>cdp.emit('Network.responseReceived',{requestId:id,response:{url:origin+bodyPin.path,status:200,headers:{'content-encoding':'gzip','content-length':String(bodyPin.gzipBytes)},...extra}});
+const finishNative=(cdp,id='native-28')=>cdp.emit('Network.loadingFinished',{requestId:id,encodedDataLength:42});
+const pwRequest={requestId:28,generation:1,url:origin+bodyPin.path,method:'GET'};
+const pwResponse={requestId:28,generation:1,url:origin+bodyPin.path,status:200};
+const ledgerRows=()=>[{requestId:28,generation:1,url:origin+bodyPin.path,path:bodyPin.path,status:200,state:'body-completed',bytes:bodyPin.bytes,sha256:bodyPin.sha256}];
+async function recorderFixture(){const cdp=new NativeBodySession();const observer=await captureActualComparisonCabinResponse({cdp,model:bodyPin,baseUrl:origin,phase:()=> 'initial'});observer.bindRequest(pwRequest);nativeRequest(cdp);nativeResponse(cdp);return{cdp,observer};}
+test('same-session native body supplies exact bytes and correlated ledger identity',async()=>{const {cdp,observer}=await recorderFixture();const pending=observer.readBody(pwResponse);finishNative(cdp);assert.equal((await pending).equals(bodyBytes),true);assert.deepEqual(cdp.commands,[{method:'Network.enable',params:{maxResourceBufferSize:32*1024*1024,maxTotalBufferSize:128*1024*1024}},{method:'Network.setCacheDisabled',params:{cacheDisabled:true}},{method:'Network.getResponseBody',params:{requestId:'native-28'}}]);assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows());});
+for(const [name,change] of [
+ ['native body error',cdp=>{cdp.failure=new Error('inspector cache evicted');}],
+ ['wrong bytes',cdp=>{cdp.response={body:Buffer.alloc(bodyPin.bytes,7).toString('base64'),base64Encoded:true};}],
+ ['text encoding',cdp=>{cdp.response.base64Encoded=false;}],
+ ['wrong body length',cdp=>{cdp.response.body='eA==';}],
+])test('model receipt fails closed on '+name,async()=>{const {cdp,observer}=await recorderFixture();change(cdp);const pending=observer.readBody(pwResponse);finishNative(cdp);await assert.rejects(pending);assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));});
+test('model receipt cannot fabricate correlation for an unrelated Playwright request',async()=>{const {cdp,observer}=await recorderFixture();assert.throws(()=>observer.readBody({...pwResponse,requestId:29}));finishNative(cdp);assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));});
+test('second actual model request poisons the evidence instead of reusing an earlier body',async()=>{const {cdp,observer}=await recorderFixture();const pending=observer.readBody(pwResponse);nativeRequest(cdp,'native-29');finishNative(cdp);await assert.rejects(pending);assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));});
+test('native redirect and unbound response cannot qualify',async()=>{for(const broken of ['redirect','unbound']){const cdp=new NativeBodySession(),observer=await captureActualComparisonCabinResponse({cdp,model:bodyPin,baseUrl:origin,phase:()=> 'initial'});observer.bindRequest(pwRequest);if(broken==='redirect')nativeRequest(cdp,'native-28',{redirectResponse:{status:302}});else nativeResponse(cdp,'orphan');await assert.rejects(observer.readBody(pwResponse));assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));}});
+test('cached or failed native model is not an exact network body receipt',async()=>{for(const broken of ['cached','failed']){const cdp=new NativeBodySession(),observer=await captureActualComparisonCabinResponse({cdp,model:bodyPin,baseUrl:origin,phase:()=> 'initial'});observer.bindRequest(pwRequest);nativeRequest(cdp);if(broken==='cached')nativeResponse(cdp,'native-28',{fromDiskCache:true});else cdp.emit('Network.loadingFailed',{requestId:'native-28',errorText:'net::ERR_ABORTED'});await assert.rejects(observer.readBody(pwResponse));assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));}});
+test('late duplicate native completion is retained as failure after bytes were read',async()=>{const {cdp,observer}=await recorderFixture();const pending=observer.readBody(pwResponse);finishNative(cdp);await pending;finishNative(cdp);assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));});
+
+test('matched pair rejects absent same-session model receipt',()=>{const {r,rows}=reports();delete rows[1].nativeModelReceipt;assert.throws(()=>assertMatchedPair(...rows,r));});
+
+function receiptFixture(model){return{version:1,buffers:{maxResourceBufferSize:32*1024*1024,maxTotalBufferSize:128*1024*1024},baseUrl:'http://127.0.0.1:4178',model:{...model},errors:[],native:{requestId:'native-28',url:'http://127.0.0.1:4178'+model.path,method:'GET',status:200,cached:false,terminal:'finished',requestSequence:1,responseSequence:2,finishedSequence:3,encodedTotalBytes:model.gzipBytes+100,headers:{'content-encoding':'gzip','content-length':String(model.gzipBytes)}},playwright:{requestId:28,generation:1,url:'http://127.0.0.1:4178'+model.path,method:'GET',status:200,bodyRequested:true},body:{nativeRequestId:'native-28',source:'CDP.Network.getResponseBody',base64Encoded:true,bytes:model.bytes,sha256:model.sha256,completedSequence:4}};}
+
+import { createRuntimeBodyLedger } from '../scripts/cabin-runtime-body-ledger.mjs';
+import { readinessWindow } from '../scripts/cabin-preparation-policy.mjs';
+test('native completion may precede Playwright binding without a fabricated or repeated read',async()=>{
+  const cdp=new NativeBodySession(),observer=await captureActualComparisonCabinResponse({cdp,model:bodyPin,baseUrl:origin,phase:()=> 'initial'});
+  nativeRequest(cdp);nativeResponse(cdp);finishNative(cdp);await Promise.resolve();
+  assert.ok(observer.snapshot().body);assert.equal(observer.snapshot().playwright,null);
+  observer.bindRequest(pwRequest);assert.equal((await observer.readBody(pwResponse)).equals(bodyBytes),true);
+  assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows());assert.equal(cdp.commands.filter(c=>c.method==='Network.getResponseBody').length,1);
+});
+for(const [name,mutate] of [
+ ['wrong generation',r=>({...r,generation:2})],['wrong response URL',r=>({...r,url:origin+'/models/other.glb'})],['wrong status',r=>({...r,status:206})],
+])test('body binding rejects '+name,async()=>{const {observer}=await recorderFixture();assert.throws(()=>observer.readBody(mutate(pwResponse)));assert.ok(observer.snapshot().errors.length);});
+for(const headers of [{'content-encoding':'identity','content-length':String(bodyPin.gzipBytes)},{'content-encoding':'gzip','content-length':'25'}])test('native response rejects incorrect encoding or compressed byte count',async()=>{
+  const cdp=new NativeBodySession(),observer=await captureActualComparisonCabinResponse({cdp,model:bodyPin,baseUrl:origin,phase:()=> 'initial'});observer.bindRequest(pwRequest);nativeRequest(cdp);nativeResponse(cdp,'native-28',{headers});await assert.rejects(observer.readBody(pwResponse));assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));
+});
+test('same-path foreign origin cannot own the model body',async()=>{
+ const cdp=new NativeBodySession(),observer=await captureActualComparisonCabinResponse({cdp,model:bodyPin,baseUrl:origin,phase:()=> 'initial'});observer.bindRequest(pwRequest);nativeRequest(cdp,'native-28',{request:{url:'http://foreign.example'+bodyPin.path,method:'GET'}});await assert.rejects(observer.readBody(pwResponse));assert.equal(cdp.commands.some(c=>c.method==='Network.getResponseBody'),false);
+});
+function receiptLedger(observer,{now=()=>1000,setTimer,clearTimer}={}){
+ const ledger=createRuntimeBodyLedger({intendedAssets:new Map([[bodyPin.path,{bytes:bodyPin.bytes,sha256:bodyPin.sha256}]]),now,...(setTimer?{setTimer,clearTimer}:{})});
+ ledger.beginDocument(1);ledger.issue({...pwRequest,path:bodyPin.path,phase:'initial',startedAt:0});
+ const task=ledger.receive({...pwResponse,body:()=>observer.readBody(pwResponse)});return{ledger,task};
+}
+test('missing native completion uses the unchanged original cleanup deadline and late completion cannot rescue it',async()=>{
+ const {cdp,observer}=await recorderFixture();let now=1000,timer,delay;
+ const {ledger,task}=receiptLedger(observer,{now:()=>now,setTimer:(fn,ms)=>{timer=fn;delay=ms;return 1;},clearTimer:()=>{}});
+ const window=readinessWindow(budgets.lifecycle,now),pending=ledger.finish({window});assert.equal(delay,30000);assert.equal(ledger.snapshot().requests[0].state,'receiving');
+ now=window.deadline;timer();await assert.rejects(pending,/Original readiness deadline exceeded/);
+ const failed=ledger.snapshot();assert.equal(failed.state,'failed');assert.equal(failed.drains[0].state,'failed');assert.deepEqual(failed.drains[0].readinessWindow,window);assert.deepEqual(failed.errors[0].requestIds,[28]);assert.equal(failed.requests[0].state,'error');
+ finishNative(cdp);await task;const late=ledger.snapshot();assert.equal(late.state,'failed');assert.equal(late.requests[0].state,'error');assert.equal(late.lateEvents[0].kind,'late-body-completed');assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,late.requests));
+});
+test('native body failure remains the original ledger error in the final failed snapshot',async()=>{
+ const {cdp,observer}=await recorderFixture();cdp.failure=new Error('Network.getResponseBody: Request content was evicted from inspector cache');const {ledger,task}=receiptLedger(observer);finishNative(cdp);await task;
+ await assert.rejects(ledger.finish({window:readinessWindow(budgets.lifecycle,1000)}),/original request errors remain/);
+ const failed=ledger.snapshot();assert.equal(failed.state,'failed');assert.equal(failed.drains[0].state,'failed');assert.match(failed.requests[0].error,/evicted from inspector cache/);assert.equal(failed.requests[0].bytes,undefined);assert.equal(failed.errors[0].error,failed.requests[0].error);assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,failed.requests));
+});
+test('successful ledger followed by late native failure is still rejected at final receipt validation',async()=>{
+ const {cdp,observer}=await recorderFixture(),{ledger,task}=receiptLedger(observer);finishNative(cdp);await task;await ledger.finish({window:readinessWindow(budgets.lifecycle,1000)});
+ assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledger.snapshot().requests);cdp.emit('Network.loadingFailed',{requestId:'native-28',errorText:'late invalid terminal'});assert.equal(ledger.snapshot().state,'finished');assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledger.snapshot().requests));
+});
+test('an owned native request ID reused for a different URL cannot silently retain its earlier body',async()=>{
+ const {cdp,observer}=await recorderFixture();const body=observer.readBody(pwResponse);finishNative(cdp);await body;
+ nativeRequest(cdp,'native-28',{request:{url:origin+'/models/other.glb',method:'GET'},redirectResponse:{status:302}});
+ assert.throws(()=>assertComparisonModelReceipt(observer.snapshot(),bodyPin,ledgerRows()));
 });

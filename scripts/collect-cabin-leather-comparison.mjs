@@ -17,6 +17,7 @@ import { cabinResourceCohort, assertCabinResourcesReleased } from './cabin-resou
 import { installDprMotionObserver } from './dpr-motion-observer.mjs';
 import { installRenderBackpressureLifecycleFixture } from './render-backpressure-lifecycle-fixture.mjs';
 import { assertFenceObservationHealthy, assertRetiredFenceContext } from './diagnose-render-backpressure-lifecycle.mjs';
+import { captureActualComparisonCabinResponse, assertComparisonModelReceipt } from './cabin-leather-model-body.mjs';
 import { createRuntimeBodyLedger } from './cabin-runtime-body-ledger.mjs';
 import { boundedOperation, createCheckpointRecorder } from './cabin-preparation-checkpoint.mjs';
 import { assertPreparationTimeline, assertResidentWorkUnchanged, assertRestoredExteriorPose, models } from './cabin-preparation-policy.mjs';
@@ -35,7 +36,7 @@ export async function main(env=process.env) {
     captures:[],steps:[],errors:[],pageErrors:[],console:[],runtimeBodies:[],cleanup:{},
     scope:'Actual production WebGL material-only comparison with native frame certificates and 11-image preparation/residency retirement. SwiftShader only; no performance or physical-device claim.'};
   const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');await save();
-  let browser,context,server,page,ledger,cohort,checkpoint,owner,phase='initial';
+  let browser,context,server,page,ledger,nativeModel,cohort,checkpoint,owner,phase='initial';
   try {
     await verifyFilePins(harness,request.helperPins,helperPaths);await verifyFilePins(root,target.expected.buildFiles,buildPaths[target.lane]);
     report.source=await applicationIdentity(root);assert.deepEqual(report.source,target.expected.source);
@@ -60,13 +61,13 @@ export async function main(env=process.env) {
     context=await browser.newContext({viewport:target.viewport,deviceScaleFactor:target.deviceScaleFactor,isMobile:target.isMobile,hasTouch:target.hasTouch,reducedMotion:'no-preference',serviceWorkers:'block'});
     await context.addInitScript({content:`(${installCabinResourceObserver.toString()})(${JSON.stringify({expectedImages:report.material.images})});(${installDprMotionObserver.toString()})({maxRecords:32768,observeContextCreation:true});(${installRenderBackpressureLifecycleFixture.toString()})();(${installFunctionalCaptureObserver.toString()})();(${installPreparationObserver.toString()})(${JSON.stringify({modelPath:target.expected.model.path,modelJson:model.subarray(20,20+model.readUInt32LE(12)).toString('utf8')})});`});
     page=await context.newPage();page.setDefaultTimeout(15000);page.setDefaultNavigationTimeout(45000);
-    const cdp=await context.newCDPSession(page);await cdp.send('Network.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});
+    const cdp=await context.newCDPSession(page);nativeModel=await captureActualComparisonCabinResponse({cdp,model:target.expected.model,baseUrl:target.baseUrl,phase:()=>phase});
     ledger=createRuntimeBodyLedger({intendedAssets:assets,intendedBytes});checkpoint=createCheckpointRecorder({row:report,save:async()=>{report.runtimeBodyLedger=ledger.snapshot();await save();}});
     const ids=new WeakMap(),generations=new WeakMap();let nextId=0,generation=0;
     const id=r=>{if(!ids.has(r))ids.set(r,++nextId);return ids.get(r);};
     const observeError=error=>{report.errors.push(String(error));};
-    page.on('request',r=>{try{const url=new URL(r.url());if(url.protocol==='blob:'&&url.origin===target.baseUrl)return;assert.equal(url.origin,target.baseUrl);if(r.isNavigationRequest()&&r.frame()===page.mainFrame())ledger.beginDocument(++generation);generations.set(r,generation);report.runtimeBodies.push(ledger.issue({requestId:id(r),generation,url:r.url(),path:url.pathname.startsWith('/configurator/')?'/index.html':url.pathname,phase,startedAt:r.timing().startTime}));}catch(e){observeError(e);}});
-    page.on('response',r=>{try{const url=new URL(r.url());if(url.protocol==='blob:'&&url.origin===target.baseUrl)return;assert.equal(url.origin,target.baseUrl);ledger.receive({requestId:id(r.request()),generation:generations.get(r.request()),url:r.url(),status:r.status(),body:()=>r.body()});}catch(e){observeError(e);}});
+    page.on('request',r=>{try{const url=new URL(r.url());if(url.protocol==='blob:'&&url.origin===target.baseUrl)return;assert.equal(url.origin,target.baseUrl);if(r.isNavigationRequest()&&r.frame()===page.mainFrame())ledger.beginDocument(++generation);generations.set(r,generation);report.runtimeBodies.push(ledger.issue({requestId:id(r),generation,url:r.url(),path:url.pathname.startsWith('/configurator/')?'/index.html':url.pathname,phase,startedAt:r.timing().startTime}));if(url.pathname===target.expected.model.path)nativeModel.bindRequest({requestId:id(r),generation,url:r.url(),method:r.method()});}catch(e){observeError(e);}});
+    page.on('response',r=>{try{const url=new URL(r.url());if(url.protocol==='blob:'&&url.origin===target.baseUrl)return;assert.equal(url.origin,target.baseUrl);ledger.receive({requestId:id(r.request()),generation:generations.get(r.request()),url:r.url(),status:r.status(),body:()=>url.pathname===target.expected.model.path?nativeModel.readBody({requestId:id(r.request()),generation:generations.get(r.request()),url:r.url(),status:r.status()}):r.body()});}catch(e){observeError(e);}});
     page.on('requestfailed',r=>{try{ledger.fail({requestId:id(r),generation:generations.get(r),error:r.failure()?.errorText});}catch(e){observeError(e);}});
     page.on('pageerror',e=>report.pageErrors.push(String(e)));
     page.on('console',m=>{if(['warning','error'].includes(m.type()))report.console.push({type:m.type(),text:m.text(),location:m.location()});});
@@ -122,6 +123,9 @@ export async function main(env=process.env) {
     if(context)try{await boundedOperation(cleanupWindow,'close browser context',()=>context.close());report.cleanup.context='closed';}catch(e){report.errors.push(String(e));report.result='failed';}
     if(browser)try{await boundedOperation(cleanupWindow,'close browser',()=>browser.close());report.cleanup.browser='closed';}catch(e){report.errors.push(String(e));report.result='failed';}
     if(server)try{await boundedOperation(cleanupWindow,'close production server',()=>new Promise((done,reject)=>server.close(e=>e?reject(e):done())));report.cleanup.server='closed';}catch(e){report.errors.push(String(e));report.result='failed';}
+    // Persist actual final drain/failure state even when ledger.finish rejected.
+    if(ledger)report.runtimeBodyLedger=ledger.snapshot();
+    if(nativeModel){report.nativeModelReceipt=nativeModel.snapshot();try{assertComparisonModelReceipt(report.nativeModelReceipt,target.expected.model,report.runtimeBodyLedger?.requests??[]);}catch(error){report.errors.push(String(error));report.result='failed';}}
     if(report.result==='collected'&&report.errors.length===0&&report.pageErrors.length===0&&report.console.length===0)report.result='passed';else report.result='failed';
     await save();
   }
