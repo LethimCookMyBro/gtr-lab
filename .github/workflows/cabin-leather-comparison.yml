@@ -4,8 +4,10 @@ on:
     branches: [main]
     paths:
       - 'qa/cabin-leather-comparison-request.json'
+      - 'qa/cabin-roughness-comparison-request.json'
       - 'scripts/*cabin-leather*.mjs'
       - 'tests/cabin-leather-comparison.node.mjs'
+      - 'tests/cabin-roughness-comparison.node.mjs'
       - '.github/workflows/cabin-leather-comparison.yml'
 permissions:
   contents: read
@@ -14,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   capture:
-    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-cabin-leather-comparison]')
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && (contains(github.event.head_commit.message, '[stage-cabin-leather-comparison]') || contains(github.event.head_commit.message, '[stage-cabin-roughness-comparison]'))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -39,16 +41,16 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import {readFile,appendFile,mkdir,writeFile} from 'node:fs/promises';
-          import {validateComparisonEnvironment,verifyFilePins,helperPaths} from './harness/scripts/cabin-leather-comparison-policy.mjs';
-          const request=JSON.parse(await readFile('harness/qa/cabin-leather-comparison-request.json'));
+          import {validateComparisonEnvironment,verifyFilePins,comparisonProfile,comparisonRequestPath} from './harness/scripts/cabin-leather-comparison-policy.mjs';
+          const request=JSON.parse(await readFile('harness/'+comparisonRequestPath(process.env.R35_LEATHER_COMMIT_MESSAGE)));
           const target=validateComparisonEnvironment(process.env,request);
           const output=`cabin-leather-results/${target.lane}-${target.name}`;await mkdir(output,{recursive:true});
           await writeFile(`${output}/input-request.json`,JSON.stringify(request,null,2));
           await writeFile(`${output}/source-selection.json`,JSON.stringify({harnessCommit:process.env.GITHUB_SHA,sourceCommit:target.commit,source:target.expected.source,model:target.expected.model},null,2));
-          await verifyFilePins('harness',request.helperPins,helperPaths);
+          await verifyFilePins('harness',request.helperPins,comparisonProfile(request.contract).helperPaths);
           await appendFile(process.env.GITHUB_ENV,`APP_COMMIT=${target.commit}\n`);
           NODE
-          node --test harness/tests/cabin-leather-comparison.node.mjs
+          node --test harness/tests/cabin-leather-comparison.node.mjs harness/tests/cabin-roughness-comparison.node.mjs
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.APP_COMMIT }}
@@ -60,11 +62,11 @@ jobs:
           import assert from 'node:assert/strict';
           import {readFile} from 'node:fs/promises';
           import {applicationIdentity} from './harness/scripts/diagnose-dpr-motion.mjs';
-          import {validateComparisonEnvironment,verifyFilePins,buildPaths,assertPreviewSelection} from './harness/scripts/cabin-leather-comparison-policy.mjs';
-          const request=JSON.parse(await readFile('harness/qa/cabin-leather-comparison-request.json'));
+          import {validateComparisonEnvironment,verifyFilePins,comparisonProfile,comparisonRequestPath,assertPreviewSelection} from './harness/scripts/cabin-leather-comparison-policy.mjs';
+          const request=JSON.parse(await readFile('harness/'+comparisonRequestPath(process.env.R35_LEATHER_COMMIT_MESSAGE)));
           const target=validateComparisonEnvironment(process.env,request);
           assert.deepEqual(await applicationIdentity('app'),target.expected.source);
-          await verifyFilePins('app',target.expected.buildFiles,buildPaths[target.lane]);
+          await verifyFilePins('app',target.expected.buildFiles,comparisonProfile(request.contract).buildPaths[target.lane]);
           assertPreviewSelection(await readFile('app/src/components/three/cabinPreview.ts','utf8'),target,request);
           NODE
       - name: Install the exact application dependencies
@@ -98,6 +100,8 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
   pairs:
+    env:
+      R35_LEATHER_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
     needs: capture
     if: always() && needs.capture.result != 'skipped'
     runs-on: ubuntu-latest

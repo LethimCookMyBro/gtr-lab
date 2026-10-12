@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { assertMatchedPair, sha256 } from './cabin-leather-comparison-policy.mjs';
+import { assertMatchedPair, sha256, comparisonRequestPath } from './cabin-leather-comparison-policy.mjs';
 export async function verifyPairs(root, request) {
   const result={result:'running',scope:'Matched evidence eligibility only; screenshots still require visual review.',pairs:[],errors:[]};
   for(const viewport of ['desktop','mobile']){
@@ -22,4 +22,4 @@ export async function verifyPairs(root, request) {
   result.result=result.errors.length?'failed':'passed';await mkdir(root,{recursive:true});await writeFile(resolve(root,'paired-comparison.json'),JSON.stringify(result,null,2)+'\n');
   assert.equal(result.result,'passed','Both independent viewports require complete matched pairs');return result;
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){const request=JSON.parse(await readFile(new URL('../qa/cabin-leather-comparison-request.json',import.meta.url)));verifyPairs(resolve(process.argv[2]??'cabin-leather-artifacts'),request).catch(error=>{console.error(error);process.exitCode=1;});}
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){const request=JSON.parse(await readFile(process.argv[3]?resolve(process.argv[3]):new URL('../'+comparisonRequestPath(process.env.R35_LEATHER_COMMIT_MESSAGE??'[stage-cabin-leather-comparison]'),import.meta.url)));verifyPairs(resolve(process.argv[2]??'cabin-leather-artifacts'),request).catch(error=>{console.error(error);process.exitCode=1;});}

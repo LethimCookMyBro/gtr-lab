@@ -36,6 +36,27 @@ export function decodeCabinContactAo(gzip) {
   validateGlb(bytes, CABIN_CONTACT_AO_ASSET);
   return bytes;
 }
+/** Private roughness-only control, content-versioned separately from accepted cabin. */
+export const CABIN_ROUGHNESS_CONTROL_ASSET = Object.freeze({
+  path: "/models/r35-cabin-roughness-control-6e7642a6.glb",
+  bytes: 20195752,
+  sha256: "6e7642a60783e4f17a65a223dad26a19d47f484f9f156bf7f574e5b1f2447c4b",
+  gzipBytes: 10194126,
+  gzipSha256:
+    "b1051a18e9dba2a9352dbc0696c6469e1e2074f68fc82c7be6991d54928cd9ca",
+});
+export function decodeCabinRoughnessControl(gzip) {
+  if (
+    gzip.length !== CABIN_ROUGHNESS_CONTROL_ASSET.gzipBytes ||
+    digest(gzip) !== CABIN_ROUGHNESS_CONTROL_ASSET.gzipSha256
+  )
+    throw new Error("Cabin roughness control source checksum mismatch");
+  const bytes = gunzipSync(gzip, {
+    maxOutputLength: CABIN_ROUGHNESS_CONTROL_ASSET.bytes,
+  });
+  validateGlb(bytes, CABIN_ROUGHNESS_CONTROL_ASSET);
+  return bytes;
+}
 export const CABIN_PROXY_ASSET = Object.freeze({
   path: "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
   bytes: 956368,
@@ -294,6 +315,13 @@ export async function prepareCabin({
 } = {}) {
   // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
+    {
+      source: "r35-contact-ao-static-faces-roughness-control.glb.gz",
+      gzipBytes: CABIN_ROUGHNESS_CONTROL_ASSET.gzipBytes,
+      filename: CABIN_ROUGHNESS_CONTROL_ASSET.path.slice("/models/".length),
+      decode: decodeCabinRoughnessControl,
+      sha256: CABIN_ROUGHNESS_CONTROL_ASSET.sha256,
+    },
     {
       source: "r35-cabin-contact-ao-static-faces.glb.gz",
       gzipBytes: CABIN_CONTACT_AO_ASSET.gzipBytes,

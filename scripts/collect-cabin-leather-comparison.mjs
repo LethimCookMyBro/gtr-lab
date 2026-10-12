@@ -23,15 +23,15 @@ import { boundedOperation, createCheckpointRecorder } from './cabin-preparation-
 import { assertPreparationTimeline, assertResidentWorkUnchanged, assertRestoredExteriorPose, models } from './cabin-preparation-policy.mjs';
 import { createCabinOracle } from './causal-cabin-model.mjs';
 import { independentExteriorTransform } from './causal-motion-preflight.mjs';
-import { budgets, readinessWindow, remainingBudget, sha256, contract, previewPath, validateComparisonEnvironment, verifyFilePins, assertPreviewSelection, inspectMaterialModel, assertNativeCertificate, helperPaths, buildPaths } from './cabin-leather-comparison-policy.mjs';
+import { budgets, readinessWindow, remainingBudget, sha256, comparisonProfile, comparisonRequestPath, previewPath, validateComparisonEnvironment, verifyFilePins, assertPreviewSelection, inspectMaterialModel, assertNativeCertificate } from './cabin-leather-comparison-policy.mjs';
 
 export async function main(env=process.env) {
   // Fail before loading a browser/server or opening any socket. Inputs are committed, not CLI overrides.
   const harness=resolve(dirname(fileURLToPath(import.meta.url)),'..');
-  const request=JSON.parse(await readFile(resolve(harness,'qa/cabin-leather-comparison-request.json')));
-  const target=validateComparisonEnvironment(env,request), root=resolve(process.argv[2]??'.');
+  const request=JSON.parse(await readFile(resolve(harness,comparisonRequestPath(env.R35_LEATHER_COMMIT_MESSAGE??''))));
+  const target=validateComparisonEnvironment(env,request), {helperPaths,buildPaths}=comparisonProfile(request.contract), root=resolve(process.argv[2]??'.');
   const output=resolve('cabin-leather-results',target.lane+'-'+target.name);await mkdir(output,{recursive:true});
-  const report={result:'running',contract,requestSha256:sha256(JSON.stringify(request)),lane:target.lane,viewport:target.name,harnessCommit:env.GITHUB_SHA,sourceCommit:target.commit,source:null,model:target.expected.model,
+  const report={result:'running',contract:request.contract,requestSha256:sha256(JSON.stringify(request)),lane:target.lane,viewport:target.name,harnessCommit:env.GITHUB_SHA,sourceCommit:target.commit,source:null,model:target.expected.model,
     budgets,quality:'standard',settings:{name:target.name,viewport:target.viewport,deviceScaleFactor:target.deviceScaleFactor,isMobile:target.isMobile,hasTouch:target.hasTouch,reducedMotion:'no-preference',quality:'standard',maxBufferPixels:2000000,requestedAntialias:true,environment:'studio',lights:false,exposure:1},
     captures:[],steps:[],errors:[],pageErrors:[],console:[],runtimeBodies:[],cleanup:{},
     scope:'Actual production WebGL material-only comparison with native frame certificates and 11-image preparation/residency retirement. SwiftShader only; no performance or physical-device claim.'};
@@ -48,7 +48,7 @@ export async function main(env=process.env) {
     const model=await readFile(resolve(root,'dist'+target.expected.model.path)), gzip=await readFile(resolve(root,'dist'+target.expected.model.path+'.gz'));
     assert.equal(gzip.length,target.expected.model.gzipBytes);assert.equal(sha256(gzip),target.expected.model.gzipSha256);assert.equal(gunzipSync(gzip,{maxOutputLength:target.expected.model.bytes}).equals(model),true);
     const original=gunzipSync(await readFile(resolve(root,'qa/cabin-preview/r35-cabin-contact-ao-static-faces.glb.gz')),{maxOutputLength:request.baseline.model.bytes});
-    report.material=inspectMaterialModel(model,target.expected.model,target.lane,original);
+    report.material=inspectMaterialModel(model,target.expected.model,target.lane,original,request.contract);
     const exterior=await readFile(resolve(root,'dist'+models[1].path));assert.equal(sha256(exterior),models[1].sha256);
     const proxy=await readFile(resolve(root,'dist'+models[2].path));assert.equal(sha256(proxy),models[2].sha256);
     const transform=independentExteriorTransform(exterior),oracle=createCabinOracle(transform);

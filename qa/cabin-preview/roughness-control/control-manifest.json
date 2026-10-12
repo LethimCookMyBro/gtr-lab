@@ -1,0 +1,160 @@
+{
+  "diagnosticOnly": true,
+  "source": {
+    "sha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+    "bytes": 20195752,
+    "canonicalGzipBytes": 10194084,
+    "canonicalGzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16"
+  },
+  "output": {
+    "sha256": "6e7642a60783e4f17a65a223dad26a19d47f484f9f156bf7f574e5b1f2447c4b",
+    "bytes": 20195752,
+    "canonicalGzipBytes": 10194126,
+    "canonicalGzipSha256": "b1051a18e9dba2a9352dbc0696c6469e1e2074f68fc82c7be6991d54928cd9ca"
+  },
+  "gzip": {
+    "python": "3.12.14",
+    "zlib": "1.3.2",
+    "runtimeZlib": "1.3.2",
+    "level": 9,
+    "mtime": 0
+  },
+  "constantEffectiveRoughness": 0.6225882352941176,
+  "medianDerivation": "original ORM green median 162 / 255 * 0.98",
+  "patches": [
+    {
+      "materialIndex": 0,
+      "name": "Red Amber | original constant-color approximation",
+      "path": "materials/0/pbrMetallicRoughness",
+      "fileOffset": 321072,
+      "length": 74,
+      "before": "\"roughnessFactor\":0.98,\"metallicRoughnessTexture\":{\"index\":1,\"texCoord\":2}",
+      "after": "\"roughnessFactor\":0.6225882352941176                                      ",
+      "semanticChanges": {
+        "roughnessFactor": {
+          "before": 0.98,
+          "after": 0.6225882352941176
+        },
+        "metallicRoughnessTexture": {
+          "before": {
+            "index": 1,
+            "texCoord": 2
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "materialIndex": 10,
+      "name": "Original approximate Red Amber door leather",
+      "path": "materials/10/pbrMetallicRoughness",
+      "fileOffset": 324333,
+      "length": 74,
+      "before": "\"roughnessFactor\":0.98,\"metallicRoughnessTexture\":{\"index\":1,\"texCoord\":2}",
+      "after": "\"roughnessFactor\":0.6225882352941176                                      ",
+      "semanticChanges": {
+        "roughnessFactor": {
+          "before": 0.98,
+          "after": 0.6225882352941176
+        },
+        "metallicRoughnessTexture": {
+          "before": {
+            "index": 1,
+            "texCoord": 2
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "materialIndex": 13,
+      "name": "Lower dashboard | Red Amber approximate",
+      "path": "materials/13/pbrMetallicRoughness",
+      "fileOffset": 325815,
+      "length": 74,
+      "before": "\"roughnessFactor\":0.98,\"metallicRoughnessTexture\":{\"index\":1,\"texCoord\":2}",
+      "after": "\"roughnessFactor\":0.6225882352941176                                      ",
+      "semanticChanges": {
+        "roughnessFactor": {
+          "before": 0.98,
+          "after": 0.6225882352941176
+        },
+        "metallicRoughnessTexture": {
+          "before": {
+            "index": 1,
+            "texCoord": 2
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "materialIndex": 32,
+      "name": "CTRL | Red Amber rim and selector leather approximate",
+      "path": "materials/32/pbrMetallicRoughness",
+      "fileOffset": 332488,
+      "length": 74,
+      "before": "\"roughnessFactor\":0.98,\"metallicRoughnessTexture\":{\"index\":1,\"texCoord\":2}",
+      "after": "\"roughnessFactor\":0.6225882352941176                                      ",
+      "semanticChanges": {
+        "roughnessFactor": {
+          "before": 0.98,
+          "after": 0.6225882352941176
+        },
+        "metallicRoughnessTexture": {
+          "before": {
+            "index": 1,
+            "texCoord": 2
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "materialIndex": 34,
+      "name": "REAR | approximate Red Amber leather",
+      "path": "materials/34/pbrMetallicRoughness",
+      "fileOffset": 333271,
+      "length": 74,
+      "before": "\"roughnessFactor\":0.98,\"metallicRoughnessTexture\":{\"index\":1,\"texCoord\":2}",
+      "after": "\"roughnessFactor\":0.6225882352941176                                      ",
+      "semanticChanges": {
+        "roughnessFactor": {
+          "before": 0.98,
+          "after": 0.6225882352941176
+        },
+        "metallicRoughnessTexture": {
+          "before": {
+            "index": 1,
+            "texCoord": 2
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "materialIndex": 35,
+      "name": "REAR | Red Amber sculpted center panels",
+      "path": "materials/35/pbrMetallicRoughness",
+      "fileOffset": 333895,
+      "length": 74,
+      "before": "\"roughnessFactor\":0.98,\"metallicRoughnessTexture\":{\"index\":1,\"texCoord\":2}",
+      "after": "\"roughnessFactor\":0.6225882352941176                                      ",
+      "semanticChanges": {
+        "roughnessFactor": {
+          "before": 0.98,
+          "after": 0.6225882352941176
+        },
+        "metallicRoughnessTexture": {
+          "before": {
+            "index": 1,
+            "texCoord": 2
+          },
+          "after": null
+        }
+      }
+    }
+  ],
+  "binSha256": "1841f691a20d599205c5810482e65cc90591b9958dc34631996689554296c6e2",
+  "byteDiffCount": 324
+}
