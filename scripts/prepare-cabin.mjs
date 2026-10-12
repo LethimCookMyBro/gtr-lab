@@ -344,13 +344,6 @@ export async function prepareCabin({
       sha256: CABIN_FINE_ROUGHNESS_ASSET.sha256,
     },
     {
-      source: "r35-contact-ao-static-faces-roughness-control.glb.gz",
-      gzipBytes: CABIN_ROUGHNESS_CONTROL_ASSET.gzipBytes,
-      filename: CABIN_ROUGHNESS_CONTROL_ASSET.path.slice("/models/".length),
-      decode: decodeCabinRoughnessControl,
-      sha256: CABIN_ROUGHNESS_CONTROL_ASSET.sha256,
-    },
-    {
       source: "r35-cabin-contact-ao-static-faces.glb.gz",
       gzipBytes: CABIN_CONTACT_AO_ASSET.gzipBytes,
       filename: CABIN_CONTACT_AO_ASSET.path.slice("/models/".length),

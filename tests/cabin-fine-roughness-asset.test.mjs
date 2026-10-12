@@ -29,12 +29,12 @@ const baseline = gunzipSync(
 );
 const digest = (b) => createHash("sha256").update(b).digest("hex");
 const document = (b) => JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)));
-test("binds only the diagnostic cabin URL to the pinned roughness control", () => {
+test("binds the active cabin URL to the accepted fine-roughness asset", () => {
   expect(preparation.CABIN_FINE_ROUGHNESS_ASSET).toEqual(asset);
   expect(CABIN_URL).toBe(asset.path);
   expect(preparation.CABIN_CONTACT_AO_ASSET.sha256).toBe(digest(baseline));
 });
-test("decodes only the exact compressed and raw diagnostic identity", () => {
+test("decodes only the exact compressed and raw fine-roughness identity", () => {
   expect(preparation.decodeCabinFineRoughness).toBeTypeOf("function");
   expect(preparation.decodeCabinFineRoughness(compressed).equals(raw)).toBe(
     true,
@@ -85,13 +85,12 @@ test("changes only six red ORM transforms and extension registration with exact 
   expect(after).toEqual(before);
   expect(after.images).toHaveLength(11);
 });
-test("ordinary preparation writes exact diagnostic raw and gzip alongside preserved baseline assets", async () => {
+test("ordinary preparation writes exact accepted fine-roughness raw and gzip alongside preserved baseline assets", async () => {
   const root = mkdtempSync(join(tmpdir(), "r35-roughness-prepare-"));
   try {
     mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
     for (const name of [
       sourceName,
-      "r35-contact-ao-static-faces-roughness-control.glb.gz",
       "r35-cabin-contact-ao-static-faces.glb.gz",
       "r35-cabin-dashboard.glb.gz",
       "r35-exterior-cabin-proxy.glb.gz",

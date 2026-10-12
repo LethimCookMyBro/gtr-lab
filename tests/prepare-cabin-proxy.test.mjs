@@ -195,13 +195,12 @@ test.each([
   );
 });
 
-test("offline preparation emits byte-identical full and proxy assets on repeated runs", async () => {
+test("offline preparation emits only byte-identical accepted cabin and proxy assets on repeated runs", async () => {
   expect(preparation.prepareCabin).toBeTypeOf("function");
   const root = await mkdtemp(join(tmpdir(), "gtr-cabin-proxy-"));
   directories.push(root);
   await mkdir(join(root, "qa/cabin-preview"), { recursive: true });
   for (const name of [
-    "r35-contact-ao-static-faces-roughness-control.glb.gz",
     "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
     "r35-cabin-dashboard.glb.gz",
     "r35-cabin-contact-ao-static-faces.glb.gz",
@@ -222,6 +221,28 @@ test("offline preparation emits byte-identical full and proxy assets on repeated
       "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326",
     );
     expect((await readFile(join(root, "public", path))).equals(raw)).toBe(true);
+    for (const [source, filename] of [
+      [
+        "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
+        "r35-cabin-fine-roughness-ed88ad0e.glb",
+      ],
+      [
+        "r35-cabin-contact-ao-static-faces.glb.gz",
+        "r35-cabin-contact-ao-static-faces-8645956f.glb",
+      ],
+      ["r35-cabin-dashboard.glb.gz", "r35-cabin-dashboard-5c0a9dca.glb"],
+      [
+        "r35-exterior-cabin-proxy.glb.gz",
+        "r35-exterior-cabin-proxy-49d7c2ab.glb",
+      ],
+    ]) {
+      const sourceGzip = await readFile(join(root, "qa/cabin-preview", source));
+      const output = join(root, "public/models", filename);
+      expect((await readFile(output)).equals(gunzipSync(sourceGzip))).toBe(
+        true,
+      );
+      expect((await readFile(output + ".gz")).equals(sourceGzip)).toBe(true);
+    }
     expect((await readdir(join(root, "public/models"))).sort()).toEqual([
       "r35-cabin-contact-ao-static-faces-8645956f.glb",
       "r35-cabin-contact-ao-static-faces-8645956f.glb.gz",
@@ -229,8 +250,6 @@ test("offline preparation emits byte-identical full and proxy assets on repeated
       "r35-cabin-dashboard-5c0a9dca.glb.gz",
       "r35-cabin-fine-roughness-ed88ad0e.glb",
       "r35-cabin-fine-roughness-ed88ad0e.glb.gz",
-      "r35-cabin-roughness-control-6e7642a6.glb",
-      "r35-cabin-roughness-control-6e7642a6.glb.gz",
       "r35-exterior-cabin-proxy-49d7c2ab.glb",
       "r35-exterior-cabin-proxy-49d7c2ab.glb.gz",
     ]);

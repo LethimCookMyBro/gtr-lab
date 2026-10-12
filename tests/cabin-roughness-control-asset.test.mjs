@@ -6,6 +6,7 @@ import {
   copyFileSync,
   rmSync,
   existsSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -80,34 +81,49 @@ test("changes only six roughness PBR fields while preserving all binary and othe
   expect(after).toEqual(before);
   expect(after.images).toHaveLength(11);
 });
-test("ordinary preparation writes exact diagnostic raw and gzip alongside preserved baseline assets", async () => {
-  const root = mkdtempSync(join(tmpdir(), "r35-roughness-prepare-"));
-  try {
-    mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
-    for (const name of [
-      sourceName,
-      "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
-      "r35-cabin-contact-ao-static-faces.glb.gz",
-      "r35-cabin-dashboard.glb.gz",
-      "r35-exterior-cabin-proxy.glb.gz",
-    ])
-      copyFileSync(
-        "qa/cabin-preview/" + name,
-        join(root, "qa/cabin-preview", name),
-      );
-    await preparation.prepareCabin({ root, log: () => {} });
-    const output = join(root, "public", asset.path);
-    expect(existsSync(output)).toBe(true);
-    expect(readFileSync(output).equals(raw)).toBe(true);
-    expect(readFileSync(output + ".gz").equals(compressed)).toBe(true);
-    expect(
-      digest(
-        readFileSync(
-          join(root, "public", preparation.CABIN_CONTACT_AO_ASSET.path),
+test.each(["present", "absent", "corrupt"])(
+  "ordinary preparation omits the diagnostic when its fixture is %s",
+  async (fixture) => {
+    const root = mkdtempSync(join(tmpdir(), "r35-roughness-prepare-"));
+    try {
+      mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
+      for (const name of [
+        "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
+        "r35-cabin-contact-ao-static-faces.glb.gz",
+        "r35-cabin-dashboard.glb.gz",
+        "r35-exterior-cabin-proxy.glb.gz",
+      ])
+        copyFileSync(
+          "qa/cabin-preview/" + name,
+          join(root, "qa/cabin-preview", name),
+        );
+      const fixturePath = join(root, "qa/cabin-preview", sourceName);
+      if (fixture !== "absent")
+        writeFileSync(
+          fixturePath,
+          fixture === "present" ? compressed : "unused diagnostic",
+        );
+      await preparation.prepareCabin({ root, log: () => {} });
+      const output = join(root, "public", asset.path);
+      expect(existsSync(output)).toBe(false);
+      expect(existsSync(output + ".gz")).toBe(false);
+      if (fixture !== "absent")
+        expect(
+          readFileSync(fixturePath).equals(
+            fixture === "present"
+              ? compressed
+              : Buffer.from("unused diagnostic"),
+          ),
+        ).toBe(true);
+      expect(
+        digest(
+          readFileSync(
+            join(root, "public", preparation.CABIN_CONTACT_AO_ASSET.path),
+          ),
         ),
-      ),
-    ).toBe(digest(baseline));
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
+      ).toBe(digest(baseline));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
