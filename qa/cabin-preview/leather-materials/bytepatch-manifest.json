@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private artistic scalar candidate. No new geometry, textures, images or render passes. Actual matched WebGL acceptance is pending.",
+  "source": {
+    "sha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452",
+    "bytes": 20195752,
+    "deterministicGzipBytes": 10194084,
+    "deterministicGzipSha256": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16"
+  },
+  "candidate": {
+    "file": "r35-contact-ao-static-faces-leather.glb",
+    "sha256": "da354db8b3d40bc569e68262d121cc630f9bdf293c10b40071b6b46b0370b06a",
+    "bytes": 20195752,
+    "deterministicGzipBytes": 10194086,
+    "deterministicGzipSha256": "9fa0fc0b8eb05287e08e54bef81936954e91665f9e34fe95a7c9002aaf33e817"
+  },
+  "changedFileBytes": 6,
+  "rawJsonFormatPreserved": true,
+  "allUndeclaredJsonFieldsExact": true,
+  "binChunkBytes": 19550964,
+  "binChunkSha256": "1841f691a20d599205c5810482e65cc90591b9958dc34631996689554296c6e2",
+  "binChunkExact": true,
+  "roughnessFactorsExact": true,
+  "canonicalGzipEncoder": {
+    "implementation": "Python gzip.compress",
+    "pythonVersion": "3.12.14",
+    "zlibCompileVersion": "1.3.2",
+    "zlibRuntimeVersion": "1.3.2",
+    "level": 9,
+    "mtime": 0
+  },
+  "patches": [
+    {
+      "materialIndex": 0,
+      "materialName": "Red Amber | original constant-color approximation",
+      "jsonPath": "/materials/0/normalTexture/scale",
+      "from": 0.55,
+      "to": 0.35,
+      "fileByteOffset": 321198,
+      "beforeHex": "35",
+      "afterHex": "33",
+      "scalarFileByteOffset": 321196,
+      "scalarBeforeAscii": "0.55",
+      "scalarAfterAscii": "0.35"
+    },
+    {
+      "materialIndex": 10,
+      "materialName": "Original approximate Red Amber door leather",
+      "jsonPath": "/materials/10/normalTexture/scale",
+      "from": 0.55,
+      "to": 0.35,
+      "fileByteOffset": 324459,
+      "beforeHex": "35",
+      "afterHex": "33",
+      "scalarFileByteOffset": 324457,
+      "scalarBeforeAscii": "0.55",
+      "scalarAfterAscii": "0.35"
+    },
+    {
+      "materialIndex": 13,
+      "materialName": "Lower dashboard | Red Amber approximate",
+      "jsonPath": "/materials/13/normalTexture/scale",
+      "from": 0.55,
+      "to": 0.35,
+      "fileByteOffset": 325941,
+      "beforeHex": "35",
+      "afterHex": "33",
+      "scalarFileByteOffset": 325939,
+      "scalarBeforeAscii": "0.55",
+      "scalarAfterAscii": "0.35"
+    },
+    {
+      "materialIndex": 32,
+      "materialName": "CTRL | Red Amber rim and selector leather approximate",
+      "jsonPath": "/materials/32/normalTexture/scale",
+      "from": 0.55,
+      "to": 0.35,
+      "fileByteOffset": 332658,
+      "beforeHex": "35",
+      "afterHex": "33",
+      "scalarFileByteOffset": 332656,
+      "scalarBeforeAscii": "0.55",
+      "scalarAfterAscii": "0.35"
+    },
+    {
+      "materialIndex": 34,
+      "materialName": "REAR | approximate Red Amber leather",
+      "jsonPath": "/materials/34/normalTexture/scale",
+      "from": 0.55,
+      "to": 0.35,
+      "fileByteOffset": 333397,
+      "beforeHex": "35",
+      "afterHex": "33",
+      "scalarFileByteOffset": 333395,
+      "scalarBeforeAscii": "0.55",
+      "scalarAfterAscii": "0.35"
+    },
+    {
+      "materialIndex": 35,
+      "materialName": "REAR | Red Amber sculpted center panels",
+      "jsonPath": "/materials/35/normalTexture/scale",
+      "from": 0.55,
+      "to": 0.35,
+      "fileByteOffset": 334021,
+      "beforeHex": "35",
+      "afterHex": "33",
+      "scalarFileByteOffset": 334019,
+      "scalarBeforeAscii": "0.55",
+      "scalarAfterAscii": "0.35"
+    }
+  ]
+}

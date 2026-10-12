@@ -3,7 +3,7 @@ import { CABIN_URL } from "../src/components/three/cabinPreview";
 import { cabinModels } from "../scripts/cabin-integration-policy.mjs";
 test("the refined cabin uses a new content-versioned URL rather than the hour-cached baseline path", () => {
   expect(CABIN_URL).toBe(
-    "/models/r35-cabin-contact-ao-static-faces-8645956f.glb",
+    "/models/r35-cabin-contact-ao-static-faces-leather-da354db8.glb",
   );
   // Historical capture contract remains closed to its original dashboard model.
   expect(cabinModels[0].path).toBe("/models/r35-cabin-dashboard-5c0a9dca.glb");

@@ -36,6 +36,27 @@ export function decodeCabinContactAo(gzip) {
   validateGlb(bytes, CABIN_CONTACT_AO_ASSET);
   return bytes;
 }
+/** Six red-leather normal-strength scalars only; the original AO source stays pinned. */
+export const CABIN_LEATHER_ASSET = Object.freeze({
+  path: "/models/r35-cabin-contact-ao-static-faces-leather-da354db8.glb",
+  bytes: 20195752,
+  sha256: "da354db8b3d40bc569e68262d121cc630f9bdf293c10b40071b6b46b0370b06a",
+  gzipBytes: 10194086,
+  gzipSha256:
+    "9fa0fc0b8eb05287e08e54bef81936954e91665f9e34fe95a7c9002aaf33e817",
+});
+export function decodeCabinLeather(gzip) {
+  if (
+    gzip.length !== CABIN_LEATHER_ASSET.gzipBytes ||
+    digest(gzip) !== CABIN_LEATHER_ASSET.gzipSha256
+  )
+    throw new Error("Cabin leather source checksum mismatch");
+  const bytes = gunzipSync(gzip, {
+    maxOutputLength: CABIN_LEATHER_ASSET.bytes,
+  });
+  validateGlb(bytes, CABIN_LEATHER_ASSET);
+  return bytes;
+}
 export const CABIN_PROXY_ASSET = Object.freeze({
   path: "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
   bytes: 956368,
@@ -294,6 +315,13 @@ export async function prepareCabin({
 } = {}) {
   // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
+    {
+      source: "r35-cabin-contact-ao-static-faces-leather.glb.gz",
+      gzipBytes: CABIN_LEATHER_ASSET.gzipBytes,
+      filename: CABIN_LEATHER_ASSET.path.slice("/models/".length),
+      decode: decodeCabinLeather,
+      sha256: CABIN_LEATHER_ASSET.sha256,
+    },
     {
       source: "r35-cabin-contact-ao-static-faces.glb.gz",
       gzipBytes: CABIN_CONTACT_AO_ASSET.gzipBytes,
