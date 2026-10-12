@@ -78,6 +78,27 @@ export function decodeCabinFineRoughness(gzip) {
   validateGlb(bytes, CABIN_FINE_ROUGHNESS_ASSET);
   return bytes;
 }
+/** Original shifter cap normals; unchanged geometry, materials and images. */
+export const CABIN_SHIFTER_NORMAL_ASSET = Object.freeze({
+  path: "/models/r35-cabin-shifter-cap-normals-e4956add.glb",
+  bytes: 20196104,
+  sha256: "e4956add0de1f707b8563720bf0e0d5bb5941f0eacfde8f4c21c0784636ae4bf",
+  gzipBytes: 10194055,
+  gzipSha256:
+    "10fccffd8021ba242f576c03f3d9f6ae33575ef73720076fe5899922c638c0da",
+});
+export function decodeCabinShifterNormal(gzip) {
+  if (
+    gzip.length !== CABIN_SHIFTER_NORMAL_ASSET.gzipBytes ||
+    digest(gzip) !== CABIN_SHIFTER_NORMAL_ASSET.gzipSha256
+  )
+    throw new Error("Cabin shifter normal source checksum mismatch");
+  const bytes = gunzipSync(gzip, {
+    maxOutputLength: CABIN_SHIFTER_NORMAL_ASSET.bytes,
+  });
+  validateGlb(bytes, CABIN_SHIFTER_NORMAL_ASSET);
+  return bytes;
+}
 export const CABIN_PROXY_ASSET = Object.freeze({
   path: "/models/r35-exterior-cabin-proxy-49d7c2ab.glb",
   bytes: 956368,
@@ -336,6 +357,13 @@ export async function prepareCabin({
 } = {}) {
   // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
+    {
+      source: "r35-cabin-shifter-cap-normals.glb.gz",
+      gzipBytes: CABIN_SHIFTER_NORMAL_ASSET.gzipBytes,
+      filename: CABIN_SHIFTER_NORMAL_ASSET.path.slice("/models/".length),
+      decode: decodeCabinShifterNormal,
+      sha256: CABIN_SHIFTER_NORMAL_ASSET.sha256,
+    },
     {
       source: "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
       gzipBytes: CABIN_FINE_ROUGHNESS_ASSET.gzipBytes,

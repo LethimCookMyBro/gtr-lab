@@ -3,7 +3,7 @@ import type { CameraView, VectorTuple } from "./sceneHelpers";
 import type { HomeSceneLoadState } from "../home/homeReadiness";
 
 export const CABIN_URL =
-  "/models/r35-cabin-fine-roughness-ed88ad0e.glb";
+  "/models/r35-cabin-shifter-cap-normals-e4956add.glb";
 export const CABIN_PROXY_URL = "/models/r35-exterior-cabin-proxy-49d7c2ab.glb";
 export type CabinWindowStatus = "loading" | "ready" | "unavailable";
 export const CABIN_SEATS = ["driver", "passenger", "rear"] as const;

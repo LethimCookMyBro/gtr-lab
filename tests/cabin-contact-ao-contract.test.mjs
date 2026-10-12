@@ -22,7 +22,7 @@ test("preserves the accepted combined source while the diagnostic URL is separat
     gzipSha256:
       "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
   });
-  expect(CABIN_URL).toBe(preparation.CABIN_FINE_ROUGHNESS_ASSET.path);
+  expect(CABIN_URL).toBe(preparation.CABIN_SHIFTER_NORMAL_ASSET.path);
   expect(CABIN_URL).not.toBe(preparation.CABIN_CONTACT_AO_ASSET.path);
   expect(CABIN_PROXY_URL).toBe(preparation.CABIN_PROXY_ASSET.path);
   expect(preparation.CABIN_SHA256).toBe(

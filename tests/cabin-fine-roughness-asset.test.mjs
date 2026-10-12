@@ -29,9 +29,9 @@ const baseline = gunzipSync(
 );
 const digest = (b) => createHash("sha256").update(b).digest("hex");
 const document = (b) => JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)));
-test("binds the active cabin URL to the accepted fine-roughness asset", () => {
+test("preserves the accepted fine-roughness asset independently of the candidate URL", () => {
   expect(preparation.CABIN_FINE_ROUGHNESS_ASSET).toEqual(asset);
-  expect(CABIN_URL).toBe(asset.path);
+  expect(CABIN_URL).not.toBe(asset.path);
   expect(preparation.CABIN_CONTACT_AO_ASSET.sha256).toBe(digest(baseline));
 });
 test("decodes only the exact compressed and raw fine-roughness identity", () => {
@@ -91,6 +91,7 @@ test("ordinary preparation writes exact accepted fine-roughness raw and gzip alo
     mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
     for (const name of [
       sourceName,
+      "r35-cabin-shifter-cap-normals.glb.gz",
       "r35-cabin-contact-ao-static-faces.glb.gz",
       "r35-cabin-dashboard.glb.gz",
       "r35-exterior-cabin-proxy.glb.gz",
