@@ -1,6 +1,6 @@
 # Formula E neutral-state CI capture
 
-This is a test-only addition for the reviewed production identity `9d52e83b8a0a05992457fca998c2ec32f4d14ec1b6c3fb94cb0b8ff71fde174f` (103 files). It changes no production source, model, catalog, material, existing timer or historical test configuration.
+The suite targets production identity `f353b758035fcc65b88376a46b5cf7c5c3e14016c1769f052368070efbe7f5dc` (103 files). Compared with the initial catalog identity `9d52e83b8a0a05992457fca998c2ec32f4d14ec1b6c3fb94cb0b8ff71fde174f`, only the Formula E mobile collection CSS has changed. Model, catalog, material, existing timer and historical test configuration bytes are unchanged.
 
 ## Why a separate suite
 
@@ -12,7 +12,7 @@ From the exact staged checkout in GitHub Actions, after npm dependencies and Chr
 
 `npx playwright test -c playwright.formula-e.config.ts`
 
-No workflow trigger is added or dispatched by this patch. The configuration rejects execution outside GitHub Actions and requires its 40-character source/harness commit. The web-server command verifies the exact production hash before the existing asset/build/start commands. It does not reuse a previously running server. Existing startup budget stays 120 seconds; no historical timeouts are widened.
+The dedicated workflow requires a main-branch push with the `[stage-formula-e-layout]` commit marker. The configuration rejects execution outside GitHub Actions and requires its 40-character source/harness commit. The web-server command verifies the exact production hash before the existing asset/build/start commands. It does not reuse a previously running server. Existing startup budget stays 120 seconds; no historical timeouts are widened.
 
 There are two tests at each of 1440×900, 320×844 and 390×844. They use the real rendered app and real keyboard/click navigation. No route interception, fake image response, synthetic car, forced model readiness or production test hook is introduced. Reduced motion is inherited from the existing general suite for these static layout captures; this is not native-motion evidence.
 
@@ -29,7 +29,13 @@ Each test attaches a JSON receipt with production identity, source/harness commi
 
 ## Local verification boundary
 
-The pure rectangle/source/CI contract has positive and negative CPU tests, including 320-wide clipping and heading/CTA overlap. TypeScript checks and targeted existing catalog/navigation DOM tests are permitted locally. No browser, server or socket has been run for this patch. Actual layout, pixel quality, visibility outside the observed rectangles and mobile usability still require successful CI execution and image review. Passing CPU tests is not evidence that the six-browser-test suite has passed.
+The pure rectangle/source/CI contract has positive and negative CPU tests, including 320-wide clipping and heading/CTA overlap. TypeScript checks and targeted existing catalog/navigation DOM tests are permitted locally. No browser, server or socket has been run locally for this patch. Actual layout, pixel quality, visibility outside the observed rectangles and mobile usability still require successful CI execution and image review. Passing CPU tests is not evidence that the six-browser-test suite has passed.
+
+## First CI finding and mobile correction
+
+At commit `d5b4dd0a3e13724b594f87d4bc728f4001ca3b94`, five of six browser cases passed. The 320px collection case failed the original no-overlap assertion: the season label at y=500.125, height=18 intersected the card copy starting at y=501.0625. The failure screenshot also shows the season colliding with `06 / TRACK`.
+
+The neutral labels inherited an absolutely positioned photo layer. Shared mobile rules loaded later also overrode the equal-specificity Formula E card alignment. The correction gives only this card three normal-flow mobile grid rows for labels, copy and Explore, with content-sized text and stronger scoped selectors. No label, font size or geometry assertion is removed or relaxed. The source regression retains the observed collision as a failing geometry example and checks the flow rules; all six original browser cases and their deadlines remain unchanged. The corrected production identity still requires a new CI run and pixel review.
 
 ## Reviewer corrections
 

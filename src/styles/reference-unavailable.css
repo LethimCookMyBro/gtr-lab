@@ -69,18 +69,30 @@
   display: none;
 }
 @media (max-width: 700px) {
-  .model-band-formula-e {
-    min-height: 330px;
-    align-items: flex-start;
+  /* Unlike a photograph, these labels must reserve space for wrapping copy.
+     Outrank the shared mobile card rules imported later by main.tsx. */
+  .model-band.model-band-formula-e {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    gap: 24px;
+    align-items: start;
+    background: #171c20;
   }
-  .model-band-formula-e .reference-unavailable {
+  .model-band.model-band-formula-e .band-image {
+    position: static;
+    inset: auto;
+    z-index: auto;
+  }
+  .model-band.model-band-formula-e .reference-unavailable {
+    height: auto;
+    min-height: 0;
     align-items: flex-start;
-    justify-content: center;
-    padding: 110px 24px 70px;
+    padding: 0;
     text-align: left;
   }
-  .model-band-formula-e .band-action {
-    align-self: flex-end;
+  .model-band.model-band-formula-e .band-action {
+    justify-self: end;
   }
   .reference-view > .reference-unavailable {
     padding: 180px 70px 100px 24px;

@@ -7,7 +7,7 @@ import { applicationIdentity } from "./diagnose-dpr-motion.mjs";
 import { createRuntimeBodyLedger } from "./cabin-runtime-body-ledger.mjs";
 
 export const FORMULA_E_SOURCE_TREE =
-  "9d52e83b8a0a05992457fca998c2ec32f4d14ec1b6c3fb94cb0b8ff71fde174f";
+  "f353b758035fcc65b88376a46b5cf7c5c3e14016c1769f052368070efbe7f5dc";
 export const FORMULA_E_VIEWPORTS = Object.freeze([
   { name: "formula-e-desktop-1440", width: 1440, height: 900 },
   { name: "formula-e-mobile-320", width: 320, height: 844 },

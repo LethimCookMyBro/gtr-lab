@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { restorePreCatalogNavigation } from "./helpers/navigation-catalog-contract";
 import {
   waitForVehicleInitialization,
   VEHICLE_INITIALIZATION_TIMEOUT,
@@ -179,11 +180,12 @@ it("retains the established 90 second initialization constant", () =>
 it("adds only an initialization stage and leaves every existing navigation/action statement unchanged", async () => {
   const { readFile } = await import("node:fs/promises");
   const { createHash } = await import("node:crypto");
-  // Frozen navigation contract at 6ff2c1c; intentional changes must update this guard.
+  // Frozen navigation contract at 6ff2c1c. Only the exact reviewed catalog
+  // delta is restored first; the historical hash and initialization checks stay.
   const beforeHash =
     "43292f6f82c8d3b2a76e5bbc223923a94d7dfa4fc532a29893378b1778332b6c";
   const after = await readFile("e2e/experience.spec.ts", "utf8");
-  const restored = after
+  const restored = restorePreCatalogNavigation(after)
     .replace(
       'import { waitForVehicleInitialization } from "./helpers/vehicle-initialization";\n',
       "",
