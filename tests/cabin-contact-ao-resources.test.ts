@@ -17,6 +17,7 @@ import { textureAllocation } from "./helpers/cabinTextureAllocation";
 afterEach(() => vi.unstubAllGlobals());
 const reports: Record<string, unknown>[] = [];
 const sources = [
+  ["selector-topology", "qa/cabin-preview/r35-cabin-selector-topology.glb.gz", 507284, 11],
   ["baseline", "qa/cabin-preview/r35-cabin-dashboard.glb.gz", 508950, 10],
   [
     "combined",
@@ -88,7 +89,7 @@ it.each(sources)(
     expect(bitmaps).toHaveLength(expectedImages);
     expect(geometries.size).toBe(309);
     expect(materials.size).toBe(46);
-    if (name === "combined") {
+    if (name === "combined" || name === "selector-topology") {
       expect(textures.size).toBe(62);
       expect(aoMeshes).toBe(105);
     }

@@ -1,0 +1,139 @@
+name: Private matched selector support-topology comparison
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/cabin-selector-topology-request.json'
+      - 'scripts/*cabin-selector-topology*.mjs'
+      - 'scripts/selector-topology/**'
+      - 'tests/cabin-selector-topology.node.mjs'
+      - '.github/workflows/cabin-selector-topology-comparison.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cabin-selector-topology-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-cabin-selector-topology-comparison]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [baseline, candidate]
+        viewport: [desktop, mobile]
+        mode: [acceptance]
+        include:
+          - lane: baseline
+            viewport: desktop
+            mode: diagnostic
+          - lane: candidate
+            viewport: desktop
+            mode: diagnostic
+    env:
+      R35_SELECTOR_MODE: ${{ matrix.mode }}
+      R35_SELECTOR_LANE: ${{ matrix.lane }}
+      R35_QA_VIEWPORT: ${{ matrix.viewport }}
+      R35_SELECTOR_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Resolve exact immutable lane before setup
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,appendFile,mkdir,writeFile} from 'node:fs/promises';
+          import {validateComparisonEnvironment,verifyFilePins,comparisonProfile,comparisonRequestPath} from './harness/scripts/cabin-selector-topology-policy.mjs';
+          const request=JSON.parse(await readFile('harness/'+comparisonRequestPath(process.env.R35_SELECTOR_COMMIT_MESSAGE)));
+          const target=validateComparisonEnvironment(process.env,request);
+          const output=`cabin-selector-topology-results/${target.lane}-${target.name}-${target.mode}`;await mkdir(output,{recursive:true});
+          await writeFile(`${output}/input-request.json`,JSON.stringify(request,null,2));
+          await writeFile(`${output}/source-selection.json`,JSON.stringify({harnessCommit:process.env.GITHUB_SHA,sourceCommit:target.commit,source:target.expected.source,model:target.expected.model},null,2));
+          await verifyFilePins('harness',request.helperPins,comparisonProfile(request.contract).helperPaths);
+          await appendFile(process.env.GITHUB_ENV,`APP_COMMIT=${target.commit}\n`);
+          NODE
+          node --test harness/tests/cabin-leather-comparison.node.mjs harness/tests/cabin-roughness-comparison.node.mjs harness/tests/cabin-fine-roughness-comparison.node.mjs harness/tests/cabin-shifter-comparison.node.mjs harness/tests/cabin-selector-topology.node.mjs harness/tests/cabin-selector-topology-verifier.node.mjs
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_COMMIT }}
+          path: app
+          persist-credentials: false
+      - name: Verify selected source and build scripts before execution
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFile} from 'node:fs/promises';
+          import {applicationIdentity} from './harness/scripts/diagnose-dpr-motion.mjs';
+          import {validateComparisonEnvironment,verifyFilePins,comparisonProfile,comparisonRequestPath,assertPreviewSelection} from './harness/scripts/cabin-selector-topology-policy.mjs';
+          const request=JSON.parse(await readFile('harness/'+comparisonRequestPath(process.env.R35_SELECTOR_COMMIT_MESSAGE)));
+          const target=validateComparisonEnvironment(process.env,request);
+          assert.deepEqual(await applicationIdentity('app'),target.expected.source);
+          await verifyFilePins('app',target.expected.buildFiles,comparisonProfile(request.contract).buildPaths[target.lane]);
+          assertPreviewSelection(await readFile('app/src/components/three/cabinPreview.ts','utf8'),target,request);
+          NODE
+      - name: Install the exact application dependencies
+        working-directory: app
+        run: npm ci
+      - name: Expose the verified app install to unchanged harness helpers
+        run: |
+          test -d app/node_modules
+          test ! -e harness/node_modules
+          ln -s ../app/node_modules harness/node_modules
+          node --input-type=module -e "const { main } = await import('./harness/scripts/cabin-selector-topology-comparison.mjs'); if (typeof main !== 'function') throw new Error('Collector import failed');"
+      - name: Focused existing preparation and ownership checks (explicit files)
+        working-directory: app
+        run: node node_modules/vitest/vitest.mjs run tests/cabin-preparation-steps.test.ts tests/cabin-resident-asset.test.tsx tests/cabin-resident-state.test.ts tests/cabin-runtime-preparation.test.tsx tests/cabin-contact-ao-resources.test.ts tests/functional-render-observation.test.ts --pool=threads --maxWorkers=1 --minWorkers=1
+      - name: Build ordinary production source and its ordinary model URL
+        working-directory: app
+        timeout-minutes: 8
+        run: npm run build
+      - name: Install Chromium for CI only
+        working-directory: app
+        timeout-minutes: 5
+        run: node node_modules/playwright/cli.js install --with-deps chromium
+      - name: Capture the selected independent functional or diagnostic path
+        timeout-minutes: 16
+        run: node harness/scripts/cabin-selector-topology-comparison.mjs app
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cabin-selector-topology-${{ matrix.lane }}-${{ matrix.viewport }}-${{ matrix.mode }}-${{ github.sha }}
+          path: cabin-selector-topology-results/
+          retention-days: 14
+          if-no-files-found: warn
+  pairs:
+    env:
+      R35_SELECTOR_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    needs: capture
+    if: always() && needs.capture.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cabin-selector-topology-*-${{ github.sha }}
+          path: cabin-selector-topology-artifacts
+          merge-multiple: true
+      - name: Replay both acceptance viewports and independent desktop diagnostic
+        if: always()
+        run: node scripts/verify-cabin-selector-topology-pairs.mjs cabin-selector-topology-artifacts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cabin-selector-topology-pair-assessment-${{ github.sha }}
+          path: cabin-selector-topology-artifacts/paired-comparison.json
+          retention-days: 14
+          if-no-files-found: warn

@@ -33,9 +33,9 @@ const baseline = gunzipSync(
   ),
 );
 const hash = (b) => createHash("sha256").update(b).digest("hex");
-test("retains the rejected historical candidate identity while the active cabin is accepted fine", () => {
+test("retains the rejected historical candidate identity while the active cabin is the topology candidate", () => {
   expect(preparation.CABIN_SHIFTER_NORMAL_ASSET).toEqual(asset);
-  expect(CABIN_URL).toBe(preparation.CABIN_FINE_ROUGHNESS_ASSET.path);
+  expect(CABIN_URL).toBe(preparation.CABIN_SELECTOR_TOPOLOGY_ASSET.path);
   expect(CABIN_URL).not.toBe(asset.path);
   expect(preparation.CABIN_FINE_ROUGHNESS_ASSET.sha256).toBe(hash(baseline));
 });
@@ -89,6 +89,7 @@ test.each(["present", "absent", "corrupt"])(
     try {
       mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
       for (const name of [
+      "r35-cabin-selector-topology.glb.gz",
         "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
         "r35-cabin-contact-ao-static-faces.glb.gz",
         "r35-cabin-dashboard.glb.gz",
@@ -119,7 +120,9 @@ test.each(["present", "absent", "corrupt"])(
         "r35-cabin-dashboard-5c0a9dca.glb.gz",
         "r35-cabin-fine-roughness-ed88ad0e.glb",
         "r35-cabin-fine-roughness-ed88ad0e.glb.gz",
-        "r35-exterior-cabin-proxy-49d7c2ab.glb",
+        "r35-cabin-selector-topology-699bea11.glb",
+      "r35-cabin-selector-topology-699bea11.glb.gz",
+      "r35-exterior-cabin-proxy-49d7c2ab.glb",
         "r35-exterior-cabin-proxy-49d7c2ab.glb.gz",
       ]);
       if (fixture !== "absent")

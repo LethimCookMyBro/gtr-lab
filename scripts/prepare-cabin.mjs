@@ -78,6 +78,21 @@ export function decodeCabinFineRoughness(gzip) {
   validateGlb(bytes, CABIN_FINE_ROUGHNESS_ASSET);
   return bytes;
 }
+/** Accepted-surface selector subdivision candidate; geometry and imagery stay bounded. */
+export const CABIN_SELECTOR_TOPOLOGY_ASSET = Object.freeze({
+  path: "/models/r35-cabin-selector-topology-699bea11.glb",
+  bytes: 20241848,
+  sha256: "699bea11244bcb695fee412bb4668d074c0330550c62385e235b417e78dba7b2",
+  gzipBytes: 10228920,
+  gzipSha256: "eff3624270a69066857be4c25b8ddd1e352cc5fc78b3041679f858e1323657be",
+});
+export function decodeCabinSelectorTopology(gzip) {
+  if (gzip.length !== CABIN_SELECTOR_TOPOLOGY_ASSET.gzipBytes || digest(gzip) !== CABIN_SELECTOR_TOPOLOGY_ASSET.gzipSha256)
+    throw new Error("Cabin selector topology source checksum mismatch");
+  const bytes = gunzipSync(gzip, { maxOutputLength: CABIN_SELECTOR_TOPOLOGY_ASSET.bytes });
+  validateGlb(bytes, CABIN_SELECTOR_TOPOLOGY_ASSET);
+  return bytes;
+}
 /** Rejected cap-normal diagnostic; never emitted by ordinary preparation. */
 export const CABIN_SHIFTER_NORMAL_ASSET = Object.freeze({
   path: "/models/r35-cabin-shifter-cap-normals-e4956add.glb",
@@ -357,6 +372,13 @@ export async function prepareCabin({
 } = {}) {
   // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
+    {
+      source: "r35-cabin-selector-topology.glb.gz",
+      gzipBytes: CABIN_SELECTOR_TOPOLOGY_ASSET.gzipBytes,
+      filename: CABIN_SELECTOR_TOPOLOGY_ASSET.path.slice("/models/".length),
+      decode: decodeCabinSelectorTopology,
+      sha256: CABIN_SELECTOR_TOPOLOGY_ASSET.sha256,
+    },
     {
       source: "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
       gzipBytes: CABIN_FINE_ROUGHNESS_ASSET.gzipBytes,

@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {gunzipSync} from 'node:zlib';
+import {verifySelectorTopologyCandidate} from '../scripts/selector-topology/verify-selector-topology.mjs';
+const baselineGzipBytes=await readFile(new URL('../qa/cabin-preview/r35-contact-ao-static-faces-roughness-uv4.glb.gz',import.meta.url));
+const candidateGzipBytes=await readFile(new URL('../qa/cabin-preview/r35-cabin-selector-topology.glb.gz',import.meta.url));
+const baseline=gunzipSync(baselineGzipBytes),candidate=gunzipSync(candidateGzipBytes),compressed={baselineGzipBytes,candidateGzipBytes};
+const expectedCosts={rawByteDelta:45740,gzipByteDelta:34807,geometryAttributeIndexByteDelta:45732,triangleDelta:1620,primitiveDelta:0,materialDelta:0,textureDelta:0,imageDelta:0,renderPassDelta:0,residentPrimitives:309,indexedTriangles:507284};
+test('actual frozen bytes independently reproduce topology cost and geometry proofs',()=>{const receipt=verifySelectorTopologyCandidate(baseline,candidate,compressed);assert.deepEqual(receipt.costs,expectedCosts);assert.equal(receipt.verified,true);assert.equal(receipt.unchanged.otherPrimitives,307);assert.equal(receipt.unchanged.embeddedImages,11);assert.deepEqual(receipt.geometry.map(g=>g.mesh),[163,164]);for(const geometry of receipt.geometry){assert.equal(geometry.closedOrientedManifold,true);assert.equal(geometry.exactThreeAxisExtrema,true);assert.equal(geometry.uvOwnership,true);assert.equal(geometry.addedHardSeams,0);assert.ok(geometry.minimumFaceVertexNormalDot>0);assert.ok(geometry.minimumSourceFaceNormalDot>.999);}});
+test('relocated default gzip dependencies reproduce explicit verified inputs',()=>{assert.deepEqual(verifySelectorTopologyCandidate(baseline,candidate),verifySelectorTopologyCandidate(baseline,candidate,compressed));});
+test('missing or changed raw candidate cannot be substituted by baseline or metadata',()=>{assert.throws(()=>verifySelectorTopologyCandidate(baseline));assert.throws(()=>verifySelectorTopologyCandidate(baseline,baseline));const damaged=Buffer.from(candidate);damaged[damaged.length-1]^=1;assert.throws(()=>verifySelectorTopologyCandidate(baseline,damaged));});
+test('mismatched compressed receipts cannot claim the frozen gzip cost',()=>{assert.throws(()=>verifySelectorTopologyCandidate(baseline,candidate,{...compressed,candidateGzipBytes:baselineGzipBytes}));assert.throws(()=>verifySelectorTopologyCandidate(baseline,candidate,{...compressed,baselineGzipBytes:candidateGzipBytes}));});

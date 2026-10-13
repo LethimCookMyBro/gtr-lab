@@ -1,0 +1,1127 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "r35-cabin-selector-topology-comparison-v1",
+  "baseline": {
+    "commit": "28f586ce35b4441254c10583fc7bc1da3265a106",
+    "source": {
+      "contract": "r35-production-source-v2-with-index",
+      "sha256": "7632e86545bdd559e38cac1133245b5b284b5bbb1b97d2fc6100ad66d021011b",
+      "files": [
+        {
+          "path": "index.html",
+          "sha256": "b43ed9f13cdd0eba8a79ad8572482c88604eb1fb09162a686a3d8685cab7d08c"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "4d2bcfb70191f05aa9ad2a85de12c338d1adda68d501d7cc314d504ec57356a9"
+        },
+        {
+          "path": "package.json",
+          "sha256": "90f7ce7a5e6cdfd52c524540241044e706ccf2e11fc26155a30dc673022fd985"
+        },
+        {
+          "path": "server.mjs",
+          "sha256": "68c9558a01ef7afb9f1593f28512c768b78bbf357837237421dda12b03162912"
+        },
+        {
+          "path": "src/App.tsx",
+          "sha256": "c9e486b5f9cd6ad19de668cb809f4ce63d26f05bb832684b91965d9bb4b15e6e"
+        },
+        {
+          "path": "src/audio/r35AudioController.ts",
+          "sha256": "1c9a931efff69f28bf5ac51cfc25858b7028d442c70361d5c626e9b4ffbedc8f"
+        },
+        {
+          "path": "src/audio/r35Recording.ts",
+          "sha256": "32a038cbaad0332aaa5822e6f7166711ab84111d7fb713d1e4a42ea57ad0b0eb"
+        },
+        {
+          "path": "src/audio/useR35Audio.ts",
+          "sha256": "bb7ef09b975eb22bdf5b3717ae36ffa70a06cefeb4478c37599855c07548087c"
+        },
+        {
+          "path": "src/components/R35SoundPreview.tsx",
+          "sha256": "10c6ece85bc9ce852cacde170f4952ff1fd812911f4941f5b906dece6db2979c"
+        },
+        {
+          "path": "src/components/configurator/AssetDisclosure.tsx",
+          "sha256": "3c45aa827b50c1a2d7867ec056059178b9f53ab3893e17a2b95ff52ee1723373"
+        },
+        {
+          "path": "src/components/configurator/CabinPreviewControls.tsx",
+          "sha256": "7fed4c1bc2f98bc3b15c6a9807a0dad990e63238637ef736f1a5c61bb5628ef5"
+        },
+        {
+          "path": "src/components/configurator/ConfiguratorPanels.tsx",
+          "sha256": "766e3fb004685b48259b1c45bb867a0987ba3aded52a94d2aa690099c1d73cbd"
+        },
+        {
+          "path": "src/components/configurator/ModelDetails.tsx",
+          "sha256": "bdcd72fd4d4c1e4288f61dbb56a2ac116c23646267191a2dd13c427ad54ac317"
+        },
+        {
+          "path": "src/components/home/EditorialOverlap.tsx",
+          "sha256": "f9ec50498791ada6a288f4d811ec9d3ae3223d5c762d0805ee205bbfd3dabbe5"
+        },
+        {
+          "path": "src/components/home/ExpandingFilm.tsx",
+          "sha256": "6861b82db4ed5ff5b23f67ec4e23b54ae7263bc4bc81b5d94b87328b9bdf63c3"
+        },
+        {
+          "path": "src/components/home/Film.tsx",
+          "sha256": "332b29f9421fa734014eff9dc2f68a4b2c627650d8f799b04d3a369722512a42"
+        },
+        {
+          "path": "src/components/home/FilmDialog.tsx",
+          "sha256": "c7feb471e66e0e2a48c9893f53602b719bfe1d9fc0a96a9f4ff53efd98f4a950"
+        },
+        {
+          "path": "src/components/home/GtrWordmark.tsx",
+          "sha256": "92b5a1924bfff76208cafdbb204c42aec4894ee4236c3b24c730598dc62dc3ae"
+        },
+        {
+          "path": "src/components/home/HeritageJourney.tsx",
+          "sha256": "540e283da94e4b0a5530439cc553dda13efda005f2867e50896d4757d2f0d247"
+        },
+        {
+          "path": "src/components/home/HeroFilm.tsx",
+          "sha256": "085665c69d0fdfb86043f726f886ed63607fa1925c4d6baa57f6aec32c077d84"
+        },
+        {
+          "path": "src/components/home/ModelInvitations.tsx",
+          "sha256": "367a85aa384f3226a31c46bb39c77f8c1b62a3e6dae2bc8a81ce37a9f13beb03"
+        },
+        {
+          "path": "src/components/home/OpeningMark.tsx",
+          "sha256": "d71a887be144c1047e4499f1446820ce855133c2d2fb61f630873e8afc793689"
+        },
+        {
+          "path": "src/components/home/RearPixelDensity.tsx",
+          "sha256": "5b2115d38b2c85a9341e9bd13f2dc7d5199d12741e0f408b554cf65bc08c9460"
+        },
+        {
+          "path": "src/components/home/RearSignature.tsx",
+          "sha256": "887f0b0d4421235ca1b8d7e03f7ac185111121c831e8b5d8a713acc1f5428076"
+        },
+        {
+          "path": "src/components/home/RearVehicleScene.tsx",
+          "sha256": "096fd4eaf6d7a22aa82bd3c31e5e49c4169128469365b877c6ce65999c99ef6b"
+        },
+        {
+          "path": "src/components/home/campaignMedia.ts",
+          "sha256": "3187c3715f1ae287c5e74638a3372c199adb31e277d2b8254fee67b9f95a6c3c"
+        },
+        {
+          "path": "src/components/home/compileRearScene.ts",
+          "sha256": "005cea6e6aa8c26cf9d359adb280d74beb7f7d8f77407beb3793f8605400d31e"
+        },
+        {
+          "path": "src/components/home/homeReadiness.ts",
+          "sha256": "7e7d969952b99f19f52f99ad4f43c93687e23a10c2026e3432cb3378ae77d577"
+        },
+        {
+          "path": "src/components/home/motion.ts",
+          "sha256": "920c36b228069a4f6856bd9f373dcd933a56174cb07e5bd6fc11d37d54b75a41"
+        },
+        {
+          "path": "src/components/home/storyMedia.ts",
+          "sha256": "9d539ffa1d7add699dc7690ba19db8dc975f8b72e1b15dd40a503bac733f0d46"
+        },
+        {
+          "path": "src/components/home/useHomeMotion.ts",
+          "sha256": "25f55f399120444e563273fba46c9ef35cae13256b2bb61c7aa655213a283577"
+        },
+        {
+          "path": "src/components/home/useRearRenderPreparation.ts",
+          "sha256": "61924effc9cfc3ebdd01b57472191367abfb027cc0d72fd84713473c658e6cf1"
+        },
+        {
+          "path": "src/components/layout/SiteLayout.tsx",
+          "sha256": "5d755cc9c7ef2fe1fc58838f6952f770c0e5cf206d554ad78121eebe27766581"
+        },
+        {
+          "path": "src/components/three/CabinAttachment.tsx",
+          "sha256": "2dbf69b89b424e1c0734d907965b8674b7b5c35942ca47e9f39f8dc5296ddd57"
+        },
+        {
+          "path": "src/components/three/CabinRuntime.tsx",
+          "sha256": "173efd5bbb5bb957b8dbc531267eefe62ae81e07c25929765c184fd748368c3c"
+        },
+        {
+          "path": "src/components/three/CameraRig.tsx",
+          "sha256": "38ad1ee0010a8f653c891b2ff185065108dd5dfbc43bfd8ba7088bdfff923bf3"
+        },
+        {
+          "path": "src/components/three/CoastalWater.tsx",
+          "sha256": "67941e81315ea874ca530684456aa7723908210ae877770652d764bb10305c4f"
+        },
+        {
+          "path": "src/components/three/DemandOrbitControls.tsx",
+          "sha256": "cfc342d4ae338916d0e1a28c8280c1044e2dd2ccfa12ac1c218d73f757544b16"
+        },
+        {
+          "path": "src/components/three/DemandRenderBackpressure.tsx",
+          "sha256": "bfd7c56246ea4ce0f3628f9b66952c421036a3a1ef06341c341eae0c9a1e05ab"
+        },
+        {
+          "path": "src/components/three/EnvironmentBoundary.tsx",
+          "sha256": "04eb437173d1d8cf6b0cfb0dc1b27f479aae39b083a8c008c0cccee78ed2f7f9"
+        },
+        {
+          "path": "src/components/three/OwnedContactShadows.tsx",
+          "sha256": "1d334c7499b10586d17d7f66ebf3acc170122acc5719d85a430e42e85bc36d75"
+        },
+        {
+          "path": "src/components/three/RecoverableEnvironment.tsx",
+          "sha256": "72f4f494d13a50b7c4597af12dc36750b355803ce653ce7991791e92906af09b"
+        },
+        {
+          "path": "src/components/three/RoadsideRocks.tsx",
+          "sha256": "1866eb65373311a5158df865520b76925fc3e8aa0caf43a9d64750fecffe034b"
+        },
+        {
+          "path": "src/components/three/SceneBoundary.tsx",
+          "sha256": "19df7aaa485528849a08219606699976f3ea0c64022e88ab083ae04b898d02a2"
+        },
+        {
+          "path": "src/components/three/StageGeometry.tsx",
+          "sha256": "bd11c2dfb623d62aa52dbd1e7d3e2c4ca0b8f1e34e6a8c9032277a61fbc8d93f"
+        },
+        {
+          "path": "src/components/three/StudioLighting.tsx",
+          "sha256": "793f453137b1f5798cdb203708e80c267e8c775544a1751c7ad9597124b37295"
+        },
+        {
+          "path": "src/components/three/VehiclePixelDensity.tsx",
+          "sha256": "307622dfcee301d42864ae01fd30f3884ccf476112eafcf73c9bbfb641bdbea0"
+        },
+        {
+          "path": "src/components/three/VehicleScene.tsx",
+          "sha256": "bf34e2fd1b5c0f2567271780251e0ce553949325c58949678bd5b3d5430982e4"
+        },
+        {
+          "path": "src/components/three/asyncRendererDisposal.ts",
+          "sha256": "281e89a204d85dd806625770f317915ac022bfdbb3d2161c74163b8e18012e26"
+        },
+        {
+          "path": "src/components/three/cabinPreparationSteps.ts",
+          "sha256": "d96dc333c1b050f3f455dca0f73d45e081b80c1ef4ea383fb6103a52cbbbdd8a"
+        },
+        {
+          "path": "src/components/three/cabinPreview.ts",
+          "sha256": "8419a526c6532392e5094bcaeca19f47e56660ebb941aeb30f8794aa81a41831"
+        },
+        {
+          "path": "src/components/three/coastalGeometry.ts",
+          "sha256": "861d2e6ee1747d1f4b0cd7c5a63ab4f5f011bec2f7376052763ec3935aabd3e5"
+        },
+        {
+          "path": "src/components/three/createVehicleLoader.ts",
+          "sha256": "20399d6f48d3caecf37948ee1be4622373b3cc70f596b8ea7d04c4ce6de21ce0"
+        },
+        {
+          "path": "src/components/three/demandBufferResize.ts",
+          "sha256": "da2cea183a5472a4afae60383e3fa2a3c43bb138195d843ee7e9c37f1e4052c6"
+        },
+        {
+          "path": "src/components/three/demandFrameAdmission.ts",
+          "sha256": "9daae116023843422f760b8031261ddb26b691ab4aa7f3dc106a0baa421eee60"
+        },
+        {
+          "path": "src/components/three/functionalRenderObservation.ts",
+          "sha256": "ad1955b3951f9c41e0ac53ae834f39d87debad46614d8636679853886470f445"
+        },
+        {
+          "path": "src/components/three/keyboardControls.ts",
+          "sha256": "4f9861c64f442aa120901f39d8cd7f20c1012f011558d3d4a5e74ef697b42610"
+        },
+        {
+          "path": "src/components/three/materialAdapter.ts",
+          "sha256": "4e2c53e3749f0c055cd8ff1bff913ce918fb5f33a6863eb67370a714fc1dba12"
+        },
+        {
+          "path": "src/components/three/releasedOrbitDamping.ts",
+          "sha256": "65ad081c9ddccf22469b4f8ad1c89170b001c31738d1a894fca1d569ea3292a8"
+        },
+        {
+          "path": "src/components/three/rendererPreparation.ts",
+          "sha256": "cb3e4aef1fcc4a9e120ac9d35de657c88c94ad2f3924753c315df6a0e9284d1e"
+        },
+        {
+          "path": "src/components/three/rendererResourceOwnership.ts",
+          "sha256": "bdbc5c104b2b7528de9fbba9a3fc3b244dd42470ced7a5246385f569fc6e4f53"
+        },
+        {
+          "path": "src/components/three/sceneHelpers.ts",
+          "sha256": "98f31452ca23631cf1098fb193f554d26954d1daa254024db6f029c57ddc1474"
+        },
+        {
+          "path": "src/components/three/stageLayers.ts",
+          "sha256": "dda69e94a4c379912f5d940f81c3ae2a88006513a02b377319a2330efe798d75"
+        },
+        {
+          "path": "src/components/three/staticShadowPolicy.ts",
+          "sha256": "2ebf5c26482a445c7fd97d94e6d2c790b706f0d6cdfb490b0c8f0bc06c6db07f"
+        },
+        {
+          "path": "src/components/three/staticStudioBatching.ts",
+          "sha256": "e7da4cc2c05bc5011bbd5921216353f36c06e7a08d06449a04fb0be24c3b7063"
+        },
+        {
+          "path": "src/components/three/targetTransition.ts",
+          "sha256": "8dca91031168d50d9bbabe32cd4fb13c5234a49e10423a77f1358e821d48c40c"
+        },
+        {
+          "path": "src/components/three/types.ts",
+          "sha256": "db6ea7ad3d33a5d2f2b2db33fb34a063e54db5ecc412dd6a00fe3f73cf0b4f16"
+        },
+        {
+          "path": "src/components/three/useInteriorLook.ts",
+          "sha256": "bf287a659618ef7dd5338092913ba89a7f7e45dc953461f8c64243a9ad8705d1"
+        },
+        {
+          "path": "src/components/three/useReleasedOrbitDamping.ts",
+          "sha256": "063dfc84ee5967d9b06219d143696aa93ab8908d43589dfe71f00c4f2458f7a7"
+        },
+        {
+          "path": "src/components/three/useResidentCabinAsset.ts",
+          "sha256": "9887b6be0ab73d51da2af75f4787c613195386f397e54cf983c61656e1ba5aaf"
+        },
+        {
+          "path": "src/components/three/useSceneReadiness.ts",
+          "sha256": "5d739c002e065af21c8d23e6c48f2a634ae2cabf16ce02112a299dcf9d664dfc"
+        },
+        {
+          "path": "src/components/three/useVehicleAsset.ts",
+          "sha256": "ccac24d452d795a0d2484c29c6198219d07942382f6f9ebc9c714c48e71d6a83"
+        },
+        {
+          "path": "src/components/three/venueGeometry.ts",
+          "sha256": "d990dee7050ef8084a213f031ca5ec3b6a88564730407727319428d2b4e674b2"
+        },
+        {
+          "path": "src/components/ui/Drawer.tsx",
+          "sha256": "10bfd06db1460688be36a3c1fb6a837b4b58e75f727dea33c9a0ec68888a10eb"
+        },
+        {
+          "path": "src/components/ui/modalIsolation.ts",
+          "sha256": "da2daafe6abb8d017c16bc8022a8b5c0dfac632ed2a82f41f962e54e7686f526"
+        },
+        {
+          "path": "src/data/configuration.ts",
+          "sha256": "f3383e7f56f1389d40e12f7e59651255d3607793469885c174df2bbccfada4e3"
+        },
+        {
+          "path": "src/data/films.ts",
+          "sha256": "fc9ec8cd3c85e817100ce84b2418ae53561583c645a4fb7c09c96fb3b969c11e"
+        },
+        {
+          "path": "src/data/home-media-credits.json",
+          "sha256": "9ffc5b32eda5ce27ced2a1aca7ba7251fa9e05b4f15e88b144471eb7f0b695e7"
+        },
+        {
+          "path": "src/data/image-credits.json",
+          "sha256": "2ffdf39385cd00fd610908da2c2db8b2ecea472f9d047dbe61b309d7070ba1de"
+        },
+        {
+          "path": "src/data/models.ts",
+          "sha256": "ed009cbde0d363f71392e8ecc7058efe04d0c1dbe93b006f6374536035eed2b6"
+        },
+        {
+          "path": "src/data/specifications.json",
+          "sha256": "5ec0a2003cefee876ebc038eb684e6eccb2e772d8520377f8d005bb0231895af"
+        },
+        {
+          "path": "src/hooks/useAudio.tsx",
+          "sha256": "5a9a2df1911a64f253404a9e1cee12da721251d28d5ce03868e55f7bdeb3bf42"
+        },
+        {
+          "path": "src/hooks/useReducedMotion.ts",
+          "sha256": "5a4819bf97c6e5e001d397a27843cb2112e780e15f47afe4e8cb589260eefc35"
+        },
+        {
+          "path": "src/main.tsx",
+          "sha256": "ec25b38fd8ff4b673ed3083f48564dbe9887b0050882663af718cb463243bc29"
+        },
+        {
+          "path": "src/pages/ConfiguratorPage.tsx",
+          "sha256": "6c3b101d4510be47db246e9d8cd9d70dffa53e2ca9494f0b8ec1e2e5abd87e48"
+        },
+        {
+          "path": "src/pages/CreditsPage.tsx",
+          "sha256": "27607abc6455caf6d972f6064bdcb4e96fb12f19a7c78fa37a5d855efae054b1"
+        },
+        {
+          "path": "src/pages/HeritagePage.tsx",
+          "sha256": "3ab2ec1504b94a5b3c3eb8f5a62c0d2f0e11aafcc51f1b91f70cbba7d57d825e"
+        },
+        {
+          "path": "src/pages/HomePage.tsx",
+          "sha256": "1f6502641d231feef0f3c8351b6edaa4281e54c62e3ca6644804aef258139fe9"
+        },
+        {
+          "path": "src/pages/ModelsPage.tsx",
+          "sha256": "2ef82ee4578a4f5558002db549d8cd8fa0d194c13908f01861bb0b1c8c952fa4"
+        },
+        {
+          "path": "src/stores/configurator.ts",
+          "sha256": "9ff066ee6484446e8ab028fcc2cc47e38a35c9acd2b8d7e40de0f0f4162dd479"
+        },
+        {
+          "path": "src/styles.css",
+          "sha256": "08478d33f837d85c6ef974632ad8dd20d7d5f7305df70080d7d8a26268037920"
+        },
+        {
+          "path": "src/styles/cabin-preview.css",
+          "sha256": "5c236fc8cf4d8a21211fdc5dcec99c89fa4c19b47256880f20d5184d1ca5a586"
+        },
+        {
+          "path": "src/styles/home-audio.css",
+          "sha256": "0db71ba3fcd85325e5f31c7c2f1667194b20a176e1eee935793e4db612375703"
+        },
+        {
+          "path": "src/styles/home-film-entry.css",
+          "sha256": "15c909d3292e8090553c87b45b3bc519b15df492af3c03b31b115a3069f601cd"
+        },
+        {
+          "path": "src/styles/home-heritage.css",
+          "sha256": "e8c411efd911570432310c60a40f25fbb7507f77224b104fb5db8a769656c39c"
+        },
+        {
+          "path": "src/styles/home-hero-exit.css",
+          "sha256": "1ac9cc107b883e220cc1872d9469bf84aa8e2f3a279e25475fd60fd597668a5e"
+        },
+        {
+          "path": "src/styles/home-loading.css",
+          "sha256": "0bfb424169fa703cf6e605819b1fbdc159b914ed0c4e355679f63430cf378951"
+        },
+        {
+          "path": "src/styles/home-opening-cards.css",
+          "sha256": "69fdfd2ca3da7d7a153d19410d30d2d7ff86258a3b0f93329a6a9f3c93d22093"
+        },
+        {
+          "path": "src/styles/home-rear.css",
+          "sha256": "c80ffbfce6a5f28abd68913c9f445bb6b4e72cbbb1e2b55b31a554753b14eecf"
+        },
+        {
+          "path": "src/styles/home.css",
+          "sha256": "fe54dd3a198efbe93a87163a0fc2a7ab35d712380306405993f46f19c035acab"
+        },
+        {
+          "path": "vite.config.ts",
+          "sha256": "d410822515c0688e57633d36b7fd73d699532cd6b4cc2064119aa9a075a700a3"
+        }
+      ]
+    },
+    "model": {
+      "path": "/models/r35-cabin-fine-roughness-ed88ad0e.glb",
+      "bytes": 20196108,
+      "sha256": "ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0",
+      "gzipBytes": 10194113,
+      "gzipSha256": "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5"
+    },
+    "buildFiles": {
+      "filmdata/gtr-detail/0000.bin": "25480b78ad835643761ff68c4c160f47681af963f4130989d50d6e36c8a173c4",
+      "filmdata/gtr-detail/0001.bin": "351a8c0849bebbe3a053237317ed400301b84f7da3140762bffd4928fd44106a",
+      "filmdata/gtr-detail/0002.bin": "ffc047c1b22b8918c4f59de3203717a7198ad805e3e555b8373cd3062cef42b6",
+      "filmdata/gtr-detail/0003.bin": "58ce5714ae86847c525a7d8022ac2c7efd0195ac803226ab533dc2d7882b483c",
+      "filmdata/gtr-detail/0004.bin": "21ab0555396f127b7d91951c90832245c37812ca01047005b8533e7f4de00f55",
+      "filmdata/gtr-detail/0005.bin": "223259a19379fe9c6c626f895af53f51268e05bac37e42339e48ee49a9f4839e",
+      "filmdata/gtr-detail/0006.bin": "ecf07dae0d9c430c359ccaa33175821f1a889f30cc487504082846b142b5218a",
+      "filmdata/gtr-detail/0007.bin": "31791b6f0d5fe2e4951709eda1f0634f85a4be65a35abb97e2afa33b8973141e",
+      "filmdata/gtr-detail/0008.bin": "cf26bfa25d52c784cb9515c741a474ad58f2986fccf949fd0a3925012df45f73",
+      "filmdata/gtr-detail/0009.bin": "045c10978f18bc00c8d3abb69d2e88af28ed3bd55caa7912a01dd1398046b923",
+      "filmdata/gtr-detail/0010.bin": "6f245b0a395db698ed773d02da2876f7013cb21e7fe72b9199af1a203fd5fa2b",
+      "filmdata/gtr-detail/0011.bin": "e737067a774a656627352d1a78305cacb8a076b588eb32b4524b9f95d54a6c2c",
+      "filmdata/gtr-detail/0012.bin": "6c94d48ed17e7141e0ebaf09ccb9b7199843171981e5309223b2fda05b58c797",
+      "filmdata/gtr-detail/0013.bin": "9bcfe58c4c5fd7895c27aba1044be3beab2565f7658334c79cdb568eee646ae5",
+      "filmdata/gtr-detail/0014.bin": "1c7c3a8ed87ec4f85fdc41dae7b6d1702a1b32e6d51c987ef0504c16809824d6",
+      "filmdata/gtr-hero/0000.bin": "4b012e526db2c3de3dde1d0054303f57b0d37cd2aa5b2c6500abd76c3af794ee",
+      "filmdata/gtr-hero/0001.bin": "75d64b916b6239266fc65858897ca6e0b1dd60a6d8d4e865edaeb6e3bdd6f41b",
+      "filmdata/gtr-hero/0002.bin": "f6a23c193b24fb1379e5954bc64e852ab49ff50978ff4c3e103ac969462b5f5b",
+      "filmdata/gtr-hero/0003.bin": "08814e658b79d8f50155fb558a5bcee0f9cebf2f0545e7e0b3df6a62b1d3f579",
+      "filmdata/gtr-hero/0004.bin": "d404c51a89a5631b26f78ab4b216cfabce9a3c3d7a5b173736e792ce6842dcf9",
+      "filmdata/gtr-hero/0005.bin": "e26f848e106ba032962e5b825dc111719be4d266ceef658d18d17cd300e46299",
+      "filmdata/gtr-hero/0006.bin": "475b8a864028e8650c80700a42115f6859d6c375e7cf0772f28f46358b08e1cf",
+      "filmdata/gtr-hero/0007.bin": "bcc9d234d78c05105e0912321333d215d029453857a096d8b8fa1fcb2a1f3e55",
+      "filmdata/gtr-hero/0008.bin": "ff338d67595789cbf77c5e571330d2f2d9054916dbd91cf44ae6921ab63f163d",
+      "filmdata/gtr-hero/0009.bin": "6a45d93b8aa9a5c6a2b4e608521838e48038bd1586c3e2cf5c0267b82182587e",
+      "filmdata/gtr-hero/0010.bin": "862ad9dee23806412995fb28c44dd9fe3ef438e1564fd8b7b40d9b5df9b5c556",
+      "filmdata/gtr-hero/0011.bin": "5e3e62a326a78999a156a75a162cab704ab1b752cae88aad7a5f1d54d9929832",
+      "filmdata/gtr-hero/0012.bin": "6ea1b69f431f55786e19e4a370faa575197a980a4404273c97c03daeb9ddf100",
+      "filmdata/gtr-hero/0013.bin": "92502a36b39f7c9f6e79174e1f0c78a574fa321a968f46119b6489dc4b25bb85",
+      "filmdata/manifest.json": "b47d0b203e9b9ba9483ba0ec59cc57bf53ec4f1689d4211d926901f57383de33",
+      "modeldata/ciasny-r35-brake-index-e9425289/0000.bin": "d0bdcddc42ae2a9fc6aea387a762bab7bd56460ee3637f02f8ab2f37bb7b05ee",
+      "modeldata/ciasny-r35-brake-index-e9425289/0001.bin": "6690008cf8507b9cbc359fb93cb5491b73c5d150fa51b4f401adfbc94e372f4b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0002.bin": "ca99dde3119ce2941aa7185c19aeadc0b3e5ef8eb01af0eb467b417e6bc3b1b6",
+      "modeldata/ciasny-r35-brake-index-e9425289/0003.bin": "fb5da2b1e08febc79f1674f8ed2b06144d9196073ca86812eb6a183944cf8b08",
+      "modeldata/ciasny-r35-brake-index-e9425289/0004.bin": "4bf2bd50eaa950dcbd3ab0dbcbb2fba3e1e7e9d28f06c22c4a6fa7d18d7a1c2b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0005.bin": "4635549e05632c0d2d0ccc155fd431559b46128414fc4497aaaa8d757393b4ba",
+      "modeldata/ciasny-r35-brake-index-e9425289/0006.bin": "99c943c96e1796b1d11d999665f1a5e9b0cf990b6c25d6d156ac2cda0bcaa935",
+      "modeldata/ciasny-r35-brake-index-e9425289/0007.bin": "c062605a03acec06e55c70bb0bd60e790a021d014613a7ff01cc44871577f9ae",
+      "modeldata/ciasny-r35-brake-index-e9425289/0008.bin": "7113652902199322f116b0b34ebbe173ca750aaac99eb4131dab09c4f0bd99a0",
+      "modeldata/ciasny-r35-brake-index-e9425289/0009.bin": "aba01b30dff70ed92c05e6e9e4a13979908b1de5a8d9470eac5bdbd2f32db1b0",
+      "modeldata/ciasny-r35-brake-index-e9425289/0010.bin": "558473213fc1b4e579c4982d7b52a430eaee869c0166ddaf71345f2866698475",
+      "modeldata/ciasny-r35-brake-index-e9425289/0011.bin": "7d1a386da71d66ebe3186e9c0af047b62e9dc4b9c7b79a864581a84b0ab7075c",
+      "modeldata/ciasny-r35-brake-index-e9425289/0012.bin": "2fdc6e74fa6f4cfc4b347c7d21edb4890db78485bb8cf35200892f48d2b73901",
+      "modeldata/ciasny-r35-brake-index-e9425289/0013.bin": "9b350edc403d59efebddfa4e74cb672b05278d30f45c7175d6eca4e7dd0337e1",
+      "modeldata/ciasny-r35-brake-index-e9425289/0014.bin": "eb1af8911799eb2ee8101a20fed1a52b0fb9096e33f3fb743e46cea18e03d74c",
+      "modeldata/ciasny-r35-brake-index-e9425289/0015.bin": "71a14550561dd396fe63ee31da949442b316a355107a5fa341a151767670d0b3",
+      "modeldata/ciasny-r35-brake-index-e9425289/0016.bin": "5a0d1c3ff5a213be9514b81182aa620d155694a6aa279f269c433e85071988b6",
+      "modeldata/ciasny-r35-brake-index-e9425289/0017.bin": "41d8cc69b493b338a661ada609e4386ed46600e9b09f581b7aacd1a994a44f59",
+      "modeldata/ciasny-r35-brake-index-e9425289/0018.bin": "d1f49a87d1254fb222be3807b9b0c33c1d0c2800b82caaab8cbf0f9f957db88b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0019.bin": "60a78e8f73c0e5d50f1604c3af59aa3169a8e45267294d558a78bd95d6429f53",
+      "modeldata/ciasny-r35-brake-index-e9425289/0020.bin": "d7105904cb21dea3b1fcaaac7546e5cc6f1647fddf862453bffb43d58882c855",
+      "modeldata/ciasny-r35-brake-index-e9425289/0021.bin": "06ef3d3b8ffc4b6bfad255e13845b878d8f8d962f1a5726664ed7cbc8003b84d",
+      "modeldata/ciasny-r35-brake-index-e9425289/0022.bin": "19ba563456d81a9d85395092e114040eb54dd55de1bd3eada0c4dd7a352cec84",
+      "modeldata/ciasny-r35-brake-index-e9425289/0023.bin": "f512e43dcc1fddc208a52268b7aa7b0f410c655d155e65f31e9870a88c25bd80",
+      "modeldata/ciasny-r35-brake-index-e9425289/0024.bin": "b6204fd8a13991aed842902061706b73699ad1788d338a27bf340d75d3f97f54",
+      "modeldata/ciasny-r35-brake-index-e9425289/0025.bin": "0f0089407febe2d56064ebad33f993973a2be134ccd97fb48d47dd57eb2bf1b3",
+      "modeldata/ciasny-r35-brake-index-e9425289/0026.bin": "0a4f8a4d322f5fea19b89f1f75e46ede2a4304843b3cf93b0ffdb9623f8a855d",
+      "modeldata/ciasny-r35-brake-index-e9425289/0027.bin": "279a22bff8161d545873d44baae4148af73dc70f968f8b3f26d4d473265c8c59",
+      "modeldata/ciasny-r35-brake-index-e9425289/0028.bin": "496ea779e2200bbac002c6156ca06c5253cb31786f8a66401bd9933644e82561",
+      "modeldata/ciasny-r35-brake-index-e9425289/0029.bin": "0077f9d7393e78e9e13aabb3fff5567e0bee9b8b19303bed656b8521eae2e50d",
+      "modeldata/ciasny-r35-brake-index-e9425289/0030.bin": "31f1d2863d6784ca49126dc22921e2043bb126f874bb007cf5f4114e7c68a79f",
+      "modeldata/ciasny-r35-brake-index-e9425289/0031.bin": "fd6105e40bf11a05c686a5813367481d53efb3ee82200737a242c95cd6365e5b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0032.bin": "cb97731d7c9ab10a8662d89e020858bb92fb6914d455ccc60f5f70e8e4749d26",
+      "modeldata/ciasny-r35/0000.bin": "2d6112173294e31775b282ed2f55066276f18c28630d33a27eea488c15fb03a1",
+      "modeldata/ciasny-r35/0001.bin": "d722f57eb0ac5fa275e9408630f935b4906b113c080d604149f4dfc6e2213c66",
+      "modeldata/ciasny-r35/0002.bin": "ae26bdf36685904a3b4ccb36f9c7f23b557ba7dea4455a780330ca8eecd73492",
+      "modeldata/ciasny-r35/0003.bin": "90e71b58d58bc5684e0bd2af815c683b4178fa0f2f0b4b6a27f5bb015fc9fad2",
+      "modeldata/ciasny-r35/0004.bin": "29b22f85f10f4da78cf4edf5a85270eeff1504fa49d2f88f4ba9265cb2919be2",
+      "modeldata/ciasny-r35/0005.bin": "8be79fef88d29fe966fa1fe201a3a7b28b1e1b171762b498551faefe47f3b833",
+      "modeldata/ciasny-r35/0006.bin": "c4dd664aa57d463872754d23ae847185b2fc758c9fda4fb605d416b4543df6cf",
+      "modeldata/ciasny-r35/0007.bin": "d15a21c8a18926f26485fb54f19b6d6fec635636c038bf86043fe7e8bbcf9c58",
+      "modeldata/ciasny-r35/0008.bin": "1c40cc950fa692dc4415d4362625c53db06e7208228f2233a554a5c6e820270b",
+      "modeldata/ciasny-r35/0009.bin": "8f39f0eb630619240df6549bcab44d32ceca084349bf12190e6c4ba43db9406f",
+      "modeldata/ciasny-r35/0010.bin": "ce0a0396ccfcc06015f80af0ae4deff75f88aa5a549c0a65999ac383bceb02a9",
+      "modeldata/ciasny-r35/0011.bin": "69d29c22599922c55759842e2d9c9290548f4b6f1334048707394111a514df2f",
+      "modeldata/ciasny-r35/0012.bin": "461fa07629620238b38bed3f2b7089ebd19c0d927ad4315d9e2502fb4a48777f",
+      "modeldata/ciasny-r35/0013.bin": "a2ed78133a2c0d9d26f69112fce299b8ac40aa97daaf4ecd3c7c79e8113bf2db",
+      "modeldata/ciasny-r35/0014.bin": "4155bd9367e04031c46c24468178bf81b51a25c2da71a57d3619460d810cbfaf",
+      "modeldata/ciasny-r35/0015.bin": "18c83728e2d891c91c1ac92074b7822b821b602b59ee031c49f5231f13dae0fb",
+      "modeldata/ciasny-r35/0016.bin": "393858e96219b95a725d16424c9640da9f81fbc3d5de689fccea24866364146a",
+      "modeldata/ciasny-r35/0017.bin": "46338f4668b2d4d386cdbeb38f3e95feb2caaaa53d5c3193756720ca2fad8d4a",
+      "modeldata/ciasny-r35/0018.bin": "62b451f97bad65641533ec8606fbc0cfa30cb660885f916ccf96d774b50d43d0",
+      "modeldata/ciasny-r35/0019.bin": "1a7a787bf07aaae3fd81226e8c598f3f830f9c61f132b641a5f7ced994a2f8ab",
+      "modeldata/ciasny-r35/0020.bin": "7d19e5716b52733986e0fd4cdbcdce09e6566253809a7a36fad22300b3c1ef74",
+      "modeldata/ciasny-r35/0021.bin": "1c69a1efd12b54e4624a9596cdfcdadc7787eb04a5061d8a15450d01cbbe8606",
+      "modeldata/ciasny-r35/0022.bin": "fac186537487621af79c0f3f77d8e89f7cf4bd62a74792d99a127de84cf4195c",
+      "modeldata/ciasny-r35/0023.bin": "9a514770cdc4f67bbc4715ccd3a60f0c2b4932e960cf665dc809d3c575fec6a7",
+      "modeldata/ciasny-r35/0024.bin": "81fe87aed56b3a051f98861ab0bd2eb715f8df51e826d57e30a9d7066092c403",
+      "modeldata/ciasny-r35/0025.bin": "608e3c3308256a79ce55cf8ee6daecbc6252bd2134ad1121a0702544658bcee6",
+      "modeldata/ciasny-r35/0026.bin": "82fcad05371575f1bec32dc6af3d7bc3c092531d3403b6231cad2fed28d6de57",
+      "modeldata/ciasny-r35/0027.bin": "c16fe89986bce203d1bf51a42105aeeab6bee88ff29da07cb246af78e8165da9",
+      "modeldata/ciasny-r35/0028.bin": "d4813d754a5a529ef88d8436f4729183e99602c16acbbfd46d27042827bc4b0b",
+      "modeldata/ciasny-r35/0029.bin": "8599f9deb7b851506d158b2cd599a972b70d6151299639fbae3621790d06df4f",
+      "modeldata/ciasny-r35/0030.bin": "4ed7266691933f8bb4b099a1f1c9a79d9f3afd8678b34deb25d991ac84268e7f",
+      "modeldata/ciasny-r35/0031.bin": "0fee015a77b84d81b8cba7edb4ec8dba25464dc2f85a624c0c2ce0bfd21d570a",
+      "modeldata/manifest.json": "b86ee33ecef8cd54d7c3f9be0ec863b78e96812467705266bd4cf1013b2f2634",
+      "public/environments/downloads.json": "8a813b72082711b78987894623eec20d1a64dc2babd803b22dc08094ed194c6e",
+      "public/environments/roadside.json": "d5e319fe91d20528796cb04279631bc0f3411d4a78a491728cab7bd01ecb5d8b",
+      "public/environments/surfaces.json": "68e62919fd59407ed458c1ef3bcb944b76740135c50ce0947c3ec41f954ecc28",
+      "qa/cabin-preview/r35-cabin-contact-ao-static-faces.glb.gz": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
+      "qa/cabin-preview/r35-cabin-dashboard.glb.gz": "70036f4c17601909d4c382a0530501618dace139debb55cd966698e89b8b75f5",
+      "qa/cabin-preview/r35-cabin-shifter-cap-normals.glb.gz": "10fccffd8021ba242f576c03f3d9f6ae33575ef73720076fe5899922c638c0da",
+      "qa/cabin-preview/r35-contact-ao-static-faces-roughness-uv4.glb.gz": "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5",
+      "qa/cabin-preview/r35-exterior-cabin-proxy.glb.gz": "bd14ba078e08d762158fb3fcc225acae6d2369b7d2c1f2ad1a128f404147733e",
+      "scripts/fetch-environments.mjs": "7f2899eec65b863c218bc664a1f3d6efb1a521207090a48310556c7691454222",
+      "scripts/fetch-roadside.mjs": "1486461fee0a9cdf3ff395a9a48e3036dddc24ef34ab47030ef437cd3504bd7d",
+      "scripts/fetch-surfaces.mjs": "1210da91a380057f44d9689e77873d83f8ebd02ce67ca26f8604e3cdc582bea5",
+      "scripts/prepare-cabin.mjs": "a42ff74213172bc9a4dad013059e35a78bfe59b39c218d616a81602b4b27b727",
+      "scripts/prepare-films.mjs": "fe99c575964417d8fef8445f21e8493aad439bcf5ac986b5f4a10e54246af09f",
+      "scripts/prepare-models.mjs": "c17b01f570422d85f7dac48ab8c0679c2896ea676e9b7970fc379f6de929e9aa"
+    }
+  },
+  "candidate": {
+    "commit": "current",
+    "source": {
+      "contract": "r35-production-source-v2-with-index",
+      "sha256": "e03ab9c74732fb314acd73b70159c920297ae4466228a43dfc437bfde1fb197f",
+      "files": [
+        {
+          "path": "index.html",
+          "sha256": "b43ed9f13cdd0eba8a79ad8572482c88604eb1fb09162a686a3d8685cab7d08c"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "4d2bcfb70191f05aa9ad2a85de12c338d1adda68d501d7cc314d504ec57356a9"
+        },
+        {
+          "path": "package.json",
+          "sha256": "90f7ce7a5e6cdfd52c524540241044e706ccf2e11fc26155a30dc673022fd985"
+        },
+        {
+          "path": "server.mjs",
+          "sha256": "68c9558a01ef7afb9f1593f28512c768b78bbf357837237421dda12b03162912"
+        },
+        {
+          "path": "src/App.tsx",
+          "sha256": "c9e486b5f9cd6ad19de668cb809f4ce63d26f05bb832684b91965d9bb4b15e6e"
+        },
+        {
+          "path": "src/audio/r35AudioController.ts",
+          "sha256": "1c9a931efff69f28bf5ac51cfc25858b7028d442c70361d5c626e9b4ffbedc8f"
+        },
+        {
+          "path": "src/audio/r35Recording.ts",
+          "sha256": "32a038cbaad0332aaa5822e6f7166711ab84111d7fb713d1e4a42ea57ad0b0eb"
+        },
+        {
+          "path": "src/audio/useR35Audio.ts",
+          "sha256": "bb7ef09b975eb22bdf5b3717ae36ffa70a06cefeb4478c37599855c07548087c"
+        },
+        {
+          "path": "src/components/R35SoundPreview.tsx",
+          "sha256": "10c6ece85bc9ce852cacde170f4952ff1fd812911f4941f5b906dece6db2979c"
+        },
+        {
+          "path": "src/components/configurator/AssetDisclosure.tsx",
+          "sha256": "3c45aa827b50c1a2d7867ec056059178b9f53ab3893e17a2b95ff52ee1723373"
+        },
+        {
+          "path": "src/components/configurator/CabinPreviewControls.tsx",
+          "sha256": "7fed4c1bc2f98bc3b15c6a9807a0dad990e63238637ef736f1a5c61bb5628ef5"
+        },
+        {
+          "path": "src/components/configurator/ConfiguratorPanels.tsx",
+          "sha256": "766e3fb004685b48259b1c45bb867a0987ba3aded52a94d2aa690099c1d73cbd"
+        },
+        {
+          "path": "src/components/configurator/ModelDetails.tsx",
+          "sha256": "bdcd72fd4d4c1e4288f61dbb56a2ac116c23646267191a2dd13c427ad54ac317"
+        },
+        {
+          "path": "src/components/home/EditorialOverlap.tsx",
+          "sha256": "f9ec50498791ada6a288f4d811ec9d3ae3223d5c762d0805ee205bbfd3dabbe5"
+        },
+        {
+          "path": "src/components/home/ExpandingFilm.tsx",
+          "sha256": "6861b82db4ed5ff5b23f67ec4e23b54ae7263bc4bc81b5d94b87328b9bdf63c3"
+        },
+        {
+          "path": "src/components/home/Film.tsx",
+          "sha256": "332b29f9421fa734014eff9dc2f68a4b2c627650d8f799b04d3a369722512a42"
+        },
+        {
+          "path": "src/components/home/FilmDialog.tsx",
+          "sha256": "c7feb471e66e0e2a48c9893f53602b719bfe1d9fc0a96a9f4ff53efd98f4a950"
+        },
+        {
+          "path": "src/components/home/GtrWordmark.tsx",
+          "sha256": "92b5a1924bfff76208cafdbb204c42aec4894ee4236c3b24c730598dc62dc3ae"
+        },
+        {
+          "path": "src/components/home/HeritageJourney.tsx",
+          "sha256": "540e283da94e4b0a5530439cc553dda13efda005f2867e50896d4757d2f0d247"
+        },
+        {
+          "path": "src/components/home/HeroFilm.tsx",
+          "sha256": "085665c69d0fdfb86043f726f886ed63607fa1925c4d6baa57f6aec32c077d84"
+        },
+        {
+          "path": "src/components/home/ModelInvitations.tsx",
+          "sha256": "367a85aa384f3226a31c46bb39c77f8c1b62a3e6dae2bc8a81ce37a9f13beb03"
+        },
+        {
+          "path": "src/components/home/OpeningMark.tsx",
+          "sha256": "d71a887be144c1047e4499f1446820ce855133c2d2fb61f630873e8afc793689"
+        },
+        {
+          "path": "src/components/home/RearPixelDensity.tsx",
+          "sha256": "5b2115d38b2c85a9341e9bd13f2dc7d5199d12741e0f408b554cf65bc08c9460"
+        },
+        {
+          "path": "src/components/home/RearSignature.tsx",
+          "sha256": "887f0b0d4421235ca1b8d7e03f7ac185111121c831e8b5d8a713acc1f5428076"
+        },
+        {
+          "path": "src/components/home/RearVehicleScene.tsx",
+          "sha256": "096fd4eaf6d7a22aa82bd3c31e5e49c4169128469365b877c6ce65999c99ef6b"
+        },
+        {
+          "path": "src/components/home/campaignMedia.ts",
+          "sha256": "3187c3715f1ae287c5e74638a3372c199adb31e277d2b8254fee67b9f95a6c3c"
+        },
+        {
+          "path": "src/components/home/compileRearScene.ts",
+          "sha256": "005cea6e6aa8c26cf9d359adb280d74beb7f7d8f77407beb3793f8605400d31e"
+        },
+        {
+          "path": "src/components/home/homeReadiness.ts",
+          "sha256": "7e7d969952b99f19f52f99ad4f43c93687e23a10c2026e3432cb3378ae77d577"
+        },
+        {
+          "path": "src/components/home/motion.ts",
+          "sha256": "920c36b228069a4f6856bd9f373dcd933a56174cb07e5bd6fc11d37d54b75a41"
+        },
+        {
+          "path": "src/components/home/storyMedia.ts",
+          "sha256": "9d539ffa1d7add699dc7690ba19db8dc975f8b72e1b15dd40a503bac733f0d46"
+        },
+        {
+          "path": "src/components/home/useHomeMotion.ts",
+          "sha256": "25f55f399120444e563273fba46c9ef35cae13256b2bb61c7aa655213a283577"
+        },
+        {
+          "path": "src/components/home/useRearRenderPreparation.ts",
+          "sha256": "61924effc9cfc3ebdd01b57472191367abfb027cc0d72fd84713473c658e6cf1"
+        },
+        {
+          "path": "src/components/layout/SiteLayout.tsx",
+          "sha256": "5d755cc9c7ef2fe1fc58838f6952f770c0e5cf206d554ad78121eebe27766581"
+        },
+        {
+          "path": "src/components/three/CabinAttachment.tsx",
+          "sha256": "2dbf69b89b424e1c0734d907965b8674b7b5c35942ca47e9f39f8dc5296ddd57"
+        },
+        {
+          "path": "src/components/three/CabinRuntime.tsx",
+          "sha256": "173efd5bbb5bb957b8dbc531267eefe62ae81e07c25929765c184fd748368c3c"
+        },
+        {
+          "path": "src/components/three/CameraRig.tsx",
+          "sha256": "38ad1ee0010a8f653c891b2ff185065108dd5dfbc43bfd8ba7088bdfff923bf3"
+        },
+        {
+          "path": "src/components/three/CoastalWater.tsx",
+          "sha256": "67941e81315ea874ca530684456aa7723908210ae877770652d764bb10305c4f"
+        },
+        {
+          "path": "src/components/three/DemandOrbitControls.tsx",
+          "sha256": "cfc342d4ae338916d0e1a28c8280c1044e2dd2ccfa12ac1c218d73f757544b16"
+        },
+        {
+          "path": "src/components/three/DemandRenderBackpressure.tsx",
+          "sha256": "bfd7c56246ea4ce0f3628f9b66952c421036a3a1ef06341c341eae0c9a1e05ab"
+        },
+        {
+          "path": "src/components/three/EnvironmentBoundary.tsx",
+          "sha256": "04eb437173d1d8cf6b0cfb0dc1b27f479aae39b083a8c008c0cccee78ed2f7f9"
+        },
+        {
+          "path": "src/components/three/OwnedContactShadows.tsx",
+          "sha256": "1d334c7499b10586d17d7f66ebf3acc170122acc5719d85a430e42e85bc36d75"
+        },
+        {
+          "path": "src/components/three/RecoverableEnvironment.tsx",
+          "sha256": "72f4f494d13a50b7c4597af12dc36750b355803ce653ce7991791e92906af09b"
+        },
+        {
+          "path": "src/components/three/RoadsideRocks.tsx",
+          "sha256": "1866eb65373311a5158df865520b76925fc3e8aa0caf43a9d64750fecffe034b"
+        },
+        {
+          "path": "src/components/three/SceneBoundary.tsx",
+          "sha256": "19df7aaa485528849a08219606699976f3ea0c64022e88ab083ae04b898d02a2"
+        },
+        {
+          "path": "src/components/three/StageGeometry.tsx",
+          "sha256": "bd11c2dfb623d62aa52dbd1e7d3e2c4ca0b8f1e34e6a8c9032277a61fbc8d93f"
+        },
+        {
+          "path": "src/components/three/StudioLighting.tsx",
+          "sha256": "793f453137b1f5798cdb203708e80c267e8c775544a1751c7ad9597124b37295"
+        },
+        {
+          "path": "src/components/three/VehiclePixelDensity.tsx",
+          "sha256": "307622dfcee301d42864ae01fd30f3884ccf476112eafcf73c9bbfb641bdbea0"
+        },
+        {
+          "path": "src/components/three/VehicleScene.tsx",
+          "sha256": "bf34e2fd1b5c0f2567271780251e0ce553949325c58949678bd5b3d5430982e4"
+        },
+        {
+          "path": "src/components/three/asyncRendererDisposal.ts",
+          "sha256": "281e89a204d85dd806625770f317915ac022bfdbb3d2161c74163b8e18012e26"
+        },
+        {
+          "path": "src/components/three/cabinPreparationSteps.ts",
+          "sha256": "d96dc333c1b050f3f455dca0f73d45e081b80c1ef4ea383fb6103a52cbbbdd8a"
+        },
+        {
+          "path": "src/components/three/cabinPreview.ts",
+          "sha256": "52686f3df0c5e7cf3b9770cef5a2690f3df27722ace978face6e10942e40be12"
+        },
+        {
+          "path": "src/components/three/coastalGeometry.ts",
+          "sha256": "861d2e6ee1747d1f4b0cd7c5a63ab4f5f011bec2f7376052763ec3935aabd3e5"
+        },
+        {
+          "path": "src/components/three/createVehicleLoader.ts",
+          "sha256": "20399d6f48d3caecf37948ee1be4622373b3cc70f596b8ea7d04c4ce6de21ce0"
+        },
+        {
+          "path": "src/components/three/demandBufferResize.ts",
+          "sha256": "da2cea183a5472a4afae60383e3fa2a3c43bb138195d843ee7e9c37f1e4052c6"
+        },
+        {
+          "path": "src/components/three/demandFrameAdmission.ts",
+          "sha256": "9daae116023843422f760b8031261ddb26b691ab4aa7f3dc106a0baa421eee60"
+        },
+        {
+          "path": "src/components/three/functionalRenderObservation.ts",
+          "sha256": "ad1955b3951f9c41e0ac53ae834f39d87debad46614d8636679853886470f445"
+        },
+        {
+          "path": "src/components/three/keyboardControls.ts",
+          "sha256": "4f9861c64f442aa120901f39d8cd7f20c1012f011558d3d4a5e74ef697b42610"
+        },
+        {
+          "path": "src/components/three/materialAdapter.ts",
+          "sha256": "4e2c53e3749f0c055cd8ff1bff913ce918fb5f33a6863eb67370a714fc1dba12"
+        },
+        {
+          "path": "src/components/three/releasedOrbitDamping.ts",
+          "sha256": "65ad081c9ddccf22469b4f8ad1c89170b001c31738d1a894fca1d569ea3292a8"
+        },
+        {
+          "path": "src/components/three/rendererPreparation.ts",
+          "sha256": "cb3e4aef1fcc4a9e120ac9d35de657c88c94ad2f3924753c315df6a0e9284d1e"
+        },
+        {
+          "path": "src/components/three/rendererResourceOwnership.ts",
+          "sha256": "bdbc5c104b2b7528de9fbba9a3fc3b244dd42470ced7a5246385f569fc6e4f53"
+        },
+        {
+          "path": "src/components/three/sceneHelpers.ts",
+          "sha256": "98f31452ca23631cf1098fb193f554d26954d1daa254024db6f029c57ddc1474"
+        },
+        {
+          "path": "src/components/three/stageLayers.ts",
+          "sha256": "dda69e94a4c379912f5d940f81c3ae2a88006513a02b377319a2330efe798d75"
+        },
+        {
+          "path": "src/components/three/staticShadowPolicy.ts",
+          "sha256": "2ebf5c26482a445c7fd97d94e6d2c790b706f0d6cdfb490b0c8f0bc06c6db07f"
+        },
+        {
+          "path": "src/components/three/staticStudioBatching.ts",
+          "sha256": "e7da4cc2c05bc5011bbd5921216353f36c06e7a08d06449a04fb0be24c3b7063"
+        },
+        {
+          "path": "src/components/three/targetTransition.ts",
+          "sha256": "8dca91031168d50d9bbabe32cd4fb13c5234a49e10423a77f1358e821d48c40c"
+        },
+        {
+          "path": "src/components/three/types.ts",
+          "sha256": "db6ea7ad3d33a5d2f2b2db33fb34a063e54db5ecc412dd6a00fe3f73cf0b4f16"
+        },
+        {
+          "path": "src/components/three/useInteriorLook.ts",
+          "sha256": "bf287a659618ef7dd5338092913ba89a7f7e45dc953461f8c64243a9ad8705d1"
+        },
+        {
+          "path": "src/components/three/useReleasedOrbitDamping.ts",
+          "sha256": "063dfc84ee5967d9b06219d143696aa93ab8908d43589dfe71f00c4f2458f7a7"
+        },
+        {
+          "path": "src/components/three/useResidentCabinAsset.ts",
+          "sha256": "9887b6be0ab73d51da2af75f4787c613195386f397e54cf983c61656e1ba5aaf"
+        },
+        {
+          "path": "src/components/three/useSceneReadiness.ts",
+          "sha256": "5d739c002e065af21c8d23e6c48f2a634ae2cabf16ce02112a299dcf9d664dfc"
+        },
+        {
+          "path": "src/components/three/useVehicleAsset.ts",
+          "sha256": "ccac24d452d795a0d2484c29c6198219d07942382f6f9ebc9c714c48e71d6a83"
+        },
+        {
+          "path": "src/components/three/venueGeometry.ts",
+          "sha256": "d990dee7050ef8084a213f031ca5ec3b6a88564730407727319428d2b4e674b2"
+        },
+        {
+          "path": "src/components/ui/Drawer.tsx",
+          "sha256": "10bfd06db1460688be36a3c1fb6a837b4b58e75f727dea33c9a0ec68888a10eb"
+        },
+        {
+          "path": "src/components/ui/modalIsolation.ts",
+          "sha256": "da2daafe6abb8d017c16bc8022a8b5c0dfac632ed2a82f41f962e54e7686f526"
+        },
+        {
+          "path": "src/data/configuration.ts",
+          "sha256": "f3383e7f56f1389d40e12f7e59651255d3607793469885c174df2bbccfada4e3"
+        },
+        {
+          "path": "src/data/films.ts",
+          "sha256": "fc9ec8cd3c85e817100ce84b2418ae53561583c645a4fb7c09c96fb3b969c11e"
+        },
+        {
+          "path": "src/data/home-media-credits.json",
+          "sha256": "9ffc5b32eda5ce27ced2a1aca7ba7251fa9e05b4f15e88b144471eb7f0b695e7"
+        },
+        {
+          "path": "src/data/image-credits.json",
+          "sha256": "2ffdf39385cd00fd610908da2c2db8b2ecea472f9d047dbe61b309d7070ba1de"
+        },
+        {
+          "path": "src/data/models.ts",
+          "sha256": "ed009cbde0d363f71392e8ecc7058efe04d0c1dbe93b006f6374536035eed2b6"
+        },
+        {
+          "path": "src/data/specifications.json",
+          "sha256": "5ec0a2003cefee876ebc038eb684e6eccb2e772d8520377f8d005bb0231895af"
+        },
+        {
+          "path": "src/hooks/useAudio.tsx",
+          "sha256": "5a9a2df1911a64f253404a9e1cee12da721251d28d5ce03868e55f7bdeb3bf42"
+        },
+        {
+          "path": "src/hooks/useReducedMotion.ts",
+          "sha256": "5a4819bf97c6e5e001d397a27843cb2112e780e15f47afe4e8cb589260eefc35"
+        },
+        {
+          "path": "src/main.tsx",
+          "sha256": "ec25b38fd8ff4b673ed3083f48564dbe9887b0050882663af718cb463243bc29"
+        },
+        {
+          "path": "src/pages/ConfiguratorPage.tsx",
+          "sha256": "6c3b101d4510be47db246e9d8cd9d70dffa53e2ca9494f0b8ec1e2e5abd87e48"
+        },
+        {
+          "path": "src/pages/CreditsPage.tsx",
+          "sha256": "27607abc6455caf6d972f6064bdcb4e96fb12f19a7c78fa37a5d855efae054b1"
+        },
+        {
+          "path": "src/pages/HeritagePage.tsx",
+          "sha256": "3ab2ec1504b94a5b3c3eb8f5a62c0d2f0e11aafcc51f1b91f70cbba7d57d825e"
+        },
+        {
+          "path": "src/pages/HomePage.tsx",
+          "sha256": "1f6502641d231feef0f3c8351b6edaa4281e54c62e3ca6644804aef258139fe9"
+        },
+        {
+          "path": "src/pages/ModelsPage.tsx",
+          "sha256": "2ef82ee4578a4f5558002db549d8cd8fa0d194c13908f01861bb0b1c8c952fa4"
+        },
+        {
+          "path": "src/stores/configurator.ts",
+          "sha256": "9ff066ee6484446e8ab028fcc2cc47e38a35c9acd2b8d7e40de0f0f4162dd479"
+        },
+        {
+          "path": "src/styles.css",
+          "sha256": "08478d33f837d85c6ef974632ad8dd20d7d5f7305df70080d7d8a26268037920"
+        },
+        {
+          "path": "src/styles/cabin-preview.css",
+          "sha256": "5c236fc8cf4d8a21211fdc5dcec99c89fa4c19b47256880f20d5184d1ca5a586"
+        },
+        {
+          "path": "src/styles/home-audio.css",
+          "sha256": "0db71ba3fcd85325e5f31c7c2f1667194b20a176e1eee935793e4db612375703"
+        },
+        {
+          "path": "src/styles/home-film-entry.css",
+          "sha256": "15c909d3292e8090553c87b45b3bc519b15df492af3c03b31b115a3069f601cd"
+        },
+        {
+          "path": "src/styles/home-heritage.css",
+          "sha256": "e8c411efd911570432310c60a40f25fbb7507f77224b104fb5db8a769656c39c"
+        },
+        {
+          "path": "src/styles/home-hero-exit.css",
+          "sha256": "1ac9cc107b883e220cc1872d9469bf84aa8e2f3a279e25475fd60fd597668a5e"
+        },
+        {
+          "path": "src/styles/home-loading.css",
+          "sha256": "0bfb424169fa703cf6e605819b1fbdc159b914ed0c4e355679f63430cf378951"
+        },
+        {
+          "path": "src/styles/home-opening-cards.css",
+          "sha256": "69fdfd2ca3da7d7a153d19410d30d2d7ff86258a3b0f93329a6a9f3c93d22093"
+        },
+        {
+          "path": "src/styles/home-rear.css",
+          "sha256": "c80ffbfce6a5f28abd68913c9f445bb6b4e72cbbb1e2b55b31a554753b14eecf"
+        },
+        {
+          "path": "src/styles/home.css",
+          "sha256": "fe54dd3a198efbe93a87163a0fc2a7ab35d712380306405993f46f19c035acab"
+        },
+        {
+          "path": "vite.config.ts",
+          "sha256": "d410822515c0688e57633d36b7fd73d699532cd6b4cc2064119aa9a075a700a3"
+        }
+      ]
+    },
+    "model": {
+      "path": "/models/r35-cabin-selector-topology-699bea11.glb",
+      "bytes": 20241848,
+      "sha256": "699bea11244bcb695fee412bb4668d074c0330550c62385e235b417e78dba7b2",
+      "gzipBytes": 10228920,
+      "gzipSha256": "eff3624270a69066857be4c25b8ddd1e352cc5fc78b3041679f858e1323657be"
+    },
+    "buildFiles": {
+      "filmdata/gtr-detail/0000.bin": "25480b78ad835643761ff68c4c160f47681af963f4130989d50d6e36c8a173c4",
+      "filmdata/gtr-detail/0001.bin": "351a8c0849bebbe3a053237317ed400301b84f7da3140762bffd4928fd44106a",
+      "filmdata/gtr-detail/0002.bin": "ffc047c1b22b8918c4f59de3203717a7198ad805e3e555b8373cd3062cef42b6",
+      "filmdata/gtr-detail/0003.bin": "58ce5714ae86847c525a7d8022ac2c7efd0195ac803226ab533dc2d7882b483c",
+      "filmdata/gtr-detail/0004.bin": "21ab0555396f127b7d91951c90832245c37812ca01047005b8533e7f4de00f55",
+      "filmdata/gtr-detail/0005.bin": "223259a19379fe9c6c626f895af53f51268e05bac37e42339e48ee49a9f4839e",
+      "filmdata/gtr-detail/0006.bin": "ecf07dae0d9c430c359ccaa33175821f1a889f30cc487504082846b142b5218a",
+      "filmdata/gtr-detail/0007.bin": "31791b6f0d5fe2e4951709eda1f0634f85a4be65a35abb97e2afa33b8973141e",
+      "filmdata/gtr-detail/0008.bin": "cf26bfa25d52c784cb9515c741a474ad58f2986fccf949fd0a3925012df45f73",
+      "filmdata/gtr-detail/0009.bin": "045c10978f18bc00c8d3abb69d2e88af28ed3bd55caa7912a01dd1398046b923",
+      "filmdata/gtr-detail/0010.bin": "6f245b0a395db698ed773d02da2876f7013cb21e7fe72b9199af1a203fd5fa2b",
+      "filmdata/gtr-detail/0011.bin": "e737067a774a656627352d1a78305cacb8a076b588eb32b4524b9f95d54a6c2c",
+      "filmdata/gtr-detail/0012.bin": "6c94d48ed17e7141e0ebaf09ccb9b7199843171981e5309223b2fda05b58c797",
+      "filmdata/gtr-detail/0013.bin": "9bcfe58c4c5fd7895c27aba1044be3beab2565f7658334c79cdb568eee646ae5",
+      "filmdata/gtr-detail/0014.bin": "1c7c3a8ed87ec4f85fdc41dae7b6d1702a1b32e6d51c987ef0504c16809824d6",
+      "filmdata/gtr-hero/0000.bin": "4b012e526db2c3de3dde1d0054303f57b0d37cd2aa5b2c6500abd76c3af794ee",
+      "filmdata/gtr-hero/0001.bin": "75d64b916b6239266fc65858897ca6e0b1dd60a6d8d4e865edaeb6e3bdd6f41b",
+      "filmdata/gtr-hero/0002.bin": "f6a23c193b24fb1379e5954bc64e852ab49ff50978ff4c3e103ac969462b5f5b",
+      "filmdata/gtr-hero/0003.bin": "08814e658b79d8f50155fb558a5bcee0f9cebf2f0545e7e0b3df6a62b1d3f579",
+      "filmdata/gtr-hero/0004.bin": "d404c51a89a5631b26f78ab4b216cfabce9a3c3d7a5b173736e792ce6842dcf9",
+      "filmdata/gtr-hero/0005.bin": "e26f848e106ba032962e5b825dc111719be4d266ceef658d18d17cd300e46299",
+      "filmdata/gtr-hero/0006.bin": "475b8a864028e8650c80700a42115f6859d6c375e7cf0772f28f46358b08e1cf",
+      "filmdata/gtr-hero/0007.bin": "bcc9d234d78c05105e0912321333d215d029453857a096d8b8fa1fcb2a1f3e55",
+      "filmdata/gtr-hero/0008.bin": "ff338d67595789cbf77c5e571330d2f2d9054916dbd91cf44ae6921ab63f163d",
+      "filmdata/gtr-hero/0009.bin": "6a45d93b8aa9a5c6a2b4e608521838e48038bd1586c3e2cf5c0267b82182587e",
+      "filmdata/gtr-hero/0010.bin": "862ad9dee23806412995fb28c44dd9fe3ef438e1564fd8b7b40d9b5df9b5c556",
+      "filmdata/gtr-hero/0011.bin": "5e3e62a326a78999a156a75a162cab704ab1b752cae88aad7a5f1d54d9929832",
+      "filmdata/gtr-hero/0012.bin": "6ea1b69f431f55786e19e4a370faa575197a980a4404273c97c03daeb9ddf100",
+      "filmdata/gtr-hero/0013.bin": "92502a36b39f7c9f6e79174e1f0c78a574fa321a968f46119b6489dc4b25bb85",
+      "filmdata/manifest.json": "b47d0b203e9b9ba9483ba0ec59cc57bf53ec4f1689d4211d926901f57383de33",
+      "modeldata/ciasny-r35-brake-index-e9425289/0000.bin": "d0bdcddc42ae2a9fc6aea387a762bab7bd56460ee3637f02f8ab2f37bb7b05ee",
+      "modeldata/ciasny-r35-brake-index-e9425289/0001.bin": "6690008cf8507b9cbc359fb93cb5491b73c5d150fa51b4f401adfbc94e372f4b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0002.bin": "ca99dde3119ce2941aa7185c19aeadc0b3e5ef8eb01af0eb467b417e6bc3b1b6",
+      "modeldata/ciasny-r35-brake-index-e9425289/0003.bin": "fb5da2b1e08febc79f1674f8ed2b06144d9196073ca86812eb6a183944cf8b08",
+      "modeldata/ciasny-r35-brake-index-e9425289/0004.bin": "4bf2bd50eaa950dcbd3ab0dbcbb2fba3e1e7e9d28f06c22c4a6fa7d18d7a1c2b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0005.bin": "4635549e05632c0d2d0ccc155fd431559b46128414fc4497aaaa8d757393b4ba",
+      "modeldata/ciasny-r35-brake-index-e9425289/0006.bin": "99c943c96e1796b1d11d999665f1a5e9b0cf990b6c25d6d156ac2cda0bcaa935",
+      "modeldata/ciasny-r35-brake-index-e9425289/0007.bin": "c062605a03acec06e55c70bb0bd60e790a021d014613a7ff01cc44871577f9ae",
+      "modeldata/ciasny-r35-brake-index-e9425289/0008.bin": "7113652902199322f116b0b34ebbe173ca750aaac99eb4131dab09c4f0bd99a0",
+      "modeldata/ciasny-r35-brake-index-e9425289/0009.bin": "aba01b30dff70ed92c05e6e9e4a13979908b1de5a8d9470eac5bdbd2f32db1b0",
+      "modeldata/ciasny-r35-brake-index-e9425289/0010.bin": "558473213fc1b4e579c4982d7b52a430eaee869c0166ddaf71345f2866698475",
+      "modeldata/ciasny-r35-brake-index-e9425289/0011.bin": "7d1a386da71d66ebe3186e9c0af047b62e9dc4b9c7b79a864581a84b0ab7075c",
+      "modeldata/ciasny-r35-brake-index-e9425289/0012.bin": "2fdc6e74fa6f4cfc4b347c7d21edb4890db78485bb8cf35200892f48d2b73901",
+      "modeldata/ciasny-r35-brake-index-e9425289/0013.bin": "9b350edc403d59efebddfa4e74cb672b05278d30f45c7175d6eca4e7dd0337e1",
+      "modeldata/ciasny-r35-brake-index-e9425289/0014.bin": "eb1af8911799eb2ee8101a20fed1a52b0fb9096e33f3fb743e46cea18e03d74c",
+      "modeldata/ciasny-r35-brake-index-e9425289/0015.bin": "71a14550561dd396fe63ee31da949442b316a355107a5fa341a151767670d0b3",
+      "modeldata/ciasny-r35-brake-index-e9425289/0016.bin": "5a0d1c3ff5a213be9514b81182aa620d155694a6aa279f269c433e85071988b6",
+      "modeldata/ciasny-r35-brake-index-e9425289/0017.bin": "41d8cc69b493b338a661ada609e4386ed46600e9b09f581b7aacd1a994a44f59",
+      "modeldata/ciasny-r35-brake-index-e9425289/0018.bin": "d1f49a87d1254fb222be3807b9b0c33c1d0c2800b82caaab8cbf0f9f957db88b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0019.bin": "60a78e8f73c0e5d50f1604c3af59aa3169a8e45267294d558a78bd95d6429f53",
+      "modeldata/ciasny-r35-brake-index-e9425289/0020.bin": "d7105904cb21dea3b1fcaaac7546e5cc6f1647fddf862453bffb43d58882c855",
+      "modeldata/ciasny-r35-brake-index-e9425289/0021.bin": "06ef3d3b8ffc4b6bfad255e13845b878d8f8d962f1a5726664ed7cbc8003b84d",
+      "modeldata/ciasny-r35-brake-index-e9425289/0022.bin": "19ba563456d81a9d85395092e114040eb54dd55de1bd3eada0c4dd7a352cec84",
+      "modeldata/ciasny-r35-brake-index-e9425289/0023.bin": "f512e43dcc1fddc208a52268b7aa7b0f410c655d155e65f31e9870a88c25bd80",
+      "modeldata/ciasny-r35-brake-index-e9425289/0024.bin": "b6204fd8a13991aed842902061706b73699ad1788d338a27bf340d75d3f97f54",
+      "modeldata/ciasny-r35-brake-index-e9425289/0025.bin": "0f0089407febe2d56064ebad33f993973a2be134ccd97fb48d47dd57eb2bf1b3",
+      "modeldata/ciasny-r35-brake-index-e9425289/0026.bin": "0a4f8a4d322f5fea19b89f1f75e46ede2a4304843b3cf93b0ffdb9623f8a855d",
+      "modeldata/ciasny-r35-brake-index-e9425289/0027.bin": "279a22bff8161d545873d44baae4148af73dc70f968f8b3f26d4d473265c8c59",
+      "modeldata/ciasny-r35-brake-index-e9425289/0028.bin": "496ea779e2200bbac002c6156ca06c5253cb31786f8a66401bd9933644e82561",
+      "modeldata/ciasny-r35-brake-index-e9425289/0029.bin": "0077f9d7393e78e9e13aabb3fff5567e0bee9b8b19303bed656b8521eae2e50d",
+      "modeldata/ciasny-r35-brake-index-e9425289/0030.bin": "31f1d2863d6784ca49126dc22921e2043bb126f874bb007cf5f4114e7c68a79f",
+      "modeldata/ciasny-r35-brake-index-e9425289/0031.bin": "fd6105e40bf11a05c686a5813367481d53efb3ee82200737a242c95cd6365e5b",
+      "modeldata/ciasny-r35-brake-index-e9425289/0032.bin": "cb97731d7c9ab10a8662d89e020858bb92fb6914d455ccc60f5f70e8e4749d26",
+      "modeldata/ciasny-r35/0000.bin": "2d6112173294e31775b282ed2f55066276f18c28630d33a27eea488c15fb03a1",
+      "modeldata/ciasny-r35/0001.bin": "d722f57eb0ac5fa275e9408630f935b4906b113c080d604149f4dfc6e2213c66",
+      "modeldata/ciasny-r35/0002.bin": "ae26bdf36685904a3b4ccb36f9c7f23b557ba7dea4455a780330ca8eecd73492",
+      "modeldata/ciasny-r35/0003.bin": "90e71b58d58bc5684e0bd2af815c683b4178fa0f2f0b4b6a27f5bb015fc9fad2",
+      "modeldata/ciasny-r35/0004.bin": "29b22f85f10f4da78cf4edf5a85270eeff1504fa49d2f88f4ba9265cb2919be2",
+      "modeldata/ciasny-r35/0005.bin": "8be79fef88d29fe966fa1fe201a3a7b28b1e1b171762b498551faefe47f3b833",
+      "modeldata/ciasny-r35/0006.bin": "c4dd664aa57d463872754d23ae847185b2fc758c9fda4fb605d416b4543df6cf",
+      "modeldata/ciasny-r35/0007.bin": "d15a21c8a18926f26485fb54f19b6d6fec635636c038bf86043fe7e8bbcf9c58",
+      "modeldata/ciasny-r35/0008.bin": "1c40cc950fa692dc4415d4362625c53db06e7208228f2233a554a5c6e820270b",
+      "modeldata/ciasny-r35/0009.bin": "8f39f0eb630619240df6549bcab44d32ceca084349bf12190e6c4ba43db9406f",
+      "modeldata/ciasny-r35/0010.bin": "ce0a0396ccfcc06015f80af0ae4deff75f88aa5a549c0a65999ac383bceb02a9",
+      "modeldata/ciasny-r35/0011.bin": "69d29c22599922c55759842e2d9c9290548f4b6f1334048707394111a514df2f",
+      "modeldata/ciasny-r35/0012.bin": "461fa07629620238b38bed3f2b7089ebd19c0d927ad4315d9e2502fb4a48777f",
+      "modeldata/ciasny-r35/0013.bin": "a2ed78133a2c0d9d26f69112fce299b8ac40aa97daaf4ecd3c7c79e8113bf2db",
+      "modeldata/ciasny-r35/0014.bin": "4155bd9367e04031c46c24468178bf81b51a25c2da71a57d3619460d810cbfaf",
+      "modeldata/ciasny-r35/0015.bin": "18c83728e2d891c91c1ac92074b7822b821b602b59ee031c49f5231f13dae0fb",
+      "modeldata/ciasny-r35/0016.bin": "393858e96219b95a725d16424c9640da9f81fbc3d5de689fccea24866364146a",
+      "modeldata/ciasny-r35/0017.bin": "46338f4668b2d4d386cdbeb38f3e95feb2caaaa53d5c3193756720ca2fad8d4a",
+      "modeldata/ciasny-r35/0018.bin": "62b451f97bad65641533ec8606fbc0cfa30cb660885f916ccf96d774b50d43d0",
+      "modeldata/ciasny-r35/0019.bin": "1a7a787bf07aaae3fd81226e8c598f3f830f9c61f132b641a5f7ced994a2f8ab",
+      "modeldata/ciasny-r35/0020.bin": "7d19e5716b52733986e0fd4cdbcdce09e6566253809a7a36fad22300b3c1ef74",
+      "modeldata/ciasny-r35/0021.bin": "1c69a1efd12b54e4624a9596cdfcdadc7787eb04a5061d8a15450d01cbbe8606",
+      "modeldata/ciasny-r35/0022.bin": "fac186537487621af79c0f3f77d8e89f7cf4bd62a74792d99a127de84cf4195c",
+      "modeldata/ciasny-r35/0023.bin": "9a514770cdc4f67bbc4715ccd3a60f0c2b4932e960cf665dc809d3c575fec6a7",
+      "modeldata/ciasny-r35/0024.bin": "81fe87aed56b3a051f98861ab0bd2eb715f8df51e826d57e30a9d7066092c403",
+      "modeldata/ciasny-r35/0025.bin": "608e3c3308256a79ce55cf8ee6daecbc6252bd2134ad1121a0702544658bcee6",
+      "modeldata/ciasny-r35/0026.bin": "82fcad05371575f1bec32dc6af3d7bc3c092531d3403b6231cad2fed28d6de57",
+      "modeldata/ciasny-r35/0027.bin": "c16fe89986bce203d1bf51a42105aeeab6bee88ff29da07cb246af78e8165da9",
+      "modeldata/ciasny-r35/0028.bin": "d4813d754a5a529ef88d8436f4729183e99602c16acbbfd46d27042827bc4b0b",
+      "modeldata/ciasny-r35/0029.bin": "8599f9deb7b851506d158b2cd599a972b70d6151299639fbae3621790d06df4f",
+      "modeldata/ciasny-r35/0030.bin": "4ed7266691933f8bb4b099a1f1c9a79d9f3afd8678b34deb25d991ac84268e7f",
+      "modeldata/ciasny-r35/0031.bin": "0fee015a77b84d81b8cba7edb4ec8dba25464dc2f85a624c0c2ce0bfd21d570a",
+      "modeldata/manifest.json": "b86ee33ecef8cd54d7c3f9be0ec863b78e96812467705266bd4cf1013b2f2634",
+      "public/environments/downloads.json": "8a813b72082711b78987894623eec20d1a64dc2babd803b22dc08094ed194c6e",
+      "public/environments/roadside.json": "d5e319fe91d20528796cb04279631bc0f3411d4a78a491728cab7bd01ecb5d8b",
+      "public/environments/surfaces.json": "68e62919fd59407ed458c1ef3bcb944b76740135c50ce0947c3ec41f954ecc28",
+      "qa/cabin-preview/r35-cabin-contact-ao-static-faces.glb.gz": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
+      "qa/cabin-preview/r35-cabin-dashboard.glb.gz": "70036f4c17601909d4c382a0530501618dace139debb55cd966698e89b8b75f5",
+      "qa/cabin-preview/r35-cabin-selector-topology.glb.gz": "eff3624270a69066857be4c25b8ddd1e352cc5fc78b3041679f858e1323657be",
+      "qa/cabin-preview/r35-cabin-shifter-cap-normals.glb.gz": "10fccffd8021ba242f576c03f3d9f6ae33575ef73720076fe5899922c638c0da",
+      "qa/cabin-preview/r35-contact-ao-static-faces-roughness-uv4.glb.gz": "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5",
+      "qa/cabin-preview/r35-exterior-cabin-proxy.glb.gz": "bd14ba078e08d762158fb3fcc225acae6d2369b7d2c1f2ad1a128f404147733e",
+      "scripts/fetch-environments.mjs": "7f2899eec65b863c218bc664a1f3d6efb1a521207090a48310556c7691454222",
+      "scripts/fetch-roadside.mjs": "1486461fee0a9cdf3ff395a9a48e3036dddc24ef34ab47030ef437cd3504bd7d",
+      "scripts/fetch-surfaces.mjs": "1210da91a380057f44d9689e77873d83f8ebd02ce67ca26f8604e3cdc582bea5",
+      "scripts/prepare-cabin.mjs": "f9be7f1ab5821d6ab657852ad141e6042a9115a9eca938e435144725905e7fe8",
+      "scripts/prepare-films.mjs": "fe99c575964417d8fef8445f21e8493aad439bcf5ac986b5f4a10e54246af09f",
+      "scripts/prepare-models.mjs": "c17b01f570422d85f7dac48ab8c0679c2896ea676e9b7970fc379f6de929e9aa"
+    }
+  },
+  "helperPins": {
+    ".github/workflows/cabin-leather-comparison.yml": "bc29cc81ad4575cb5b5343ef7c27da215c73e17c9e5233c168a200c17385302a",
+    ".github/workflows/cabin-selector-topology-comparison.yml": "d3fed509b4cd7e2f06816d733033858911ab447174c6b2fc865ea72808ede359",
+    ".github/workflows/cabin-shifter-comparison.yml": "8107d92867f0f0bbbeb2659ef9859231a8644df3e0e48dddda45bb2653a4cb59",
+    "qa/cabin-fine-roughness-comparison-request.json": "53add7d9533c6f2216675bfc1b2e6b19b09130a2d9693d41e374755434ab8c52",
+    "qa/cabin-leather-comparison-request.json": "11bb4a657a9c0e40395c5faf3574353fc910f4bbf8ae21b0d3f13127b2956aea",
+    "qa/cabin-preview/r35-cabin-contact-ao-static-faces.glb.gz": "efe0ace781740e4b1cec685f02bf6b94eb6654447cccb96cc79769bfd01eee16",
+    "qa/cabin-preview/r35-cabin-selector-topology.glb.gz": "eff3624270a69066857be4c25b8ddd1e352cc5fc78b3041679f858e1323657be",
+    "qa/cabin-preview/r35-cabin-shifter-cap-normals.glb.gz": "10fccffd8021ba242f576c03f3d9f6ae33575ef73720076fe5899922c638c0da",
+    "qa/cabin-preview/r35-contact-ao-static-faces-roughness-uv4.glb.gz": "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5",
+    "qa/cabin-preview/shifter-normal/baseline-source.json": "4db42f15f487b31ddbee4d00e9583e3babb2e4cc1204f59aba17f0e7ad8a5cf6",
+    "qa/cabin-roughness-comparison-request.json": "392d163ec28e8917afab97c638250f8a8e10e69a5529ba564fd0b2df9152cc41",
+    "scripts/cabin-capture-readiness.mjs": "67accafd0ae7aa55620571318f910c607e9eaaf3b792ba6bc947e093cba80056",
+    "scripts/cabin-leather-comparison-policy.mjs": "94b58a9c01e9b02d525d1b5960b6b00d6d5d392c27541d86c52276f06028f068",
+    "scripts/cabin-leather-model-body.mjs": "36d645367ff8706aa6d721ff397b0d34a7ace32e704f6f89ac75f2fe4cfdc66c",
+    "scripts/cabin-preparation-checkpoint.mjs": "4fe9c71291c32e2363ce1efa892ded92c3348beadacad519e4c2daeff3563b34",
+    "scripts/cabin-preparation-network.mjs": "110ae32fe3008b7604fcb06cf5c2d8f1319596d9d6d9ba351170cd2543458d7e",
+    "scripts/cabin-preparation-observer.mjs": "eedea2eb6ae690266006d125fe7a2ce4ae155fdc138e33c6d3b2ac6ab921a85d",
+    "scripts/cabin-preparation-policy.mjs": "f62c8eed6f18e465ce98721961343ef54bb82d0a13f51e20c3e8eb8e0f3b37cb",
+    "scripts/cabin-preparation-readiness.generated.mjs": "9a3b09e5592058214e65715edc8f3c7039acf335fd9210c5b4428142cac343c6",
+    "scripts/cabin-resource-assertions.mjs": "de65490919f7cfd479ff35b02826ad66115d2ef8cc13776e2183ad02a8345bea",
+    "scripts/cabin-resource-observer.mjs": "c35d627df9e75868925c4c6cce53eb2071ac00ef1030d73b2e97513a10e22caf",
+    "scripts/cabin-runtime-body-ledger.mjs": "356ec061cdea91e834d9a060e1837d06e2cc2d9977bb4232aae3c0d2a239703b",
+    "scripts/cabin-selector-topology-closure.mjs": "041fdd161c9a138410898f9ddc2825c41c4fccd448076916e4ffbd25f88c6e25",
+    "scripts/cabin-selector-topology-comparison.mjs": "29f0ebb3a6ef8d628be9baa385dd570f34bb1e46fba1255d60b067053cd052fb",
+    "scripts/cabin-selector-topology-path.mjs": "77c79180c8c2f4f9f8a1380cf7695319fd2c01b1e8bfac8059625b18ac340002",
+    "scripts/cabin-selector-topology-policy.mjs": "b1a0fcb4ffb71e8493e58c291057744957852faa3af24f55b218dc20d2ca3fc1",
+    "scripts/cabin-shifter-closeup.mjs": "44fed84a4797c343690f0a610c029a58c3a2f277afd022bf0d8e65b45cc59daf",
+    "scripts/cabin-shifter-comparison-closure.mjs": "50320bd4c00ca7698e14a277246435ffa105289ae2b5f2e128818335d6aa774f",
+    "scripts/cabin-shifter-comparison-policy.mjs": "f4e995ab086441a378c13aabb62eedf1d2dfb1565ad7010bffb38d80c2bda61d",
+    "scripts/cabin-shifter-comparison.mjs": "06e8d013c4584bd7aa6a3a44d9fa5bfad5ab5171c1b2fce71a56555bda97767d",
+    "scripts/causal-cabin-model.mjs": "d2204b1d4e0a5168eed051dd6d964ee7c5dd170fe5cc5448f305c3c894057a16",
+    "scripts/causal-motion-preflight.mjs": "35215e7b7cbb376c492349c374101055622deb3cc32d991fc1a9e94703349143",
+    "scripts/collect-cabin-leather-comparison.mjs": "55b4447832474776d78b883ccd4daf4abdb9797ad70ff01159c244cc8e0eb0d8",
+    "scripts/diagnose-configurator-controls.mjs": "3261ecc44eb8ca0a473d4047229c832f6ce655ee065806c4060b508e9078ff0d",
+    "scripts/diagnose-dpr-motion.mjs": "b56d962004c4d0a65e0080eec5f9138c76f18e5b22602ea455bc5f64ecf97110",
+    "scripts/diagnose-render-backpressure-lifecycle.mjs": "6e9a43f7046ea586b79d91d7bea6e00f346ed72fd8ed13505e147e380a81a9c6",
+    "scripts/dpr-motion-observer.mjs": "ba4364c76024cd543435fd578b3fdc2def691f935ec30fbf7e3e20f669169aa8",
+    "scripts/dpr-motion-policy.mjs": "33a69e394835ac5592c54c4b1dd278c80b42f3fb8335ee2821a075d5d66ba36b",
+    "scripts/environment-pixel-comparison.mjs": "5994eaa59262f1093ec008e441e1247aaa62b20dca8842f254a4f34545d4d958",
+    "scripts/functional-capture-readiness.mjs": "816f8123344a2ab9f98a2469a81758266fc3d60d69545977dae3e19412a2dffb",
+    "scripts/raster-cost-evidence.mjs": "fe9444220bc251f2f71a3be16af24a08e3a2abc3876113b66e30e94bc3388a2a",
+    "scripts/render-backpressure-lifecycle-fixture.mjs": "33dfc365a070a4fceb1d1c73e0b6e7eb0c7b1c6c9a0842f75add6a65d138422d",
+    "scripts/selector-topology/selector-topology-provenance.json": "45a317ca3c932cc1c1c3f40635eefaf3b7b5f0d6414e3b7071336a57db9fb42b",
+    "scripts/selector-topology/verify-selector-topology.mjs": "039af0652ef0654180c88a011810d08a1a07633a1786f61de233a1147de99e69",
+    "scripts/shifter-normal/verify-cap-normals.mjs": "13906683bafd4d240167f422365ffde96df53bc6a2bd0e17d253a878bcb076ab",
+    "scripts/vehicle-preview-readiness.mjs": "7005f0acc335ddfd2784a3f3ce6f0f4615447636074bc85e36e30259a0cbd17a",
+    "scripts/verify-cabin-selector-topology-pairs.mjs": "571f23dcf38392ebb5f0b21990667bdac356111d3a4f1dacbd084b0d8bfc9cfb",
+    "scripts/verify-cabin-shifter-pairs.mjs": "84bb99eb15d496948688e470c42916d661962d5c37c3ba70eac615ca062d4c98",
+    "tests/cabin-fine-roughness-comparison.node.mjs": "60715d2da793dd439896fdaf3d29c7a2857d27eec24acb2e34f25e000fda5e14",
+    "tests/cabin-leather-comparison.node.mjs": "6983e253bf1a1c6e3410ab04bda2e5e1f79137fa7279637f6d12928a00dcde2e",
+    "tests/cabin-roughness-comparison.node.mjs": "d46f295f31a61875bbe1bbd7cf17c96a1ca4878569f7b99596585d6b94701726",
+    "tests/cabin-selector-topology-verifier.node.mjs": "3f97b5c51515ce96e484a24d9c872a3a9327f326f6762804ff9c71b541397736",
+    "tests/cabin-selector-topology.node.mjs": "274bc5605bfb851e67988cc415360408cfbbed96c96f5c6a96e773d660b1501a",
+    "tests/cabin-shifter-comparison.node.mjs": "4b00eab4d5224a329b861cd3ebc941a4afb314512f3012a53811ff10ff6faee8",
+    "tests/fixtures/cabin-selector-topology-evidence.mjs": "2ddd878b7c2097b073c845cdc9436bc9ad47e1c4487381c848faed693170f0f6"
+  }
+}
