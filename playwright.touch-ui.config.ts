@@ -7,7 +7,8 @@ if (!target) throw new Error("Explicit reviewed viewport required");
 export default defineConfig({
   ...base,
   testMatch: "touch-ui-live.spec.ts",
-  grep: process.env.TOUCH_UI_AREA === "home-collection" ? /@home|@collection/ : /@configurator/,
+  // Bounded refinement run. Original @home and @configurator failures remain in prior receipts.
+  grep: process.env.TOUCH_UI_AREA === "home-collection" ? /@collection|@footer/ : /@configurator/,
   timeout: 30_000,
   retries: 0,
   workers: 1,

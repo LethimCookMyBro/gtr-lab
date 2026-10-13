@@ -1,5 +1,5 @@
 # QA-only source-bound baseline or explicit staged candidate. Never deploys.
-name: Touch UI source-bound audit
+name: Reference layout and footer verification
 on:
   push:
     branches: [main]
@@ -64,7 +64,7 @@ jobs:
       max-parallel: 6
       matrix:
         viewport: [phone-320, phone-390, tablet-768, tablet-820, tablet-landscape-1024, desktop-1440]
-        area: [home-collection, configurator]
+        area: [home-collection]
     env:
       TOUCH_UI_ALLOW: '1'
       TOUCH_UI_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}

@@ -28,7 +28,7 @@ test('candidate uses separately checked-in exact source and fixed CI-only origin
 });
 test('active UI cleanup request is the independently reviewed exact candidate',async()=>{
   const active=JSON.parse(await readFile('qa/touch-ui-live-request.json','utf8'));
-  assert.deepEqual(active,{version:1,allow:true,contract:TOUCH_UI_CONTRACT,mode:'candidate-ci',target:{origin:'http://127.0.0.1:4173',sourceTree:'36bc9bb5973d42b4090df387a39d289c0a96cf50affca5a1371875006ed6573f',sourceFiles:104}});
+  assert.deepEqual(active,{version:1,allow:true,contract:TOUCH_UI_CONTRACT,mode:'candidate-ci',target:{origin:'http://127.0.0.1:4173',sourceTree:'79671bdf0f7d201425c4e32621927c0b43b687f1ce0111ed09ce480c4bcc0298',sourceFiles:104}});
   const {applicationIdentity}=await import('../scripts/diagnose-dpr-motion.mjs');
   assertTouchSource(await applicationIdentity('.'),active);
   validateTouchCI(active,{...env(),TOUCH_UI_COMMIT_MESSAGE:'QA [stage-touch-ui]'});
@@ -46,9 +46,9 @@ test('touch receipts require trusted native start/move/end and observed directio
   assert.deepEqual(assessTouchGesture({...gesture(),kind:'no-scroll-required',before:{position:0,max:0},after:undefined}),[]);
   assert.deepEqual(assessTouchGesture({...gesture(),direction:'backward',before:{position:220,max:1000},after:{position:0}}),[]);
 });
-test('workflow isolates independent page jobs, reuses one build, and has no release writes',async()=>{
+test('refinement workflow bounds six reference/footer jobs, reuses one build, and has no release writes',async()=>{
   const workflow=await readFile('.github/workflows/touch-ui-live.yml','utf8');
-  for(const required of ['fail-fast: false','max-parallel: 6','area: [home-collection, configurator]','actions/download-artifact@v4','contents: read','if: always()']) assert.ok(workflow.includes(required));
+  for(const required of ['fail-fast: false','max-parallel: 6','area: [home-collection]','actions/download-artifact@v4','contents: read','if: always()']) assert.ok(workflow.includes(required));
   assert.doesNotMatch(workflow,/contents: write|git push|railway (?:up|deploy)/);
   const config=await readFile('playwright.touch-ui.config.ts','utf8');
   assert.match(config,/retries: 0/);assert.match(config,/timeout: 30_000/);assert.match(config,/request.mode === "candidate-ci"/);assert.match(config,/timeout:120_000/);
@@ -56,6 +56,7 @@ test('workflow isolates independent page jobs, reuses one build, and has no rele
 test('browser harness reuses established ledger/readiness and leaves real assets and animation native',async()=>{
   const helper=await readFile('e2e/helpers/touch-ui-audit.ts','utf8'),spec=await readFile('e2e/touch-ui-live.spec.ts','utf8');
   for(const required of ['createTouchRuntimeEvidence','cabin-preparation-readiness.generated.mjs','budgets.initial','remainingBudget(initial)','Input.dispatchTouchEvent','event.isTrusted','animations:"allow"','scale:"css"']) assert.ok(helper.includes(required));
+  assert.ok((await readFile('playwright.touch-ui.config.ts','utf8')).includes('/@collection|@footer/'));
   for(const forbidden of ['page.route(','route.fulfill(','force:true','animations:"disabled"','createAppServer(','createServer(','__r35PreparationDecode']) assert.ok(!helper.includes(forbidden));
   assert.ok(spec.includes('continueHomeWithout3D(page)'));assert.ok(spec.includes('width:720'));assert.ok(spec.includes('home-footer'));assert.ok(spec.includes('Physical') === false);
 });

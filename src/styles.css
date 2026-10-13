@@ -2506,6 +2506,7 @@ p {
 
 /* Missing assets need only content and navigation, not reserved scene controls. */
 .configurator[data-asset-state="missing"] {
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto;

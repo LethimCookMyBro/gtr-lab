@@ -136,14 +136,21 @@ describe("Nissan Formula E catalog correction", () => {
     expect(within(link).getByText("Reference image unavailable")).toBeTruthy();
     expect(document.querySelectorAll(".model-band img")).toHaveLength(5);
   });
-  it("shows source-backed details and explicit unknown torque, never zero", () => {
+  it("shows source-backed figures and retains unknown torque in the source notes", () => {
     const model = getModel("formula-e");
     expect(model).toBeDefined();
     if (!model) return;
     const { container } = wrapper(<ModelDetails model={model} />);
     expect(container.querySelector("img")).toBeNull();
-    expect(screen.getByText("Reference image unavailable")).toBeTruthy();
-    expect(screen.getByText("Not specified in source")).toBeTruthy();
+    expect(screen.queryByText("Reference image unavailable")).toBeNull();
+    expect(screen.queryByText("Not specified in source")).toBeNull();
+    expect(container.querySelectorAll(".key-figures > div")).toHaveLength(1);
+    expect(
+      screen.getByText("Torque and transmission details are not specified in the cited sources."),
+    ).toBeTruthy();
+    expect(
+      screen.getAllByText("No rights-cleared reference image or licensed 3D model has been integrated."),
+    ).toHaveLength(1);
     expect(screen.getByText("Maximum traction power")).toBeTruthy();
     expect(screen.getByText("Powertrain")).toBeTruthy();
     expect(screen.queryByText("Engine")).toBeNull();

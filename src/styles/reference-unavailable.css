@@ -23,17 +23,6 @@
   line-height: 1.5;
   color: #b9c2c8;
 }
-.model-details > .reference-unavailable-note {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #b9c2c8;
-}
-.key-figures .unknown-figure {
-  font-size: 18px;
-  line-height: 1.5;
-  letter-spacing: 0;
-}
 .home-invitations .home-model-invitation > .reference-unavailable {
   position: absolute;
   inset: 0;

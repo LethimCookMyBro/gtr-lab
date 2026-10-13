@@ -155,6 +155,7 @@ it("uses one shared missing-asset layout with no reserved toolbar or paint rows"
     return result;
   }
   expect(properties()).toMatchObject({
+    "min-height": "0",
     display: "grid",
     "grid-template-rows": "auto minmax(0, 1fr) auto",
   });

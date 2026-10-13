@@ -44,6 +44,18 @@ async function assertDrawer(audit:TouchUiAudit,label:string) {
   return state;
 }
 
+async function assertReferenceViewport(audit:TouchUiAudit,label:string) {
+  const selectors=['.config-information-header','.scene-stage','.scene-bottom','.config-header .back-link','.config-header .brand','.config-header button','.switch-model','.asset-status'];
+  const sample=await audit.geometry(label,selectors);
+  expect(sample.scrollY,`${label}: unrequested page scroll`).toBeLessThanOrEqual(1);
+  expect(sample.documentHeight,`${label}: unnecessary fixed minimum page height`).toBeLessThanOrEqual(sample.height+1);
+  for(const selector of selectors) expect(sample.nodes.some(node=>node.selector===selector),`${label}: missing ${selector}`).toBe(true);
+  for(const node of sample.nodes) {
+    expect(node.rect.y,`${label}: ${node.text} top`).toBeGreaterThanOrEqual(-1);
+    expect(node.rect.bottom,`${label}: ${node.text} bottom`).toBeLessThanOrEqual(sample.height+1);
+  }
+}
+
 test('@home opening, menu, real gestures, invitation and footer views',async({page},info)=>{
   const audit=active.get(info)!;await audit.navigate('/');
   const initialGate=await page.locator('.home-loading-gate').getAttribute('data-state');
@@ -69,6 +81,20 @@ test('@home opening, menu, real gestures, invitation and footer views',async({pa
   await expect.poll(()=>page.evaluate(()=>scrollY),{timeout:5_000}).toBeLessThan(2);
 });
 
+test('@footer independent footer navigation and five-second Back to top',async({page},info)=>{
+  const audit=active.get(info)!;await audit.navigate('/');await continueHomeWithout3D(page);
+  const footer=page.locator('.home-footer');await footer.scrollIntoViewIfNeeded();
+  const navigation=footer.getByRole('navigation',{name:'Footer navigation'});
+  await expect(navigation.getByRole('link')).toHaveCount(3);
+  for(const [name,href] of [['All models','/models'],['Heritage','/heritage'],['Credits & sources','/credits']]) await expect(navigation.getByRole('link',{name,exact:true})).toHaveAttribute('href',href);
+  await audit.geometry('independent-footer',['.home-footer','.home-footer nav','.home-footer-link']);
+  await audit.capture('independent-footer');
+  const before=await page.evaluate(()=>scrollY);expect(before).toBeGreaterThan(2);
+  const started=performance.now();await audit.tap(footer.getByRole('button',{name:'Back to top',exact:true}));
+  await expect.poll(()=>page.evaluate(()=>scrollY),{timeout:5_000}).toBeLessThan(2);
+  audit.observations.push({label:'independent-back-to-top',started,completed:performance.now(),before,after:await page.evaluate(()=>scrollY),scope:'Separate footer-only functional proof; does not replace the original whole-page30s result'});
+});
+
 test('@collection collection pictures, bounds, touch navigation and mixed breakpoint',async({page},info)=>{
   const audit=active.get(info)!;await audit.navigate('/models');
   await expect(page.getByRole('heading',{name:'Choose your expression.'})).toBeVisible();
@@ -90,7 +116,7 @@ test('@collection collection pictures, bounds, touch navigation and mixed breakp
   for(const name of ['Model detail','Switch model']) { await expect(page.getByRole('button',{name,exact:true})).toBeVisible();await expect(page.getByRole('button',{name,exact:true})).toBeEnabled(); }
   await expect(page.getByText('Photo reference · 3D asset pending',{exact:true})).toBeVisible();
   await expect(page.getByRole('link',{name:'Back to models',exact:true})).toBeVisible();
-  await audit.capture('reference-configurator');
+  await assertReferenceViewport(audit,'reference-viewport');await audit.capture('reference-configurator');
   const {trigger,dialog}=await openDrawer(audit,'Model detail');
   await assertDrawer(audit,'reference-drawer-isolation');await audit.capture('reference-model-detail');
   await audit.tap(dialog.getByRole('button',{name:'Close panel',exact:true}));await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();
@@ -105,16 +131,19 @@ test('@collection Formula E compact specification details',async({page},info)=>{
   await expect(page.locator('.reference-view img,.reference-view picture')).toHaveCount(0);
   await expect(page.locator('.reference-unavailable-label')).toHaveText('Reference image unavailable');
   await expect(page.locator('.reference-unavailable-context')).toHaveText('2025/26 Season 12 · GEN3 Evo');
-  await audit.capture('formula-e-reference');
+  await assertReferenceViewport(audit,'formula-e-viewport');await audit.capture('formula-e-reference');
   const {trigger,dialog}=await openDrawer(audit,'Model detail');
   const details=dialog.locator('.model-details');
-  await expect(details.locator('p.reference-unavailable-note')).toHaveText('Reference image unavailable');
+  await expect(details.locator('p.reference-unavailable-note')).toHaveCount(0);
+  await expect(details.getByText('No rights-cleared reference image or licensed 3D model has been integrated.',{exact:true})).toHaveCount(1);
   await expect(details.locator('.reference-unavailable,img,picture,canvas')).toHaveCount(0);
   await expect(details.locator('.spec-context')).toHaveText('2025/26 Season 12 · GEN3 Evo');
   await expect(details.locator('.detail-lead')).toHaveText('Nissan’s battery-electric single-seater for Formula E competition.');
   await expect(details.getByText('Maximum traction power',{exact:true})).toBeVisible();
   await expect(details.locator('.key-figures strong').first()).toHaveText('350kW');
-  await expect(details.locator('.unknown-figure')).toHaveText('Not specified in source');
+  await expect(details.locator('.unknown-figure')).toHaveCount(0);
+  await expect(details.locator('.key-figures > div')).toHaveCount(1);
+  await expect(details.getByText('Torque and transmission details are not specified in the cited sources.',{exact:true})).toHaveCount(1);
   await expect(details.getByRole('link',{name:'Primary source 1',exact:true})).toHaveAttribute('href','https://global.nissannews.com/en/releases/nissan-formula-e-press-kit');
   await expect(details.getByRole('link',{name:'Primary source 2',exact:true})).toHaveAttribute('href','https://www.fia.com/news/formula-e-and-fia-unveil-gen3-evo-race-car-capable-0-60mph-just-182s');
   await assertDrawer(audit,'formula-e-details');await audit.capture('formula-e-compact-details');

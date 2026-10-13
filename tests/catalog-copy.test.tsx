@@ -103,12 +103,16 @@ describe("concise, capability-specific catalog actions", () => {
 });
 
 describe("compact Formula E details", () => {
-  it("replaces the image-shaped placeholder with one small line and one specification context", () => {
+  it("uses one existing availability disclosure and one specification context", () => {
     const model = getModel("formula-e")!;
     const { container } = render(<ModelDetails model={model} />);
-    const missing = screen.getByText("Reference image unavailable");
-    expect(missing.tagName).toBe("P");
-    expect(missing.className).toBe("reference-unavailable-note");
+    expect(screen.queryByText("Reference image unavailable")).toBeNull();
+    expect(container.querySelector(".reference-unavailable-note")).toBeNull();
+    expect(
+      screen.getAllByText(
+        "No rights-cleared reference image or licensed 3D model has been integrated.",
+      ),
+    ).toHaveLength(1);
     expect(container.querySelector(".reference-unavailable, img")).toBeNull();
     expect(screen.getAllByText(model.modelYear)).toHaveLength(1);
     expect(container.querySelector(".spec-context")?.textContent).toBe(
@@ -122,7 +126,7 @@ describe("compact Formula E details", () => {
     ).not.toMatch(/\.model-details\s*>\s*\.reference-unavailable\s*\{/);
   });
 
-  it("retains every source-backed value, note, unknown and primary-source link", () => {
+  it("retains every source-backed value, note and primary-source link", () => {
     const model = getModel("formula-e")!;
     const { container } = render(<ModelDetails model={model} />);
     expect(container.querySelector(".key-figures")?.textContent).toContain(
@@ -130,7 +134,6 @@ describe("compact Formula E details", () => {
     );
     for (const text of [
       model.powerLabel!,
-      "Not specified in source",
       model.engine,
       model.drive,
       model.transmission,
@@ -139,6 +142,10 @@ describe("compact Formula E details", () => {
     ]) {
       expect(screen.getByText(text)).toBeTruthy();
     }
+    expect(container.querySelectorAll(".key-figures > div")).toHaveLength(1);
+    expect(container.querySelector(".unknown-figure")).toBeNull();
+    expect(screen.queryByText("Not specified in source")).toBeNull();
+    expect(screen.queryByText("Torque", { exact: true })).toBeNull();
     const sources = container.querySelectorAll(".detail-sources a");
     expect(Array.from(sources, (link) => link.getAttribute("href"))).toEqual(
       model.sourceUrls,
@@ -147,6 +154,30 @@ describe("compact Formula E details", () => {
       expect(link.textContent).toMatch(/Primary source/);
       expect(link.getAttribute("rel")).toBe("noreferrer");
     }
+  });
+
+  it.each(models.filter((model) => model.torqueValue !== null))(
+    "retains published or estimated torque for $id",
+    (model) => {
+      const { container } = render(<ModelDetails model={model} />);
+      const figures = container.querySelectorAll(".key-figures > div");
+      expect(figures).toHaveLength(2);
+      expect(figures[1].querySelector("strong")?.textContent).toBe(
+        `${model.torqueValue}${model.torqueUnit}`,
+      );
+      expect(figures[1].querySelector("span")?.textContent).toBe(
+        model.outputIsEstimate ? "Estimated torque" : "Published torque",
+      );
+    },
+  );
+
+  it("distinguishes a provided zero from an unavailable torque value", () => {
+    const model = { ...getModel("nismo")!, torqueValue: 0 };
+    const { container } = render(<ModelDetails model={model} />);
+    expect(container.querySelectorAll(".key-figures > div")).toHaveLength(2);
+    expect(container.querySelectorAll(".key-figures strong")[1].textContent).toBe(
+      `0${model.torqueUnit}`,
+    );
   });
 
   it("preserves photographed model descriptions, captions and asset provenance", () => {

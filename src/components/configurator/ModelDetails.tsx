@@ -1,18 +1,13 @@
 import { ArrowUpRight } from "lucide-react";
 import type { VehicleModel } from "../../data/models";
-import "../../styles/reference-unavailable.css";
 export function ModelDetails({ model }: { model: VehicleModel }) {
   return (
     <div className="model-details">
-      {model.image ? (
+      {model.image && (
         <>
           <img src={model.image} alt={model.imageCaption} />
           <p className="photo-caption">{model.imageCaption}</p>
         </>
-      ) : (
-        <p className="reference-unavailable-note">
-          Reference image unavailable
-        </p>
       )}
       <p className="detail-lead">{model.description}</p>
       {model.asset.referenceNote && (
@@ -29,23 +24,17 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
               (model.outputIsEstimate ? "Estimated power" : "Published power")}
           </span>
         </div>
-        <div>
-          {model.torqueValue === null ? (
-            <strong className="unknown-figure">Not specified in source</strong>
-          ) : (
+        {model.torqueValue !== null && (
+          <div>
             <strong>
               {model.torqueValue}
               <small>{model.torqueUnit}</small>
             </strong>
-          )}
-          <span>
-            {model.torqueValue === null
-              ? "Torque"
-              : model.outputIsEstimate
-                ? "Estimated torque"
-                : "Published torque"}
-          </span>
-        </div>
+            <span>
+              {model.outputIsEstimate ? "Estimated torque" : "Published torque"}
+            </span>
+          </div>
+        )}
       </div>
       <p className="spec-context">{model.modelYear}</p>
       <dl>
