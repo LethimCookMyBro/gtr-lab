@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "current-render-cost-four-cell-v1",
+  "sourceCommit": "28f586ce35b4441254c10583fc7bc1da3265a106",
+  "sourceTree": "7632e86545bdd559e38cac1133245b5b284b5bbb1b97d2fc6100ad66d021011b",
+  "cells": [
+    "studio-standard",
+    "studio-reduced",
+    "night-standard",
+    "night-reduced"
+  ],
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "deviceScaleFactor": 1,
+  "reducedMotion": "reduce",
+  "budgets": {
+    "availabilityMs": 90000,
+    "functionalMs": 15000,
+    "captureMs": 45000
+  },
+  "retries": 0
+}

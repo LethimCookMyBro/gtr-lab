@@ -1,0 +1,85 @@
+# PRIVATE FROZEN CANDIDATE: the request is disabled. Publication and activation are separate approvals.
+name: Current source render-cost discriminator
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - qa/current-render-cost-request.json
+permissions:
+  contents: read
+concurrency:
+  group: current-render-cost-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  four-cells:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[stage-current-render-cost]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: 'true'
+      R35_ALLOW_CURRENT_RENDER_COST: '1'
+      R35_RENDER_COST_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+      R35_RENDER_COST_CELL: studio-standard
+      R35_APP_ROOT: ${{ github.workspace }}/application
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: harness
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: application
+          ref: 28f586ce35b4441254c10583fc7bc1da3265a106
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reject disabled or non-current request before dependency setup
+        working-directory: harness
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { authorizeRun, verifySources } from './scripts/current-render-cost-policy.mjs';
+          authorizeRun(JSON.parse(readFileSync('qa/current-render-cost-request.json')), process.env);
+          await verifySources(process.env.R35_APP_ROOT);
+          NODE
+      - run: npm ci
+        working-directory: application
+      - name: Test exact source, observer, prefixes, deadlines and censored evidence
+        working-directory: harness
+        run: node --test tests/current-render-cost/*.node.mjs
+        env:
+          R35_TEST_APP_ROOT: ${{ github.workspace }}/application
+      - run: npm run build
+        working-directory: application
+        timeout-minutes: 8
+      - run: node node_modules/playwright/cli.js install --with-deps chromium
+        working-directory: application
+        timeout-minutes: 5
+      - name: Four fresh browser processes on one runner, no retries or success filtering
+        working-directory: harness
+        timeout-minutes: 49
+        run: |
+          status=0
+          for cell in studio-standard studio-reduced night-standard night-reduced; do
+            if timeout --signal=TERM --kill-after=10s 12m env R35_RENDER_COST_CELL="$cell" node scripts/current-render-cost-runner.mjs; then
+              printf '%s completed\n' "$cell"
+            else
+              status=1
+              printf '%s failed or was censored; retain its report and continue the other fixed cells\n' "$cell"
+            fi
+          done
+          exit "$status"
+      - name: Preserve missing, failed and completed cells in the comparison
+        if: always()
+        working-directory: harness
+        run: node scripts/current-render-cost-compare.mjs results results/comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-render-cost-four-cells-${{ github.sha }}
+          path: harness/results/
+          retention-days: 14
+          if-no-files-found: warn
