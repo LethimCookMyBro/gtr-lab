@@ -125,7 +125,39 @@ test("retired GT500 route explains the correction without a silent redirect", as
   },
 ] as const;
 
+// The requested UI subtraction replaces disabled unavailable controls with DOM
+// absence. Reverse only this exact assertion hunk before historical comparison;
+// no navigation, initialization budget, or other assertion may disappear.
+const reviewedUiSubtraction = {
+  before: String.raw`  await expect(pending).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Pearl White", exact: true }),
+  ).toBeDisabled();
+  await pending.click();`,
+  after: String.raw`  await expect(pending).toBeVisible();
+  await expect(page.locator(".config-toolbar, .paint-rail")).toHaveCount(0);
+  for (const name of [
+    "Camera",
+    "Environment",
+    "Lights",
+    "Rotate",
+    "Pearl White",
+  ]) {
+    await expect(page.getByRole("button", { name, exact: true })).toHaveCount(
+      0,
+    );
+  }
+  await pending.click();`,
+};
+
 export function restorePreCatalogNavigation(source: string): string {
+  const uiOccurrences = source.split(reviewedUiSubtraction.after).length - 1;
+  if (uiOccurrences > 1) throw new Error("Duplicate reviewed UI subtraction");
+  if (uiOccurrences === 1)
+    source = source.replace(
+      reviewedUiSubtraction.after,
+      reviewedUiSubtraction.before,
+    );
   for (const { name, before, after } of reviewedCatalogChanges) {
     const occurrences = source.split(after).length - 1;
     if (occurrences !== 1) {

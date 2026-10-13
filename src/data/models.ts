@@ -105,7 +105,7 @@ const editorial: Record<
     shortName: "Formula E",
     tagline: "Electric racing, a different discipline.",
     description:
-      "Nissan’s battery-electric single-seater for the 2025/26 Formula E season. This GEN3 Evo entry is presented through verified specifications while suitable visual assets remain unavailable.",
+      "Nissan’s battery-electric single-seater for Formula E competition.",
     category: "Track",
     imagePosition: "50% 50%",
   },

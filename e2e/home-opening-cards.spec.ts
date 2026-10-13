@@ -355,9 +355,20 @@ test("model card borders stay inside their grid tracks without overlapping", asy
   // Lazy images outside the viewport must be visited before awaiting decode.
   for (const card of await lineup.locator("a").all()) {
     await card.scrollIntoViewIfNeeded();
-    await card
-      .locator("img")
-      .evaluate((image: HTMLImageElement) => image.decode());
+    const experience = await card.getAttribute("data-experience");
+    if (experience === "specifications") {
+      await expect(card.locator("img")).toHaveCount(0);
+      await expect(card.locator(".reference-unavailable")).toHaveCount(1);
+      await expect(card.locator(".reference-unavailable-label")).toHaveText(
+        "Reference image unavailable",
+      );
+    } else {
+      expect(["3d", "photography"]).toContain(experience);
+      await expect(card.locator("img")).toHaveCount(1);
+      await card
+        .locator("img")
+        .evaluate((image: HTMLImageElement) => image.decode());
+    }
   }
   await lineup.locator("a").first().scrollIntoViewIfNeeded();
   // Freeze only reveal translation so this measures the layout box, not scroll progress.

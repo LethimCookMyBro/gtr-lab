@@ -1,6 +1,6 @@
-import { ReferenceUnavailable } from "../ReferenceUnavailable";
 import { ArrowUpRight } from "lucide-react";
 import type { VehicleModel } from "../../data/models";
+import "../../styles/reference-unavailable.css";
 export function ModelDetails({ model }: { model: VehicleModel }) {
   return (
     <div className="model-details">
@@ -10,7 +10,9 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
           <p className="photo-caption">{model.imageCaption}</p>
         </>
       ) : (
-        <ReferenceUnavailable model={model} />
+        <p className="reference-unavailable-note">
+          Reference image unavailable
+        </p>
       )}
       <p className="detail-lead">{model.description}</p>
       {model.asset.referenceNote && (

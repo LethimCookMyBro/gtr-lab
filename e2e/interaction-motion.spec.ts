@@ -1,5 +1,193 @@
 import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+
+declare global {
+  interface Window {
+    __drawerRotationMotion: {
+      entries: Set<Animation>;
+      exits: Set<Animation>;
+      starts: string[];
+    };
+  }
+}
+
+async function observeDrawerMotion(page: Page) {
+  await page.addInitScript(() => {
+    window.__drawerRotationMotion = {
+      entries: new Set(),
+      exits: new Set(),
+      starts: [],
+    };
+    document.addEventListener("animationstart", (event) => {
+      const element = event.target;
+      if (!(element instanceof Element) || !element.matches(".drawer")) return;
+      const state = window.__drawerRotationMotion;
+      state.starts.push(event.animationName);
+      for (const animation of element.getAnimations()) {
+        if (!(animation instanceof CSSAnimation)) continue;
+        const target =
+          animation.animationName === "drawer-in" ? state.entries : state.exits;
+        target.add(animation);
+      }
+    });
+  });
+}
+
+async function drawerMotion(dialog: Locator) {
+  return dialog.evaluate((element) => {
+    // Reading computed style flushes the resize. Keep real Animation identities,
+    // including a replacement that exists before its animationstart is delivered.
+    const style = getComputedStyle(element);
+    const animations = element.getAnimations();
+    const state = window.__drawerRotationMotion;
+    for (const animation of animations) {
+      if (!(animation instanceof CSSAnimation)) continue;
+      const target =
+        element.getAttribute("data-phase") === "open"
+          ? state.entries
+          : state.exits;
+      target.add(animation);
+    }
+    const bounds = element.getBoundingClientRect();
+    return {
+      entries: state.entries.size,
+      exits: state.exits.size,
+      starts: [...state.starts],
+      running: animations.filter(
+        (animation) => animation.playState === "running",
+      ).length,
+      name: style.animationName,
+      duration: style.animationDuration,
+      easing: style.animationTimingFunction,
+      opacity: style.opacity,
+      bounds: {
+        x: bounds.x,
+        y: bounds.y,
+        right: bounds.right,
+        bottom: bounds.bottom,
+      },
+    };
+  });
+}
+
+test.describe("drawer orientation without animation replay", () => {
+  test.use({ hasTouch: true, isMobile: true, actionTimeout: 5_000 });
+  for (const initial of [
+    { width: 320, height: 740 },
+    { width: 390, height: 844 },
+    { width: 768, height: 1024 },
+    { width: 820, height: 1180 },
+    { width: 1024, height: 768 },
+    { width: 1440, height: 900 },
+  ]) {
+    test(`settled entry and interrupted exit retain their instances at ${initial.width}px`, async ({
+      page,
+    }, info) => {
+      test.setTimeout(30_000);
+      await page.setViewportSize(initial);
+      await observeDrawerMotion(page);
+      // Real reference route isolates drawer behavior from Premium renderer cost.
+      // These are Chromium touch-emulation checks, not physical-device evidence.
+      await page.goto("/configurator/nismo");
+      const trigger = page.getByRole("button", {
+        name: "Model detail",
+        exact: true,
+      });
+      await trigger.focus();
+      await trigger.tap();
+      const dialog = page.getByRole("dialog");
+      const deadline = performance.now() + 5_000;
+      const remaining = () => {
+        const value = deadline - performance.now();
+        if (value <= 0)
+          throw new Error("Original five-second drawer deadline exceeded");
+        return value;
+      };
+      await expect(dialog).toHaveAttribute("data-phase", "open", {
+        timeout: remaining(),
+      });
+      await expect
+        .poll(async () => (await drawerMotion(dialog)).running, {
+          timeout: remaining(),
+        })
+        .toBe(0);
+      const opened = await drawerMotion(dialog);
+      expect(opened.entries).toBe(1);
+      expect(opened.starts).toEqual(["drawer-in"]);
+      expect(opened.opacity).toBe("1");
+      const rotated = { width: initial.height, height: initial.width };
+      const observations = [{ viewport: initial, ...opened }];
+      for (const viewport of [rotated, initial]) {
+        await page.setViewportSize(viewport);
+        const resized = await drawerMotion(dialog);
+        observations.push({ viewport, ...resized });
+        // No settling wait here: a new entry instance or replay is the defect.
+        expect(resized.entries).toBe(1);
+        expect(resized.running).toBe(0);
+        expect(resized.starts).toEqual(["drawer-in"]);
+        expect(resized.name).toBe("drawer-in");
+        expect(resized.duration).toBe("0.3s");
+        expect(resized.easing).toBe("cubic-bezier(0.2, 0.7, 0.2, 1)");
+        expect(resized.opacity).toBe("1");
+        expect(resized.bounds.x).toBeGreaterThanOrEqual(-1);
+        expect(resized.bounds.y).toBeGreaterThanOrEqual(-1);
+        expect(resized.bounds.right).toBeLessThanOrEqual(viewport.width + 1);
+        expect(resized.bounds.bottom).toBeLessThanOrEqual(viewport.height + 1);
+      }
+      await page.keyboard.press("Escape");
+      await expect(dialog).toHaveAttribute("data-phase", "closing");
+      const closing = await drawerMotion(dialog);
+      expect(closing.exits).toBe(1);
+      expect(closing.name).toBe("drawer-out");
+      expect(closing.duration).toBe("0.28s");
+      await page.setViewportSize(rotated);
+      await expect(dialog).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+      const closed = await page.evaluate(() => ({
+        entries: window.__drawerRotationMotion.entries.size,
+        exits: window.__drawerRotationMotion.exits.size,
+        starts: window.__drawerRotationMotion.starts,
+        inert: document.querySelectorAll("[inert]").length,
+        bodyStyle: document.body.getAttribute("style"),
+        htmlStyle: document.documentElement.getAttribute("style"),
+      }));
+      expect(closed.entries).toBe(1);
+      expect(closed.exits).toBe(1);
+      expect(closed.starts).toEqual(["drawer-in", "drawer-out"]);
+      expect(closed.inert).toBe(0);
+      expect(closed.bodyStyle).toBeNull();
+      expect(closed.htmlStyle).toBeNull();
+      // A real second opening must still animate after the previous one unmounts.
+      await trigger.tap();
+      await expect
+        .poll(async () => (await drawerMotion(dialog)).entries, {
+          timeout: 5_000,
+        })
+        .toBe(2);
+      await page.keyboard.press("Escape");
+      await expect(dialog).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+      await info.attach("drawer-orientation-instances", {
+        contentType: "application/json",
+        body: Buffer.from(
+          JSON.stringify(
+            {
+              physicalDevice: false,
+              route: "/configurator/nismo",
+              initial,
+              observations,
+              closing,
+              closed,
+            },
+            null,
+            2,
+          ),
+        ),
+      });
+    });
+  }
+});
 
 test("menu hover and keyboard focus share restrained movement, close reverses the links", async ({
   page,
@@ -64,8 +252,8 @@ test("configurator drawer exits before unmounting and repeated panels remain usa
   page,
 }, info) => {
   await page.goto("/configurator/nismo");
-  const camera = page.getByRole("button", { name: "Camera", exact: true });
-  await camera.click();
+  const detail = page.getByRole("button", { name: "Model detail", exact: true });
+  await detail.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   await dialog
@@ -79,8 +267,8 @@ test("configurator drawer exits before unmounting and repeated panels remain usa
     path: info.outputPath("configurator-panel-exit.png"),
   });
   await expect(dialog).toHaveCount(0);
-  await expect(camera).toBeFocused();
-  for (const name of ["Environment", "Camera", "Model detail"]) {
+  await expect(detail).toBeFocused();
+  for (const name of ["Switch model", "Model detail", "Switch model"]) {
     await page.getByRole("button", { name, exact: true }).click();
     await expect(dialog).toHaveCount(1);
     await page.keyboard.press("Escape");
@@ -138,7 +326,7 @@ test("reduced motion removes hover transforms and dismisses immediately", async 
   await expect(trigger).toBeFocused();
   await expect(dialog).toHaveCount(0);
   await page.goto("/configurator/nismo");
-  await page.getByRole("button", { name: "Camera", exact: true }).click();
+  await page.getByRole("button", { name: "Model detail", exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
@@ -146,6 +334,7 @@ test("reduced motion removes hover transforms and dismisses immediately", async 
 for (const viewport of [
   { width: 1440, height: 900 },
   { width: 390, height: 844 },
+  { width: 320, height: 568 },
 ]) {
   test(`footer rows share a traveling underline and arrow cue for hover and keyboard at ${viewport.width}px`, async ({
     page,
@@ -154,11 +343,20 @@ for (const viewport of [
     await page.goto("/");
     await continueHomeWithout3D(page);
     const footer = page.locator(".home-footer");
-    const road = footer.getByRole("navigation", { name: "Road models" });
-    const link = road.getByRole("link", { name: "Premium", exact: true });
+    const navigation = footer.getByRole("navigation", {
+      name: "Footer navigation",
+    });
+    const link = navigation.getByRole("link", {
+      name: "All models",
+      exact: true,
+    });
+    await expect(footer.getByRole("link")).toHaveCount(4);
+    await expect(
+      footer.getByText(/independent digital exhibition/i),
+    ).toHaveCount(0);
     await link.scrollIntoViewIfNeeded();
     const initial = await link.boundingBox();
-    const column = await road.boundingBox();
+    const column = await navigation.boundingBox();
     expect(initial!.width).toBeCloseTo(column!.width, 0);
     expect(initial!.height).toBeGreaterThanOrEqual(44);
     expect(
@@ -194,7 +392,7 @@ for (const viewport of [
     await footer.screenshot({ path: info.outputPath("footer-hover.png") });
 
     await page.mouse.move(1, 1);
-    await footer.getByRole("link", { name: "Find your expression" }).focus();
+    await footer.getByRole("link", { name: "GT-R LAB home" }).focus();
     await page.keyboard.press("Tab");
     await expect(link).toBeFocused();
     expect(await link.evaluate((el) => el.matches(":focus-visible"))).toBe(
@@ -218,7 +416,7 @@ test("footer reduced motion preserves an immediate static underline and keyboard
   await page.goto("/");
   await continueHomeWithout3D(page);
   const footer = page.locator(".home-footer");
-  const link = footer.getByRole("link", { name: "Premium", exact: true });
+  const link = footer.getByRole("link", { name: "All models", exact: true });
   await link.scrollIntoViewIfNeeded();
   await link.hover();
   const readFeedback = () =>
@@ -244,7 +442,7 @@ test("footer reduced motion preserves an immediate static underline and keyboard
   };
   expect(await readFeedback()).toEqual(expected);
   await page.mouse.move(1, 1);
-  await footer.getByRole("link", { name: "Find your expression" }).focus();
+  await footer.getByRole("link", { name: "GT-R LAB home" }).focus();
   await page.keyboard.press("Tab");
   await expect(link).toBeFocused();
   expect(await readFeedback()).toEqual(expected);

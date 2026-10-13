@@ -158,7 +158,7 @@ describe("Nissan Formula E catalog correction", () => {
     expect(screen.queryByText("Available · attributed")).toBeNull();
     expect(screen.getByText(/No rights-cleared reference image/)).toBeTruthy();
   });
-  it("renders the new route with disabled 3D controls and no renderer or image", async () => {
+  it("renders the new route without unavailable 3D controls, renderer or image", async () => {
     const { container } = route("formula-e");
     expect(
       screen.getByRole("heading", { name: "Nissan e-4ORCE 05" }),
@@ -168,13 +168,11 @@ describe("Nissan Formula E catalog correction", () => {
     ).toBeTruthy();
     expect(container.querySelector("canvas, .reference-view img")).toBeNull();
     expect(
-      (screen.getByRole("button", { name: "Lights" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+      screen.queryByRole("button", { name: "Lights", hidden: true }),
+    ).toBeNull();
     expect(
-      (screen.getByRole("button", { name: "Pearl White" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+      screen.queryByRole("button", { name: "Pearl White", hidden: true }),
+    ).toBeNull();
     await userEvent
       .setup()
       .click(screen.getByRole("button", { name: "Switch model" }));

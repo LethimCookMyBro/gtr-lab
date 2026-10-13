@@ -61,9 +61,7 @@ it("cancels a pending close when a newer panel opens", () => {
   act(() => useConfigurator.getState().togglePanel("environment"));
   act(() => vi.advanceTimersByTime(300));
   expect(screen.getByRole("dialog").getAttribute("data-phase")).toBe("open");
-  expect(screen.getByRole("dialog").textContent).toContain(
-    "Change the atmosphere.",
-  );
+  expect(screen.getByRole("dialog").textContent).toContain("Environment");
 });
 it("dismisses immediately for reduced motion", () => {
   reduced = true;

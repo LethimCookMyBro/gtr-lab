@@ -77,9 +77,11 @@ describe("drawer compositing surfaces", () => {
         (rule) =>
           rule.parent?.type === "atrule" && rule.parent.params === query,
       );
-    expect(
-      property(inMedia(".drawer", "(max-width: 760px)"), "animation"),
-    ).toBe("rise-in 0.25s");
+    const mobileSheet = inMedia(".drawer", "(max-width: 760px)");
+    expect(property(mobileSheet, "animation")).toBe("");
+    expect(property(mobileSheet, "--drawer-enter-x")).toBe("0px");
+    expect(property(mobileSheet, "--drawer-enter-y")).toBe("12px");
+    expect(property(mobileSheet, "--drawer-enter-opacity")).toBe("0");
     const enteringBackdrop = rules(".drawer-backdrop").find(
       (rule) => rule.parent?.type === "root" && property(rule, "animation"),
     );
@@ -106,6 +108,73 @@ describe("drawer compositing surfaces", () => {
         ),
       ).toBe("none");
     }
+  });
+
+  it("keeps entry and exit animation identity and timing stable across viewport changes", () => {
+    for (const selector of [
+      ".drawer",
+      '.drawer-layer[data-phase="closing"] .drawer',
+    ]) {
+      for (const rule of rules(selector)) {
+        if (rule.parent?.type !== "atrule") continue;
+        if (rule.parent.params === "(prefers-reduced-motion: reduce)") continue;
+        for (const declaration of rule.nodes) {
+          if (declaration.type !== "decl") continue;
+          expect(declaration.prop).not.toMatch(/^animation(?:-|$)/);
+        }
+      }
+    }
+    const exit = rules('.drawer-layer[data-phase="closing"] .drawer')[0];
+    expect(property(exit, "animation")).toBe(
+      "drawer-out 280ms cubic-bezier(0.4, 0, 0.7, 0.2) both",
+    );
+    expect(property(sheet(), "--drawer-enter-x")).toBe("60px");
+    expect(property(sheet(), "--drawer-enter-y")).toBe("0px");
+    expect(property(sheet(), "--drawer-enter-opacity")).toBe("0.5");
+    expect(property(sheet(), "--drawer-exit-x")).toBe("70px");
+    expect(property(sheet(), "--drawer-exit-y")).toBe("0px");
+    const mobile = rules(".drawer").find(
+      (rule) =>
+        rule.parent?.type === "atrule" &&
+        rule.parent.params === "(max-width: 760px)",
+    );
+    expect(property(mobile, "--drawer-exit-x")).toBe("0px");
+    expect(property(mobile, "--drawer-exit-y")).toBe("50px");
+  });
+
+  it("changes only displacement and initial opacity through shared drawer keyframes", () => {
+    const motion = new Map<string, Map<string, string>>();
+    stylesheet.walkAtRules("keyframes", (keyframes) => {
+      if (!keyframes.params.startsWith("drawer-")) return;
+      expect(keyframes.parent?.type).toBe("root");
+      keyframes.walkRules((rule) => {
+        motion.set(
+          `${keyframes.params}:${rule.selector}`,
+          new Map(
+            rule.nodes.flatMap((node) =>
+              node.type === "decl" ? [[node.prop, node.value] as const] : [],
+            ),
+          ),
+        );
+      });
+    });
+    expect(motion.get("drawer-in:from")?.get("transform")).toBe(
+      "translate(var(--drawer-enter-x), var(--drawer-enter-y))",
+    );
+    expect(motion.get("drawer-in:from")?.get("opacity")).toBe(
+      "var(--drawer-enter-opacity)",
+    );
+    expect(motion.get("drawer-in:to")?.get("transform")).toBe(
+      "translate(0, 0)",
+    );
+    expect(motion.get("drawer-in:to")?.get("opacity")).toBe("1");
+    expect(motion.get("drawer-out:to")?.get("transform")).toBe(
+      "translate(var(--drawer-exit-x), var(--drawer-exit-y))",
+    );
+    expect(motion.get("drawer-out:to")?.get("opacity")).toBe("0");
+    expect(
+      [...motion.keys()].some((key) => key.startsWith("drawer-sheet-out:")),
+    ).toBe(false);
   });
 
   it("preserves large close and selection targets plus visible radio focus", () => {

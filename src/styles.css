@@ -1054,6 +1054,12 @@ p {
   height: 100%;
 }
 .drawer {
+  /* Keep animation identity and timing stable when an open drawer rotates. */
+  --drawer-enter-x: 60px;
+  --drawer-enter-y: 0px;
+  --drawer-enter-opacity: 0.5;
+  --drawer-exit-x: 70px;
+  --drawer-exit-y: 0px;
   position: absolute;
   right: 0;
   top: 0;
@@ -1365,12 +1371,12 @@ p {
 }
 @keyframes drawer-in {
   from {
-    opacity: 0.5;
-    transform: translateX(60px);
+    opacity: var(--drawer-enter-opacity);
+    transform: translate(var(--drawer-enter-x), var(--drawer-enter-y));
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate(0, 0);
   }
 }
 @keyframes scene-reveal {
@@ -2005,6 +2011,11 @@ p {
     inset: -4px;
   }
   .drawer {
+    --drawer-enter-x: 0px;
+    --drawer-enter-y: 12px;
+    --drawer-enter-opacity: 0;
+    --drawer-exit-x: 0px;
+    --drawer-exit-y: 50px;
     top: auto;
     left: 0;
     right: 0;
@@ -2014,7 +2025,6 @@ p {
     border-left: 0;
     border-top: 1px solid var(--line);
     border-radius: 18px 18px 0 0;
-    animation: rise-in 0.25s;
   }
   .drawer > header {
     padding: 18px 21px 15px;
@@ -2380,7 +2390,7 @@ p {
 @keyframes drawer-out {
   to {
     opacity: 0;
-    transform: translateX(70px);
+    transform: translate(var(--drawer-exit-x), var(--drawer-exit-y));
   }
 }
 @keyframes drawer-backdrop-in {
@@ -2397,17 +2407,6 @@ p {
   }
   to {
     opacity: 0;
-  }
-}
-@media (max-width: 760px) {
-  .drawer-layer[data-phase="closing"] .drawer {
-    animation-name: drawer-sheet-out;
-  }
-  @keyframes drawer-sheet-out {
-    to {
-      opacity: 0;
-      transform: translateY(50px);
-    }
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2503,4 +2502,66 @@ p {
 .render-quality:disabled label {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Missing assets need only content and navigation, not reserved scene controls. */
+.configurator[data-asset-state="missing"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.configurator[data-asset-state="missing"] .config-information-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  grid-row: 1;
+  background: #111416;
+}
+.configurator[data-asset-state="missing"] .config-header {
+  position: static;
+  flex-shrink: 0;
+  background: none;
+}
+.configurator[data-asset-state="missing"] .config-title {
+  position: static;
+  width: auto;
+  padding: 12px var(--gutter) 24px;
+}
+.configurator[data-asset-state="missing"] .scene-stage {
+  position: relative;
+  inset: auto;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+}
+.configurator[data-asset-state="missing"]
+  .reference-view
+  > .reference-unavailable {
+  min-height: 0;
+  padding: 24px;
+}
+.configurator[data-asset-state="missing"] .scene-bottom {
+  position: relative;
+  inset: auto;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 16px var(--gutter);
+  background: #111416;
+}
+.configurator[data-asset-state="missing"] .asset-status {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: start;
+  text-align: left;
+  font-size: 11px;
+}
+.configurator[data-asset-state="missing"] .switch-model {
+  justify-self: start;
+  font-size: 12px;
+}
+.configurator[data-asset-state="missing"] .scene-bottom button {
+  min-height: 44px;
 }

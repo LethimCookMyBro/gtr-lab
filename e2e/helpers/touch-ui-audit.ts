@@ -1,9 +1,9 @@
 import { expect } from "@playwright/test";
-import type { Locator, Page, TestInfo } from "@playwright/test";
+import type { Locator, Page, TestInfo, Frame } from "@playwright/test";
 import { createHash } from "node:crypto";
 import { readFormulaEAssets } from "../../scripts/formula-e-live-contract.mjs";
-import { assertTouchBuild, assessTouchGesture, createTouchRuntimeEvidence, assertTouchRuntimeRequest, assertTouchRuntimeComplete, loadTouchRequest, TOUCH_UI_VIEWPORTS } from "../../scripts/touch-ui-live-contract.mjs";
-import type { TouchRequest, TouchViewport } from "../../scripts/touch-ui-live-contract.mjs";
+import { assertTouchBuild, assessTouchGesture, createTouchRuntimeEvidence, assertTouchRuntimeRequest, assertTouchRuntimeComplete, collectTouchFrameGesture, recordTouchTrustVerdict, loadTouchRequest, TOUCH_UI_VIEWPORTS } from "../../scripts/touch-ui-live-contract.mjs";
+import type { TouchRequest, TouchViewport, TouchFrameSnapshot } from "../../scripts/touch-ui-live-contract.mjs";
 // @ts-expect-error Reuse the existing opt-in native preparation observer; no renderer writes.
 import { installFunctionalCaptureObserver, waitForFunctionalCapture, verifyFunctionalCapture } from "../../scripts/cabin-preparation-readiness.generated.mjs";
 // @ts-expect-error Existing exact preparation deadlines are intentionally reused.
@@ -17,6 +17,8 @@ export class TouchUiAudit {
   readonly startedAt = performance.now();
   actionWindow = readinessWindow(30_000,this.startedAt);
   readonly runtimeBodies: object[] = [];
+  readonly frameIds = new WeakMap<Frame,number>();
+  nextFrameId = 0;
   cleanupListeners: (()=>void) | undefined;
   readonly captures: object[] = [];
   readonly inputs: object[] = [];
@@ -98,6 +100,15 @@ export class TouchUiAudit {
     }
     return sample;
   }
+  async inputFrames():Promise<TouchFrameSnapshot[]> {
+    const frames=this.page.frames();
+    if(frames.length>16)throw new Error("Bounded input frame count exceeded");
+    return boundedOperation(this.actionWindow,"Frame-local native input observation",()=>Promise.all(frames.map(async frame=>{
+      let id=this.frameIds.get(frame);if(id===undefined){id=++this.nextFrameId;this.frameIds.set(frame,id);}
+      try { return {id,...await frame.evaluate(()=>({url:location.href,timeOrigin:performance.timeOrigin,events:window.__touchUiInput?.slice()??[]}))}; }
+      catch(error) { return {id,url:frame.url(),timeOrigin:-1,events:[],error:String(error)}; }
+    })));
+  }
   async swipe(label:string, body?:Locator, direction:"forward"|"backward"="forward") {
     const read = () => body ? body.evaluate(element=>({position:element.scrollTop,max:element.scrollHeight-element.clientHeight,background:scrollY})) : this.page.evaluate(()=>({position:scrollY,max:document.documentElement.scrollHeight-innerHeight,background:scrollY}));
     // Retire previous inertial scrolling before attributing a new gesture.
@@ -114,8 +125,8 @@ export class TouchUiAudit {
     const distance = Math.min((bottom-top)*0.6,380);
     const startY = direction === "forward" ? bottom-8 : top+8;
     const endY = startY+(direction === "forward" ? -distance : distance);
-    const inputStart = await this.page.evaluate(()=>window.__touchUiInput.length);
-    const attempt:Record<string,unknown>={label,kind:this.target.touch?"native-cdp-touch":"native-wheel",touch:this.target.touch,direction,before,status:"started"};
+    const inputBefore = await this.inputFrames();
+    const attempt:Record<string,unknown>={label,kind:this.target.touch?"native-cdp-touch":"native-wheel",touch:this.target.touch,direction,before,inputBefore,status:"started"};
     this.inputs.push(attempt);
     let after=before,observed:Array<{type:string;trusted:boolean}>=[];
     try {
@@ -131,12 +142,17 @@ export class TouchUiAudit {
         } finally { await cdp.detach(); }
       } else { await this.page.mouse.move(x,startY); await this.page.mouse.wheel(0,direction === "forward" ? distance : -distance); }
       await expect.poll(async()=>((await read()).position-before.position)*(direction === "forward" ? 1 : -1),{timeout:Math.min(5_000,remainingBudget(this.actionWindow))}).toBeGreaterThan(2);
-      after=await read();observed=await this.page.evaluate(start=>window.__touchUiInput.slice(start),inputStart);
-      expect(assessTouchGesture({touch:this.target.touch,direction,before,after,observed,kind:String(attempt.kind)}),`${label}: native gesture receipt`).toEqual([]);
-      attempt.status="passed";
+      after=await read();
+      const inputAfter=await this.inputFrames(),frameEvidence=collectTouchFrameGesture(inputBefore,inputAfter);
+      Object.assign(attempt,{inputAfter,frameEvidence});observed=frameEvidence.observed;
+      // Scrolling remains a hard postcondition. Only trust-observation errors
+      // are soft so later independent views survive, while the test still fails.
+      expect(assessTouchGesture({touch:false,direction,before,after,observed,kind:String(attempt.kind)}),`${label}: directional scroll receipt`).toEqual([]);
+      const trustFailures=this.target.touch?[...frameEvidence.failures,...assessTouchGesture({touch:true,direction,before,after,observed,kind:String(attempt.kind)})]:[];
+      recordTouchTrustVerdict(attempt,trustFailures,failures=>expect.soft(failures,`${label}: native same-frame trusted input`).toEqual([]));
     } catch(error) { attempt.status="failed";attempt.error=String(error);throw error; }
     finally {
-      Object.assign(attempt,{after:await read().catch(()=>null),observed:await this.page.evaluate(start=>window.__touchUiInput.slice(start),inputStart).catch(()=>[])});
+      Object.assign(attempt,{after:await read().catch(()=>null),observed,finalInputFrames:await this.inputFrames().catch(error=>[{error:String(error)}])});
       await this.save(`${label}-input`);
     }
     if(body) expect(Math.abs(after.background-before.background),"Drawer gesture must not scroll its background").toBeLessThan(1);

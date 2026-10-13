@@ -44,9 +44,9 @@ it.each([
     '  await page.goto("/configurator/nismo");',
   ],
   [
-    "weakened catalog paint-disabled assertion",
-    '    page.getByRole("button", { name: "Pearl White", exact: true }),\n  ).toBeDisabled();',
-    '    page.getByRole("button", { name: "Pearl White", exact: true }),\n  ).toBeVisible();',
+    "weakened missing-control absence assertion",
+    '  await expect(page.locator(".config-toolbar, .paint-rail")).toHaveCount(0);',
+    '  await expect(page.locator(".config-toolbar, .paint-rail")).toHaveCount(1);',
   ],
   [
     "changed catalog heading",

@@ -15,3 +15,7 @@ export function assessTouchGesture(input:{touch:boolean;direction:string;before:
 export function createTouchRuntimeEvidence(options:{page:import('@playwright/test').Page;origin:string;pins:Map<string,{bytes:number;sha256:string}>;receipts:object[]}): {navigate(url:string):Promise<void>;drain():Promise<unknown>;finish():Promise<unknown>;snapshot():unknown;stop():void};
 export function assertTouchRuntimeRequest(request:{url:string;resourceType:string;mainFrame:boolean;redirected:boolean},origin:string,pins:Map<string,{bytes:number;sha256:string}>):string;
 export function assertTouchRuntimeComplete(snapshot:unknown):unknown;
+export interface TouchInputEvent {type:string;trusted:boolean;pointerType:string;at:number}
+export interface TouchFrameSnapshot {id:number;url:string;timeOrigin:number;events:TouchInputEvent[];error?:string}
+export function collectTouchFrameGesture(before:TouchFrameSnapshot[],after:TouchFrameSnapshot[]):{frames:object[];observed:TouchInputEvent[];sourceFrame:{id:number;url:string;timeOrigin:number}|null;failures:string[]};
+export function recordTouchTrustVerdict(attempt:Record<string,unknown>,failures:string[],softAssert:(failures:string[])=>void):void;

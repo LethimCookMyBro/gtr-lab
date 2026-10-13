@@ -261,75 +261,23 @@ export function HomeFooter() {
         : "smooth",
     });
   return (
-    <footer className="home-footer">
+    <footer className="home-footer" id="about-project">
       <div className="home-footer-top">
-        <div className="home-footer-about" id="about-project">
-          <p className="home-footer-eyebrow">ENGINEERING · CULTURE · MOTION</p>
-          <Brand />
-          <p>
-            An independent digital exhibition of the GT-R. Explore its history,
-            its different expressions and the details that make it unmistakable.
-          </p>
-          <Link to="/models" className="home-footer-link home-footer-enter">
-            <span>Find your expression</span>
-            <ArrowUpRight size={22} strokeWidth={1.5} aria-hidden="true" />
+        <Brand />
+        <nav aria-label="Footer navigation">
+          <Link to="/models" className="home-footer-link">
+            <span>All models</span>
+            <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
           </Link>
-        </div>
-        <div className="home-footer-columns">
-          <nav aria-label="Road models">
-            <h2>Road</h2>
-            {models
-              .filter((m) => m.category === "Road")
-              .map((m) => (
-                <Link
-                  key={m.id}
-                  to={`/configurator/${m.id}`}
-                  className="home-footer-link"
-                >
-                  <span>{m.shortName}</span>
-                  <ArrowUpRight
-                    size={18}
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  />
-                </Link>
-              ))}
-          </nav>
-          <nav aria-label="Bespoke and motorsport models">
-            <h2>Beyond the road</h2>
-            {models
-              .filter((m) => m.category !== "Road")
-              .map((m) => (
-                <Link
-                  key={m.id}
-                  to={`/configurator/${m.id}`}
-                  className="home-footer-link"
-                >
-                  <span>{m.shortName}</span>
-                  <ArrowUpRight
-                    size={18}
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  />
-                </Link>
-              ))}
-          </nav>
-          <nav aria-label="Footer navigation">
-            <h2>Explore</h2>
-            <Link to="/models" className="home-footer-link">
-              <span>All models</span>
-              <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
-            </Link>
-            <Link to="/heritage" className="home-footer-link">
-              <span>Heritage</span>
-              <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
-            </Link>
-            <Link to="/credits" className="home-footer-link">
-              <span>Credits & sources</span>
-              <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
-            </Link>
-          </nav>
-        </div>
+          <Link to="/heritage" className="home-footer-link">
+            <span>Heritage</span>
+            <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
+          </Link>
+          <Link to="/credits" className="home-footer-link">
+            <span>Credits & sources</span>
+            <ArrowUpRight size={18} strokeWidth={1.5} aria-hidden="true" />
+          </Link>
+        </nav>
       </div>
       <div className="home-footer-bottom">
         <p>

@@ -263,24 +263,21 @@ describe("cinematic homepage", () => {
     await waitFor(() => expect(document.activeElement).toBe(trigger));
     expect(document.body.style.overflow).toBe("");
   });
-  it("provides truthful footer context and direct links to all six variants", () => {
+  it("keeps the footer focused on essential navigation and project disclosure", () => {
     setup();
-    const footer = document.querySelector(".home-footer") as HTMLElement;
+    const footer = screen.getByRole("contentinfo");
+    expect(within(footer).getByText(/Independent fan project/)).toBeTruthy();
     expect(
-      within(footer).getByText(/independent digital exhibition/i),
+      within(footer).queryByText(/independent digital exhibition/i),
+    ).toBeNull();
+    expect(
+      within(footer)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/", "/models", "/heritage", "/credits"]);
+    expect(
+      within(footer).getByRole("button", { name: "Back to top" }),
     ).toBeTruthy();
-    for (const id of [
-      "premium",
-      "nismo",
-      "tspec",
-      "gtr50",
-      "gt3",
-      "formula-e",
-    ]) {
-      expect(
-        footer.querySelector(`a[href="/configurator/${id}"]`),
-      ).toBeTruthy();
-    }
   });
   it("restores the real rear signature without fabricated rings or photographic zoom", () => {
     setup();

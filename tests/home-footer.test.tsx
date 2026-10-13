@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { afterEach, expect, it } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { HomeFooter } from "../src/components/layout/SiteLayout";
 
@@ -10,6 +16,8 @@ const style = document.createElement("style");
 afterEach(() => {
   cleanup();
   style.remove();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 function footer(reducedMotion = false) {
@@ -46,13 +54,6 @@ function footer(reducedMotion = false) {
 it("gives every footer destination a full-width row and decorative directional arrow", () => {
   footer();
   const destinations = [
-    ["Find your expression", "/models"],
-    ["Premium", "/configurator/premium"],
-    ["NISMO", "/configurator/nismo"],
-    ["T-spec", "/configurator/tspec"],
-    ["GT-R50", "/configurator/gtr50"],
-    ["GT3", "/configurator/gt3"],
-    ["Formula E", "/configurator/formula-e"],
     ["All models", "/models"],
     ["Heritage", "/heritage"],
     ["Credits & sources", "/credits"],
@@ -81,7 +82,7 @@ it("gives every footer destination a full-width row and decorative directional a
 
 it("moves the arrow on keyboard focus while keeping the footer row stationary", () => {
   footer();
-  const link = screen.getByRole("link", { name: "Find your expression" });
+  const link = screen.getByRole("link", { name: "All models" });
   const resting = getComputedStyle(link).transform;
   link.focus();
   expect(link.matches(":focus-visible")).toBe(true);
@@ -96,10 +97,52 @@ it("moves the arrow on keyboard focus while keeping the footer row stationary", 
 
 it("keeps reduced-motion keyboard feedback free of arrow movement or transitions", () => {
   footer(true);
-  const link = screen.getByRole("link", { name: "Find your expression" });
+  const link = screen.getByRole("link", { name: "All models" });
   link.focus();
   const arrow = getComputedStyle(link.querySelector("svg")!);
   expect(arrow.transform).toBe("none");
   expect(arrow.transition).toBe("none");
   expect(getComputedStyle(link).transition).toBe("none");
 });
+
+it("keeps only essential footer links without repeating the model invitations or introduction", () => {
+  footer();
+  const content = screen.getByRole("contentinfo");
+  expect(
+    within(content)
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href")),
+  ).toEqual(["/", "/models", "/heritage", "/credits"]);
+  expect(
+    within(content).getByRole("link", { name: "GT-R LAB home" }),
+  ).toBeTruthy();
+  expect(within(content).getAllByRole("navigation")).toHaveLength(1);
+  expect(
+    within(content).queryByText(/engineering · culture · motion/i),
+  ).toBeNull();
+  expect(
+    within(content).queryByText(/independent digital exhibition/i),
+  ).toBeNull();
+  expect(within(content).queryByText("Find your expression")).toBeNull();
+  expect(within(content).queryByText("Road")).toBeNull();
+  expect(within(content).queryByText("Beyond the road")).toBeNull();
+});
+
+it.each([
+  [false, "smooth"],
+  [true, "instant"],
+] as const)(
+  "returns to the top with reduced motion %s",
+  (reducedMotion, behavior) => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(prefers-reduced-motion: reduce)" && reducedMotion,
+      })),
+    );
+    const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    footer(reducedMotion);
+    fireEvent.click(screen.getByRole("button", { name: "Back to top" }));
+    expect(scroll).toHaveBeenCalledExactlyOnceWith({ top: 0, behavior });
+  },
+);

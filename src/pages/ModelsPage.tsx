@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { ReferenceUnavailable } from "../components/ReferenceUnavailable";
 import { models } from "../data/models";
+import { getModelExperience } from "../data/modelExperience";
 export function ModelsPage() {
   return (
     <div className="models-page page-enter">
@@ -10,11 +11,7 @@ export function ModelsPage() {
           Choose your
           <br className="mobile-only" /> expression.
         </h1>
-        <p>
-          GT-R heritage. Electric competition.
-          <br />
-          Six distinct perspectives.
-        </p>
+        <p>GT-R heritage. Electric competition.</p>
       </section>
       <div className="model-bands">
         {models.map((m, i) => (
@@ -23,6 +20,7 @@ export function ModelsPage() {
             key={m.id}
             to={"/configurator/" + m.id}
             aria-label={"Explore " + m.name}
+            aria-describedby={`collection-action-${m.id}`}
           >
             <div className="band-image">
               {m.image ? (
@@ -43,17 +41,16 @@ export function ModelsPage() {
               <h2>{m.shortName}</h2>
               <p>{m.tagline}</p>
             </div>
-            <div className="band-action">
-              Explore
-              <ArrowRight size={22} />
+            <div className="band-action" id={`collection-action-${m.id}`}>
+              {getModelExperience(m).action}
+              <ArrowRight size={22} aria-hidden="true" />
             </div>
           </Link>
         ))}
       </div>
       <p className="lineup-note">
-        Photographs represent specific model years. Each model’s detail panel
-        identifies its specification and image context. Formula E currently has
-        specifications only; its reference image and 3D asset are unavailable.
+        Photographs show specific model years. See model details for
+        specifications and image context.
       </p>
     </div>
   );

@@ -122,3 +122,42 @@ export function assertTouchRuntimeComplete(snapshot) {
   for(const kind of ['html','js','css']) assert.ok(snapshot.requests.some(row=>row.state==='body-completed' && (kind==='html' ? ['/index.html','/models'].includes(row.path) : row.path.endsWith('.'+kind))),`Missing completed ${kind} app body`);
   return snapshot;
 }
+
+/** Select one complete trusted sequence from one unchanged frame document.
+ * Never splice events across frames or reuse a pre-gesture event watermark.
+ */
+export function collectTouchFrameGesture(before, after) {
+  assert.ok(Array.isArray(before) && Array.isArray(after) && before.length <= 16 && after.length <= 16,'Bounded frame snapshots required');
+  const frames = after.map(current => {
+    const previous=before.find(value=>value.id===current.id);
+    let rejection;
+    if(current.error || previous?.error) rejection='Frame observation unavailable';
+    else if(!previous) rejection='Frame attached after input watermark';
+    else if(current.timeOrigin!==previous.timeOrigin || current.url!==previous.url) rejection='Frame document changed during gesture';
+    else if(!Array.isArray(current.events) || !Array.isArray(previous.events) || current.events.length<previous.events.length) rejection='Frame event buffer was reset';
+    else if(previous.events.some((event,index)=>JSON.stringify(event)!==JSON.stringify(current.events[index]))) rejection='Frame event watermark no longer matches its observed prefix';
+    else if(current.events.length>=512 || previous.events.length>=512) rejection='Bounded input buffer exhausted';
+    const observed=rejection?[]:current.events.slice(previous.events.length);
+    // A trusted DOM TouchEvent sequence belongs to its originating document.
+    const start=observed.findIndex(event=>event.type==='touchstart' && event.trusted===true && event.pointerType==='touch');
+    const move=observed.findIndex((event,index)=>index>start && event.type==='touchmove' && event.trusted===true && event.pointerType==='touch');
+    const end=observed.findIndex((event,index)=>index>move && event.type==='touchend' && event.trusted===true && event.pointerType==='touch');
+    const complete=!rejection && start>=0 && move>start && end>move;
+    return {id:current.id,url:current.url,timeOrigin:current.timeOrigin,rejection,observed,complete};
+  });
+  const complete=frames.filter(frame=>frame.complete);
+  // Multiple frame sequences would be ambiguous for the one-finger input script.
+  const accepted=complete.length===1 ? complete[0] : null;
+  return {frames,observed:accepted?.observed ?? [],sourceFrame:accepted?{id:accepted.id,url:accepted.url,timeOrigin:accepted.timeOrigin}:null,
+    failures:accepted?[]:[complete.length>1?'Multiple complete frame sequences for one gesture':'No complete trusted sequence in one unchanged frame document']};
+}
+/** A soft assertion preserves a failed verdict while independent views continue.
+ * Dispatch, directional scrolling, source identity and budgets never use this path.
+ */
+export function recordTouchTrustVerdict(attempt, failures, softAssert) {
+  assert.ok(Array.isArray(failures)); assert.equal(typeof softAssert,'function');
+  attempt.trustFailures=[...failures];
+  attempt.status=failures.length?'failed':'passed';
+  if(failures.length) attempt.failureKind='trust-observation';
+  softAssert(failures);
+}

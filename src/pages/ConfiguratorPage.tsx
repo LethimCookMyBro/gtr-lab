@@ -211,6 +211,7 @@ export function ConfiguratorPage() {
   };
   return (
     <main
+      data-asset-state={hasAsset ? "available" : "missing"}
       data-cabin-preparation={
         model.asset.cabinPreview ? state.cabinPreparation.phase : undefined
       }
@@ -250,7 +251,6 @@ export function ConfiguratorPage() {
         </div>
         <div className="config-title">
           <h1>{sceneName}</h1>
-          <p>{model.tagline}</p>
           {model.asset.kind === "original-study" && (
             <button className="study-disclosure" onClick={() => open("assets")}>
               <Info size={14} />
@@ -275,7 +275,7 @@ export function ConfiguratorPage() {
               {model.asset.cabinPreview && !state.error && (
                 <span
                   className="cabin-window-status"
-                  hidden={state.cabin.phase === "active"}
+                  hidden={state.cabin.phase === "active" || windowStatus === "ready"}
                   role="status"
                   aria-live="polite"
                 >
@@ -411,62 +411,64 @@ export function ConfiguratorPage() {
             </div>
           )}
       </div>
-      <div className="config-toolbar" aria-label="Scene tools">
-        <button
-          ref={cameraButton}
-          onClick={() => open("camera")}
-          className={state.panel === "camera" ? "active" : ""}
-          aria-expanded={state.panel === "camera"}
-          title="Camera presets"
-        >
-          <Camera />
-          <span>Camera</span>
-        </button>
-        <button
-          onClick={() => open("environment")}
-          className={state.panel === "environment" ? "active" : ""}
-          aria-expanded={state.panel === "environment"}
-          title="Environment"
-        >
-          <Image />
-          <span>Environment</span>
-        </button>
-        <button
-          onClick={() => {
-            useConfigurator.setState({ lightsEnabled: !state.lightsEnabled });
-            audio.play();
-          }}
-          disabled={
-            !interactive || !model.asset.lights || !state.lightsAvailable
-          }
-          aria-label="Lights"
-          aria-pressed={state.lightsEnabled}
-          title={
-            !interactive
-              ? "Lights require a ready 3D model"
-              : "Toggle running lights: front LED strips and rear rings"
-          }
-        >
-          <Sun />
-          <span>Lights {state.lightsEnabled ? "on" : "off"}</span>
-        </button>
-        <button
-          disabled={!interactive || reduced || state.cabin.phase === "active"}
-          onClick={() => {
-            useConfigurator.setState({ autoRotate: !state.autoRotate });
-            audio.play();
-          }}
-          aria-label="Rotate"
-          aria-pressed={state.autoRotate}
-          title={
-            reduced ? "Showcase disabled for reduced motion" : "Auto rotate"
-          }
-        >
-          <RotateCw />
-          <span>{state.autoRotate ? "Stop rotation" : "Rotate"}</span>
-        </button>
-        <SoundButton cueOnly />
-      </div>
+      {hasAsset && (
+        <div className="config-toolbar" aria-label="Scene tools">
+          <button
+            ref={cameraButton}
+            onClick={() => open("camera")}
+            className={state.panel === "camera" ? "active" : ""}
+            aria-expanded={state.panel === "camera"}
+            title="Camera presets"
+          >
+            <Camera />
+            <span>Camera</span>
+          </button>
+          <button
+            onClick={() => open("environment")}
+            className={state.panel === "environment" ? "active" : ""}
+            aria-expanded={state.panel === "environment"}
+            title="Environment"
+          >
+            <Image />
+            <span>Environment</span>
+          </button>
+          <button
+            onClick={() => {
+              useConfigurator.setState({ lightsEnabled: !state.lightsEnabled });
+              audio.play();
+            }}
+            disabled={
+              !interactive || !model.asset.lights || !state.lightsAvailable
+            }
+            aria-label="Lights"
+            aria-pressed={state.lightsEnabled}
+            title={
+              !interactive
+                ? "Lights require a ready 3D model"
+                : "Toggle running lights: front LED strips and rear rings"
+            }
+          >
+            <Sun />
+            <span>Lights {state.lightsEnabled ? "on" : "off"}</span>
+          </button>
+          <button
+            disabled={!interactive || reduced || state.cabin.phase === "active"}
+            onClick={() => {
+              useConfigurator.setState({ autoRotate: !state.autoRotate });
+              audio.play();
+            }}
+            aria-label="Rotate"
+            aria-pressed={state.autoRotate}
+            title={
+              reduced ? "Showcase disabled for reduced motion" : "Auto rotate"
+            }
+          >
+            <RotateCw />
+            <span>{state.autoRotate ? "Stop rotation" : "Rotate"}</span>
+          </button>
+          <SoundButton cueOnly />
+        </div>
+      )}
       <div className="scene-bottom">
         <button className="switch-model" onClick={() => open("models")}>
           <Car size={17} />
@@ -490,13 +492,17 @@ export function ConfiguratorPage() {
                   : "Specifications only · 3D asset pending"}
           </button>
         )}
-        <span className="scene-count">
-          {String(models.findIndex((entry) => entry.id === id) + 1).padStart(
-            2,
-            "0",
-          )}{" "}
-          / 06
-        </span>
+        {hasAsset ? (
+          <span className="scene-count">
+            {String(models.findIndex((entry) => entry.id === id) + 1).padStart(
+              2,
+              "0",
+            )}{" "}
+            / 06
+          </span>
+        ) : (
+          <SoundButton cueOnly />
+        )}
       </div>
       {state.error && (
         <div className="render-error" role="alert">
@@ -523,53 +529,57 @@ export function ConfiguratorPage() {
           </button>
         </div>
       )}
-      {state.cabin.phase !== "closed" ? (
-        <CabinPreviewControls onExit={exitCabin} reducedMotion={reduced} />
-      ) : (
-        <footer className="paint-rail">
-          <div className="paint-label">
-            <span>Exterior / Concept palette</span>
-            <strong>
-              {interactive ? paint.name : "Select your perspective"}
-            </strong>
-            <small>
-              {interactive
-                ? "Illustrative finish, not an official paint catalog"
-                : "Paint controls unlock with the 3D model"}
-            </small>
-          </div>
-          <div
-            className="paint-swatches"
-            role="group"
-            aria-label="Exterior paint"
-          >
-            {paints.map((p) => (
-              <button
-                key={p.id}
-                disabled={!interactive || !state.paintAvailable}
-                onClick={() => {
-                  state.setPaint(p.id);
-                  audio.play();
-                }}
-                aria-label={p.name}
-                aria-pressed={p.id === paint.id}
-                className={p.id === paint.id ? "selected" : ""}
-                title={p.name}
-              >
-                <span className="swatch" style={{ backgroundColor: p.color }} />
-                <span className="swatch-name">{p.name}</span>
-              </button>
-            ))}
-          </div>
-          <button
-            className="paint-info icon-button"
-            aria-label="Asset information"
-            onClick={() => open("assets")}
-          >
-            <Info size={20} />
-          </button>
-        </footer>
-      )}
+      {hasAsset &&
+        (state.cabin.phase !== "closed" ? (
+          <CabinPreviewControls onExit={exitCabin} reducedMotion={reduced} />
+        ) : (
+          <footer className="paint-rail">
+            <div className="paint-label">
+              <span>Exterior / Concept palette</span>
+              <strong>
+                {interactive ? paint.name : "Select your perspective"}
+              </strong>
+              <small>
+                {interactive
+                  ? "Illustrative finish, not an official paint catalog"
+                  : "Paint controls unlock with the 3D model"}
+              </small>
+            </div>
+            <div
+              className="paint-swatches"
+              role="group"
+              aria-label="Exterior paint"
+            >
+              {paints.map((p) => (
+                <button
+                  key={p.id}
+                  disabled={!interactive || !state.paintAvailable}
+                  onClick={() => {
+                    state.setPaint(p.id);
+                    audio.play();
+                  }}
+                  aria-label={p.name}
+                  aria-pressed={p.id === paint.id}
+                  className={p.id === paint.id ? "selected" : ""}
+                  title={p.name}
+                >
+                  <span
+                    className="swatch"
+                    style={{ backgroundColor: p.color }}
+                  />
+                  <span className="swatch-name">{p.name}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              className="paint-info icon-button"
+              aria-label="Asset information"
+              onClick={() => open("assets")}
+            >
+              <Info size={20} />
+            </button>
+          </footer>
+        ))}
       <div
         key={state.selectedEnvironment}
         className="environment-transition"

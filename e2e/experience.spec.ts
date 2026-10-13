@@ -104,9 +104,18 @@ test("missing assets remain visibly honest and controls are disabled", async ({
     name: "Specifications only · 3D asset pending",
   });
   await expect(pending).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Pearl White", exact: true }),
-  ).toBeDisabled();
+  await expect(page.locator(".config-toolbar, .paint-rail")).toHaveCount(0);
+  for (const name of [
+    "Camera",
+    "Environment",
+    "Lights",
+    "Rotate",
+    "Pearl White",
+  ]) {
+    await expect(page.getByRole("button", { name, exact: true })).toHaveCount(
+      0,
+    );
+  }
   await pending.click();
   await expect(page.getByRole("dialog")).toContainText(
     "No rights-cleared reference image",

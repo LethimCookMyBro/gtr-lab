@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { models } from "../../data/models";
+import { getModelExperience } from "../../data/modelExperience";
 import { ReferenceUnavailable } from "../ReferenceUnavailable";
 import { campaignMedia } from "./campaignMedia";
 import "../../styles/home-opening-cards.css";
@@ -18,13 +19,8 @@ export function ModelInvitations() {
       </header>
       <nav aria-label="Explore all six models">
         {models.map((model) => {
-          const has3D =
-            model.asset.status === "ready" && Boolean(model.asset.url);
-          const action = has3D
-            ? "View in 3D"
-            : model.image
-              ? "View photos"
-              : "View specifications";
+          const { kind, action } = getModelExperience(model);
+          const has3D = kind === "3d";
           return (
             <Link
               key={model.id}
@@ -32,9 +28,7 @@ export function ModelInvitations() {
               className={`home-model-invitation home-model-invitation--${model.id}`}
               aria-label={`Explore ${model.shortName}: ${action}`}
               data-motion-anchor={`model-${model.id}`}
-              data-experience={
-                has3D ? "3d" : model.image ? "photography" : "specifications"
-              }
+              data-experience={kind}
             >
               {model.image ? (
                 <img

@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { TOUCH_UI_BASELINE, TOUCH_UI_CONTRACT, TOUCH_UI_VIEWPORTS, validateTouchRequest, validateTouchCI, assertTouchSource, assertTouchBuild, assessTouchGesture, createTouchRuntimeEvidence, assertTouchRuntimeRequest, assertTouchRuntimeComplete } from '../scripts/touch-ui-live-contract.mjs';
+import { TOUCH_UI_BASELINE, TOUCH_UI_CONTRACT, TOUCH_UI_VIEWPORTS, validateTouchRequest, validateTouchCI, assertTouchSource, assertTouchBuild, assessTouchGesture, createTouchRuntimeEvidence, assertTouchRuntimeRequest, assertTouchRuntimeComplete, collectTouchFrameGesture, recordTouchTrustVerdict } from '../scripts/touch-ui-live-contract.mjs';
 const request = ()=>({version:1,allow:true,contract:TOUCH_UI_CONTRACT,mode:'baseline-live',target:{...TOUCH_UI_BASELINE}});
 const env = ()=>({CI:'true',GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'LethimCookMyBro/gtr-lab',GITHUB_REF:'refs/heads/main',GITHUB_EVENT_NAME:'push',GITHUB_SHA:'a'.repeat(40),TOUCH_UI_ALLOW:'1',TOUCH_UI_COMMIT_MESSAGE:'QA [verify-touch-ui-live]',TOUCH_UI_VIEWPORT:'tablet-768',TOUCH_UI_AREA:'home-collection'});
 const candidate = ()=>({...request(),mode:'candidate-ci',target:{origin:'http://127.0.0.1:4173',sourceTree:'b'.repeat(64),sourceFiles:103}});
@@ -13,7 +13,6 @@ test('exact requested phone/tablet/landscape/desktop grid retains genuine touch 
 });
 test('public baseline pins are the reviewed release request, never discovered from HTTP',async()=>{
   assert.deepEqual(JSON.parse(await readFile('qa/formula-e-live-request.json','utf8')),TOUCH_UI_BASELINE);
-  assert.deepEqual(JSON.parse(await readFile('qa/touch-ui-live-request.json','utf8')),request());
   validateTouchRequest(request());validateTouchCI(request(),env());
 });
 for(const [name,change] of Object.entries({inactive:{allow:false},unknown:{skipReadiness:true},origin:{target:{...TOUCH_UI_BASELINE,origin:'https://example.com'}},source:{target:{...TOUCH_UI_BASELINE,sourceTree:'b'.repeat(64)}},commit:{target:{...TOUCH_UI_BASELINE,expectedDeployedCommit:'b'.repeat(40)}},build:{target:{...TOUCH_UI_BASELINE,buildSha256:'b'.repeat(64)}},mode:{mode:'custom'}})) test(`rejects changed baseline ${name}`,()=>assert.throws(()=>validateTouchRequest({...request(),...change})));
@@ -26,6 +25,13 @@ test('candidate uses separately checked-in exact source and fixed CI-only origin
   assertTouchSource({sha256:'b'.repeat(64),files:Array(103)},candidate());
   assert.throws(()=>assertTouchSource({sha256:'a'.repeat(64),files:Array(103)},candidate()));
   assert.throws(()=>assertTouchSource({sha256:'b'.repeat(64),files:Array(102)},candidate()));
+});
+test('active UI cleanup request is the independently reviewed exact candidate',async()=>{
+  const active=JSON.parse(await readFile('qa/touch-ui-live-request.json','utf8'));
+  assert.deepEqual(active,{version:1,allow:true,contract:TOUCH_UI_CONTRACT,mode:'candidate-ci',target:{origin:'http://127.0.0.1:4173',sourceTree:'36bc9bb5973d42b4090df387a39d289c0a96cf50affca5a1371875006ed6573f',sourceFiles:104}});
+  const {applicationIdentity}=await import('../scripts/diagnose-dpr-motion.mjs');
+  assertTouchSource(await applicationIdentity('.'),active);
+  validateTouchCI(active,{...env(),TOUCH_UI_COMMIT_MESSAGE:'QA [stage-touch-ui]'});
 });
 test('candidate bytes are derived from source-bound local build while live hash cannot drift',()=>{
   const bytes=Buffer.from('cpu fixture'),pin={bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
@@ -93,4 +99,53 @@ test('finished runtime receipts still require every frontend body kind',()=>{
   for(let index=0;index<3;index++) assert.throws(()=>assertTouchRuntimeComplete({...snapshot,requests:snapshot.requests.filter((_,i)=>i!==index)}));
   assert.throws(()=>assertTouchRuntimeComplete({...snapshot,eventErrors:['original failure']}));
   assert.throws(()=>assertTouchRuntimeComplete({...snapshot,state:'receiving'}));
+});
+
+const inputEvent=(type,at=1)=>({type,trusted:true,pointerType:'touch',at});
+const frame=(id,events=[],url='https://media.flixel.com/player')=>({id,url,timeOrigin:1000+id,events});
+const touchSequence=()=>['touchstart','touchmove','touchend'].map((type,index)=>inputEvent(type,index+1));
+test('frame-aware input accepts the original observer blind spot without inventing main-frame events',()=>{
+  const before=[frame(1,[],TOUCH_UI_BASELINE.origin),frame(2)];
+  const after=[frame(1,[],TOUCH_UI_BASELINE.origin),frame(2,touchSequence())];
+  const evidence=collectTouchFrameGesture(before,after);
+  assert.deepEqual(evidence.failures,[]);assert.equal(evidence.sourceFrame.id,2);
+  assert.equal(evidence.frames[0].observed.length,0);
+  assert.deepEqual(assessTouchGesture({...gesture(),observed:evidence.observed}),[]);
+});
+test('frame-aware input rejects stale, changed-document, untrusted, out-of-order and cross-frame sequences',()=>{
+  const before=[frame(1),frame(2)];
+  const cases=[
+    [frame(1,touchSequence().map(event=>({...event,trusted:false}))),frame(2)],
+    [frame(1,[inputEvent('touchmove'),inputEvent('touchstart'),inputEvent('touchend')]),frame(2)],
+    [frame(1,[inputEvent('touchstart')]),frame(2,[inputEvent('touchmove'),inputEvent('touchend')])],
+    [{...frame(1,touchSequence()),timeOrigin:2000},frame(2)],
+    [frame(1,touchSequence(),'https://media.flixel.com/new-document'),frame(2)],
+    [frame(1),frame(2),frame(3,touchSequence())],
+    [frame(1,touchSequence()),frame(2,touchSequence())],
+    [{...frame(1,touchSequence()),error:'detached'},frame(2)],
+    [frame(1,Array(512).fill(inputEvent('touchstart'))),frame(2)],
+  ];
+  for(const after of cases){const result=collectTouchFrameGesture(before,after);assert.ok(result.failures.length);assert.deepEqual(result.observed,[]);}
+  const prefix=frame(1,[inputEvent('pointerdown',0)]);
+  assert.ok(collectTouchFrameGesture([prefix],[frame(1,[inputEvent('pointerup',0),...touchSequence()])]).failures.length);
+  const old=frame(1,touchSequence());assert.ok(collectTouchFrameGesture([old],[old]).failures.length);
+  assert.ok(collectTouchFrameGesture([old],[frame(1)]).failures.length);
+});
+test('frame-aware input preserves original CDP coordinates, move count and cadence',async()=>{
+  const helper=await readFile('e2e/helpers/touch-ui-audit.ts','utf8');
+  for(const exact of ['viewport.width-12','const top = Math.max(box.y+14,76)','step<=12','step/12','waitForTimeout(16)','type:"touchStart"','type:"touchMove"','type:"touchEnd"'])assert.ok(helper.includes(exact));
+  assert.ok(helper.includes('collectTouchFrameGesture(inputBefore,inputAfter)'));
+  assert.ok(helper.includes('remainingBudget(this.actionWindow)'));
+});
+
+test('missing trust stays failed while the next independent view can be collected',async()=>{
+  const attempt={status:'started'},testFailures=[],views=[];
+  const collectIndependentViews=async()=>{
+    recordTouchTrustVerdict(attempt,['Missing trusted touchstart'],failures=>{if(failures.length)testFailures.push(...failures);});
+    views.push('later-footer-view');
+  };
+  await collectIndependentViews();
+  assert.equal(attempt.status,'failed');assert.equal(attempt.failureKind,'trust-observation');
+  assert.deepEqual(testFailures,['Missing trusted touchstart']);assert.deepEqual(views,['later-footer-view']);
+  assert.deepEqual(attempt.trustFailures,testFailures);
 });

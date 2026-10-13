@@ -67,13 +67,15 @@ it.each(["nismo", "tspec", "gtr50", "gt3", "formula-e"])(
   "keeps %s unavailable with no preview entry",
   async (id) => {
     setup(id);
-    await userEvent
-      .setup()
-      .click(screen.getByRole("button", { name: "Camera" }));
-    expect(screen.queryByRole("button", { name: /Cabin preview/ })).toBeNull();
     expect(
-      screen.getByRole("button", { name: /Interior/ }).hasAttribute("disabled"),
-    ).toBe(true);
+      screen.queryByRole("button", { name: "Camera", hidden: true }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Cabin preview/, hidden: true }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Interior/, hidden: true }),
+    ).toBeNull();
   },
 );
 
@@ -150,6 +152,8 @@ it("announces window readiness without gating exterior controls or changing cabi
   expect(state().cabin.phase).toBe("closed");
   act(() => viewer.props!.onWindowStatus!("ready"));
   expect(screen.getByText("Window view ready · Simplified cabin")).toBeTruthy();
+  expect(screen.getByText("Window view ready · Simplified cabin").hidden).toBe(true);
+  expect(screen.queryByRole("status")).toBeNull();
 });
 
 it("hides optional window status on a model switch and ignores the old model callback", async () => {
@@ -187,8 +191,8 @@ it.each(["loading", "ready", "unavailable"] as const)(
     expect(screen.queryByRole("status")).toBeNull();
     expect(state().cabin.phase).toBe("active");
     act(() => state().exitCabin(false));
-    expect(label.hidden).toBe(false);
-    expect(screen.getByRole("status")).toBe(label);
+    expect(label.hidden).toBe(status === "ready");
+    expect(screen.queryByRole("status")).toBe(status === "ready" ? null : label);
     expect(label.textContent).toBe(
       status === "loading"
         ? "Loading window view…"

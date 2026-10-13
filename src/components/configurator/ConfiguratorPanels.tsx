@@ -33,11 +33,11 @@ export function ConfiguratorPanels({
   );
   if (!panel) return null;
   const titles = {
-    camera: "A new perspective.",
-    environment: "Change the atmosphere.",
-    models: "Choose your expression.",
+    camera: "Camera",
+    environment: "Environment",
+    models: "Models",
     details: model.name,
-    assets: "Behind the experience.",
+    assets: "Asset details",
   };
   return (
     <Drawer
@@ -81,10 +81,6 @@ export function ConfiguratorPanels({
       )}
       {panel === "camera" && (
         <>
-          <p className="panel-intro">
-            Find the form from every angle. Drag to orbit; scroll or pinch to
-            move closer.
-          </p>
           {!interactive && (
             <p className="availability-note">
               Camera controls activate when this model’s licensed 3D asset is
@@ -101,10 +97,8 @@ export function ConfiguratorPanels({
             )}
           {model.asset.cabinPreview && (
             <p className="availability-note" id="cabin-preview-note">
-              An original authored cabin, still in progress. Prepared with the
-              vehicle so Interior opens directly when ready. Not a verified
-              factory interior. Displays and dial faces are static
-              illustrations.
+              Cabin preview · Work in progress. Original approximation, not a
+              verified factory interior. Instruments are static.
             </p>
           )}
           <div className="camera-choices">
@@ -195,17 +189,14 @@ export function ConfiguratorPanels({
               </span>
             </label>
             <p id="render-quality-note">
-              May help on larger screens. Small screens may look and perform the
-              same. Both keep anti-aliasing. Kept for this visit; reload
-              restores Standard.
+              Reduced may help on larger screens; small screens may be
+              unchanged. Both retain anti-aliasing. Choice lasts this visit;
+              reload restores Standard.
             </p>
             {(model.asset.status !== "ready" || !model.asset.url) && (
               <p>Quality applies to 3D models, not photo references.</p>
             )}
           </fieldset>
-          <p className="panel-intro">
-            Lighting, reflections and background change together.
-          </p>
           {!interactive && (
             <p className="availability-note">
               Environment controls require a ready 3D scene.

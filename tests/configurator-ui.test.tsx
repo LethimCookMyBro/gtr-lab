@@ -81,17 +81,15 @@ describe("configurator honest functional flow", () => {
     expect(screen.getByRole("main").className).not.toContain("is-scene-ready");
     expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
   });
-  it("labels photograph honestly and disables materials without geometry", () => {
+  it("labels photograph honestly and omits controls without geometry", () => {
     setup("/configurator/gt3");
     expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
     expect(
-      (screen.getByRole("button", { name: "Pearl White" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+      screen.queryByRole("button", { name: "Pearl White", hidden: true }),
+    ).toBeNull();
     expect(
-      (screen.getByRole("button", { name: "Lights" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+      screen.queryByRole("button", { name: "Lights", hidden: true }),
+    ).toBeNull();
   });
   it("opens variant details and escapes without leaving the route", async () => {
     setup();
@@ -127,17 +125,23 @@ describe("configurator honest functional flow", () => {
       "AWD during qualifying duels, race starts and ATTACK MODE",
     );
   });
-  it("explains unavailable camera and detailed interior instead of teleporting into fake cabin", async () => {
+  it("explains missing geometry through asset details without unusable camera choices", async () => {
     setup("/configurator/gt3");
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Camera" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Photo reference · 3D asset pending",
+      }),
+    );
     expect(screen.getByRole("dialog").textContent).toContain(
       "licensed 3D asset",
     );
     expect(
-      (screen.getByRole("button", { name: /Interior/ }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+      screen.queryByRole("button", { name: "Camera", hidden: true }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Interior/, hidden: true }),
+    ).toBeNull();
   });
   it("explains the optional original WIP cabin beside the ready exterior camera choices", async () => {
     setup();
@@ -146,7 +150,7 @@ describe("configurator honest functional flow", () => {
       .setup()
       .click(screen.getByRole("button", { name: "Camera" }));
     expect(screen.getByRole("dialog").textContent).toContain(
-      "An original authored cabin, still in progress",
+      "Cabin preview · Work in progress. Original approximation",
     );
     const interior = screen.getByRole("button", { name: "Interior" });
     expect(interior.getAttribute("aria-describedby")).toBe(

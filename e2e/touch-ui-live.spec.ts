@@ -62,9 +62,9 @@ test('@home opening, menu, real gestures, invitation and footer views',async({pa
   audit.observations.push({label:'invitation-positioning',method:'Playwright scrollIntoViewIfNeeded for a bounded independent screenshot; not a claim of full-page gesture traversal'});
   await expect.poll(()=>invitation.locator('img').evaluate((element:HTMLImageElement)=>element.complete&&element.naturalWidth>0)).toBe(true);
   await audit.capture('home-invitation');await audit.geometry('home-invitation',['.home-model-invitation--premium']);
-  const footer=page.locator('.home-footer');await footer.scrollIntoViewIfNeeded();
+  const footer=page.locator('.home-footer');await expect(footer.getByRole('navigation',{name:'Footer navigation'})).toHaveCount(1);await expect(footer.locator('.home-footer-link')).toHaveCount(3);await footer.scrollIntoViewIfNeeded();
   await audit.swipe('footer-reverse',undefined,'backward');await audit.swipe('footer-forward');
-  await audit.capture('home-footer');await audit.geometry('home-footer',['.home-footer','.home-footer-columns nav','.home-footer-link']);
+  await audit.capture('home-footer');await audit.geometry('home-footer',['.home-footer','.home-footer nav','.home-footer-link']);
   await audit.tap(page.getByRole('button',{name:'Back to top',exact:true}));
   await expect.poll(()=>page.evaluate(()=>scrollY),{timeout:5_000}).toBeLessThan(2);
 });
@@ -82,12 +82,43 @@ test('@collection collection pictures, bounds, touch navigation and mixed breakp
     await page.setViewportSize({width:audit.target.width,height:audit.target.height});
   }
   const nismo=page.getByRole('link',{name:'Explore GT-R NISMO',exact:true});
+  await expect(nismo.locator('.band-action')).toHaveText('View photos');
   await nismo.scrollIntoViewIfNeeded();await audit.tap(nismo);await expect(page).toHaveURL(/\/configurator\/nismo$/);
+  await expect(page.locator('main.configurator')).toHaveAttribute('data-asset-state','missing');
+  await expect(page.locator('.config-toolbar,.paint-rail,canvas')).toHaveCount(0);
+  await expect.poll(()=>page.locator('.reference-view img').evaluate((image:HTMLImageElement)=>image.complete&&image.naturalWidth>0)).toBe(true);
+  for(const name of ['Model detail','Switch model']) { await expect(page.getByRole('button',{name,exact:true})).toBeVisible();await expect(page.getByRole('button',{name,exact:true})).toBeEnabled(); }
+  await expect(page.getByText('Photo reference · 3D asset pending',{exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:'Back to models',exact:true})).toBeVisible();
   await audit.capture('reference-configurator');
   const {trigger,dialog}=await openDrawer(audit,'Model detail');
   await assertDrawer(audit,'reference-drawer-isolation');await audit.capture('reference-model-detail');
   await audit.tap(dialog.getByRole('button',{name:'Close panel',exact:true}));await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();
   await audit.tap(page.getByRole('link',{name:'Back to models',exact:true}));await expect(page).toHaveURL(/\/models$/);
+});
+
+test('@collection Formula E compact specification details',async({page},info)=>{
+  const audit=active.get(info)!;await audit.navigate('/configurator/formula-e');
+  await expect(page.locator('main.configurator')).toHaveAttribute('data-asset-state','missing');
+  await expect(page.locator('.config-toolbar,.paint-rail,canvas')).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Nissan e-4ORCE 05',exact:true})).toBeVisible();
+  await expect(page.locator('.reference-view img,.reference-view picture')).toHaveCount(0);
+  await expect(page.locator('.reference-unavailable-label')).toHaveText('Reference image unavailable');
+  await expect(page.locator('.reference-unavailable-context')).toHaveText('2025/26 Season 12 · GEN3 Evo');
+  await audit.capture('formula-e-reference');
+  const {trigger,dialog}=await openDrawer(audit,'Model detail');
+  const details=dialog.locator('.model-details');
+  await expect(details.locator('p.reference-unavailable-note')).toHaveText('Reference image unavailable');
+  await expect(details.locator('.reference-unavailable,img,picture,canvas')).toHaveCount(0);
+  await expect(details.locator('.spec-context')).toHaveText('2025/26 Season 12 · GEN3 Evo');
+  await expect(details.locator('.detail-lead')).toHaveText('Nissan’s battery-electric single-seater for Formula E competition.');
+  await expect(details.getByText('Maximum traction power',{exact:true})).toBeVisible();
+  await expect(details.locator('.key-figures strong').first()).toHaveText('350kW');
+  await expect(details.locator('.unknown-figure')).toHaveText('Not specified in source');
+  await expect(details.getByRole('link',{name:'Primary source 1',exact:true})).toHaveAttribute('href','https://global.nissannews.com/en/releases/nissan-formula-e-press-kit');
+  await expect(details.getByRole('link',{name:'Primary source 2',exact:true})).toHaveAttribute('href','https://www.fia.com/news/formula-e-and-fia-unveil-gen3-evo-race-car-capable-0-60mph-just-182s');
+  await assertDrawer(audit,'formula-e-details');await audit.capture('formula-e-compact-details');
+  await audit.tap(dialog.getByRole('button',{name:'Close panel',exact:true}));await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();
 });
 
 test('@configurator prepared Premium, touch drawer, focus and orientation changes',async({page},info)=>{

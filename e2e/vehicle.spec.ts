@@ -10,7 +10,8 @@ type Diagnostic = {
   expected?: boolean;
 };
 const diagnostics = new WeakMap<Page, Diagnostic[]>();
-const sharedHdrPath = "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr";
+const sharedHdrPath =
+  "/environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr";
 // SwiftShader readback and DPR recovery can each exceed the normal assertion
 // window on shared CI CPUs. Keep the predicates strict and their waits bounded.
 const pixelReadbackTimeout = process.env.CI ? 30000 : 5000;
@@ -321,11 +322,15 @@ test("actual exterior cameras render and prepared Interior retains WIP disclosur
     .getByRole("dialog")
     .getByRole("button", { name: "Interior", exact: true });
   await expect(interior).toBeEnabled();
-  await expect(interior).toHaveAttribute("aria-describedby", "cabin-preview-note");
+  await expect(interior).toHaveAttribute(
+    "aria-describedby",
+    "cabin-preview-note",
+  );
   const disclosure = page.locator("#cabin-preview-note");
   await expect(disclosure).toBeVisible();
-  await expect(disclosure).toContainText("still in progress");
-  await expect(disclosure).toContainText("Not a verified factory interior");
+  await expect(disclosure).toContainText("Work in progress");
+  await expect(disclosure).toContainText("not a verified factory interior");
+  await expect(disclosure).toContainText("Instruments are static");
   await capture(page, info, "vehicle-interior-disclosure");
 });
 
@@ -530,9 +535,10 @@ test("variant switching never reuses the licensed mesh under NISMO and restores 
       exact: true,
     }),
   ).toBeVisible();
+  await expect(page.locator(".config-toolbar, .paint-rail")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Ultimate Silver", exact: true }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
   await capture(page, info, "nismo-remains-photo-reference");
   await page.getByRole("button", { name: "Switch model", exact: true }).click();
   await page

@@ -140,19 +140,15 @@ it("preserves the choice through Back to models, browser back and forward", asyn
   expect(useConfigurator.getState().renderQuality).toBe("reduced");
 });
 
-it("explains why photo-only variants cannot use rendering quality", async () => {
+it("omits rendering quality when a photo-only variant has no scene", () => {
   setup("/configurator/gt3");
-  await userEvent
-    .setup()
-    .click(screen.getByRole("button", { name: "Environment" }));
   expect(
-    radio("Standard").disabled ||
-      radio("Standard").closest("fieldset")?.disabled,
-  ).toBe(true);
+    screen.queryByRole("button", { name: "Environment", hidden: true }),
+  ).toBeNull();
   expect(
-    radio("Reduced").disabled || radio("Reduced").closest("fieldset")?.disabled,
-  ).toBe(true);
-  expect(screen.getByText(/Quality applies to 3D models/)).toBeTruthy();
+    screen.queryByRole("group", { name: "Rendering quality", hidden: true }),
+  ).toBeNull();
+  expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
 });
 
 it("allows changing quality after a rendering error and retains it on retry", async () => {
@@ -172,27 +168,26 @@ it("allows changing quality after a rendering error and retains it on retry", as
   );
 });
 
-it.each(["/configurator/premium", "/configurator/gt3"])(
-  "keeps Tab inside the drawer when quality is the only available choice on %s",
-  async (route) => {
+it.each(["loading", "error"])(
+  "keeps Tab inside the drawer when quality is the only available choice during %s",
+  async (phase) => {
     // jsdom has no layout; provide only visibility geometry, retaining real
     // native radio semantics and the actual Drawer focus handler.
     vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
       { width: 10, height: 10 },
     ] as unknown as DOMRectList);
-    setup(route);
+    setup();
+    if (phase === "error")
+      act(() => useConfigurator.setState({ error: "Rendering stopped" }));
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Environment" }));
     const dialog = screen.getByRole("dialog");
     const close = within(dialog).getByRole("button", { name: "Close panel" });
-    if (route.endsWith("premium")) radio("Standard").focus();
-    else close.focus();
+    radio("Standard").focus();
     await user.tab();
     expect(document.activeElement).toBe(close);
     await user.tab({ shift: true });
-    expect(document.activeElement).toBe(
-      route.endsWith("premium") ? radio("Standard") : close,
-    );
+    expect(document.activeElement).toBe(radio("Standard"));
   },
 );
 

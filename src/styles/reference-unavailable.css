@@ -23,8 +23,11 @@
   line-height: 1.5;
   color: #b9c2c8;
 }
-.model-details > .reference-unavailable {
-  aspect-ratio: 1.6;
+.model-details > .reference-unavailable-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b9c2c8;
 }
 .key-figures .unknown-figure {
   font-size: 18px;
