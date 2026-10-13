@@ -26,13 +26,15 @@ test('candidate uses separately checked-in exact source and fixed CI-only origin
   assert.throws(()=>assertTouchSource({sha256:'a'.repeat(64),files:Array(103)},candidate()));
   assert.throws(()=>assertTouchSource({sha256:'b'.repeat(64),files:Array(102)},candidate()));
 });
-test('released UI request stays inactive until independently verified release pins are supplied',async()=>{
+test('released UI request pins the independently verified successful deployment',async()=>{
   const active=JSON.parse(await readFile('qa/touch-ui-live-request.json','utf8'));
-  assert.deepEqual(active,{version:1,allow:false,contract:TOUCH_UI_CONTRACT,mode:'released-ui',target:{origin:TOUCH_UI_BASELINE.origin,...TOUCH_UI_RELEASED_SOURCE,expectedDeployedCommit:'PENDING_VERIFIED_RELEASE_COMMIT',railwayDeploymentId:'PENDING_VERIFIED_RAILWAY_DEPLOYMENT',buildSha256:'PENDING_ACCEPTED_RELEASE_BUILD'}});
+  assert.deepEqual(active,{version:1,allow:true,contract:TOUCH_UI_CONTRACT,mode:'released-ui',target:{origin:TOUCH_UI_BASELINE.origin,...TOUCH_UI_RELEASED_SOURCE,expectedDeployedCommit:'32c6b49378e6208b1984a6d2d854d3cc5148badf',railwayDeploymentId:'b7fd047d-41cc-47aa-b32a-48c9062462a2',buildSha256:'1ed75e0f7c8c16538c226444a36249d6e72eca2b6818eccafaba69944204883b'}});
   const {applicationIdentity}=await import('../scripts/diagnose-dpr-motion.mjs');
   const identity=await applicationIdentity('.');
   assert.equal(identity.sha256,TOUCH_UI_RELEASED_SOURCE.sourceTree);assert.equal(identity.files.length,TOUCH_UI_RELEASED_SOURCE.sourceFiles);
-  assert.throws(()=>validateTouchRequest(active));assert.throws(()=>validateTouchRequest({...active,allow:true}));
+  validateTouchRequest(active);validateTouchCI(active,{...env(),TOUCH_UI_COMMIT_MESSAGE:'QA [verify-released-ui]'});
+  assert.throws(()=>validateTouchRequest({...active,allow:false}));
+  for(const key of ['expectedDeployedCommit','railwayDeploymentId','buildSha256']) assert.throws(()=>validateTouchRequest({...active,target:{...active.target,[key]:'PENDING_VERIFIED_RELEASE'}}));
 });
 const released=()=>({...request(),mode:'released-ui',target:{origin:TOUCH_UI_BASELINE.origin,...TOUCH_UI_RELEASED_SOURCE,expectedDeployedCommit:'c'.repeat(40),railwayDeploymentId:'11111111-2222-3333-4444-555555555555',buildSha256:'d'.repeat(64)}});
 test('released UI requires exact reviewed source, live origin and complete release pins',()=>{
