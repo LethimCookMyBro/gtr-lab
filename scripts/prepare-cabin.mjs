@@ -373,13 +373,6 @@ export async function prepareCabin({
   // Verify all inputs before writing. Baseline and proxy remain recoverable.
   const assets = [
     {
-      source: "r35-cabin-selector-topology.glb.gz",
-      gzipBytes: CABIN_SELECTOR_TOPOLOGY_ASSET.gzipBytes,
-      filename: CABIN_SELECTOR_TOPOLOGY_ASSET.path.slice("/models/".length),
-      decode: decodeCabinSelectorTopology,
-      sha256: CABIN_SELECTOR_TOPOLOGY_ASSET.sha256,
-    },
-    {
       source: "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
       gzipBytes: CABIN_FINE_ROUGHNESS_ASSET.gzipBytes,
       filename: CABIN_FINE_ROUGHNESS_ASSET.path.slice("/models/".length),

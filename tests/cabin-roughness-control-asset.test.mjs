@@ -88,7 +88,6 @@ test.each(["present", "absent", "corrupt"])(
     try {
       mkdirSync(join(root, "qa/cabin-preview"), { recursive: true });
       for (const name of [
-      "r35-cabin-selector-topology.glb.gz",
         "r35-contact-ao-static-faces-roughness-uv4.glb.gz",
         "r35-cabin-contact-ao-static-faces.glb.gz",
         "r35-cabin-dashboard.glb.gz",
