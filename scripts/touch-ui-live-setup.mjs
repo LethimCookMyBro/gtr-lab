@@ -9,10 +9,12 @@ export default async function setup() {
   try {
     const identity = await verifyTouchCheckout(); Object.assign(receipt,identity);
     receipt.build = assertTouchBuild(await readFormulaEAssets(),identity.request);
-    if(identity.request.mode === 'baseline-live') {
+    if(identity.request.mode !== 'candidate-ci') {
       const {commit,...publicAssets} = await verifyReleaseAssets({commit:identity.request.target.expectedDeployedCommit});
       receipt.publicAssets = {...publicAssets,expectedDeployedCommit:commit};
-      receipt.commitEvidence = 'Frozen separate Railway connector readback. HTTP compares bytes and does not prove commit provenance.';
+      receipt.commitEvidence = identity.request.mode === 'baseline-live'
+        ? 'Frozen separate Railway connector readback. HTTP compares bytes and does not prove commit provenance.'
+        : 'Pinned separate Railway connector readback. HTTP compares frontend bytes and does not prove deployed commit provenance, GLB identity or Premium performance.';
     }
     receipt.status = 'passed';
   } catch(error) { receipt.status = 'failed'; receipt.error = String(error); throw error; }

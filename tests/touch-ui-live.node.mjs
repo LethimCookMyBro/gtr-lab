@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { TOUCH_UI_BASELINE, TOUCH_UI_CONTRACT, TOUCH_UI_VIEWPORTS, validateTouchRequest, validateTouchCI, assertTouchSource, assertTouchBuild, assessTouchGesture, createTouchRuntimeEvidence, assertTouchRuntimeRequest, assertTouchRuntimeComplete, collectTouchFrameGesture, recordTouchTrustVerdict } from '../scripts/touch-ui-live-contract.mjs';
+import { TOUCH_UI_BASELINE, TOUCH_UI_RELEASED_SOURCE, TOUCH_UI_CONTRACT, TOUCH_UI_VIEWPORTS, validateTouchRequest, validateTouchCI, assertTouchSource, assertTouchBuild, assessTouchGesture, createTouchRuntimeEvidence, assertTouchRuntimeRequest, assertTouchRuntimeComplete, collectTouchFrameGesture, recordTouchTrustVerdict } from '../scripts/touch-ui-live-contract.mjs';
 const request = ()=>({version:1,allow:true,contract:TOUCH_UI_CONTRACT,mode:'baseline-live',target:{...TOUCH_UI_BASELINE}});
 const env = ()=>({CI:'true',GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'LethimCookMyBro/gtr-lab',GITHUB_REF:'refs/heads/main',GITHUB_EVENT_NAME:'push',GITHUB_SHA:'a'.repeat(40),TOUCH_UI_ALLOW:'1',TOUCH_UI_COMMIT_MESSAGE:'QA [verify-touch-ui-live]',TOUCH_UI_VIEWPORT:'tablet-768',TOUCH_UI_AREA:'home-collection'});
 const candidate = ()=>({...request(),mode:'candidate-ci',target:{origin:'http://127.0.0.1:4173',sourceTree:'b'.repeat(64),sourceFiles:103}});
@@ -26,12 +26,41 @@ test('candidate uses separately checked-in exact source and fixed CI-only origin
   assert.throws(()=>assertTouchSource({sha256:'a'.repeat(64),files:Array(103)},candidate()));
   assert.throws(()=>assertTouchSource({sha256:'b'.repeat(64),files:Array(102)},candidate()));
 });
-test('active UI cleanup request is the independently reviewed exact candidate',async()=>{
+test('released UI request stays inactive until independently verified release pins are supplied',async()=>{
   const active=JSON.parse(await readFile('qa/touch-ui-live-request.json','utf8'));
-  assert.deepEqual(active,{version:1,allow:true,contract:TOUCH_UI_CONTRACT,mode:'candidate-ci',target:{origin:'http://127.0.0.1:4173',sourceTree:'79671bdf0f7d201425c4e32621927c0b43b687f1ce0111ed09ce480c4bcc0298',sourceFiles:104}});
+  assert.deepEqual(active,{version:1,allow:false,contract:TOUCH_UI_CONTRACT,mode:'released-ui',target:{origin:TOUCH_UI_BASELINE.origin,...TOUCH_UI_RELEASED_SOURCE,expectedDeployedCommit:'PENDING_VERIFIED_RELEASE_COMMIT',railwayDeploymentId:'PENDING_VERIFIED_RAILWAY_DEPLOYMENT',buildSha256:'PENDING_ACCEPTED_RELEASE_BUILD'}});
   const {applicationIdentity}=await import('../scripts/diagnose-dpr-motion.mjs');
-  assertTouchSource(await applicationIdentity('.'),active);
-  validateTouchCI(active,{...env(),TOUCH_UI_COMMIT_MESSAGE:'QA [stage-touch-ui]'});
+  const identity=await applicationIdentity('.');
+  assert.equal(identity.sha256,TOUCH_UI_RELEASED_SOURCE.sourceTree);assert.equal(identity.files.length,TOUCH_UI_RELEASED_SOURCE.sourceFiles);
+  assert.throws(()=>validateTouchRequest(active));assert.throws(()=>validateTouchRequest({...active,allow:true}));
+});
+const released=()=>({...request(),mode:'released-ui',target:{origin:TOUCH_UI_BASELINE.origin,...TOUCH_UI_RELEASED_SOURCE,expectedDeployedCommit:'c'.repeat(40),railwayDeploymentId:'11111111-2222-3333-4444-555555555555',buildSha256:'d'.repeat(64)}});
+test('released UI requires exact reviewed source, live origin and complete release pins',()=>{
+  validateTouchRequest(released());
+  for(const change of [{origin:'https://example.com'},{origin:'http://127.0.0.1:4173'},{sourceTree:TOUCH_UI_BASELINE.sourceTree},{sourceTree:'b'.repeat(64)},{sourceFiles:103},{expectedDeployedCommit:'main'},{expectedDeployedCommit:'0'.repeat(40)},{expectedDeployedCommit:TOUCH_UI_BASELINE.expectedDeployedCommit},{railwayDeploymentId:'pending'},{buildSha256:'pending'},{buildSha256:'0'.repeat(64)},{skipReadiness:true}]) assert.throws(()=>validateTouchRequest({...released(),target:{...released().target,...change}}));
+  assertTouchSource({sha256:TOUCH_UI_RELEASED_SOURCE.sourceTree,files:Array(104)},released());
+  assert.throws(()=>assertTouchSource({sha256:'b'.repeat(64),files:Array(104)},released()));
+});
+test('released UI uses its own QA token and excludes Premium and runtime overrides',()=>{
+  const liveEnv={...env(),TOUCH_UI_COMMIT_MESSAGE:'QA [verify-released-ui]'};
+  validateTouchCI(released(),liveEnv);
+  validateTouchCI(released(),{...liveEnv,TOUCH_UI_VIEWPORT:'build',TOUCH_UI_AREA:'build'});
+  for(const change of [{TOUCH_UI_AREA:'configurator'},{TOUCH_UI_COMMIT_MESSAGE:'[stage-touch-ui]'},{TOUCH_UI_COMMIT_MESSAGE:'[verify-touch-ui-live]'},{TOUCH_UI_COMMIT_MESSAGE:'[verify-released-ui] [release-ui]'},{TOUCH_UI_ORIGIN:TOUCH_UI_BASELINE.origin}]) assert.throws(()=>validateTouchCI(released(),{...liveEnv,...change}));
+  assert.throws(()=>validateTouchCI(request(),liveEnv));assert.throws(()=>validateTouchCI(candidate(),liveEnv));
+});
+test('released UI rejects changed frontend bytes with the existing build identity',()=>{
+  const bytes=Buffer.from('released CPU fixture'),pin={bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
+  const assets=new Map(['/index.html','/assets/app.js','/assets/app.css'].map(path=>[path,pin]));
+  const build=assertTouchBuild(assets,candidate());
+  assert.deepEqual(assertTouchBuild(assets,{...released(),target:{...released().target,buildSha256:build.sha256}}),build);
+  assert.throws(()=>assertTouchBuild(assets,released()));
+});
+test('released UI reuses existing public verification and deployment ancestry without new network paths',async()=>{
+  const contract=await readFile('scripts/touch-ui-live-contract.mjs','utf8'),setup=await readFile('scripts/touch-ui-live-setup.mjs','utf8');
+  assert.ok(contract.includes("if(request.mode !== 'candidate-ci') git(['merge-base','--is-ancestor',request.target.expectedDeployedCommit,'HEAD'])"));
+  assert.ok(setup.includes("if(identity.request.mode !== 'candidate-ci')"));
+  assert.ok(setup.includes('await verifyReleaseAssets({commit:identity.request.target.expectedDeployedCommit})'));
+  assert.doesNotMatch(contract+setup,/fetch\(|page\.request|request\.get/);
 });
 test('candidate bytes are derived from source-bound local build while live hash cannot drift',()=>{
   const bytes=Buffer.from('cpu fixture'),pin={bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};

@@ -1,11 +1,14 @@
 {
   "version": 1,
-  "allow": true,
+  "allow": false,
   "contract": "gtr-touch-ui-source-bound-v1",
-  "mode": "candidate-ci",
+  "mode": "released-ui",
   "target": {
-    "origin": "http://127.0.0.1:4173",
+    "origin": "https://gtr-lab-production.up.railway.app",
     "sourceTree": "79671bdf0f7d201425c4e32621927c0b43b687f1ce0111ed09ce480c4bcc0298",
-    "sourceFiles": 104
+    "sourceFiles": 104,
+    "expectedDeployedCommit": "PENDING_VERIFIED_RELEASE_COMMIT",
+    "railwayDeploymentId": "PENDING_VERIFIED_RAILWAY_DEPLOYMENT",
+    "buildSha256": "PENDING_ACCEPTED_RELEASE_BUILD"
   }
 }

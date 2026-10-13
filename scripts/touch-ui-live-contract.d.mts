@@ -1,7 +1,8 @@
 export interface TouchViewport { name: string; width: number; height: number; deviceScaleFactor: number; touch: boolean }
-export interface TouchRequest { version: 1; allow: true; contract: string; mode: 'baseline-live' | 'candidate-ci'; target: {origin: string; sourceTree: string; sourceFiles: number; expectedDeployedCommit?: string; railwayDeploymentId?: string; buildSha256?: string} }
+export interface TouchRequest { version: 1; allow: true; contract: string; mode: 'baseline-live' | 'candidate-ci' | 'released-ui'; target: {origin: string; sourceTree: string; sourceFiles: number; expectedDeployedCommit?: string; railwayDeploymentId?: string; buildSha256?: string} }
 export const TOUCH_UI_CONTRACT: string;
 export const TOUCH_UI_REQUEST: string;
+export const TOUCH_UI_RELEASED_SOURCE: Readonly<{sourceTree:string;sourceFiles:number}>;
 export const TOUCH_UI_BASELINE: Readonly<TouchRequest['target']>;
 export const TOUCH_UI_VIEWPORTS: ReadonlyArray<TouchViewport>;
 export function validateTouchRequest(value: unknown): TouchRequest;

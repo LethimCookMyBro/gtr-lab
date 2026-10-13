@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && (contains(github.event.head_commit.message, '[verify-touch-ui-live]') || contains(github.event.head_commit.message, '[stage-touch-ui]')) && !contains(github.event.head_commit.message, '[release-')
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && (contains(github.event.head_commit.message, '[verify-touch-ui-live]') || contains(github.event.head_commit.message, '[stage-touch-ui]') || contains(github.event.head_commit.message, '[verify-released-ui]')) && !contains(github.event.head_commit.message, '[release-')
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:

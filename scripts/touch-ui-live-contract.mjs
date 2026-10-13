@@ -24,13 +24,24 @@ export const TOUCH_UI_BASELINE = Object.freeze({
   sourceTree: 'f353b758035fcc65b88376a46b5cf7c5c3e14016c1769f052368070efbe7f5dc', sourceFiles: 103,
   buildSha256: 'a07a992b2d5a925015b99de14b6c5a469d0ec2875f67fd1c29549f536c28ba7e',
 });
+export const TOUCH_UI_RELEASED_SOURCE = Object.freeze({
+  sourceTree: '79671bdf0f7d201425c4e32621927c0b43b687f1ce0111ed09ce480c4bcc0298', sourceFiles: 104,
+});
 export function validateTouchRequest(request) {
   assert.deepEqual(Object.keys(request ?? {}).sort(), ['version','allow','contract','mode','target'].sort());
   assert.equal(request.version, 1); assert.equal(request.allow, true); assert.equal(request.contract, TOUCH_UI_CONTRACT);
-  assert.ok(['baseline-live','candidate-ci'].includes(request.mode));
+  assert.ok(['baseline-live','candidate-ci','released-ui'].includes(request.mode));
   if (request.mode === 'baseline-live') {
     validateFormulaELiveRequest(request.target);
     assert.deepEqual(request.target, TOUCH_UI_BASELINE, 'Live baseline is frozen; changing it requires a reviewed contract');
+  } else if (request.mode === 'released-ui') {
+    assert.deepEqual(Object.keys(request.target ?? {}).sort(), ['origin','sourceTree','sourceFiles','expectedDeployedCommit','railwayDeploymentId','buildSha256'].sort());
+    assert.equal(request.target.origin, TOUCH_UI_BASELINE.origin, 'Unreviewed released UI origin');
+    for(const [key,value] of Object.entries(TOUCH_UI_RELEASED_SOURCE)) assert.equal(request.target[key],value,'Unreviewed released UI production source');
+    assert.match(request.target.expectedDeployedCommit ?? '', /^(?!0{40}$)[a-f0-9]{40}$/, 'Exact independently verified deployed commit required');
+    assert.notEqual(request.target.expectedDeployedCommit, TOUCH_UI_BASELINE.expectedDeployedCommit, 'Released UI cannot reuse the historical baseline deployment');
+    assert.match(request.target.railwayDeploymentId ?? '', /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/, 'Separate Railway deployment readback required');
+    assert.match(request.target.buildSha256 ?? '', /^(?!0{64}$)[a-f0-9]{64}$/, 'Exact accepted released UI build required');
   } else {
     // A future reviewed candidate request changes checked-in pins, never an environment override.
     assert.deepEqual(Object.keys(request.target ?? {}).sort(), ['origin','sourceTree','sourceFiles'].sort());
@@ -45,11 +56,12 @@ export function validateTouchCI(request, env = process.env) {
   validateTouchRequest(request);
   for (const [key,value] of Object.entries({CI:'true',GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'LethimCookMyBro/gtr-lab',GITHUB_REF:'refs/heads/main',GITHUB_EVENT_NAME:'push',TOUCH_UI_ALLOW:'1'})) assert.equal(env[key],value,key);
   assert.match(env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/);
-  const token = request.mode === 'baseline-live' ? '[verify-touch-ui-live]' : '[stage-touch-ui]';
+  const token = request.mode === 'baseline-live' ? '[verify-touch-ui-live]' : request.mode === 'released-ui' ? '[verify-released-ui]' : '[stage-touch-ui]';
   assert.ok(env.TOUCH_UI_COMMIT_MESSAGE?.includes(token), 'Explicit matching audit token required');
   assert.ok(!env.TOUCH_UI_COMMIT_MESSAGE.includes('[release-'), 'QA-only push cannot authorize a release');
   assert.ok(TOUCH_UI_VIEWPORTS.some(target => target.name === env.TOUCH_UI_VIEWPORT) || env.TOUCH_UI_VIEWPORT === 'build');
   assert.ok(['home-collection','configurator','build'].includes(env.TOUCH_UI_AREA));
+  if(request.mode === 'released-ui') assert.ok(['home-collection','build'].includes(env.TOUCH_UI_AREA), 'Released UI is collection/footer only; no Premium or performance proof');
   for (const key of Object.keys(env).filter(key => key.startsWith('TOUCH_UI_'))) assert.ok(['TOUCH_UI_ALLOW','TOUCH_UI_COMMIT_MESSAGE','TOUCH_UI_VIEWPORT','TOUCH_UI_AREA'].includes(key), `Unreviewed override ${key}`);
 }
 export async function loadTouchRequest(env = process.env) {
@@ -63,7 +75,7 @@ export function assertTouchSource(identity, request) {
 }
 export function assertTouchBuild(assets, request) {
   validateTouchRequest(request); const build = formulaEBuildIdentity(assets);
-  if(request.mode === 'baseline-live') assert.equal(build.sha256,request.target.buildSha256,'Local build differs from accepted live bytes');
+  if(request.mode !== 'candidate-ci') assert.equal(build.sha256,request.target.buildSha256,'Local build differs from accepted live bytes');
   return build;
 }
 export async function verifyTouchCheckout(env = process.env) {
@@ -72,7 +84,7 @@ export async function verifyTouchCheckout(env = process.env) {
   assert.equal(git(['rev-parse','HEAD']),env.GITHUB_SHA);
   assert.equal(git(['status','--porcelain','--untracked-files=no']),'','Tracked audit and source must stay clean');
   git(['ls-files','--error-unmatch',TOUCH_UI_REQUEST]);
-  if(request.mode === 'baseline-live') git(['merge-base','--is-ancestor',request.target.expectedDeployedCommit,'HEAD']);
+  if(request.mode !== 'candidate-ci') git(['merge-base','--is-ancestor',request.target.expectedDeployedCommit,'HEAD']);
   const source = await applicationIdentity('.'); assertTouchSource(source,request);
   return {request,source,harnessCommit:env.GITHUB_SHA};
 }

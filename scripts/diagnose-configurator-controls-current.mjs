@@ -21,6 +21,33 @@ export async function captureWithTimeoutRetry(capture, onRetry) {
   }
 }
 export { auditPreparedCabinAvailability as auditCabinPreviewAvailability } from './prepared-cabin-availability.mjs';
+/** Missing models expose factual references and navigation, with no scene controls. */
+export async function auditMissingModelAvailability({ page, id }) {
+  const specificationsOnly = id === 'formula-e';
+  const fallbackLabel = specificationsOnly ? 'Specifications only · 3D asset pending' : 'Photo reference · 3D asset pending';
+  const availability = page.getByRole('button', { name: fallbackLabel, exact: true });
+  await availability.waitFor();
+  assert.equal(await page.locator('main.configurator').getAttribute('data-asset-state'), 'missing');
+  assert.equal(await page.locator('.config-toolbar, .paint-rail, .scene-stage canvas').count(), 0, 'Missing models must omit scene controls and canvas from the DOM');
+  for (const name of ['Camera', 'Environment', 'Lights', 'Rotate', 'Ultimate Silver']) {
+    assert.equal(await page.getByRole('button', { name, exact: true, includeHidden: true }).count(), 0, `${name} must be absent for a missing model`);
+  }
+  assert.equal(await availability.isVisible(), true);
+  assert.equal(await availability.isEnabled(), true);
+  for (const name of ['Model detail', 'Switch model']) {
+    const button = page.getByRole('button', { name, exact: true });
+    assert.equal(await button.isVisible(), true, `${name} must remain visible`);
+    assert.equal(await button.isEnabled(), true, `${name} must remain available`);
+  }
+  for (const [name, href] of [['Back to models', '/models'], ['GT-R LAB home', '/']]) {
+    const link = page.getByRole('link', { name, exact: true });
+    assert.equal(await link.isVisible(), true, `${name} must remain visible`);
+    assert.equal(await link.getAttribute('href'), href);
+  }
+  assert.equal(await page.locator('.reference-view img').count(), specificationsOnly ? 0 : 1);
+  if (specificationsOnly) assert.equal(await page.getByText('Reference image unavailable', { exact: true }).count(), 1);
+  return { canvas: false, sceneControls: false, photoFallback: !specificationsOnly, specificationsOnly, navigationAvailable: true };
+}
 async function runControlAudit() {
 const cabinSource = await readFile('src/components/three/cabinPreview.ts', 'utf8');
 const cabinMatches = [...cabinSource.matchAll(/export const CABIN_URL\s*=\s*"([^"]+)"/g)];
@@ -175,7 +202,10 @@ try {
       await check('Rotate on, visible movement, and stop', async () => { const before = await shot('rotate-before'); await page.emulateMedia({ reducedMotion: 'no-preference' }); const button = page.getByRole('button', { name: 'Rotate', exact: true }); await armCapture(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true'); await page.evaluate(() => new Promise(resolve => { let n=24; const frame=()=> --n <= 0 ? resolve() : requestAnimationFrame(frame); requestAnimationFrame(frame); })); await armCapture(); await button.click({ timeout: 60000 }); assert.equal(await button.getAttribute('aria-pressed'), 'false'); const after = await shot('rotate-after'); assert.notEqual(after, before); return { before, after, pixelsChanged: true }; });
       await check('Sound is an opt-in interface cue', async () => { const button = page.locator('.config-toolbar .sound-button'); const count = await page.evaluate(() => window.__audioStarts); await button.click(); await page.waitForTimeout(300); const starts = await page.evaluate(() => window.__audioStarts); assert.ok(starts > count); const enabledText = await button.innerText(); await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'false'); return { enabledText, actualOscillatorStarts: starts - count, soundType: 'interface cue, not engine audio' }; });
       for (const [id, label] of [['nismo', 'NISMO'], ['tspec', 'T-spec'], ['gtr50', 'GT-R50'], ['gt3', 'GT3'], ['formula-e', 'Formula E']]) {
-        await check(`${label} remains an honest unavailable-3D fallback`, async () => { const fallbackLabel = id === 'formula-e' ? 'Specifications only · 3D asset pending' : 'Photo reference · 3D asset pending'; await page.goto(baseURL + '/configurator/' + id, { waitUntil: 'domcontentloaded' }); await page.getByRole('button', { name: fallbackLabel, exact: true }).waitFor(); assert.equal(await canvas.count(), 0); assert.equal(await page.getByRole('button', { name: fallbackLabel, exact: true }).isVisible(), true); assert.equal(await page.getByRole('button', { name: 'Ultimate Silver', exact: true }).isDisabled(), true); await open('Camera'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: 'Front', exact: true }).isDisabled(), true); await close(); await open('Environment'); assert.equal(await page.getByRole('dialog').getByRole('button', { name: /^Pit garage/ }).isDisabled(), true); await close(); if (id === 'formula-e') { assert.equal(await page.locator('.reference-view img').count(), 0); assert.equal(await page.getByText('Reference image unavailable', { exact: true }).count(), 1); } return { canvas: false, photoFallback: id !== 'formula-e', specificationsOnly: id === 'formula-e', cameraDisabled: true, environmentDisabled: true }; });
+        await check(`${label} remains an honest unavailable-3D fallback`, async () => {
+          await page.goto(baseURL + '/configurator/' + id, { waitUntil: 'domcontentloaded' });
+          return auditMissingModelAvailability({ page, id });
+        });
       }
     } catch (error) { result.functionalCapture = await readFunctionalCaptureFailure(page); result.errors.push(String(error)); report.failures.push(`${name}: ${error.message}`); }
     if (result.errors.length) report.failures.push(`${name}: unexpected browser errors`);
