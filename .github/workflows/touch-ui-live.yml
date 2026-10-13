@@ -1,0 +1,102 @@
+# QA-only source-bound baseline or explicit staged candidate. Never deploys.
+name: Touch UI source-bound audit
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/touch-ui-live-request.json'
+      - 'scripts/touch-ui-live-*'
+      - 'playwright.touch-ui.config.ts'
+      - 'e2e/touch-ui-live.spec.ts'
+      - 'e2e/helpers/touch-ui-audit.ts'
+      - 'tests/touch-ui-live.node.mjs'
+      - '.github/workflows/touch-ui-live.yml'
+permissions:
+  contents: read
+concurrency:
+  group: touch-ui-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && (contains(github.event.head_commit.message, '[verify-touch-ui-live]') || contains(github.event.head_commit.message, '[stage-touch-ui]')) && !contains(github.event.head_commit.message, '[release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TOUCH_UI_ALLOW: '1'
+      TOUCH_UI_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+      TOUCH_UI_VIEWPORT: build
+      TOUCH_UI_AREA: build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate exact checked-in source and target before setup
+        run: node scripts/touch-ui-live-contract.mjs --check-checkout
+      - run: npm ci
+      - name: Socket-free contract checks
+        run: node --test tests/touch-ui-live.node.mjs tests/ui-optimization-receipts.node.mjs tests/formula-e-runtime-evidence.node.mjs tests/cabin-runtime-body-ledger.node.mjs
+      - name: Build exact runtime once; baseline does not prepare model assets
+        run: |
+          if node --input-type=module -e 'import fs from "node:fs";process.exit(JSON.parse(fs.readFileSync("qa/touch-ui-live-request.json")).mode === "candidate-ci" ? 0 : 1)'; then
+            npm run prepare:assets
+          fi
+          node node_modules/typescript/bin/tsc --noEmit
+          node node_modules/vite/bin/vite.js build
+          node scripts/touch-ui-live-contract.mjs --check-build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: touch-ui-exact-build-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+  browser:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        viewport: [phone-320, phone-390, tablet-768, tablet-820, tablet-landscape-1024, desktop-1440]
+        area: [home-collection, configurator]
+    env:
+      TOUCH_UI_ALLOW: '1'
+      TOUCH_UI_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+      TOUCH_UI_VIEWPORT: ${{ matrix.viewport }}
+      TOUCH_UI_AREA: ${{ matrix.area }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: node scripts/touch-ui-live-contract.mjs --check-checkout
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: touch-ui-exact-build-${{ github.sha }}
+          path: dist/
+      - run: node scripts/touch-ui-live-contract.mjs --check-build
+      - run: npx playwright install --with-deps chromium
+      - name: Actual independent UI audit with original deadlines and zero retries
+        run: npx playwright test -c playwright.touch-ui.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: touch-ui-${{ matrix.viewport }}-${{ matrix.area }}-${{ github.sha }}
+          path: |
+            qa/touch-ui-live-request.json
+            test-results/touch-ui/
+            playwright-touch-ui-report/
+          retention-days: 14
+          if-no-files-found: warn
