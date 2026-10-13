@@ -30,7 +30,7 @@ test('quality dimensional contract gives a genuine pixel contrast without changi
  const d=p.expectedDimensions({renderWidth:1920,renderHeight:924,nativeDpr:1},'reduced');assert.ok(d,'Missing dimensional contract');assert.equal(d.width,1441);assert.equal(d.height,693);assert.ok(d.width*d.height<=1000000);assert.throws(()=>p.expectedDimensions({renderWidth:1920,renderHeight:924,nativeDpr:1},'auto'));
 });
 test('source verification binds exact checkout, runtime and historical helpers',async()=>{
- const r=await p.verifySources(app);assert.ok(r,'Missing source verification');assert.equal(r.source.sha256,request().sourceTree);assert.equal(r.sourceCommit,request().sourceCommit);assert.equal(Object.keys(r.helpers).length,11);
+ const r=await p.verifySources(app);assert.ok(r,'Missing source verification');assert.equal(r.source.sha256,request().sourceTree);assert.equal(r.sourceCommit,request().sourceCommit);assert.equal(Object.keys(r.helpers).length,14);
 });
 test('readiness derivation is exactly existing reviewed quality-budget derivation',async()=>{
  const bytes=await readFile(resolve(app,'scripts/functional-capture-readiness.mjs'));

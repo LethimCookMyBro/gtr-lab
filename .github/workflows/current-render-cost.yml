@@ -50,7 +50,7 @@ jobs:
         working-directory: application
       - name: Test exact source, observer, prefixes, deadlines and censored evidence
         working-directory: harness
-        run: node --test tests/current-render-cost/*.node.mjs
+        run: node --test tests/current-render-cost/*.node.mjs ../application/tests/cabin-leather-comparison.node.mjs ../application/tests/cabin-runtime-body-ledger.node.mjs
         env:
           R35_TEST_APP_ROOT: ${{ github.workspace }}/application
       - run: npm run build

@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
-import { expectedRequest, authorizeRun, validateRequest, verifySources, deriveReadiness, expectedDimensions, actionPrefix, censor, hash, modelPins, completePlan, summarizeInterval } from './current-render-cost-policy.mjs';
+import { expectedRequest, authorizeRun, validateRequest, verifySources, deriveReadiness, expectedDimensions, actionPrefix, censor, hash, modelPins, completePlan, summarizeInterval, nativeCabinModel } from './current-render-cost-policy.mjs';
 import { installCurrentRenderCostObserver } from './current-render-cost-observer.mjs';
 const here=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 export async function runBoundedPrefix(plan,execute,readFailure,persist) {
@@ -40,9 +40,11 @@ export async function main(env=process.env,{checkOnly=false}={}) {
  const assets=await collectDistAssets(resolve(app,'dist'));
  const {createRuntimeBodyLedger}=await importApp('scripts/cabin-runtime-body-ledger.mjs');
  const {readinessWindow}=await importApp('scripts/cabin-preparation-policy.mjs');
+ const {captureActualComparisonCabinResponse,assertComparisonModelReceipt}=await importApp('scripts/cabin-leather-model-body.mjs');
  const intendedBytes=new Map();for(const path of assets.keys())intendedBytes.set(path,(await stat(resolve(app,'dist'+path))).size);
  const ledger=createRuntimeBodyLedger({intendedAssets:assets,intendedBytes});ledger.beginDocument(1);
  for(const model of modelPins){const bytes=await readFile(resolve(app,'dist'+model.path));assert.equal(bytes.length,model.bytes);assert.equal(hash(bytes),model.sha256);}
+ const gzip=await readFile(resolve(app,'dist'+nativeCabinModel.path+'.gz'));assert.equal(gzip.length,nativeCabinModel.gzipBytes);assert.equal(hash(gzip),nativeCabinModel.gzipSha256);
  await mkdir(output,{recursive:true});const generated=deriveReadiness(await readFile(resolve(app,'scripts/functional-capture-readiness.mjs')));
  await writeFile(resolve(output,'readiness.generated.mjs'),generated);
  const readiness=await import(pathToFileURL(resolve(output,'readiness.generated.mjs')));
@@ -58,7 +60,7 @@ export async function main(env=process.env,{checkOnly=false}={}) {
   scope:'Current source four-cell SwiftShader discriminator. The 45s capture cap is stricter than historical 1920 visual 90s. This run cannot replace that historical verdict or native-motion acceptance.',
   limitations:['No hardware GPU runner or hardware FPS claim.','Exact scheduler admission and pre-main start are not emitted; earlier delay remains partly unpartitioned.','Cached shadow/environment work is not assumed to execute on every frame.','No repaint, extra fence/poll, retry or default quality downgrade.','Stopped suffix rows remain blocked; no cherry-picked successful denominator.']};
  const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');await save();
- let server,browser,page,canvas,initialCanvas,expectedPreset='hero',expectedEnvironment='studio',quality='standard',captureArmed=true,intervalStart=0;
+ let server,browser,page,canvas,initialCanvas,nativeModel,expectedPreset='hero',expectedEnvironment='studio',quality='standard',captureArmed=true,intervalStart=0;
  const images=new Map(),requestIds=new WeakMap();let nextRequestId=0,activeStep='setup';
  const mark=(phase,data={})=>page.evaluate(({phase,data})=>globalThis.__r35CurrentRenderCost.mark(phase,data),{phase,data});
  const observe=()=>page.evaluate(()=>globalThis.__r35CurrentRenderCost.snapshot());
@@ -71,16 +73,17 @@ export async function main(env=process.env,{checkOnly=false}={}) {
   const context=await browser.newContext({viewport:request.viewport,deviceScaleFactor:1,reducedMotion:'reduce',serviceWorkers:'block'});
   await context.addInitScript({content:`(${readiness.installFunctionalCaptureObserver.toString()})();(${installCurrentRenderCostObserver.toString()})();`});
   page=await context.newPage();page.setDefaultTimeout(15_000);page.setDefaultNavigationTimeout(30_000);
-  const cdp=await context.newCDPSession(page);await cdp.send('Network.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});
+  const cdp=await context.newCDPSession(page);nativeModel=await captureActualComparisonCabinResponse({cdp,model:nativeCabinModel,baseUrl:base,phase:()=>activeStep});
   page.on('request',request=>{
    try{const url=new URL(request.url());assert.equal(url.origin,base,'Unexpected runtime origin');if(url.protocol==='blob:')return;
     const requestId=++nextRequestId;requestIds.set(request,requestId);const path=url.pathname.startsWith('/configurator/')?'/index.html':url.pathname;
     const receipt=ledger.issue({requestId,generation:1,url:request.url(),path,phase:activeStep,startedAt:performance.now()});report.runtimeBodies.push(receipt);
+    if(path===nativeCabinModel.path)nativeModel.bindRequest({requestId,generation:1,url:request.url(),method:request.method()});
    }catch(error){report.errors.push({step:activeStep,error:String(error)});}
   });
   page.on('response',response=>{
    try{const url=new URL(response.url());assert.equal(url.origin,base,'Unexpected runtime origin');if(url.protocol==='blob:'){report.derivedBlobs.push({step:activeStep,url:response.url(),status:response.status()});return;}
-    ledger.receive({requestId:requestIds.get(response.request()),generation:1,url:response.url(),status:response.status(),body:()=>response.body()});
+    ledger.receive({requestId:requestIds.get(response.request()),generation:1,url:response.url(),status:response.status(),body:()=>url.pathname===nativeCabinModel.path?nativeModel.readBody({requestId:requestIds.get(response.request()),generation:1,url:response.url(),status:response.status()}):response.body()});
    }catch(error){report.errors.push({step:activeStep,error:String(error)});}
   });
   page.on('pageerror',error=>report.pageErrors.push({step:activeStep,message:error.message}));
@@ -166,6 +169,7 @@ export async function main(env=process.env,{checkOnly=false}={}) {
   if(report.bodyLedger.state!=='finished'||report.bodyLedger.errors.length||report.errors.length||report.runtimeBodies.some(r=>r.error)||report.pageErrors.length||report.requestsFailed.length||report.observation?.issues.length){report.status='failed';report.errors.push({step:'evidence-health',error:'Runtime body, browser or observation error; see raw receipts'});}
   report.cleanup=await cleanupResources({persist:save,browser,server});report.cleanupConfirmed=report.cleanup.confirmed;report.errors.push(...report.cleanup.errors);if(!report.cleanupConfirmed)report.status='failed';
   report.bodyLedger=ledger.snapshot();if(report.bodyLedger.state!=='finished'||report.bodyLedger.errors.length||report.errors.length||report.requestsFailed.length)report.status='failed';
+  if(nativeModel){report.nativeModelReceipt=nativeModel.snapshot();try{assertComparisonModelReceipt(report.nativeModelReceipt,nativeCabinModel,report.bodyLedger.requests);}catch(error){report.status='failed';report.errors.push({step:'same-session-native-model-receipt',error:String(error)});}}
   if(report.status==='collected')report.status='passed';await save();
  }
  if(report.status!=='passed')process.exitCode=1;return report;

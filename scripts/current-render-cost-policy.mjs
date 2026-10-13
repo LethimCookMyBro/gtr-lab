@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertComparisonModelReceipt } from './cabin-leather-model-body.mjs';
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
@@ -6,6 +7,9 @@ import { resolve } from 'node:path';
 export const hash = value => createHash('sha256').update(value).digest('hex');
 export const expectedRequest = Object.freeze({version:1,allow:false,contract:'current-render-cost-four-cell-v1',sourceCommit:'28f586ce35b4441254c10583fc7bc1da3265a106',sourceTree:'7632e86545bdd559e38cac1133245b5b284b5bbb1b97d2fc6100ad66d021011b',cells:['studio-standard','studio-reduced','night-standard','night-reduced'],viewport:{width:1920,height:1080},deviceScaleFactor:1,reducedMotion:'reduce',budgets:{availabilityMs:90000,functionalMs:15000,captureMs:45000},retries:0});
 export const helperPins = Object.freeze({
+ 'scripts/cabin-leather-model-body.mjs':'36d645367ff8706aa6d721ff397b0d34a7ace32e704f6f89ac75f2fe4cfdc66c',
+ 'scripts/cabin-preparation-network.mjs':'110ae32fe3008b7604fcb06cf5c2d8f1319596d9d6d9ba351170cd2543458d7e',
+ 'tests/cabin-leather-comparison.node.mjs':'6983e253bf1a1c6e3410ab04bda2e5e1f79137fa7279637f6d12928a00dcde2e',
  'scripts/cabin-runtime-body-ledger.mjs':'356ec061cdea91e834d9a060e1837d06e2cc2d9977bb4232aae3c0d2a239703b',
  'scripts/cabin-preparation-policy.mjs':'f62c8eed6f18e465ce98721961343ef54bb82d0a13f51e20c3e8eb8e0f3b37cb',
  'scripts/capture-environments.mjs':'73b50776dd511f82d7bc6a979f8a8fd9854355ee2b142ac3c74a1bb6eeed014d',
@@ -75,6 +79,7 @@ export const modelPins=Object.freeze([
  {path:'/models/r35-cabin-fine-roughness-ed88ad0e.glb',bytes:20196108,sha256:'ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0'},
  {path:'/models/r35-exterior-cabin-proxy-49d7c2ab.glb',bytes:956368,sha256:'49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347'},
 ]);
+export const nativeCabinModel=Object.freeze({...modelPins[1],gzipBytes:10194113,gzipSha256:'b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5'});
 export function completePlan(cell){return [{id:'initial-default-standard',type:'initial'},{id:'original-accessibility-prefix',type:'accessibility'},{id:'actual-quality-selection',type:'quality'},...actionPrefix(cell)];}
 
 export function summarizeInterval(observation,afterSequence,deadline=Infinity) {
@@ -108,6 +113,7 @@ export function validateReport(report) {
   for(const row of rows)check(row.bytes===pin.bytes&&row.sha256===pin.sha256&&row.status===200&&row.state==='body-completed'&&!row.error,`unverified actual model response: ${pin.path}`);
   for(const collection of [report?.runtimeBodies,report?.bodyLedger?.requests]){const receipts=collection?.filter(r=>r.path===pin.path)??[];check(receipts.length===1&&receipts[0].bytes===pin.bytes&&receipts[0].sha256===pin.sha256&&receipts[0].status===200&&receipts[0].state==='body-completed'&&!receipts[0].error,`missing exact model body/ledger correspondence: ${pin.path}`);}
  }
+ try{assertComparisonModelReceipt(report?.nativeModelReceipt,nativeCabinModel,report?.bodyLedger?.requests??[]);}catch(error){reasons.push(`missing or invalid same-session cabin receipt: ${error.message}`);}
  check(report?.bodyLedger?.state==='finished','body ledger unfinished or failed');equal(report?.bodyLedger?.errors,[],'body ledger errors');equal(report?.bodyLedger?.lateEvents,[],'body ledger late events');
  try{validateRequest({...report?.request,allow:false});}catch{reasons.push('missing exact dimensions, motion and budgets request');}
  equal(report?.limits,{functionalMs:15000,availabilityMs:90000,captureMs:45000,retries:0},'changed gate budgets');
