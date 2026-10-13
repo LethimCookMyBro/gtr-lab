@@ -88,22 +88,22 @@ Sources:
 - https://www.nismo.co.jp/en/products/customerracing/pdf/nissan_gtr_nismo_gt3_2018-spec_en.pdf
 - https://www.nismo.co.jp/en/products/customerracing/racingcar.html
 
-## GT-R NISMO GT500
+## Nissan e-4ORCE 05
 
-2020 Class 1 specification
+2025/26 Season 12 · GEN3 Evo. Verified 2026-10-13; this is a historical season choice, not a claim to be Nissan’s latest Formula E car.
 
-- Engine: NR20B · 1,998 cc direct-injection turbo inline-four
-- Output: 550 PS+
-- Torque: 50 kgf·m+
-- Drive: Rear-wheel drive
-- Transmission: 6-speed sequential transaxle
-
-- A purpose-built Class 1 race car; it is not the road-going V6 AWD drivetrain.
-- Dimensions 4,725 × 1,950 × 1,150 mm; wheelbase 2,750 mm.
-- GT500 specifications vary by year: 2021 used NR4S21 instead of NR20B.
+- Battery-electric single-seater, separate from the GT-R family
+- Maximum traction power: 350 kW
+- Maximum regenerative braking: 600 kW, not additional traction output
+- AWD is available during qualifying duels, race starts and ATTACK MODE
+- Torque and transmission details: not specified in the cited sources, represented explicitly as unknown rather than zero or a road-car gearbox
+- Reference image and 3D geometry remain unavailable
 
 Sources:
-- https://www.nismo.co.jp/motorsports/SUPERGT/2020/machine.html
+- https://global.nissannews.com/en/releases/nissan-formula-e-press-kit
+- https://www.fia.com/news/formula-e-and-fia-unveil-gen3-evo-race-car-capable-0-60mph-just-182s
+
+The Nissan press kit’s GEN3 Evo specification table distinguishes maximum power from maximum regeneration. Its prose also uses “600kW of total power”; that phrase is not used as the traction specification here. The FIA GEN3 Evo release independently confirms the regeneration figure and the limited AWD use cases.
 
 ## Not asserted
 

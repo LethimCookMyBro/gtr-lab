@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { ReferenceUnavailable } from "../components/ReferenceUnavailable";
 import { models } from "../data/models";
 export function ModelsPage() {
   return (
@@ -10,7 +11,7 @@ export function ModelsPage() {
           <br className="mobile-only" /> expression.
         </h1>
         <p>
-          One unmistakable lineage.
+          GT-R heritage. Electric competition.
           <br />
           Six distinct perspectives.
         </p>
@@ -24,12 +25,16 @@ export function ModelsPage() {
             aria-label={"Explore " + m.name}
           >
             <div className="band-image">
-              <img
-                src={m.image}
-                alt={m.imageCaption}
-                style={{ objectPosition: m.imagePosition }}
-                loading={i > 1 ? "lazy" : "eager"}
-              />
+              {m.image ? (
+                <img
+                  src={m.image}
+                  alt={m.imageCaption}
+                  style={{ objectPosition: m.imagePosition }}
+                  loading={i > 1 ? "lazy" : "eager"}
+                />
+              ) : (
+                <ReferenceUnavailable model={m} />
+              )}
             </div>
             <div className="band-copy">
               <span className="model-index">
@@ -47,7 +52,8 @@ export function ModelsPage() {
       </div>
       <p className="lineup-note">
         Photographs represent specific model years. Each model’s detail panel
-        identifies its specification and image context.
+        identifies its specification and image context. Formula E currently has
+        specifications only; its reference image and 3D asset are unavailable.
       </p>
     </div>
   );

@@ -1,3 +1,5 @@
+> Current source boundary, 2026-10-13: these historical release/research notes are retained below. The current Premium route prepares an original authored approximate cabin with the vehicle and allows direct entry once ready; the full cabin stays route-resident and the exterior uses a separate window-view proxy. Displays and dials are static illustrations, and physical-device performance is unverified. Current catalog: Premium, NISMO, T-spec, GT-R50, GT3, and Nissan e-4ORCE 05 (GEN3 Evo, 2025/26 Season 12). Formula E has neither an integrated image nor 3D asset. The old GT500 research does not authorize its reuse for Formula E. See [current scope and evidence](FORMULA_E_CATALOG.md) and [current model provenance](MODEL_PROVENANCE.md).
+
 # Remaining authentic variant assets: free-only qualification
 
 Research checkpoint: 2026-10-01, 09:50 UTC. **Car assets must be free.** Paid models, paid subscriptions, seller contact, new accounts and authentication retries are outside this sourcing task. No new car archive was acquired in this pass. This is a bounded qualification result, not a claim that no suitable free model exists anywhere.

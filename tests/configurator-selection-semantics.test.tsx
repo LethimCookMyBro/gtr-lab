@@ -168,7 +168,7 @@ it("represents the existing native-interior camera branch without requiring a pr
   expectCameraSelection("interior");
 });
 it("keeps unavailable Interior disabled, described and unpressed", async () => {
-  show("gt500", false);
+  show("formula-e", false);
   await open("camera");
   const interior = screen.getByRole("button", {
     name: /Interior/,
@@ -262,13 +262,15 @@ it.each(models.map((model) => model.id))(
 it("preserves native model navigation and updates the current-page marker on the destination", async () => {
   show();
   await open("models");
-  const target = getModel("gt500")!;
+  const target = getModel("formula-e")!;
   const button = screen.getByRole("button", {
     name: `${target.shortName} ${target.tagline}`,
   });
   button.focus();
   await userEvent.setup().keyboard("{Enter}");
-  expect(screen.getByTestId("route").textContent).toBe("/configurator/gt500");
+  expect(screen.getByTestId("route").textContent).toBe(
+    "/configurator/formula-e",
+  );
   expect(screen.queryByRole("dialog")).toBeNull();
   const dialog = await open("models");
   expect(

@@ -193,8 +193,8 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
   });
   await expect(lineup.getByRole("link")).toHaveCount(6);
   await expect(lineup.getByText("View in 3D", { exact: true })).toHaveCount(1);
-  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(5);
-  for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"]) {
+  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(4);
+  for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "formula-e"]) {
     await expect(lineup.locator(`a[href="/configurator/${id}"]`)).toHaveCount(
       1,
     );
@@ -207,7 +207,13 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
   await expect(premium).not.toHaveAttribute("aria-describedby");
   await expect(page.locator("#home-model-asset-note")).toHaveCount(0);
   for (const card of await lineup.getByRole("link").all()) {
-    await expect(card.locator(":scope > img")).toHaveCount(1);
+    const specificationsOnly =
+      (await card.getAttribute("href")) === "/configurator/formula-e";
+    await expect(card.locator(":scope > img")).toHaveCount(
+      specificationsOnly ? 0 : 1,
+    );
+    if (specificationsOnly)
+      await expect(card.getByText("Reference image unavailable")).toBeVisible();
     await expect(card.getByRole("heading", { level: 3 })).toHaveCount(1);
     await expect(card.locator(".home-invitation-cta")).toHaveCount(1);
     await expect(card.locator(".home-invitation-cta")).toBeVisible();
@@ -216,12 +222,13 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
         ".home-invitation-copy > p, .home-invitation-meta, .home-invitation-cursor",
       ),
     ).toHaveCount(0);
-    await expect(card.locator("img")).toHaveCSS(
-      "object-fit",
-      (await card.getAttribute("href")) === "/configurator/gtr50"
-        ? "contain"
-        : "cover",
-    );
+    if (!specificationsOnly)
+      await expect(card.locator("img")).toHaveCSS(
+        "object-fit",
+        (await card.getAttribute("href")) === "/configurator/gtr50"
+          ? "contain"
+          : "cover",
+      );
     await expect(card.locator(".home-invitation-cta > span")).toHaveCSS(
       "opacity",
       "1",
@@ -229,14 +236,18 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
     const photoOnly =
       (await card.getAttribute("href")) !== "/configurator/premium";
     await expect(card).toHaveAccessibleName(
-      `Explore ${await card.getByRole("heading", { level: 3 }).innerText()}: ${photoOnly ? "View photos" : "View in 3D"}`,
+      `Explore ${await card.getByRole("heading", { level: 3 }).innerText()}: ${specificationsOnly ? "View specifications" : photoOnly ? "View photos" : "View in 3D"}`,
     );
     await expect(card).toHaveAttribute(
       "data-experience",
-      photoOnly ? "photography" : "3d",
+      specificationsOnly ? "specifications" : photoOnly ? "photography" : "3d",
     );
     await expect(card.locator(".home-invitation-cta")).toHaveText(
-      photoOnly ? "View photos" : "View in 3D",
+      specificationsOnly
+        ? "View specifications"
+        : photoOnly
+          ? "View photos"
+          : "View in 3D",
     );
   }
   await settleCardGeometry(premium, info);

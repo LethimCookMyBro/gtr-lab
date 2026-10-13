@@ -1,7 +1,7 @@
 import { continueHomeWithout3D } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
 import { waitForVehicleInitialization } from "./helpers/vehicle-initialization";
-const variants = ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"];
+const variants = ["premium", "nismo", "tspec", "gtr50", "gt3", "formula-e"];
 test("homepage to models to details and back", async ({ page }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -96,12 +96,12 @@ for (const id of variants) {
 test("missing assets remain visibly honest and controls are disabled", async ({
   page,
 }) => {
-  await page.goto("/configurator/gt500");
+  await page.goto("/configurator/formula-e");
   await expect(
-    page.getByRole("heading", { name: "GT-R NISMO GT500" }),
+    page.getByRole("heading", { name: "Nissan e-4ORCE 05" }),
   ).toBeVisible();
   const pending = page.getByRole("button", {
-    name: "Photo reference · 3D asset pending",
+    name: "Specifications only · 3D asset pending",
   });
   await expect(pending).toBeVisible();
   await expect(
@@ -109,7 +109,7 @@ test("missing assets remain visibly honest and controls are disabled", async ({
   ).toBeDisabled();
   await pending.click();
   await expect(page.getByRole("dialog")).toContainText(
-    "photograph, not an interactive render",
+    "No rights-cleared reference image",
   );
 });
 test("reduced motion preserves navigation", async ({ page }) => {
@@ -120,10 +120,12 @@ test("reduced motion preserves navigation", async ({ page }) => {
   ).toBeDisabled();
   await page.getByRole("button", { name: "Switch model", exact: true }).click();
   await page
-    .getByRole("button", { name: "GT500 Motorsport without compromise." })
+    .getByRole("button", {
+      name: "Formula E Electric racing, a different discipline.",
+    })
     .click();
   await expect(
-    page.getByRole("heading", { name: "GT-R NISMO GT500" }),
+    page.getByRole("heading", { name: "Nissan e-4ORCE 05" }),
   ).toBeVisible();
 });
 
@@ -175,4 +177,18 @@ test("detail sheet reaches its sources and traps keyboard focus", async ({
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
+});
+
+test("retired GT500 route explains the correction without a silent redirect", async ({
+  page,
+}) => {
+  await page.goto("/configurator/gt500");
+  await expect(
+    page.getByRole("heading", {
+      name: "GT500 is no longer in this collection.",
+    }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/configurator\/gt500$/);
+  await page.getByRole("link", { name: /Explore the collection/ }).click();
+  await expect(page).toHaveURL(/\/models$/);
 });

@@ -52,7 +52,7 @@ it("gives every footer destination a full-width row and decorative directional a
     ["T-spec", "/configurator/tspec"],
     ["GT-R50", "/configurator/gtr50"],
     ["GT3", "/configurator/gt3"],
-    ["GT500", "/configurator/gt500"],
+    ["Formula E", "/configurator/formula-e"],
     ["All models", "/models"],
     ["Heritage", "/heritage"],
     ["Credits & sources", "/credits"],

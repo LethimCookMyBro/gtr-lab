@@ -141,7 +141,7 @@ it("preserves the choice through Back to models, browser back and forward", asyn
 });
 
 it("explains why photo-only variants cannot use rendering quality", async () => {
-  setup("/configurator/gt500");
+  setup("/configurator/gt3");
   await userEvent
     .setup()
     .click(screen.getByRole("button", { name: "Environment" }));
@@ -172,7 +172,7 @@ it("allows changing quality after a rendering error and retains it on retry", as
   );
 });
 
-it.each(["/configurator/premium", "/configurator/gt500"])(
+it.each(["/configurator/premium", "/configurator/gt3"])(
   "keeps Tab inside the drawer when quality is the only available choice on %s",
   async (route) => {
     // jsdom has no layout; provide only visibility geometry, retaining real

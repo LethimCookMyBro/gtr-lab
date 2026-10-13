@@ -1,0 +1,106 @@
+[
+  {
+    "id": "premium",
+    "name": "GT-R Premium",
+    "modelYear": "2024 US specification",
+    "engine": "VR38DETT · 3.8 L twin-turbo V6",
+    "powerValue": 565,
+    "powerUnit": "hp",
+    "torqueValue": 467,
+    "torqueUnit": "lb-ft",
+    "drive": "ATTESA E-TS AWD",
+    "transmission": "6-speed dual-clutch rear transaxle",
+    "sourceUrls": [
+      "https://usa.nissannews.com/en-US/releases/2024-nissan-gt-r-press-kit"
+    ],
+    "notes": [
+      "Published US output: 565 hp.",
+      "Reference photograph: 2018 Premium."
+    ]
+  },
+  {
+    "id": "nismo",
+    "name": "GT-R NISMO",
+    "modelYear": "2024 US specification",
+    "engine": "VR38DETT · 3.8 L twin-turbo V6",
+    "powerValue": 600,
+    "powerUnit": "hp",
+    "torqueValue": 481,
+    "torqueUnit": "lb-ft",
+    "drive": "ATTESA E-TS AWD",
+    "transmission": "6-speed dual-clutch rear transaxle",
+    "sourceUrls": [
+      "https://usa.nissannews.com/en-US/releases/2024-nissan-gt-r-press-kit"
+    ],
+    "notes": [
+      "Front limited-slip differential added for 2024.",
+      "Carbon-ceramic brakes and carbon-fiber exterior components."
+    ]
+  },
+  {
+    "id": "tspec",
+    "name": "GT-R T-spec",
+    "modelYear": "2024 US specification",
+    "engine": "VR38DETT · 3.8 L twin-turbo V6",
+    "powerValue": 565,
+    "powerUnit": "hp",
+    "torqueValue": 467,
+    "torqueUnit": "lb-ft",
+    "drive": "ATTESA E-TS AWD",
+    "transmission": "6-speed dual-clutch rear transaxle",
+    "sourceUrls": [
+      "https://usa.nissannews.com/en-US/releases/2024-nissan-gt-r-press-kit"
+    ],
+    "notes": [
+      "Gold RAYS wheels, carbon-ceramic brakes, NISMO-tuned VDC.",
+      "Exclusive Millennium Jade and Midnight Purple colors."
+    ]
+  },
+  {
+    "id": "gtr50",
+    "name": "GT-R50 by Italdesign",
+    "modelYear": "2018 prototype specification",
+    "engine": "NISMO-tuned VR38DETT · 3.8 L twin-turbo V6",
+    "powerValue": 720,
+    "powerUnit": "PS",
+    "torqueValue": 780,
+    "torqueUnit": "Nm",
+    "sourceUrls": [
+      "https://global.nissannews.com/en/releases/nissan-and-italdesign-to-unveil-ultra-limited-gt-r-prototype",
+      "https://www.italdesign.it/en/project/gt-r-50-by-italdesign/"
+    ],
+    "notes": [
+      "Nissan’s 2018 prototype figures are estimates: 720 PS and 780 Nm, not certified production output.",
+      "720 PS is metric horsepower, approximately 710 hp.",
+      "Reference photograph: the 2018 prototype shown at 2019 NYIAS.",
+      "The bespoke prototype cabin and drivetrain are a separate configuration from later customer cars."
+    ],
+    "drive": "ATTESA E-TS AWD",
+    "transmission": "Reinforced 6-speed dual-clutch rear transaxle",
+    "outputIsEstimate": true,
+    "purpose": "One-off anniversary prototype"
+  },
+  {
+    "id": "gt3",
+    "name": "GT-R NISMO GT3",
+    "modelYear": "2018-spec FIA GT3",
+    "engine": "VR38DETT · 3,799 cc twin-turbo V6",
+    "powerValue": 550,
+    "powerUnit": "PS+",
+    "torqueValue": 637,
+    "torqueUnit": "Nm+",
+    "transmission": "6-speed sequential with paddle shift",
+    "sourceUrls": [
+      "https://www.nismo.co.jp/en/news_list/2018/news_flash/18009.html",
+      "https://www.nismo.co.jp/en/products/customerracing/pdf/nissan_gtr_nismo_gt3_2018-spec_en.pdf",
+      "https://www.nismo.co.jp/en/products/customerracing/racingcar.html"
+    ],
+    "notes": [
+      "Power and torque depend on the event Balance of Performance; minimum published values, not fixed universal figures.",
+      "ABS, traction control, double-wishbone front and rear suspension.",
+      "Reference photograph: a 2015-spec Bathurst car.",
+      "Selected geometry target: the 2018-spec factory demonstrator; later EVO cockpit revisions are outside this specification."
+    ],
+    "drive": "Rear-wheel drive"
+  }
+]

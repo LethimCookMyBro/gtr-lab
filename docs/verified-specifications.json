@@ -5,7 +5,8 @@
     "gtr50": "https://www.nismo.co.jp/en/news_list/2021/news_flash/21007.html",
     "gtr50_design": "https://www.italdesign.it/en/project/gt-r-50-by-italdesign/",
     "gt3": "https://www.nismo.co.jp/en/products/customerracing/",
-    "gt500": "https://www.nismo.co.jp/motorsports/SUPERGT/2020/machine.html"
+    "formulaE": "https://global.nissannews.com/en/releases/nissan-formula-e-press-kit",
+    "formulaE_fia": "https://www.fia.com/news/formula-e-and-fia-unveil-gen3-evo-race-car-capable-0-60mph-just-182s"
   },
   "variants": [
     {
@@ -110,26 +111,30 @@
       "drive": "Rear-wheel drive"
     },
     {
-      "id": "gt500",
-      "name": "GT-R NISMO GT500",
-      "modelYear": "2020 Class 1 specification",
-      "engine": "NR20B · 1,998 cc direct-injection turbo inline-four",
-      "powerValue": 550,
-      "powerUnit": "PS+",
-      "torqueValue": 50,
-      "torqueUnit": "kgf·m+",
-      "drive": "Rear-wheel drive",
-      "transmission": "6-speed sequential transaxle",
-      "massValue": 1020,
-      "massUnit": "kg+",
+      "id": "formula-e",
+      "name": "Nissan e-4ORCE 05",
+      "modelYear": "2025/26 Season 12 · GEN3 Evo",
+      "engine": "Battery-electric · front and rear motor-generators",
+      "engineLabel": "Powertrain",
+      "powerValue": 350,
+      "powerUnit": "kW",
+      "powerLabel": "Maximum traction power",
+      "torqueValue": null,
+      "torqueUnit": "",
+      "drive": "AWD during qualifying duels, race starts and ATTACK MODE",
+      "transmission": "Not specified in cited sources",
+      "purpose": "ABB FIA Formula E World Championship",
       "sourceUrls": [
-        "https://www.nismo.co.jp/motorsports/SUPERGT/2020/machine.html"
+        "https://global.nissannews.com/en/releases/nissan-formula-e-press-kit",
+        "https://www.fia.com/news/formula-e-and-fia-unveil-gen3-evo-race-car-capable-0-60mph-just-182s"
       ],
       "notes": [
-        "A purpose-built Class 1 race car; it is not the road-going V6 AWD drivetrain.",
-        "Dimensions 4,725 × 1,950 × 1,150 mm; wheelbase 2,750 mm.",
-        "GT500 specifications vary by year: 2021 used NR4S21 instead of NR20B."
+        "Historical catalog selection: Nissan e-4ORCE 05, GEN3 Evo, 2025/26 Season 12. This is a separate electric single-seater, not a GT-R variant.",
+        "350 kW maximum traction power; 600 kW maximum regeneration. Regeneration is not additional propulsive output.",
+        "Torque and transmission details are not specified in the cited sources.",
+        "No rights-cleared reference image or licensed 3D model has been integrated."
       ]
     }
-  ]
+  ],
+  "formulaEVerifiedOn": "2026-10-13"
 }

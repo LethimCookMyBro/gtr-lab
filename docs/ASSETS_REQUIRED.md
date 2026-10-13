@@ -1,10 +1,10 @@
 # GT-R LAB asset status
 
-Research date: 2026-10-01. This is an asset acquisition record, not a legal opinion. A displayed Creative Commons label does not validate a re-uploader's ownership of a game asset. Preserve attribution, source links, license versions, and modification notices. Do not imply Nissan endorsement.
+Original research date: 2026-10-01. Catalog correction: 2026-10-13. This is an asset acquisition record, not a legal opinion. A displayed Creative Commons label does not validate a re-uploader's ownership of a game asset. Preserve attribution, source links, license versions, and modification notices. Do not imply Nissan endorsement.
 
 ## Current verified delivery
 
-- Six licensed photographs in `public/images/*.webp`, with 800px `.small.webp` alternatives
+- Five current catalog photographs in `public/images/*.webp`, with 800px `.small.webp` alternatives; the former GT500 photograph and credits remain historical files. Formula E has no rights-cleared reference image integrated.
 - Original JPEGs preserved in `asset-sources/images/`, outside the public web bundle
 - Full credits: `public/images/credits.json` and `docs/IMAGE_CREDITS.md`
 - Manufacturer-sourced facts: `docs/verified-specifications.json` and `docs/SPECIFICATIONS.md`
@@ -18,12 +18,12 @@ Research date: 2026-10-01. This is an asset acquisition record, not a legal opin
 
 | Variant | Required model | Best current evidence | Blocker / next step |
 |---|---|---|---|
-| R35 Premium | Detailed stock R35 exterior with appropriate model year | Official Ciasny CC BY 4.0 GLB acquired. Its recognizable custom-aero R35 exterior is active on this route, clearly separated from the 2024 catalog specifications | Detailed cabin is absent and being authored from matched photographs. Actual-car browser/material QA pending. Not an exact 2024 Premium replica |
+| R35 Premium | Detailed stock R35 exterior with appropriate model year | Official Ciasny CC BY 4.0 GLB acquired. Its recognizable custom-aero R35 exterior is active on this route, clearly separated from the 2024 catalog specifications | The licensed source cabin is absent; the route integrates a separate authored approximation with static instruments. Physical-device performance and factory accuracy remain unverified. Not an exact 2024 Premium replica |
 | R35 NISMO | Correct NISMO body, wing, wheels, vents | Search surfaced several downloadable Sketchfab models | Prominent candidates declare game-derived sources or carry contradictory provenance; no clean production-qualified asset found |
 | T-spec | Correct body/year, wider front fenders, gold wheels, T-spec details | No exact clean free model established | Obtain an authorized exact model, or properly license and carefully adapt a compatible R35 base and label the adaptation |
 | GT-R50 by Italdesign | Unique GT-R50 body, not a recolored R35 | Professional SQUIR model available commercially | Purchase not authorized; listed standard licenses may restrict distribution of the underlying model. Free candidate is a game-derived re-upload |
 | NISMO GT3 | Exact competition generation / bodywork | vecarz listing displays CC BY but description disclaims originating ownership and prohibits commercial use | Conflicting license and third-party provenance. Excluded. Obtain an authorized original racing model |
-| NISMO GT500 | Correct GT500 season and race body | Professional marketplace models exist; searches also surfaced unrelated Skyline GT500 and game models | No verified clean free R35 GT500 asset acquired. Do not substitute Skyline or a road R35 with a spoiler |
+| Nissan e-4ORCE 05 | GEN3 Evo, 2025/26 Season 12 electric single-seater | Primary facts verified; no lawful asset acquired | Missing rights-cleared image and licensed 3D geometry. Use specifications and a neutral text-only placeholder |
 
 ## Strongest realistic acquisition candidates
 
@@ -78,8 +78,8 @@ Research date: 2026-10-01. This is an asset acquisition record, not a legal opin
 - NISMO and T-spec photos depict 2024 variants
 - GT-R50 image depicts the 2018 concept, not the 2021 production car
 - GT3 image depicts the 2015-spec Bathurst car, not the 2018 / 2020 EVO specification. Original is only 1080 × 720 and was not upscaled
-- GT500 image depicts the 2020 No.23 MOTUL AUTECH car, matching the supplied 2020 NR20B specification
+- Retained historical GT500 image depicts the 2020 No.23 MOTUL AUTECH car. It is not assigned to Formula E or any current catalog route.
 
 ## Honest application behavior
 
-Use the real photographs with visible credits while licensed detailed geometry is pending. A placeholder, unavailable model state, or a photo is not a completed 3D model. Never claim six authentic models are available when only a base geometry or none has been acquired. Do not relabel a road car as GT3/GT500 or a Nissan Skyline R34 as an R35.
+Use the real photographs with visible credits where available while licensed detailed geometry is pending. Formula E uses a neutral “Reference image unavailable” state and verified specifications. A placeholder, unavailable model state, or a photo is not a completed 3D model. Never claim six authentic models are available when only a base geometry or none has been acquired. Do not relabel a road car as GT3/GT500 or a Nissan Skyline R34 as an R35.

@@ -5,7 +5,7 @@ import type {
 import facts from "./specifications.json";
 import imageCredits from "./image-credits.json";
 export type VariantId =
-  "premium" | "nismo" | "tspec" | "gtr50" | "gt3" | "gt500";
+  "premium" | "nismo" | "tspec" | "gtr50" | "gt3" | "formula-e";
 export interface AssetManifest {
   status: "missing" | "ready";
   kind?: "original-study" | "licensed-model";
@@ -32,12 +32,14 @@ export interface VehicleModel {
   tagline: string;
   description: string;
   category: "Road" | "Track" | "Bespoke";
-  image: string;
+  image: string | null;
   imagePosition: string;
   imageCaption: string;
   powerValue: number;
   powerUnit: string;
-  torqueValue: number;
+  powerLabel?: string;
+  engineLabel?: string;
+  torqueValue: number | null;
   torqueUnit: string;
   outputIsEstimate?: boolean;
   purpose?: string;
@@ -99,13 +101,13 @@ const editorial: Record<
     category: "Track",
     imagePosition: "50% 55%",
   },
-  gt500: {
-    shortName: "GT500",
-    tagline: "Motorsport without compromise.",
+  "formula-e": {
+    shortName: "Formula E",
+    tagline: "Electric racing, a different discipline.",
     description:
-      "A silhouette, re-engineered for the circuit. The Class 1 machine pairs a turbocharged inline-four with a dedicated rear-drive racing chassis.",
+      "Nissan’s battery-electric single-seater for the 2025/26 Formula E season. This GEN3 Evo entry is presented through verified specifications while suitable visual assets remain unavailable.",
     category: "Track",
-    imagePosition: "50% 58%",
+    imagePosition: "50% 50%",
   },
 };
 const licensedR35: AssetManifest = {
@@ -156,7 +158,7 @@ export const models: VehicleModel[] = facts.variants.map((v) => ({
   drive: "drive" in v ? v.drive! : "Not specified in source",
   transmission:
     "transmission" in v ? v.transmission! : "Not specified in source",
-  image: `/images/gtr-${v.id}.webp`,
+  image: v.id === "formula-e" ? null : `/images/gtr-${v.id}.webp`,
   imageCaption: imageCredits.find((c) => c.id === v.id)?.description || "",
   asset:
     v.id === "premium"

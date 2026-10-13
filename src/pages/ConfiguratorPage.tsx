@@ -19,7 +19,8 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
-import { getModel } from "../data/models";
+import { ReferenceUnavailable } from "../components/ReferenceUnavailable";
+import { getModel, models } from "../data/models";
 import { paints } from "../data/configuration";
 import { useConfigurator } from "../stores/configurator";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -163,7 +164,18 @@ export function ConfiguratorPage() {
   if (!model)
     return (
       <div className="not-found">
-        <h1>That model isn’t in the lab.</h1>
+        <h1>
+          {id === "gt500"
+            ? "GT500 is no longer in this collection."
+            : "That model isn’t in the lab."}
+        </h1>
+        {id === "gt500" && (
+          <p>
+            The previous sixth slot was a catalog error. The collection now
+            includes Nissan Formula E as a separate electric race car. Choose a
+            model below.
+          </p>
+        )}
         <Link to="/models" className="outline-button">
           Explore the collection
           <ArrowRight />
@@ -285,7 +297,9 @@ export function ConfiguratorPage() {
             ? "Interactive 3D " + sceneName
             : hasAsset && !state.error
               ? "Loading 3D " + sceneName
-              : "Photographic reference of " + model.name
+              : model.image
+                ? "Photographic reference of " + model.name
+                : "Specifications only for " + model.name
         }
       >
         {hasAsset && !state.error ? (
@@ -334,7 +348,11 @@ export function ConfiguratorPage() {
           </Suspense>
         ) : (
           <div className="reference-view">
-            <img src={model.image} alt={model.imageCaption} />
+            {model.image ? (
+              <img src={model.image} alt={model.imageCaption} />
+            ) : (
+              <ReferenceUnavailable model={model} />
+            )}
           </div>
         )}
         {hasAsset &&
@@ -467,14 +485,16 @@ export function ConfiguratorPage() {
               ? "3D unavailable · View details"
               : hasAsset
                 ? "Preparing 3D · View details"
-                : "Photo reference · 3D asset pending"}
+                : model.image
+                  ? "Photo reference · 3D asset pending"
+                  : "Specifications only · 3D asset pending"}
           </button>
         )}
         <span className="scene-count">
-          {String(
-            ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"].indexOf(id) +
-              1,
-          ).padStart(2, "0")}{" "}
+          {String(models.findIndex((entry) => entry.id === id) + 1).padStart(
+            2,
+            "0",
+          )}{" "}
           / 06
         </span>
       </div>

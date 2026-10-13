@@ -77,7 +77,7 @@ test("sparse timeline and quiet cards through native forward and reverse input",
     .first()
     .evaluate((node: HTMLImageElement) => node.decode());
   await expect(lineup.getByText("View in 3D", { exact: true })).toHaveCount(1);
-  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(5);
+  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(4);
   await expect(lineup.locator(".home-invitation-cursor")).toHaveCount(0);
   await capture(page, info, "03-quiet-model-cards");
   await page.waitForTimeout(600);

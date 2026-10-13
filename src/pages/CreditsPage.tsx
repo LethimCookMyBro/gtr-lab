@@ -278,7 +278,10 @@ export function CreditsPage() {
             <p>{m.modelYear}</p>
             {m.sourceUrls.map((url, i) => (
               <a key={url} href={url} target="_blank" rel="noreferrer">
-                Manufacturer source {i + 1}
+                {m.id === "formula-e"
+                  ? "Primary source"
+                  : "Manufacturer source"}{" "}
+                {i + 1}
               </a>
             ))}
           </div>
@@ -289,8 +292,10 @@ export function CreditsPage() {
         <p>
           Only licensed vehicle assets with recorded provenance are eligible for
           the live viewer. If a model is unavailable, the configurator displays
-          a clearly marked photographic reference rather than substituting
-          another variant or a primitive mesh.
+          a clearly marked photographic reference where available. The Nissan
+          Formula E entry has no rights-cleared image or licensed 3D asset, so
+          it uses a neutral text-only placeholder. No other vehicle is
+          substituted.
         </p>
         {models
           .filter((m) => m.asset.status === "ready")

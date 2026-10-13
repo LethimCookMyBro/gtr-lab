@@ -1,0 +1,59 @@
+name: Formula E neutral layout evidence
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'server.mjs'
+      - 'e2e/formula-e.spec.ts'
+      - 'e2e/helpers/home-gate.ts'
+      - 'playwright.config.ts'
+      - 'playwright.formula-e.config.ts'
+      - 'scripts/formula-e-layout-contract.mjs'
+      - 'scripts/formula-e-layout-contract.d.mts'
+      - 'scripts/cabin-runtime-body-ledger.mjs'
+      - 'scripts/cabin-preparation-policy.mjs'
+      - 'scripts/diagnose-dpr-motion.mjs'
+      - 'tests/formula-e-layout-contract.node.mjs'
+      - 'tests/formula-e-runtime-evidence.node.mjs'
+      - 'tests/cabin-runtime-body-ledger.node.mjs'
+      - '.github/workflows/formula-e-layout.yml'
+permissions:
+  contents: read
+jobs:
+  formula-e-layout:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-formula-e-layout]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Preserve the exact source commit on setup failure
+        run: printf '%s\n' '${{ github.sha }}' > formula-e-layout-source-sha.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Check the 52 socket-free evidence contracts
+        run: node --test tests/formula-e-layout-contract.node.mjs tests/formula-e-runtime-evidence.node.mjs tests/cabin-runtime-body-ledger.node.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Capture all six exact-source Formula E layout cases
+        # The reviewed config verifies source and builds before listening. It retains
+        # the 120-second startup budget, original test deadlines and zero retries.
+        run: npx playwright test -c playwright.formula-e.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formula-e-layout-evidence
+          path: |
+            formula-e-layout-source-sha.txt
+            test-results/formula-e/
+            playwright-formula-e-report/
+          retention-days: 14

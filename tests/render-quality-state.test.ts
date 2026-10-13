@@ -35,7 +35,7 @@ describe("session-only rendering quality", () => {
     expect(useConfigurator.getState().cabin.phase).toBe("active");
     useConfigurator.getState().exitCabin(false);
     useConfigurator.getState().retryScene();
-    useConfigurator.getState().selectVariant("gt500");
+    useConfigurator.getState().selectVariant("formula-e");
     useConfigurator.getState().selectVariant("premium");
     expect(useConfigurator.getState().renderQuality).toBe("reduced");
   });

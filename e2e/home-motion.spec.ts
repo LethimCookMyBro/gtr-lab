@@ -709,13 +709,13 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
     ["tspec", "T-spec"],
     ["gtr50", "GT-R50"],
     ["gt3", "GT3"],
-    ["gt500", "GT500"],
+    ["formula-e", "Formula E"],
   ]) {
     await expect(
       page
         .getByRole("navigation", { name: "Explore all six models" })
         .getByRole("link", {
-          name: `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
+          name: `Explore ${name}: ${id === "premium" ? "View in 3D" : id === "formula-e" ? "View specifications" : "View photos"}`,
           exact: true,
         }),
     ).toHaveAttribute("href", `/configurator/${id}`);
@@ -1584,7 +1584,7 @@ test("model invitations keep all six cards separated and keyboard reachable", as
     ["tspec", "T-spec"],
     ["gtr50", "GT-R50"],
     ["gt3", "GT3"],
-    ["gt500", "GT500"],
+    ["formula-e", "Formula E"],
   ];
   for (const [width, height] of [
     [390, 844],
@@ -1615,20 +1615,26 @@ test("model invitations keep all six cards separated and keyboard reachable", as
       await expect(card).toBeFocused();
       await expect(card).toHaveAttribute("href", `/configurator/${id}`);
       await expect(card).toHaveAccessibleName(
-        `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
+        `Explore ${name}: ${id === "premium" ? "View in 3D" : id === "formula-e" ? "View specifications" : "View photos"}`,
       );
       await card.scrollIntoViewIfNeeded();
-      await expect
-        .poll(() =>
-          card
-            .locator("img")
-            .evaluate(
-              (node) =>
-                (node as HTMLImageElement).complete &&
-                (node as HTMLImageElement).naturalWidth > 0,
-            ),
-        )
-        .toBe(true);
+      if (id === "formula-e") {
+        await expect(card.locator("img")).toHaveCount(0);
+        await expect(
+          card.getByText("Reference image unavailable"),
+        ).toBeVisible();
+      } else
+        await expect
+          .poll(() =>
+            card
+              .locator("img")
+              .evaluate(
+                (node) =>
+                  (node as HTMLImageElement).complete &&
+                  (node as HTMLImageElement).naturalWidth > 0,
+              ),
+          )
+          .toBe(true);
       const box = (await card.boundingBox())!;
       const title = (await card.locator("h3").boundingBox())!;
       const cta = (await card.locator(".home-invitation-cta").boundingBox())!;

@@ -153,15 +153,23 @@ describe("truthful spatial model invitations", () => {
       "tspec",
       "gtr50",
       "gt3",
-      "gt500",
+      "formula-e",
     ].entries()) {
       expect(links[index].getAttribute("href")).toBe(`/configurator/${id}`);
       expect(links[index].getAttribute("data-experience")).toBe(
-        index === 0 ? "3d" : "photography",
+        index === 0
+          ? "3d"
+          : id === "formula-e"
+            ? "specifications"
+            : "photography",
       );
       expect(
         within(links[index]).getByText(
-          index === 0 ? "View in 3D" : "View photos",
+          index === 0
+            ? "View in 3D"
+            : id === "formula-e"
+              ? "View specifications"
+              : "View photos",
         ),
       ).toBeTruthy();
     }

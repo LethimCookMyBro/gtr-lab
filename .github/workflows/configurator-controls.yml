@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - 'scripts/diagnose-configurator-controls.mjs'
+      - 'scripts/diagnose-configurator-controls-current.mjs'
+      - 'scripts/prepared-cabin-availability.mjs'
+      - 'tests/current-controls-contract.node.mjs'
+      - 'tests/prepared-cabin-availability.node.mjs'
       - '.github/workflows/configurator-controls.yml'
       - 'src/components/configurator/**'
       - 'src/components/three/**'
@@ -26,7 +30,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
-      - run: node scripts/diagnose-configurator-controls.mjs
+      - run: node --test tests/prepared-cabin-availability.node.mjs tests/current-controls-contract.node.mjs
+      - run: node scripts/diagnose-configurator-controls-current.mjs
         timeout-minutes: 14
       - uses: actions/upload-artifact@v4
         if: always()

@@ -1,3 +1,4 @@
+import { ReferenceUnavailable } from "../ReferenceUnavailable";
 import { AssetDisclosure } from "./AssetDisclosure";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -60,7 +61,11 @@ export function ConfiguratorPanels({
                 close();
               }}
             >
-              <img src={m.image.replace(".webp", ".small.webp")} alt="" />
+              {m.image ? (
+                <img src={m.image.replace(".webp", ".small.webp")} alt="" />
+              ) : (
+                <ReferenceUnavailable model={m} />
+              )}
               <span>
                 <strong>{m.shortName}</strong>
                 <small>{m.tagline}</small>

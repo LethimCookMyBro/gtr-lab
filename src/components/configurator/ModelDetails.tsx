@@ -1,10 +1,17 @@
+import { ReferenceUnavailable } from "../ReferenceUnavailable";
 import { ArrowUpRight } from "lucide-react";
 import type { VehicleModel } from "../../data/models";
 export function ModelDetails({ model }: { model: VehicleModel }) {
   return (
     <div className="model-details">
-      <img src={model.image} alt={model.imageCaption} />
-      <p className="photo-caption">{model.imageCaption}</p>
+      {model.image ? (
+        <>
+          <img src={model.image} alt={model.imageCaption} />
+          <p className="photo-caption">{model.imageCaption}</p>
+        </>
+      ) : (
+        <ReferenceUnavailable model={model} />
+      )}
       <p className="detail-lead">{model.description}</p>
       {model.asset.referenceNote && (
         <p className="availability-note">{model.asset.referenceNote}</p>
@@ -16,23 +23,32 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
             <small>{model.powerUnit}</small>
           </strong>
           <span>
-            {model.outputIsEstimate ? "Estimated power" : "Published power"}
+            {model.powerLabel ??
+              (model.outputIsEstimate ? "Estimated power" : "Published power")}
           </span>
         </div>
         <div>
-          <strong>
-            {model.torqueValue}
-            <small>{model.torqueUnit}</small>
-          </strong>
+          {model.torqueValue === null ? (
+            <strong className="unknown-figure">Not specified in source</strong>
+          ) : (
+            <strong>
+              {model.torqueValue}
+              <small>{model.torqueUnit}</small>
+            </strong>
+          )}
           <span>
-            {model.outputIsEstimate ? "Estimated torque" : "Published torque"}
+            {model.torqueValue === null
+              ? "Torque"
+              : model.outputIsEstimate
+                ? "Estimated torque"
+                : "Published torque"}
           </span>
         </div>
       </div>
       <p className="spec-context">{model.modelYear}</p>
       <dl>
         <div>
-          <dt>Engine</dt>
+          <dt>{model.engineLabel ?? "Engine"}</dt>
           <dd>{model.engine}</dd>
         </div>
         <div>
@@ -63,7 +79,10 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
       <div className="detail-sources">
         {model.sourceUrls.map((url, i) => (
           <a href={url} key={url} target="_blank" rel="noreferrer">
-            Manufacturer source {i + 1}
+            {model.id === "formula-e"
+              ? "Primary source"
+              : "Manufacturer source"}{" "}
+            {i + 1}
             <ArrowUpRight size={15} />
           </a>
         ))}

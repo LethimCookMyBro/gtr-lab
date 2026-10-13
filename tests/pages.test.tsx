@@ -19,7 +19,7 @@ describe("experience routes", () => {
   });
   it("provides six unique model entry routes", () => {
     const html = render(<ModelsPage />);
-    for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"])
+    for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "formula-e"])
       expect(html).toContain("/configurator/" + id);
   });
 });

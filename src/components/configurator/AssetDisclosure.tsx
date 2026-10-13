@@ -26,7 +26,10 @@ export function AssetDisclosure({
       ? "A 3D asset is available, but this view is not yet interactive. Allow loading to complete or retry after a rendering error. Any photographic fallback is identified separately."
       : "A production-quality, licensed 3D asset for " +
         model.name +
-        " has not been integrated yet. The current view is a clearly marked photograph, not an interactive render.";
+        " has not been integrated yet. " +
+        (model.image
+          ? "The current view is a clearly marked photograph, not an interactive render."
+          : "No rights-cleared reference image is available. This view presents specifications only, with no substitute vehicle imagery.");
   return (
     <div className="asset-explanation">
       <Box size={35} />
@@ -70,7 +73,11 @@ export function AssetDisclosure({
       <dl>
         <div>
           <dt>Photography</dt>
-          <dd>Available · attributed</dd>
+          <dd>
+            {model.image
+              ? "Available · attributed"
+              : "Reference image unavailable"}
+          </dd>
         </div>
         <div>
           <dt>Vehicle geometry</dt>

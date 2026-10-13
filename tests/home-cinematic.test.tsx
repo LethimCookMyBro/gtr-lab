@@ -134,12 +134,12 @@ describe("cinematic homepage", () => {
       ["tspec", "T-spec"],
       ["gtr50", "GT-R50"],
       ["gt3", "GT3"],
-      ["gt500", "GT500"],
+      ["formula-e", "Formula E"],
     ]) {
       expect(
         within(invitations)
           .getByRole("link", {
-            name: `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
+            name: `Explore ${name}: ${id === "premium" ? "View in 3D" : id === "formula-e" ? "View specifications" : "View photos"}`,
           })
           .getAttribute("href"),
       ).toBe(`/configurator/${id}`);
@@ -269,7 +269,14 @@ describe("cinematic homepage", () => {
     expect(
       within(footer).getByText(/independent digital exhibition/i),
     ).toBeTruthy();
-    for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "gt500"]) {
+    for (const id of [
+      "premium",
+      "nismo",
+      "tspec",
+      "gtr50",
+      "gt3",
+      "formula-e",
+    ]) {
       expect(
         footer.querySelector(`a[href="/configurator/${id}"]`),
       ).toBeTruthy();

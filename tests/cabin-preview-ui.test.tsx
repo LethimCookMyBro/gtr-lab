@@ -63,7 +63,7 @@ it("offers three fixed seats and Escape restores exterior focus without affectin
     screen.getByRole("button", { name: "Camera" }),
   );
 });
-it.each(["nismo", "tspec", "gtr50", "gt3", "gt500"])(
+it.each(["nismo", "tspec", "gtr50", "gt3", "formula-e"])(
   "keeps %s unavailable with no preview entry",
   async (id) => {
     setup(id);

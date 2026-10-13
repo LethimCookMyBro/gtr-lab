@@ -150,5 +150,5 @@ it("uses the full-width intact film and removes only the lineup asset-note strip
     container.querySelector('[aria-describedby="home-model-asset-note"]'),
   ).toBeNull();
   expect(screen.getAllByRole("link")).toHaveLength(6);
-  expect(screen.getAllByText("View photos")).toHaveLength(5);
+  expect(screen.getAllByText("View photos")).toHaveLength(4);
 });

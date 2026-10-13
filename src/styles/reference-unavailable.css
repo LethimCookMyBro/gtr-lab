@@ -1,0 +1,96 @@
+/* Fixed media slots reserve space without inventing a vehicle illustration. */
+.reference-unavailable {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 120px;
+  padding: 24px;
+  color: #e1e5e8;
+  background: #171c20;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.reference-unavailable-label {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.reference-unavailable-context {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b9c2c8;
+}
+.model-details > .reference-unavailable {
+  aspect-ratio: 1.6;
+}
+.key-figures .unknown-figure {
+  font-size: 18px;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+.home-invitations .home-model-invitation > .reference-unavailable {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  padding: 90px 24px;
+}
+.model-band-formula-e .band-image {
+  margin-left: 0;
+}
+.model-band-formula-e .reference-unavailable {
+  height: 100%;
+  align-items: flex-end;
+  padding-right: 23%;
+}
+.model-band-formula-e:after {
+  content: none;
+}
+.reference-view > .reference-unavailable {
+  height: 100%;
+  padding: 180px 80px 100px;
+}
+.reference-view:has(> .reference-unavailable):after {
+  content: none;
+}
+.variant-choices .reference-unavailable {
+  width: 150px;
+  height: 90px;
+  min-height: 90px;
+  padding: 8px;
+  flex: none;
+}
+.variant-choices .reference-unavailable-label {
+  font-size: 12px;
+}
+.variant-choices .reference-unavailable-context {
+  display: none;
+}
+@media (max-width: 700px) {
+  .model-band-formula-e {
+    min-height: 330px;
+    align-items: flex-start;
+  }
+  .model-band-formula-e .reference-unavailable {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 110px 24px 70px;
+    text-align: left;
+  }
+  .model-band-formula-e .band-action {
+    align-self: flex-end;
+  }
+  .reference-view > .reference-unavailable {
+    padding: 180px 70px 100px 24px;
+  }
+  .variant-choices .reference-unavailable {
+    width: 90px;
+    height: 65px;
+    min-height: 65px;
+  }
+  .variant-choices .reference-unavailable-label {
+    font-size: 10px;
+  }
+}

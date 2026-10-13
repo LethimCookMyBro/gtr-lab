@@ -76,13 +76,13 @@ describe("configurator honest functional flow", () => {
   });
   it("does not apply bright-gallery ink labels to photo-only variants", () => {
     useConfigurator.setState({ selectedEnvironment: "gallery" });
-    setup("/configurator/gt500");
+    setup("/configurator/gt3");
     expect(screen.getByRole("main").className).toContain("environment-gallery");
     expect(screen.getByRole("main").className).not.toContain("is-scene-ready");
     expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
   });
   it("labels photograph honestly and disables materials without geometry", () => {
-    setup("/configurator/gt500");
+    setup("/configurator/gt3");
     expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
     expect(
       (screen.getByRole("button", { name: "Pearl White" }) as HTMLButtonElement)
@@ -112,21 +112,23 @@ describe("configurator honest functional flow", () => {
     await user.click(screen.getByRole("button", { name: "Switch model" }));
     await user.click(
       screen.getByRole("button", {
-        name: /GT500 Motorsport without compromise/,
+        name: /Formula E Electric racing, a different discipline/,
       }),
     );
     expect(
-      await screen.findByRole("heading", { name: "GT-R NISMO GT500" }),
+      await screen.findByRole("heading", { name: "Nissan e-4ORCE 05" }),
     ).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Model detail" }));
-    expect(screen.getByRole("dialog").textContent).toContain("inline-four");
     expect(screen.getByRole("dialog").textContent).toContain(
-      "Rear-wheel drive",
+      "Battery-electric",
+    );
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "AWD during qualifying duels, race starts and ATTACK MODE",
     );
   });
   it("explains unavailable camera and detailed interior instead of teleporting into fake cabin", async () => {
-    setup("/configurator/gt500");
+    setup("/configurator/gt3");
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Camera" }));
     expect(screen.getByRole("dialog").textContent).toContain(

@@ -2,10 +2,14 @@ import { describe, it, expect } from "vitest";
 import { models, getModel } from "../src/data/models";
 import { paints, cameraPresets } from "../src/data/configuration";
 describe("accurate distinct lineup", () => {
-  it("has six distinct variant identities and images", () => {
+  it("has six distinct identities with five photos and one explicit unavailable image", () => {
     expect(models).toHaveLength(6);
     expect(new Set(models.map((m) => m.id)).size).toBe(6);
-    expect(new Set(models.map((m) => m.image)).size).toBe(6);
+    expect(models.filter((m) => m.image)).toHaveLength(5);
+    expect(
+      new Set(models.filter((m) => m.image).map((m) => m.image)).size,
+    ).toBe(5);
+    expect(getModel("formula-e")?.image).toBeNull();
   });
   it("does not invent GLB readiness", () => {
     for (const m of models) {
@@ -26,9 +30,10 @@ describe("accurate distinct lineup", () => {
     expect(available[0].asset.referenceNote).toContain("2024 Premium");
     expect(available[0].asset.interior).toBe(false);
   });
-  it("keeps GT500 distinct from road-car specifications", () => {
-    expect(getModel("gt500")?.engine).toContain("inline-four");
-    expect(getModel("gt500")?.drive).toBe("Rear-wheel drive");
+  it("keeps Formula E distinct from road-car specifications", () => {
+    expect(getModel("formula-e")?.engine).toContain("electric");
+    expect(getModel("formula-e")?.powerUnit).toBe("kW");
+    expect(getModel("gt500")).toBeUndefined();
   });
   it("never assigns the race-car RWD fallback to the bespoke GT-R50", () => {
     expect(getModel("gtr50")?.drive).toContain("AWD");

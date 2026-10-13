@@ -5,7 +5,7 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 ## Current status
 **In progress. Not a completed production configurator.**
 
-One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. The other five routes remain labeled photographic references, not renamed copies of the same mesh. Paint, lamps, cameras and five real-geometry environments work on the licensed exterior. Interior remains disabled until an accurate cabin preview is accepted. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
+One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. NISMO, T-spec, GT-R50 and GT3 remain labeled photographic references. The sixth entry is Nissan e-4ORCE 05, GEN3 Evo, 2025/26 Season 12: verified specifications only, with no rights-cleared reference image or licensed 3D asset integrated. Paint, lamps, cameras and five real-geometry environments work on the licensed exterior. Premium includes a separately authored, approximate cabin study with static instruments. Exterior and full cabin preparation share the initial loading phase; Interior opens directly once preparation is ready. The full cabin remains route-resident through inside/outside switches, without a repeat download within that route lifecycle. A lightweight exterior-window proxy provides a simplified cabin view through the glass. These are source-level behavior descriptions, not an instant-load or physical-device performance guarantee. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
 
 The homepage combines two real NissanNews GT-R track films in intact Flixel players, a reversible hero-to-paper exit, white editorial photography, focused film viewing, four multi-photo heritage chapters, including a bounded R32 race-to-engineering scroll sequence and a slim era index, an animated layered menu, six larger model invitations and an independent-project footer with full-width link rows and matching hover/keyboard feedback. Keyboard, reduced-motion and responsive checks cover the complete flow. Both exact hosted players were verified on the public Railway origin; GitHub runners have received provider playback restrictions, so deterministic app checks and public-origin media verification are reported separately. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
 
@@ -23,8 +23,9 @@ and neutral/red accents support a reversible heading → photograph → details
 sequence. All 12 heritage photographs and their qualified captions remain.
 See [implementation and verification boundaries](docs/HOME_LOADING_IDENTITY.md)
 and [brand/font provenance](docs/BRAND_IDENTITY.md). This remains an independent
-enthusiast project with one licensed exterior, no accepted cabin and five
-photographic-reference routes.
+enthusiast project with one licensed exterior, an approximate authored Premium
+cabin, four other photographic-reference routes and one specifications-only
+Formula E entry. See [Formula E scope and source notes](docs/FORMULA_E_CATALOG.md).
 
 ## Run
 
@@ -56,7 +57,9 @@ Environment HDR and PBR JPG binaries are excluded from Git. `npm run build` fetc
 
 - `/` cinematic home
 - `/models` six-model collection
-- `/configurator/premium`, `/nismo`, `/tspec`, `/gtr50`, `/gt3`, `/gt500` under the configurator prefix
+- `/configurator/premium`, `/configurator/nismo`, `/configurator/tspec`, `/configurator/gtr50`, `/configurator/gt3`
+- `/configurator/formula-e` Nissan e-4ORCE 05 · GEN3 Evo · 2025/26 Season 12, specifications only
+- `/configurator/gt500` unsupported legacy catalog entry, with an explanation and a collection link; no automatic redirect to another vehicle
 - `/heritage` engineering/heritage
 - `/credits` photography, factual sources and independent-project disclosure
 

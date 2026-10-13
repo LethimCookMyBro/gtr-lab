@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {captureWithTimeoutRetry} from '../scripts/diagnose-configurator-controls-current.mjs';
+const base=await readFile(new URL('../scripts/diagnose-configurator-controls.mjs',import.meta.url),'utf8');
+const current=await readFile(new URL('../scripts/diagnose-configurator-controls-current.mjs',import.meta.url),'utf8');
+const part=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
+test('historic driver remains exact',()=>assert.equal(createHash('sha256').update(base).digest('hex'),'3261ecc44eb8ca0a473d4047229c832f6ce655ee065806c4060b508e9078ff0d'));
+for(const [a,b] of [["const shot = async label", "const check = async"],["const chooseCamera = async", "    try {"],["let paintPixels =", "      for (const [id, label]"]])test('preserves workload '+a,()=>assert.equal(part(current,a,b),part(base,a,b)));
+test('current audit binds prepared model and preserves fixture separation',()=>{assert.match(current,/const cabinRequests = observeCabinRequests\(page\)/);assert.match(current,/auditPreparedCabinAvailability\(\{ page, open, close, cabinRequests, cabinUrl,/);assert.match(current,/\['formula-e', 'Formula E'\]/);assert.doesNotMatch(current,/\['gt500', 'GT500'\]/);assert.match(current,/Specifications only · 3D asset pending/);assert.match(current,/\.reference-view img/);});
+test('never retries readiness failure',async()=>{let n=0;const err=Object.assign(new Error('page.waitForFunction: Timeout 15000ms exceeded.'),{name:'TimeoutError'});await assert.rejects(captureWithTimeoutRetry(async()=>{n++;throw err;},async()=>assert.fail()),e=>e===err);assert.equal(n,1);});
+test('only one same-capture screenshot retry',async()=>{let n=0,retries=0;const err=Object.assign(new Error('page.screenshot: Timeout 45000ms exceeded.'),{name:'TimeoutError'});const out=await captureWithTimeoutRetry(async()=>{if(++n===1)throw err;return 'pixels';},async()=>retries++);assert.equal(out,'pixels');assert.equal(n,2);assert.equal(retries,1);});

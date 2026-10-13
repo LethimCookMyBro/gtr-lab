@@ -50,7 +50,7 @@ function Navigation() {
   const navigate = useNavigate();
   return (
     <>
-      <button onClick={() => navigate("/configurator/gt500")}>
+      <button onClick={() => navigate("/configurator/gt3")}>
         Show reference
       </button>
       <button onClick={() => navigate("/configurator/premium")}>
