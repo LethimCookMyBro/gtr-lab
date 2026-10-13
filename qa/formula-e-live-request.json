@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "allow": false,
+  "origin": "https://gtr-lab-production.up.railway.app",
+  "expectedDeployedCommit": null,
+  "railwayDeploymentId": null,
+  "sourceTree": "f353b758035fcc65b88376a46b5cf7c5c3e14016c1769f052368070efbe7f5dc",
+  "sourceFiles": 103,
+  "buildSha256": null
+}

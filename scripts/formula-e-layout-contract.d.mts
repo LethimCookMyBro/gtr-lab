@@ -39,6 +39,7 @@ export function createFormulaERuntimeEvidence(
   page: Pick<import("@playwright/test").Page, "on" | "off">,
   options: {
     intendedAssets: Map<string, { bytes: number; sha256: string }>;
+    origin?: string;
     window: {
       startedAt: number;
       deadline: number;

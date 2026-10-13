@@ -1,0 +1,48 @@
+name: Formula E exact live verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - "qa/formula-e-live-request.json"
+      - "playwright.formula-e-live.config.ts"
+      - "scripts/formula-e-live-*.mjs"
+      - ".github/workflows/formula-e-live.yml"
+permissions:
+  contents: read
+jobs:
+  formula-e-live:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[verify-formula-e-live]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FORMULA_E_LIVE: "1"
+      FORMULA_E_LIVE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Fail closed on inactive or unpinned release before setup
+        run: node scripts/formula-e-live-contract.mjs --check-checkout
+      - run: npm ci
+      - name: Check socket-free contracts
+        run: node --test tests/formula-e-layout-contract.node.mjs tests/formula-e-runtime-evidence.node.mjs tests/formula-e-live.node.mjs tests/cabin-runtime-body-ledger.node.mjs
+      - name: Build exact runtime for comparison against accepted candidate pins
+        run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Verify public bytes and the same six actual layout and navigation cases
+        run: npx playwright test -c playwright.formula-e-live.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formula-e-live-evidence-${{ github.sha }}
+          path: |
+            qa/formula-e-live-request.json
+            test-results/formula-e-live/
+            playwright-formula-e-live-report/
+          retention-days: 14

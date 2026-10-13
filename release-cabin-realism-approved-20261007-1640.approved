@@ -1,15 +1,39 @@
 {
   "version": 1,
   "allow": true,
-  "contract": "r35-cabin-fine-roughness-public-v1",
-  "release": "[release-cabin-fine-roughness]",
-  "stagedSource": "1a667aa902aa45f160b3526476fefd588f84e243",
-  "sourceTree": "7632e86545bdd559e38cac1133245b5b284b5bbb1b97d2fc6100ad66d021011b",
-  "comparisonRequestSha256": "eb257e48f9feb273ccb1f75e884e0db031fa4139706372ea12875f698c49bf73",
-  "liveRequestSha256": "f18cac3b4aa54c641df7f9a2be5710ece5e919145b09bb36a39972e9ded2b813",
+  "contract": "formula-e-catalog-public-v1",
+  "release": "[release-formula-e-catalog]",
+  "stagedSource": "be358734cd6d5037df2db4df41adf797877ce843",
+  "sourceTree": "f353b758035fcc65b88376a46b5cf7c5c3e14016c1769f052368070efbe7f5dc",
+  "sourceFiles": 103,
+  "buildSha256": "a07a992b2d5a925015b99de14b6c5a469d0ec2875f67fd1c29549f536c28ba7e",
+  "quality": {
+    "run": 38379487753,
+    "conclusion": "success",
+    "unitTests": 1665,
+    "navigationTests": 48,
+    "rendererTests": 6,
+    "vehicleTests": 14
+  },
+  "catalogLayout": {
+    "run": 38379487940,
+    "conclusion": "success",
+    "cases": 6,
+    "viewports": [
+      1440,
+      320,
+      390
+    ]
+  },
+  "scope": "Correct sixth catalog vehicle to Nissan e-4ORCE05 GEN3 Evo, 2025/26 Season12, with verified specifications and explicit unavailable reference image/3D asset. Preserve accepted Premium renderer and fine-leather cabin. Fix mobile neutral-card text flow.",
   "modelPath": "/models/r35-cabin-fine-roughness-ed88ad0e.glb",
   "modelSha256": "ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0",
   "modelBytes": 20196108,
-  "modelGzipSha256": "b16da8f79721b7d1016542f0d8af0ab018fa7dbdfecedea44c4ce1301ec0c5e5",
-  "modelGzipBytes": 10194113
+  "limits": [
+    "Five requested vehicle 3D assets remain unavailable; catalog correction is not six-model completion.",
+    "Original desktop Wheel, After-hours, Rotate and current1920 Standard/Reduced15-second native completion failures remain recorded.",
+    "Current performance run38377810637 has exact identities but an insufficient whole-pair verdict; no hardware smoothness claim.",
+    "Cabin and existing exterior retain their disclosed original-author/custom-aero approximation."
+  ],
+  "liveVerification": "Require exact Railway release SUCCESS and active deployment readback, all accepted HTML/JS/CSS bytes, and six unchanged live layout/navigation cases before restoring original14 watchPatterns."
 }

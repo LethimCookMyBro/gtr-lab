@@ -1,8 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Locator, Page, TestInfo } from "@playwright/test";
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
-import { resolve } from "node:path";
 import { continueHomeWithout3D } from "./helpers/home-gate";
 import {
   assessNeutralLayout,
@@ -12,6 +10,12 @@ import {
   FORMULA_E_SCENE_OBSTACLES,
   createFormulaERuntimeEvidence,
 } from "../scripts/formula-e-layout-contract.mjs";
+import {
+  FORMULA_E_LIVE_ORIGIN,
+  readFormulaEAssets,
+  loadFormulaELiveRequest,
+  assertFormulaELiveBuild,
+} from "../scripts/formula-e-live-contract.mjs";
 // @ts-expect-error Read-only existing production identity helper.
 import { applicationIdentity } from "../scripts/diagnose-dpr-motion.mjs";
 const digest = (bytes: Buffer) =>
@@ -52,6 +56,7 @@ async function layout(
 }
 type RuntimeEvidence = ReturnType<typeof createFormulaERuntimeEvidence>;
 const activeEvidence = new Map<TestInfo, RuntimeEvidence>();
+const evidenceIdentity = new Map<TestInfo, object>();
 async function runtimeEvidence(page: Page, info: TestInfo) {
   // This is the existing test budget, beginning before navigation, never renewed.
   const startedAt = performance.now();
@@ -61,19 +66,30 @@ async function runtimeEvidence(page: Page, info: TestInfo) {
     deadline: startedAt + info.timeout,
     clock: "node-performance" as const,
   };
-  const paths = [
-    "/index.html",
-    ...(await readdir("dist/assets"))
-      .filter((name) => /\.(js|css)$/.test(name))
-      .map((name) => "/assets/" + name),
-  ];
-  const intendedAssets = new Map<string, { bytes: number; sha256: string }>();
-  for (const path of paths) {
-    const bytes = await readFile(resolve("dist", "." + path));
-    intendedAssets.set(path, { bytes: bytes.length, sha256: digest(bytes) });
-  }
+  const intendedAssets = await readFormulaEAssets();
+  const live = info.config.metadata.formulaEMode === "live";
+  const request = live ? await loadFormulaELiveRequest() : null;
+  const build = request
+    ? assertFormulaELiveBuild(request, intendedAssets)
+    : null;
+  evidenceIdentity.set(info, {
+    mode: live ? "live" : "staged",
+    harnessCommit: process.env.GITHUB_SHA,
+    sourceTree: FORMULA_E_SOURCE_TREE,
+    ...(request
+      ? {
+          expectedDeployedCommit: request.expectedDeployedCommit,
+          railwayDeploymentId: request.railwayDeploymentId,
+          expectedBuildSha256: request.buildSha256,
+          observedLocalBuildSha256: build!.sha256,
+          commitEvidence:
+            "Separate Railway connector readback; HTTP verifies bytes only",
+        }
+      : { sourceCommit: process.env.GITHUB_SHA }),
+  });
   const evidence = createFormulaERuntimeEvidence(page, {
     intendedAssets,
+    origin: live ? FORMULA_E_LIVE_ORIGIN : "http://127.0.0.1:4173",
     window,
   });
   evidence.beginDocument();
@@ -102,8 +118,7 @@ test.afterEach(async ({ page }, info) => {
     body: Buffer.from(
       JSON.stringify(
         {
-          sourceTree: FORMULA_E_SOURCE_TREE,
-          sourceCommit: process.env.GITHUB_SHA,
+          ...evidenceIdentity.get(info),
           viewport: page.viewportSize(),
           testStatus: info.status,
           runtime,
@@ -114,6 +129,7 @@ test.afterEach(async ({ page }, info) => {
     ),
     contentType: "application/json",
   });
+  evidenceIdentity.delete(info);
   if (completionError && info.status === info.expectedStatus)
     throw completionError;
 });
@@ -131,8 +147,7 @@ async function receipt(info: TestInfo, page: Page, data: object) {
     body: Buffer.from(
       JSON.stringify(
         {
-          sourceTree: FORMULA_E_SOURCE_TREE,
-          sourceCommit: process.env.GITHUB_SHA,
+          ...evidenceIdentity.get(info),
           project: info.project.name,
           viewport: page.viewportSize(),
           ...data,

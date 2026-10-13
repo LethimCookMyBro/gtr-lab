@@ -99,12 +99,21 @@ export function createFormulaERuntimeEvidence(
   page,
   {
     intendedAssets,
+    origin = "http://127.0.0.1:4173",
     window,
     now = () => performance.now(),
     setTimer = setTimeout,
     clearTimer = clearTimeout,
   },
 ) {
+  assert.ok(
+    [
+      "http://127.0.0.1:4173",
+      "https://gtr-lab-production.up.railway.app",
+    ].includes(origin),
+    "Unreviewed Formula E evidence origin",
+  );
+  const live = origin === "https://gtr-lab-production.up.railway.app";
   const ledger = createRuntimeBodyLedger({
     intendedAssets,
     now,
@@ -121,6 +130,7 @@ export function createFormulaERuntimeEvidence(
     const result = ledger.snapshot();
     return {
       ...result,
+      origin,
       state: faults.length || completionError ? "failed" : result.state,
       observationWindow: window,
       observerErrors: faults.map((row) => ({ ...row })),
@@ -139,7 +149,28 @@ export function createFormulaERuntimeEvidence(
   };
   const assetPath = (request) => {
     const url = new URL(request.url());
-    if (url.origin !== "http://127.0.0.1:4173") return null;
+    if (
+      live &&
+      ["document", "script", "stylesheet"].includes(request.resourceType())
+    ) {
+      assert.equal(
+        url.origin,
+        origin,
+        "Live document or bundle escaped the intended origin",
+      );
+      assert.equal(url.search, "", "Live runtime URL must not add a query");
+      assert.equal(
+        request.redirectedFrom(),
+        null,
+        "Live runtime request must not redirect",
+      );
+      if (request.resourceType() !== "document")
+        assert.ok(
+          intendedAssets.has(url.pathname),
+          "Unpinned live script or stylesheet",
+        );
+    }
+    if (url.origin !== origin) return null;
     if (request.resourceType() === "document") return "/index.html";
     return /^\/assets\/[^/]+\.(js|css)$/.test(url.pathname)
       ? url.pathname
