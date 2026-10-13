@@ -50,7 +50,7 @@ export async function main(env=process.env,{checkOnly=false}={}) {
  const {canvasPixelHash,assertDistinctScenePixels,observeOverlayRectangles}=await importApp('scripts/environment-pixel-comparison.mjs');
  const {summarizeScenePixels}=await importApp('scripts/dpr-motion-policy.mjs');
  const require=createRequire(resolve(app,'package.json')),{PNG}=require('playwright-core/lib/utilsBundle');
- const {chromium,expect}=await import(pathToFileURL(require.resolve('@playwright/test')));
+ const {chromium,expect}=require('@playwright/test');
  const {createAppServer}=await importApp('server.mjs');
  const report={version:1,contract:request.contract,cell:target.cell,sourceTree:source.source.sha256,sourceCommit:source.sourceCommit,harnessCommit:env.GITHUB_SHA,request,source,models:modelPins,
   status:'running',runner:runnerIdentity(env),runtimeBodies:[],derivedBlobs:[],steps:[],errors:[],pageErrors:[],warnings:[],requestsFailed:[],

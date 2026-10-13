@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - qa/current-render-cost-request.json
+      - scripts/current-render-cost-runner.mjs
 permissions:
   contents: read
 concurrency:
