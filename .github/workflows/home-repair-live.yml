@@ -1,0 +1,60 @@
+# Read-only candidate proof after a separately approved exact deployment.
+name: Public exact homepage candidate verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release-home-repair-approved-20261014.approved'
+permissions:
+  contents: read
+concurrency:
+  group: home-repair-live-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  public-home:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-home-repair]') && !contains(github.event.head_commit.message, '[stage-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile, tablet, landscape]
+    env:
+      R35_ALLOW_HOME_LIVE: '1'
+      R35_HOME_LIVE_VIEWPORT: ${{ matrix.viewport }}
+      R35_HOME_LIVE_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate separate release marker and clean exact source before setup
+        run: node scripts/home-repair-live.mjs --check-release
+      - run: npm ci
+      - name: Pure shared-helper and closed-live-contract regressions
+        run: |
+          node --check scripts/home-repair-live.mjs
+          node --test tests/home-repair-live.node.mjs tests/home-repair-contract.node.mjs tests/home-repair-audio-observer.node.mjs tests/home-repair-gpu-observer.node.mjs tests/home-repair-b229-regression.node.mjs tests/home-repair-pixels.node.mjs tests/ui-optimization-receipts.node.mjs tests/cabin-runtime-body-ledger.node.mjs
+      - name: Build actual release for exact public byte comparison
+        run: npm run build
+        timeout-minutes: 8
+      - name: Wait for exact approved Railway revision
+        run: node scripts/wait-railway.mjs
+        timeout-minutes: 6
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Verify public bytes before native candidate-only homepage flows
+        run: node scripts/home-repair-live.mjs
+        timeout-minutes: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-home-candidate-${{ matrix.viewport }}-${{ github.sha }}
+          path: home-repair-live-results/
+          retention-days: 14
+          if-no-files-found: warn

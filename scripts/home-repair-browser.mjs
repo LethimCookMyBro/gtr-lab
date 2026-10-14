@@ -25,7 +25,7 @@ export async function preflight(env=process.env,root=resolve('.')) {
   return {request,target,identities};
 }
 export async function bounded(promise,ms,label) {let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`${label}: original ${ms}ms deadline exceeded`)),ms);})]);}finally{clearTimeout(timer);}}
-function homeSnapshot(carHeld=false) {
+export function homeSnapshot(carHeld=false) {
   const gate=document.querySelector('.home-loading-gate'),hero=document.querySelector('.home-film--hero'),image=hero?.querySelector('img'),root=document.querySelector('.cinematic-home');
   const rect=element=>{if(!element)return null;const box=element.getBoundingClientRect();return Object.fromEntries(['x','y','width','height','bottom','right'].map(key=>[key,box[key]]));};
   return {at:performance.now(),viewport:{width:innerWidth,height:innerHeight},y:scrollY,overflow:document.documentElement.scrollWidth>innerWidth+1,visibility:document.visibilityState,
@@ -156,7 +156,8 @@ async function waitRearCompletion(page,progress,timeout=budgets.nativeLater) {
     checkpoint:(gate,remaining)=>bounded(page.evaluate(name=>globalThis.__r35HomeGpuFrames.checkpoint(name),gate),Math.min(budgets.command,remaining),'Native prefix checkpoint'),
     pause:ms=>page.waitForTimeout(ms)});
 }
-async function exercise({page,context,row,shot,check,save,receipts,target,held,initialStarted}) {
+export async function exercise({page,context,row,shot,check,save,receipts,target,held,initialStarted,startup}) {
+  if(startup)await startup();else {
   // The actual original local car/poster requests are delayed, never replaced or refetched.
   await check('decoded-poster-gate-while-car-pending',async()=>{
     const initialDeadline=initialStarted+budgets.initialPage;const left=()=>{const remaining=initialDeadline-performance.now();assert.ok(remaining>0,'Original single 25s poster/navigation deadline');return Math.min(budgets.command,remaining);};
@@ -174,6 +175,7 @@ async function exercise({page,context,row,shot,check,save,receipts,target,held,i
     await shot('poster-ready-car-pending');
   });
   await held.poster.release();await held.car.release();row.heldRequests=held.snapshot();await save();
+  }
   await check('real-rear-ready',async()=>{await page.waitForFunction(()=>document.querySelector('.home-signature-runway')?.getAttribute('data-scene-state')==='ready',null,{timeout:budgets.ready});await page.waitForFunction(()=>!document.querySelector('.home-loading-gate')?.hasAttribute('open'),null,{timeout:budgets.initialPage});});
   await check('stable-poster-native-provider',async()=>{
     row.hero=await page.evaluate(homeSnapshot);assert.equal(row.hero.loadingFilmHeadline,false);assert.equal(row.hero.overflow,false);assert.equal(row.hero.poster,'decoded');assert.equal(row.hero.posterOpacity,'1');row.heroPixels=(await shot('hero')).heroPixels;
@@ -252,6 +254,16 @@ export async function holdOriginalRequest(page,url) {
   return {wait:(ms=budgets.initialPage)=>bounded(requested,ms,'Original held request appearance'),pending:()=>state.requested&&!state.released,
     async release(){if(!state.released){state.released=true;allow();}},snapshot:()=>({...state,error:routeError??null})};
 }
+export function createHomeShot({getPage,row,target,deadline,alive,output,save,PNG,posterReference,lane}) {
+  return async(label,locator,options={})=>{
+      const page=getPage();
+      alive();assert.ok(row.captures.length<28,'Bounded screenshot count');const file=`${lane}-${label}.png`;let clip;
+      if(options.detail){const bounds=await locator.boundingBox();assert.ok(bounds);clip={x:Math.max(0,bounds.x+bounds.width*.12),y:Math.max(0,bounds.y+bounds.height*.18),width:Math.min(target.viewport.width,bounds.width*.76),height:Math.min(target.viewport.height*.65,bounds.height*.65)};}
+      const heroGeometry=['hero','hero-reentry'].includes(label)?await bounded(page.evaluate(observeHeroPixelGeometry),budgets.command,'Actual hero region geometry'):null;
+      const capture={label,file,scope:options.detail?'Measured rear canvas detail crop; no alternate camera':locator?'Actual homepage canvas/element':'Actual homepage composition',...(clip?{clip}:{})};row.captures.push(capture);await save();
+      const bytes=await bounded((clip?page:locator??page).screenshot({path:resolve(output,file),timeout:budgets.screenshot,animations:'allow',scale:'css',...(clip?{clip}:{})}),Math.min(budgets.screenshot,deadline-performance.now()),'Screenshot');Object.assign(capture,{sha256:sha256(bytes),bytes:bytes.length});if(heroGeometry)capture.heroPixels=assessHeroPixels(PNG.sync.read(bytes),heroGeometry,posterReference);await save();return capture;
+    };
+}
 export async function main(env=process.env) {
   const root=resolve('.'),verified=await preflight(env,root);if(process.argv.includes('--preflight')){process.stdout.write(JSON.stringify(verified,null,2)+'\n');return;}
   const {request,target}=verified,output=resolve(root,'home-repair-results',target.name);await mkdir(output,{recursive:true});
@@ -273,13 +285,7 @@ export async function main(env=process.env) {
     const row={lane,status:'running',checks:[],captures:[],errors:[],pageErrors:[],console:[],providerResponses:[],runtimeBodies:[]};report.lanes.push(row);await save();
     let server,browser,context,page,receipts,held;const deadline=performance.now()+budgets.lane;let expired=false;
     const alive=()=>{assert.equal(expired,false,'Original lane deadline exhausted');assert.ok(performance.now()<deadline,'Original lane deadline exhausted');};
-    const shot=async(label,locator,options={})=>{
-      alive();assert.ok(row.captures.length<28,'Bounded screenshot count');const file=`${lane}-${label}.png`;let clip;
-      if(options.detail){const bounds=await locator.boundingBox();assert.ok(bounds);clip={x:Math.max(0,bounds.x+bounds.width*.12),y:Math.max(0,bounds.y+bounds.height*.18),width:Math.min(target.viewport.width,bounds.width*.76),height:Math.min(target.viewport.height*.65,bounds.height*.65)};}
-      const heroGeometry=['hero','hero-reentry'].includes(label)?await bounded(page.evaluate(observeHeroPixelGeometry),budgets.command,'Actual hero region geometry'):null;
-      const capture={label,file,scope:options.detail?'Measured rear canvas detail crop; no alternate camera':locator?'Actual homepage canvas/element':'Actual homepage composition',...(clip?{clip}:{})};row.captures.push(capture);await save();
-      const bytes=await bounded((clip?page:locator??page).screenshot({path:resolve(output,file),timeout:budgets.screenshot,animations:'allow',scale:'css',...(clip?{clip}:{})}),Math.min(budgets.screenshot,deadline-performance.now()),'Screenshot');Object.assign(capture,{sha256:sha256(bytes),bytes:bytes.length});if(heroGeometry)capture.heroPixels=assessHeroPixels(PNG.sync.read(bytes),heroGeometry,posterReference);await save();return capture;
-    };
+    const shot=createHomeShot({getPage:()=>page,row,target,deadline,alive,output,save,PNG,posterReference,lane});
     const check=async(name,run)=>{alive();const check={name,status:'running',startedAt:new Date().toISOString()};row.checks.push(check);await save();try{await run();check.status='passed';}catch(error){check.status='failed';check.error=String(error);row.errors.push({check:name,message:String(error)});}finally{check.finishedAt=new Date().toISOString();await save();}};
     try {
       row.identity=await verifyCheckout(laneRoot,lane,request,env);row.dist=await distIdentity(laneRoot);

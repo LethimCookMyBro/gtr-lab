@@ -1,49 +1,23 @@
 {
   "version": 1,
   "allow": true,
-  "contract": "gtr-responsive-ui-subtraction-public-v1",
-  "release": "[release-responsive-ui-cleanup]",
-  "stagedSource": "e304b1cf139d0bde2c8343088dfe4a3f60ab5d66",
-  "sourceTree": "79671bdf0f7d201425c4e32621927c0b43b687f1ce0111ed09ce480c4bcc0298",
-  "sourceFiles": 104,
-  "buildSha256": "1ed75e0f7c8c16538c226444a36249d6e72eca2b6818eccafaba69944204883b",
-  "quality": {
-    "run": 38394008284,
-    "conclusion": "success",
-    "unitTests": 1694,
-    "unitFiles": 161,
-    "navigationTests": 48,
-    "rendererTests": 6,
-    "vehicleTests": 14
+  "contract": "home-repair-public-candidate-20261014-v1",
+  "stagedCommit": "81f67c3e28229b68d5583781680a885cb4d375d6",
+  "sourceTree": "a0fcd2aec6e4e353ffc4099120a78f467928ebb7b0026deb52749a1ae3dec230",
+  "inputTree": "f72be7c75795563b91ed5e0158eb788a4ad0b16f25429152f3c7010e52afb0a0",
+  "model": {
+    "path": "/models/ciasny-r35.glb",
+    "bytes": 8296356,
+    "sha256": "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d"
   },
-  "layout": {
-    "run": 38394008350,
-    "collectionAndSpecificationCases": 12,
-    "collectionAndSpecificationPassed": 12,
-    "footerCases": 6,
-    "footerPassed": 4,
-    "viewports": [
-      320,
-      390,
-      768,
-      820,
-      1024,
-      1440
-    ]
+  "audio": {
+    "path": "/audio/nissan-gtr-specv-edvvc.ogg",
+    "sha256": "496536debb72d6d540914cc330db43567fc64b85e8e7dd892d6d1dcee3051a60",
+    "durationSeconds": 7.60056689342404
   },
-  "rotation": {
-    "run": 38391906559,
-    "conclusion": "success"
+  "formulaPhoto": {
+    "path": "/images/nissan-gen3-evo-2024-25.jpg",
+    "sha256": "4aaf4aafbfffc1825d9ab403c356fdf89415cae58603e93a60e7b583e35e7b08"
   },
-  "scope": "Remove duplicate UI prose and unavailable scene controls, simplify footer and capability labels, fit reference layouts to viewport, and prevent drawer entry animation replay on rotation. Preserve accepted renderer, models and cabin.",
-  "modelPath": "/models/r35-cabin-fine-roughness-ed88ad0e.glb",
-  "modelSha256": "ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0",
-  "modelBytes": 20196108,
-  "limits": [
-    "Footer proof remains4/6: tablet820 initial gate attribute5s timeout; tablet1024 total30s expired during upward scrolling after11.905s capture.",
-    "Prior full-page homepage and Premium820/1024 responsiveness failures remain failed; software rendering/rAF delays are not resolved by this UI cleanup.",
-    "Chromium viewport/touch emulation is not physical iPad/Safari or hardware smoothness evidence.",
-    "Five requested vehicle3D models remain unavailable; this is not six-model or photoreal completion."
-  ],
-  "liveVerification": "Verify exact Railway release SUCCESS/readback and all HTML/JS/CSS/model bytes, then source-bound collection/footer layout checks at six viewports before restoring original14 watchPatterns. Retain any existing timing failures explicitly."
+  "release": "[release-home-repair]"
 }

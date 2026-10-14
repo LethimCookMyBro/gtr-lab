@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "home-repair-public-candidate-20261014-v1",
+  "stagedCommit": "81f67c3e28229b68d5583781680a885cb4d375d6",
+  "sourceTree": "a0fcd2aec6e4e353ffc4099120a78f467928ebb7b0026deb52749a1ae3dec230",
+  "inputTree": "f72be7c75795563b91ed5e0158eb788a4ad0b16f25429152f3c7010e52afb0a0",
+  "model": {
+    "path": "/models/ciasny-r35.glb",
+    "bytes": 8296356,
+    "sha256": "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d"
+  },
+  "audio": {
+    "path": "/audio/nissan-gtr-specv-edvvc.ogg",
+    "sha256": "496536debb72d6d540914cc330db43567fc64b85e8e7dd892d6d1dcee3051a60",
+    "durationSeconds": 7.60056689342404
+  },
+  "formulaPhoto": {
+    "path": "/images/nissan-gen3-evo-2024-25.jpg",
+    "sha256": "4aaf4aafbfffc1825d9ab403c356fdf89415cae58603e93a60e7b583e35e7b08"
+  },
+  "release": "[release-home-repair]"
+}
