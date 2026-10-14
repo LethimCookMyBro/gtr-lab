@@ -1,0 +1,14 @@
+{
+  "sourcePath": "/media/campaign-r35-orange-hero.webp",
+  "sourceSha256": "31d1144360db7049d543241f199388f1f561c2c578b787679e9f855b11ee448d",
+  "positiveSampling": "64x36 nearest source-pixel centers from unchanged1600x900 decoded source; no fabricated pixels",
+  "positivePngSha256": "485f547636ad688e5c36ab1d2a9588ee77343d2a507b09f435874dc900fcc7b2",
+  "negativeSource": "b229 desktop candidate-hero.png",
+  "negativePngSha256": "66efec538756a4f6398ca79aef20e41311010a0cbe69d45e80004a26ea7943e4",
+  "negativePosterRect": {
+    "x": 0,
+    "y": 0,
+    "width": 1440,
+    "height": 810
+  }
+}

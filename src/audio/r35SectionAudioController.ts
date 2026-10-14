@@ -200,6 +200,16 @@ export class R35SectionAudioController {
       event.target.closest("[data-r35-sound-control], [inert]")
     )
       return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest('[aria-haspopup="dialog"], .home-film-enlarge')
+    ) {
+      // A menu/film opener will immediately cover the car. Preserve its trusted
+      // activation without starting a recording fetch that the modal must abort.
+      this.armed = this.transport.unlockFromGesture();
+      if (this.armed) this.attemptedEntry = true;
+      return;
+    }
     this.armed = this.transport.prepareFromGesture();
     if (this.armed && gate) {
       this.continueGate = gate;

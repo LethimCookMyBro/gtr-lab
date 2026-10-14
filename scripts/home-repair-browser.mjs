@@ -5,6 +5,8 @@ import {readFile,readdir,mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {assessHeroPixels,observeHeroPixelGeometry} from './home-repair-pixels.mjs';
 import {createUiReceipts} from './ui-optimization-receipts.mjs';
 import {installHomeRepairGpuObserver} from './home-repair-gpu-observer.mjs';
 import {installHomeRepairAudioObserver} from './home-repair-audio-observer.mjs';
@@ -32,12 +34,26 @@ function homeSnapshot(carHeld=false) {
     films:[...document.querySelectorAll('.home-film')].map(node=>({kind:node.className,state:node.getAttribute('data-film-state'),document:node.getAttribute('data-film-document'),playback:node.getAttribute('data-film-playback'),poster:node.getAttribute('data-film-poster'),iframes:node.querySelectorAll('iframe').length,rect:rect(node)})),
     sound:[...document.querySelectorAll('.r35-sound-preview, .r35-section-sound')].map(node=>({className:node.className,phase:node.getAttribute('data-audio-phase'),rect:rect(node),controls:[...node.querySelectorAll('button')].map(button=>({label:button.textContent?.trim(),rect:rect(button),disabled:button.disabled}))}))};
 }
-async function nativeSeek(page,target,limit=budgets.nativeLater) {
-  const deadline=performance.now()+limit;await page.mouse.move(8,8);
-  while(performance.now()<deadline){const y=await bounded(page.evaluate(()=>scrollY),budgets.command,'Native scroll position');const delta=target-y;if(Math.abs(delta)<2)return;await bounded(page.mouse.wheel(0,Math.sign(delta)*Math.min(1200,Math.abs(delta))),budgets.command,'Native wheel');await page.waitForTimeout(80);}
+export async function nativeSeek(page,target,limit=budgets.nativeLater,now=()=>performance.now()) {
+  const deadline=now()+limit;await page.mouse.move(8,8);
+  while(now()<deadline){
+    const position=await bounded(page.evaluate(()=>({y:scrollY,max:Math.max(0,document.documentElement.scrollHeight-innerHeight)})),budgets.command,'Native scroll position');
+    const reachable=Math.min(position.max,Math.max(0,target)),delta=reachable-position.y;
+    if(Math.abs(delta)<2)return {requestedTarget:target,reachableTarget:reachable,maxScrollY:position.max,actualY:position.y,clamped:reachable!==target};
+    await bounded(page.mouse.wheel(0,Math.sign(delta)*Math.min(1200,Math.abs(delta))),budgets.command,'Native wheel');await page.waitForTimeout(80);
+  }
   throw new Error(`Native scroll did not reach target within original ${limit}ms deadline`);
 }
-async function sectionTarget(page,selector,progress=.5) {return page.locator(selector).evaluate((element,p)=>{const rect=element.getBoundingClientRect();const sticky=element.firstElementChild;return scrollY+rect.top+Math.max(0,rect.height-(sticky?.getBoundingClientRect().height??innerHeight))*p;},progress);}
+export async function sectionTarget(page,selector,progress=.5) {return page.locator(selector).evaluate((element,p)=>{
+  const rect=element.getBoundingClientRect(),child=element.firstElementChild;
+  // Only a real sticky runway has scroll progress. Ordinary sections align at
+  // their start; nativeSeek records the browser's reachable document clamp.
+  const sticky=child&&getComputedStyle(child).position==='sticky';
+  return scrollY+rect.top+(sticky?Math.max(0,rect.height-child.getBoundingClientRect().height)*p:0);
+},progress);}
+export function audioProofWaitExpression(before) {
+  return `(${assessAudio.toString()})(${JSON.stringify(before)},globalThis.__r35HomeAudio.snapshot()).passed`;
+}
 async function sampleProviderPair(page) {
   const before={at:Date.now(),frames:[]},after={at:null,frames:[]},owned=[];
   const read=video=>({currentTime:video.currentTime,readyState:video.readyState,paused:video.paused,duration:Number.isFinite(video.duration)?video.duration:null,videoWidth:video.videoWidth,videoHeight:video.videoHeight,connected:video.isConnected&&video.ownerDocument===document});
@@ -117,14 +133,14 @@ async function exercise({page,context,row,shot,check,save,receipts,target,held,i
   await held.poster.release();await held.car.release();row.heldRequests=held.snapshot();await save();
   await check('real-rear-ready',async()=>{await page.waitForFunction(()=>document.querySelector('.home-signature-runway')?.getAttribute('data-scene-state')==='ready',null,{timeout:budgets.ready});await page.waitForFunction(()=>!document.querySelector('.home-loading-gate')?.hasAttribute('open'),null,{timeout:budgets.initialPage});});
   await check('stable-poster-native-provider',async()=>{
-    row.hero=await page.evaluate(homeSnapshot);assert.equal(row.hero.loadingFilmHeadline,false);assert.equal(row.hero.overflow,false);assert.equal(row.hero.poster,'decoded');assert.equal(row.hero.posterOpacity,'1');await shot('hero');
-    row.provider=await sampleProviderPair(page);
+    row.hero=await page.evaluate(homeSnapshot);assert.equal(row.hero.loadingFilmHeadline,false);assert.equal(row.hero.overflow,false);assert.equal(row.hero.poster,'decoded');assert.equal(row.hero.posterOpacity,'1');row.heroPixels=(await shot('hero')).heroPixels;
+    row.provider=await sampleProviderPair(page);assert.equal(row.heroPixels.passed,true,'Actual hero PNG must contain nonblank image content outside text/controls');
   });
   await check('film-offscreen-and-automatic-reentry',async()=>{
     const start=await page.evaluate(homeSnapshot);assert.equal(start.films.find(f=>f.kind.includes('--hero'))?.iframes,1,'Initial hero embed must be present');
     await nativeSeek(page,await sectionTarget(page,'.home-expanding-runway'),budgets.nativeInitial);
     await page.waitForFunction(()=>document.querySelectorAll('.home-film--hero iframe').length===0,null,{timeout:budgets.command});row.filmOffscreen=await page.evaluate(homeSnapshot);await shot('detail-film');
-    await nativeSeek(page,0);await page.waitForFunction(()=>document.querySelectorAll('.home-film--hero iframe').length===1,null,{timeout:budgets.command});row.filmReentry=await page.evaluate(homeSnapshot);assert.equal(row.filmReentry.poster,'decoded');assert.equal(row.filmReentry.posterOpacity,'1');assert.equal(row.filmReentry.loadingFilmHeadline,false);await shot('hero-reentry');
+    await nativeSeek(page,0);await page.waitForFunction(()=>document.querySelectorAll('.home-film--hero iframe').length===1,null,{timeout:budgets.command});row.filmReentry=await page.evaluate(homeSnapshot);assert.equal(row.filmReentry.poster,'decoded');assert.equal(row.filmReentry.posterOpacity,'1');assert.equal(row.filmReentry.loadingFilmHeadline,false);row.heroReentryPixels=(await shot('hero-reentry')).heroPixels;assert.equal(row.heroReentryPixels.passed,true,'Actual reentry PNG must retain nonblank image content');
   });
   await check('three-actual-rear-dolly-poses',async()=>{
     row.rear=[];for(const progress of [.08,.5,.92]) {
@@ -145,7 +161,7 @@ async function exercise({page,context,row,shot,check,save,receipts,target,held,i
     else {if(await mute.getAttribute('aria-pressed')==='true')await mute.click({timeout:budgets.command});if(['loading','playing'].includes(await legacy.getAttribute('data-audio-phase')))await control.click({timeout:budgets.command});}
     await page.waitForFunction(()=>!globalThis.__r35HomeAudio.snapshot().edges.some(edge=>edge.active&&edge.fromKind==='source'),null,{timeout:budgets.command});
     await control.click({timeout:budgets.command});const atStart=await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot());
-    await page.waitForFunction(()=>{const audio=globalThis.__r35HomeAudio.snapshot();return audio.edges.some(edge=>edge.active&&edge.fromKind==='source'&&audio.samples.some(sample=>sample.gainNodeId===edge.to&&sample.peak>1e-7&&sample.connectedToDestination));},null,{timeout:budgets.initialPage,polling:100});
+    await page.waitForFunction(audioProofWaitExpression(atStart),null,{timeout:budgets.initialPage,polling:100});
     const playing=await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot()),proof=assessAudio(atStart,playing);assert.equal(proof.passed,true);assert.deepEqual(playing.issues,[]);
     row.audioEntries??=[];row.audioEntries.push({label,mode,atStart,playing,proof});return {control,mute};
   }
@@ -165,7 +181,7 @@ async function exercise({page,context,row,shot,check,save,receipts,target,held,i
     }finally{await cover.close();await page.bringToFront();}
   });
   await check('licensed-formula-e-photo',async()=>{
-    await nativeSeek(page,await sectionTarget(page,'#home-lineup'),budgets.nativeInitial);const card=page.locator('.home-model-invitation--formula-e');await card.scrollIntoViewIfNeeded({timeout:budgets.command});
+    row.lineupScroll=await nativeSeek(page,await sectionTarget(page,'#home-lineup'),budgets.nativeInitial);const card=page.locator('.home-model-invitation--formula-e');await card.scrollIntoViewIfNeeded({timeout:budgets.command});
     row.formulaE=await card.evaluate(element=>{const image=element.querySelector('img');return {text:element.textContent,alt:image?.alt,currentSrc:image?.currentSrc,complete:image?.complete,naturalWidth:image?.naturalWidth};});
     await shot('formula-e-caption',card);assert.ok(row.formulaE.complete&&row.formulaE.naturalWidth>0);assert.ok(row.formulaE.currentSrc?.endsWith(formulaPhoto.path));assert.match(row.formulaE.text??'',/2024\/25/);
   });
@@ -205,6 +221,8 @@ export async function main(env=process.env) {
   ]};
   const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2));await save();
   const {chromium}=await import('@playwright/test');
+  const {PNG}=createRequire(import.meta.url)('playwright-core/lib/utilsBundle');
+  const posterReference=JSON.parse(await readFile(resolve(root,'qa/home-repair-pixel-fixtures/reference.json'),'utf8'));
   for(const lane of ['baseline','candidate']) {
     const laneRoot=lane==='baseline'?resolve(root,'../baseline-app'):root;
     const row={lane,status:'running',checks:[],captures:[],errors:[],pageErrors:[],console:[],providerResponses:[],runtimeBodies:[]};report.lanes.push(row);await save();
@@ -213,14 +231,15 @@ export async function main(env=process.env) {
     const shot=async(label,locator,options={})=>{
       alive();assert.ok(row.captures.length<28,'Bounded screenshot count');const file=`${lane}-${label}.png`;let clip;
       if(options.detail){const bounds=await locator.boundingBox();assert.ok(bounds);clip={x:Math.max(0,bounds.x+bounds.width*.12),y:Math.max(0,bounds.y+bounds.height*.18),width:Math.min(target.viewport.width,bounds.width*.76),height:Math.min(target.viewport.height*.65,bounds.height*.65)};}
+      const heroGeometry=['hero','hero-reentry'].includes(label)?await bounded(page.evaluate(observeHeroPixelGeometry),budgets.command,'Actual hero region geometry'):null;
       const capture={label,file,scope:options.detail?'Measured rear canvas detail crop; no alternate camera':locator?'Actual homepage canvas/element':'Actual homepage composition',...(clip?{clip}:{})};row.captures.push(capture);await save();
-      const bytes=await bounded((clip?page:locator??page).screenshot({path:resolve(output,file),timeout:budgets.screenshot,animations:'allow',scale:'css',...(clip?{clip}:{})}),Math.min(budgets.screenshot,deadline-performance.now()),'Screenshot');Object.assign(capture,{sha256:sha256(bytes),bytes:bytes.length});await save();return capture;
+      const bytes=await bounded((clip?page:locator??page).screenshot({path:resolve(output,file),timeout:budgets.screenshot,animations:'allow',scale:'css',...(clip?{clip}:{})}),Math.min(budgets.screenshot,deadline-performance.now()),'Screenshot');Object.assign(capture,{sha256:sha256(bytes),bytes:bytes.length});if(heroGeometry)capture.heroPixels=assessHeroPixels(PNG.sync.read(bytes),heroGeometry,posterReference);await save();return capture;
     };
     const check=async(name,run)=>{alive();const check={name,status:'running',startedAt:new Date().toISOString()};row.checks.push(check);await save();try{await run();check.status='passed';}catch(error){check.status='failed';check.error=String(error);row.errors.push({check:name,message:String(error)});}finally{check.finishedAt=new Date().toISOString();await save();}};
     try {
       row.identity=await verifyCheckout(laneRoot,lane,request,env);row.dist=await distIdentity(laneRoot);
       const pins=new Map(row.dist.files.map(file=>['/'+file.path.slice('dist/'.length),{bytes:file.bytes,sha256:file.sha256}]));
-      assert.deepEqual(pins.get(model.path),{bytes:model.bytes,sha256:model.sha256},'Unchanged original Ciasny asset');assert.equal(pins.get(audio.path)?.sha256,audio.sha256,'Exact licensed source recording');
+      assert.deepEqual(pins.get(model.path),{bytes:model.bytes,sha256:model.sha256},'Unchanged original Ciasny asset');assert.equal(pins.get(audio.path)?.sha256,audio.sha256,'Exact licensed source recording');assert.equal(pins.get('/media/campaign-r35-orange-hero.webp')?.sha256,posterReference.sourceSha256,'Pixel calibration belongs to this exact real poster');
       if(lane==='candidate')assert.equal(pins.get(formulaPhoto.path)?.sha256,formulaPhoto.sha256,'Exact requested Formula E photograph');
       const {createAppServer}=await import(pathToFileURL(resolve(laneRoot,'server.mjs')));
       server=createAppServer(resolve(laneRoot,'dist'));await bounded(new Promise((done,reject)=>{server.once('error',reject);server.listen(4189,'127.0.0.1',done);}),budgets.command,'CI loopback server startup');

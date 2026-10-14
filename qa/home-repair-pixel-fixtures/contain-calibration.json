@@ -1,0 +1,303 @@
+{
+  "sourceSha256": "31d1144360db7049d543241f199388f1f561c2c578b787679e9f855b11ee448d",
+  "sourceDimensions": {
+    "width": 1600,
+    "height": 900
+  },
+  "method": "CPU nearest exact source pixel centers in final CSS16:9 contain box, declared sRGB gradient, and98px header excluded. Source-derived calibration, not browser rendering evidence.",
+  "roi": {
+    "left": 0.12,
+    "top": 0.2,
+    "right": 0.88,
+    "bottom": 0.65,
+    "columns": 48,
+    "rows": 27
+  },
+  "cases": [
+    {
+      "name": "compact",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "poster": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 180
+      },
+      "panelHeight": 568,
+      "overlays": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 98
+        }
+      ],
+      "gradientStops": [
+        [
+          0,
+          0.18823529411764706
+        ],
+        [
+          24,
+          0
+        ],
+        [
+          44,
+          0.18823529411764706
+        ],
+        [
+          69,
+          0.788235294117647
+        ],
+        [
+          100,
+          0.9490196078431372
+        ]
+      ],
+      "privatePngSha256": "445ac8b16e80564d83319334ace63e2a2d01869471a8c6db74c2a2120e6a4625",
+      "statistics": {
+        "sampled": 288,
+        "excluded": 1008,
+        "mean": 0.18805250272331145,
+        "stddev": 0.18214056669498152,
+        "p05": 0.00784313725490196,
+        "p50": 0.11892705882352941,
+        "p95": 0.5718941176470589,
+        "brightFraction": 0.59375,
+        "colorFraction": 0.3715277777777778
+      },
+      "passed": true
+    },
+    {
+      "name": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "poster": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 219.375
+      },
+      "panelHeight": 844,
+      "overlays": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 98
+        }
+      ],
+      "gradientStops": [
+        [
+          0,
+          0.18823529411764706
+        ],
+        [
+          24,
+          0
+        ],
+        [
+          44,
+          0.18823529411764706
+        ],
+        [
+          69,
+          0.788235294117647
+        ],
+        [
+          100,
+          0.9490196078431372
+        ]
+      ],
+      "privatePngSha256": "eea28d1bafb7bb9da9ff21e7e984eb9045e20ffff7cfe5ea483aee6675383d2b",
+      "statistics": {
+        "sampled": 576,
+        "excluded": 720,
+        "mean": 0.23138220179738564,
+        "stddev": 0.19072675814405177,
+        "p05": 0.010930980392156862,
+        "p50": 0.17113176470588234,
+        "p95": 0.5773607843137255,
+        "brightFraction": 0.6649305555555556,
+        "colorFraction": 0.4809027777777778
+      },
+      "passed": true
+    },
+    {
+      "name": "tablet",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "poster": {
+        "x": 0,
+        "y": 0,
+        "width": 820,
+        "height": 461.25
+      },
+      "panelHeight": 1180,
+      "overlays": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 820,
+          "height": 98
+        }
+      ],
+      "gradientStops": [
+        [
+          0,
+          0.13333333333333333
+        ],
+        [
+          22,
+          0
+        ],
+        [
+          48,
+          0
+        ],
+        [
+          78,
+          0.47843137254901963
+        ],
+        [
+          100,
+          0.7686274509803922
+        ]
+      ],
+      "privatePngSha256": "39708f5d46d457e2517aefed51d2ccbdd0d54a409b772608043d521991419874",
+      "statistics": {
+        "sampled": 1248,
+        "excluded": 48,
+        "mean": 0.35248139768728026,
+        "stddev": 0.239361948922303,
+        "p05": 0.018506666666666664,
+        "p50": 0.34131921568627444,
+        "p95": 0.777643137254902,
+        "brightFraction": 0.8221153846153846,
+        "colorFraction": 0.45753205128205127
+      },
+      "passed": true
+    },
+    {
+      "name": "landscape",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "poster": {
+        "x": 0,
+        "y": 0,
+        "width": 1024,
+        "height": 576
+      },
+      "panelHeight": 768,
+      "overlays": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 98
+        }
+      ],
+      "gradientStops": [
+        [
+          0,
+          0.13333333333333333
+        ],
+        [
+          22,
+          0
+        ],
+        [
+          48,
+          0
+        ],
+        [
+          78,
+          0.47843137254901963
+        ],
+        [
+          100,
+          0.7686274509803922
+        ]
+      ],
+      "privatePngSha256": "03a5cb0dbf484618a543c024066b5589fe6c7716b787a0d3eddc48fe43953e52",
+      "statistics": {
+        "sampled": 1296,
+        "excluded": 0,
+        "mean": 0.3669715752844349,
+        "stddev": 0.24779091384820578,
+        "p05": 0.02129098039215686,
+        "p50": 0.35140078431372546,
+        "p95": 0.8168439215686274,
+        "brightFraction": 0.8287037037037037,
+        "colorFraction": 0.44753086419753085
+      },
+      "passed": true
+    },
+    {
+      "name": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "poster": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 810
+      },
+      "panelHeight": 900,
+      "overlays": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 98
+        }
+      ],
+      "gradientStops": [
+        [
+          0,
+          0.13333333333333333
+        ],
+        [
+          22,
+          0
+        ],
+        [
+          48,
+          0
+        ],
+        [
+          78,
+          0.47843137254901963
+        ],
+        [
+          100,
+          0.7686274509803922
+        ]
+      ],
+      "privatePngSha256": "d0c5861cfd27f46afbd31f7fa1ea006072d703c1d53d8a89d5d4b372d782caee",
+      "statistics": {
+        "sampled": 1296,
+        "excluded": 0,
+        "mean": 0.3660616442749937,
+        "stddev": 0.24769777853244362,
+        "p05": 0.01961254901960784,
+        "p50": 0.35175686274509804,
+        "p95": 0.8235850980392156,
+        "brightFraction": 0.8263888888888888,
+        "colorFraction": 0.44675925925925924
+      },
+      "passed": true
+    }
+  ]
+}

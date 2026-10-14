@@ -427,3 +427,75 @@ describe("opening Continue activation exception", () => {
     expect(SectionAudioPort.instances[0].sources).toHaveLength(0);
   });
 });
+
+describe("modal opener unlock without wasted recording fetch", () => {
+  it.each(["pointerdown", "pointerup", "keydown"])(
+    "a trusted Menu %s unlocks without fetching before its modal opens",
+    async (type) => {
+      const controller = create();
+      const menuButton = document.createElement("button");
+      menuButton.className = "home-menu-trigger";
+      menuButton.setAttribute("aria-haspopup", "dialog");
+      menuButton.setAttribute("aria-expanded", "false");
+      document.body.append(menuButton);
+      controller.onGesture({
+        ...trustedGesture(type),
+        target: menuButton,
+      } as Event);
+      expect(SectionAudioPort.instances).toHaveLength(1);
+      expect(SectionAudioPort.instances[0].resume).toHaveBeenCalledOnce();
+      // Let resume resolve before React's later click opens the menu. This was
+      // the actual CI race: a real request could start between pointerdown/click.
+      await flushAudio();
+      expect(fetch).not.toHaveBeenCalled();
+      const menu = document.createElement("dialog");
+      menu.open = true;
+      document.body.append(menu);
+      await flushAudio();
+      expect(fetch).not.toHaveBeenCalled();
+      expect(SectionAudioPort.instances[0].sources).toHaveLength(0);
+      menu.open = false;
+      await flushAudio();
+      expect(fetch).not.toHaveBeenCalled();
+      controller.setViewportFraction(1);
+      await flushAudio();
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(SectionAudioPort.instances[0].sources).toHaveLength(1);
+      expect(SectionAudioPort.instances[0].resume).toHaveBeenCalledOnce();
+    },
+  );
+  it("does not fetch or play under the menu-opening gesture even if the car is already visible", async () => {
+    const controller = create();
+    controller.setViewportFraction(1);
+    const button = document.createElement("button");
+    button.setAttribute("aria-haspopup", "dialog");
+    document.body.append(button);
+    controller.onGesture({ ...trustedGesture(), target: button } as Event);
+    await flushAudio();
+    expect(fetch).not.toHaveBeenCalled();
+    const menu = document.createElement("dialog");
+    menu.open = true;
+    document.body.append(menu);
+    await flushAudio();
+    menu.open = false;
+    await flushAudio();
+    expect(fetch).not.toHaveBeenCalled();
+    controller.setViewportFraction(0);
+    controller.setViewportFraction(1);
+    await flushAudio();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(SectionAudioPort.instances[0].sources).toHaveLength(1);
+  });
+  it("uses the same unlock-only path for the existing film modal opener", async () => {
+    const controller = create();
+    const button = document.createElement("button");
+    button.className = "home-film-enlarge";
+    const icon = document.createElement("span");
+    button.append(icon);
+    document.body.append(button);
+    controller.onGesture({ ...trustedGesture(), target: icon } as Event);
+    await flushAudio();
+    expect(SectionAudioPort.instances).toHaveLength(1);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});

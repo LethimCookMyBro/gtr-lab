@@ -77,11 +77,13 @@ export class R35AudioController {
 
   // Callers must supply an explicit gesture. The section controller additionally
   // checks native event trust; scroll/IntersectionObserver never call resume().
+  // A gesture opening a modal may unlock audio without speculative fetch/decode.
+  unlockFromGesture = (): boolean => this.startFromGesture(false, false);
   prepareFromGesture = (): boolean => this.startFromGesture(false);
   playFromGesture = () => {
     this.startFromGesture(true);
   };
-  private startFromGesture(play: boolean): boolean {
+  private startFromGesture(play: boolean, loadRecording = true): boolean {
     if (!this.allowed()) return false;
     if (this.snapshot.phase === "playing" || this.snapshot.phase === "loading")
       return true;
@@ -108,7 +110,7 @@ export class R35AudioController {
       const resumed = context.resume();
       this.unlocked = true;
       if (play) this.claimPlayback();
-      this.beginPreparation(context, resumed);
+      this.beginPreparation(context, resumed, loadRecording);
       return true;
     } catch {
       this.fail(
@@ -136,7 +138,11 @@ export class R35AudioController {
     return true;
   };
 
-  private beginPreparation(context: AudioContext, resumed: Promise<void>) {
+  private beginPreparation(
+    context: AudioContext,
+    resumed: Promise<void>,
+    loadRecording = true,
+  ) {
     const attempt = ++this.attempt;
     this.request = new AbortController();
     this.update({ phase: "loading", error: null });
@@ -146,17 +152,31 @@ export class R35AudioController {
           "The recording took too long to load. Retry when your connection is ready.",
         );
     }, MAX_LOAD_MS);
-    void this.loadAndPrepare(context, resumed, attempt, this.request.signal);
+    void this.loadAndPrepare(
+      context,
+      resumed,
+      attempt,
+      this.request.signal,
+      loadRecording,
+    );
   }
   private async loadAndPrepare(
     context: AudioContext,
     resumed: Promise<void>,
     attempt: number,
     signal: AbortSignal,
+    loadRecording: boolean,
   ) {
     try {
       await resumed;
       if (!this.isCurrent(attempt)) return;
+      if (!loadRecording && !this.wantsPlayback) {
+        if (context.state !== "running") throw new Error("Audio suspended");
+        this.clearLoadTimer();
+        this.request = null;
+        this.update({ phase: "idle", error: null });
+        return;
+      }
       let buffer = this.buffer;
       if (!buffer) {
         const response = await fetch(r35Recording.url, { signal });

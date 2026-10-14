@@ -49,7 +49,7 @@ jobs:
       - name: Verify frozen source and input assets before dependencies or sockets
         run: |
           node --check scripts/home-repair-browser.mjs
-          node --test tests/home-repair-contract.node.mjs tests/home-repair-audio-observer.node.mjs tests/home-repair-gpu-observer.node.mjs tests/ui-optimization-receipts.node.mjs tests/cabin-runtime-body-ledger.node.mjs
+          node --test tests/home-repair-contract.node.mjs tests/home-repair-audio-observer.node.mjs tests/home-repair-gpu-observer.node.mjs tests/home-repair-b229-regression.node.mjs tests/home-repair-pixels.node.mjs tests/ui-optimization-receipts.node.mjs tests/cabin-runtime-body-ledger.node.mjs
           node scripts/home-repair-browser.mjs --preflight
       - run: npm ci
       - name: Install immutable baseline dependencies

@@ -1333,7 +1333,10 @@
   width: 100%;
   height: calc(100% - 64px);
   border: 0;
-  background: #070809;
+  /* A blocked/empty document can emit load without a first frame. Keep our
+     backing transparent so it cannot cover the decoded local poster below.
+     Provider-painted content is unchanged; document load is not playback. */
+  background: transparent;
 }
 .home-film-backup[hidden] {
   display: none;

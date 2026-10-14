@@ -412,3 +412,80 @@ it("the modal interrupt urgently stops the globally owned fading recording", asy
   ).toHaveBeenLastCalledWith();
   expect(controller.getSnapshot().phase).toBe("idle");
 });
+
+describe("unlock-only audio transport", () => {
+  it("unlocks synchronously without fetching, then loads on a later entry without a second resume", async () => {
+    const controller = create();
+    expect(controller.unlockFromGesture()).toBe(true);
+    const context = FakeAudioContext.instances[0];
+    expect(context.resume).toHaveBeenCalledOnce();
+    await flush();
+    expect(fetchSample).not.toHaveBeenCalled();
+    expect(context.decodeAudioData).not.toHaveBeenCalled();
+    expect(controller.getSnapshot().phase).toBe("idle");
+    Object.defineProperty(navigator, "userActivation", {
+      configurable: true,
+      value: { isActive: false },
+    });
+    controller.playPrepared();
+    await flush();
+    expect(fetchSample).toHaveBeenCalledTimes(1);
+    expect(context.sources).toHaveLength(1);
+    expect(context.resume).toHaveBeenCalledOnce();
+  });
+  it("bounds a pending unlock and cannot fetch when its cancelled resume settles", async () => {
+    vi.useFakeTimers();
+    let resolve!: () => void;
+    class PendingUnlock extends FakeAudioContext {
+      constructor() {
+        super();
+        this.resume = vi.fn(
+          () =>
+            new Promise<void>((r) => {
+              resolve = r;
+            }),
+        );
+      }
+    }
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      writable: true,
+      value: PendingUnlock,
+    });
+    const controller = create();
+    controller.unlockFromGesture();
+    await vi.advanceTimersByTimeAsync(12_000);
+    expect(controller.getSnapshot().phase).toBe("error");
+    expect(vi.getTimerCount()).toBe(0);
+    resolve();
+    await flush();
+    expect(fetchSample).not.toHaveBeenCalled();
+    expect(FakeAudioContext.instances[0].sources).toHaveLength(0);
+  });
+  it("stopping a pending unlock prevents its late result from reactivating transport", async () => {
+    let resolve!: () => void;
+    class PendingUnlock extends FakeAudioContext {
+      constructor() {
+        super();
+        this.resume = vi.fn(
+          () =>
+            new Promise<void>((r) => {
+              resolve = r;
+            }),
+        );
+      }
+    }
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      writable: true,
+      value: PendingUnlock,
+    });
+    const controller = create();
+    controller.unlockFromGesture();
+    controller.stop();
+    resolve();
+    await flush();
+    expect(controller.getSnapshot().phase).toBe("idle");
+    expect(fetchSample).not.toHaveBeenCalled();
+  });
+});

@@ -77,6 +77,11 @@ external audio host. No new packages or accounts are required.
   blocked until gate closure and section eligibility. For restored scroll, the
   gate's closure releases this never-attempted entry once; later menu/film
   dismissal cannot restart an interrupted entry
+- A first gesture on a menu/film modal opener unlocks the AudioContext only.
+  It does not fetch/decode a recording that opening the modal would immediately
+  cancel, and does not play into an already-visible car entry. After the modal
+  closes, a later genuine section entry may load/play using that unlocked
+  context; closing the modal itself never starts playback
 - Preparation can happen offscreen. One playback occurs per genuine car-section
   entry after activation. The visible area is normalized against
   min(section width, viewport width) × min(section height, viewport height), so
