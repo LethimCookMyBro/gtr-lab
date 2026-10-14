@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ACESFilmicToneMapping,
@@ -16,6 +16,7 @@ import {
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { models } from "../../data/models";
 import { useVehicleAsset } from "../three/useVehicleAsset";
+import { prepareAsyncRendererDisposal } from "../three/asyncRendererDisposal";
 import { applyVehicleAppearance } from "../three/materialAdapter";
 import type { PreparedVehicle } from "../three/materialAdapter";
 import { StageGeometry } from "../three/StageGeometry";
@@ -424,6 +425,8 @@ export default function RearVehicleScene(props: Props) {
     source.disabledEmissive,
     props.onLoadState,
   );
+  const ownedAsset = useRef(asset);
+  ownedAsset.current = asset;
   return (
     <SceneBoundary onError={props.onError}>
       <Canvas
@@ -433,6 +436,9 @@ export default function RearVehicleScene(props: Props) {
         camera={{ position: [0, 1.1, -6], fov: 36, near: 0.05, far: 70 }}
         gl={{ antialias: true, alpha: false, powerPreference: "low-power" }}
         onCreated={({ gl }) => {
+          // Canvas may retire before the outer loader's passive cleanup. Release
+          // this load while native handles still exist, then drain asynchronously.
+          prepareAsyncRendererDisposal(gl, () => ownedAsset.current?.dispose());
           gl.setClearAlpha(0);
           gl.outputColorSpace = SRGBColorSpace;
           gl.toneMapping = ACESFilmicToneMapping;
