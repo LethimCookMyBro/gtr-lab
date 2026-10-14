@@ -17,6 +17,7 @@ import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLigh
 import { models } from "../../data/models";
 import { useVehicleAsset } from "../three/useVehicleAsset";
 import { prepareAsyncRendererDisposal } from "../three/asyncRendererDisposal";
+import { DemandRenderBackpressure } from "../three/DemandRenderBackpressure";
 import { applyVehicleAppearance } from "../three/materialAdapter";
 import type { PreparedVehicle } from "../three/materialAdapter";
 import { StageGeometry } from "../three/StageGeometry";
@@ -450,6 +451,7 @@ export default function RearVehicleScene(props: Props) {
           gl.domElement.setAttribute("role", "img");
         }}
       >
+        <DemandRenderBackpressure onError={props.onError} />
         <ContextHealth onError={props.onError} />
         <RearPixelDensity
           progress={props.progress}

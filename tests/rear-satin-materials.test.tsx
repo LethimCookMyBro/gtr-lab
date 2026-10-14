@@ -19,6 +19,12 @@ import RearVehicleScene from "../src/components/home/RearVehicleScene";
 import { prepareVehicle } from "../src/components/three/materialAdapter";
 import type { PreparedVehicle } from "../src/components/three/materialAdapter";
 
+// This fixture replaces R3F with a non-rendering host. Actual admission,
+// resize, visibility and cleanup are exercised in rear-demand-admission.test.
+vi.mock("../src/components/three/DemandRenderBackpressure", () => ({
+  DemandRenderBackpressure: () => null,
+}));
+
 const runtime = vi.hoisted(() => ({
   state: {} as any,
   asset: null as any,

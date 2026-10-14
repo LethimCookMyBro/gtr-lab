@@ -212,6 +212,52 @@ it("gates the installed R3F demand tick, retaining the latest input until comple
   expect(f.errors).not.toHaveBeenCalled();
 });
 
+it("retains queued demand across never mode while fences and other roots keep the native loop alive", async () => {
+  const f = await fixture({ component: true });
+  const other = await fixture({ paced: false });
+  other.state.setFrameloop("always");
+  f.complete();
+  await frame();
+  expect(f.draws).toEqual([0]);
+  f.input(1);
+  f.state.setFrameloop("never");
+  await frame();
+  expect(f.draws).toEqual([0]);
+  expect(f.deltas).toHaveLength(1);
+  expect(f.state.internal.frames).toBe(1);
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(32));
+  for (const input of [2, 3, 4]) {
+    f.input(input);
+    await frame();
+  }
+  expect(f.draws).toEqual([0]);
+  expect(f.deltas).toHaveLength(1);
+  expect(f.state.internal.frames).toBe(1);
+  f.state.setFrameloop("demand");
+  f.state.invalidate();
+  await frame();
+  expect(f.draws).toEqual([0, 4]);
+  expect(f.errors).not.toHaveBeenCalled();
+});
+
+it("leaves ordinary always-mode rendering ungated and resumes admission for demand", async () => {
+  const f = await fixture({ component: true });
+  f.state.setFrameloop("always");
+  for (let index = 0; index < 3; index++) await frame();
+  expect(f.draws).toHaveLength(3);
+  expect(f.deltas).toHaveLength(3);
+  f.input(7);
+  f.state.setFrameloop("demand");
+  await frame();
+  expect(f.draws).toHaveLength(3);
+  f.complete();
+  await act(async () => vi.advanceTimersByTimeAsync(16));
+  await frame();
+  expect(f.draws).toEqual([0, 0, 0, 7]);
+  expect(f.errors).not.toHaveBeenCalled();
+});
+
 it("admits every requested RAF when the backend completes within a refresh", async () => {
   const f = await fixture({ step: (state) => state.invalidate() });
   for (let index = 0; index < 12; index++) {

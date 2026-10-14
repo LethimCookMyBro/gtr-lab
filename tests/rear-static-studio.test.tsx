@@ -6,6 +6,12 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Group, PerspectiveCamera, Scene, MeshStandardMaterial } from "three";
 import RearVehicleScene from "../src/components/home/RearVehicleScene";
 
+// This fixture replaces R3F with a non-rendering host. Actual admission,
+// resize, visibility and cleanup are exercised in rear-demand-admission.test.
+vi.mock("../src/components/three/DemandRenderBackpressure", () => ({
+  DemandRenderBackpressure: () => null,
+}));
+
 const runtime = vi.hoisted(() => ({
   state: {} as any,
   asset: null as any,

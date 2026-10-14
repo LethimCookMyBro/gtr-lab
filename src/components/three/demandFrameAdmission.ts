@@ -267,11 +267,14 @@ export function installDemandRenderBackpressure(
     if (
       stopped ||
       !state.internal.active ||
-      state.frameloop !== "demand" ||
+      state.frameloop === "always" ||
       renderer.xr.isPresenting
     )
       return;
-    const mayRender = poll(false);
+    // R3F retains queued frames when switching to never and its global loop
+    // still tests that counter. Mask eligibility without consuming the demand
+    // so an in-flight frame cannot leak through while hidden, then resume it.
+    const mayRender = state.frameloop === "demand" && poll(false);
     windowOpen = true;
     const generation = ++windowGeneration;
     // Another root can throw before global after effects run. Never strand the
