@@ -6,7 +6,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
-import {assessHeroPixels,observeHeroPixelGeometry} from './home-repair-pixels.mjs';
+import {assessHeroPixels,observeHeroPixelGeometry,assessDetailPixels,observeDetailPixelGeometry,detailPoster} from './home-repair-pixels.mjs';
 import {createUiReceipts} from './ui-optimization-receipts.mjs';
 import {installHomeRepairGpuObserver} from './home-repair-gpu-observer.mjs';
 import {installHomeRepairAudioObserver} from './home-repair-audio-observer.mjs';
@@ -97,6 +97,13 @@ export async function waitForRouteExit({receipt,read,pause,now=()=>performance.n
   }catch(error){receipt.status='failed';receipt.error=String(error);throw error;}
   finally{receipt.finishedAt=now();receipt.elapsedMs=receipt.finishedAt-startedAt;}
 }
+export async function waitForDetailPoster({page,now=()=>performance.now()}) {
+  const startedAt=now(),deadline=startedAt+budgets.command,left=()=>{const remaining=deadline-now();assert.ok(remaining>0,'Original5000ms detail transition deadline');return remaining;};
+  await page.waitForFunction(()=>{const film=document.querySelector('.home-film--detail'),image=film?.querySelector('.home-film-backup');return document.querySelectorAll('.home-film--hero iframe').length===0&&film?.getAttribute('data-film-poster')==='decoded'&&image?.complete&&image.naturalWidth>0;},null,{timeout:left()});
+  const decoded=await bounded(page.evaluate(async()=>{const image=document.querySelector('.home-film--detail .home-film-backup');if(!image)throw new Error('Detail image missing');await image.decode();return {sameImage:image===document.querySelector('.home-film--detail .home-film-backup'),connected:image.isConnected,source:image.currentSrc,naturalWidth:image.naturalWidth,naturalHeight:image.naturalHeight};}),left(),'Actual local detail decode');
+  left();assert.ok(decoded.sameImage&&decoded.connected&&decoded.naturalWidth>0&&decoded.naturalHeight>0);assert.equal(new URL(decoded.source).pathname,detailPoster.path);
+  return {decoded,window:{startedAt,deadline,budget:budgets.command,elapsedMs:now()-startedAt},scope:'Same real local image decoded after natural scroll; provider playback remains unverified.'};
+}
 async function sampleProviderPair(page) {
   const before={at:Date.now(),frames:[]},after={at:null,frames:[]},owned=[];
   const read=video=>({currentTime:video.currentTime,readyState:video.readyState,paused:video.paused,duration:Number.isFinite(video.duration)?video.duration:null,videoWidth:video.videoWidth,videoHeight:video.videoHeight,connected:video.isConnected&&video.ownerDocument===document});
@@ -184,7 +191,7 @@ export async function exercise({page,context,row,shot,check,save,receipts,target
   await check('film-offscreen-and-automatic-reentry',async()=>{
     const start=await page.evaluate(homeSnapshot);assert.equal(start.films.find(f=>f.kind.includes('--hero'))?.iframes,1,'Initial hero embed must be present');
     await nativeSeek(page,await sectionTarget(page,'.home-expanding-runway'),budgets.nativeInitial);
-    await page.waitForFunction(()=>document.querySelectorAll('.home-film--hero iframe').length===0,null,{timeout:budgets.command});row.filmOffscreen=await page.evaluate(homeSnapshot);await shot('detail-film');
+    row.detailPoster=await waitForDetailPoster({page});row.filmOffscreen=await page.evaluate(homeSnapshot);row.detailPixels=(await shot('detail-film')).detailPixels;assert.equal(row.detailPixels.passed,true,'Actual detail PNG must contain nonblank image content outside controls/captions');
     await nativeSeek(page,0);await page.waitForFunction(()=>document.querySelectorAll('.home-film--hero iframe').length===1,null,{timeout:budgets.command});row.filmReentry=await page.evaluate(homeSnapshot);assert.equal(row.filmReentry.poster,'decoded');assert.equal(row.filmReentry.posterOpacity,'1');assert.equal(row.filmReentry.loadingFilmHeadline,false);row.heroReentryPixels=(await shot('hero-reentry')).heroPixels;assert.equal(row.heroReentryPixels.passed,true,'Actual reentry PNG must retain nonblank image content');
   });
   await check('three-actual-rear-dolly-poses',async()=>{
@@ -235,7 +242,7 @@ export async function exercise({page,context,row,shot,check,save,receipts,target
     const resized=await waitRearCompletion(page,1,budgets.nativeLater);assert.equal(resized.context.id,row.rear?.at(-1)?.defaultFramebuffer.contextId,'Native resize retains original homepage scene owner');assert.equal(resized.canvas.progress,'1.0000','Compact-height visuals use their actual sequential pose');row.supplementary.at(-1).nativeResize=resized;
     await shot(`audio-${name}`);const afterResizeShot=await waitRearCompletion(page,1,budgets.nativeLater);assert.equal(afterResizeShot.main.id,resized.main.id);assert.equal(afterResizeShot.context.workRevision,resized.context.workRevision);assert.deepEqual(afterResizeShot.canvas,resized.canvas);await handles.mute.click({timeout:budgets.command});
   });
-  await receipts.drain();
+  await receipts.drain();assert.ok(row.runtimeBodies.some(receipt=>receipt.path===detailPoster.path&&receipt.state==='body-completed'),'Actual original detail poster body required');
   await check('spa-exit-audio-gpu-cleanup',async()=>{
     await freshSectionAudio('native-menu-route-exit');
     row.beforeExit={gpu:await page.evaluate(()=>globalThis.__r35HomeGpuFrames.snapshot()),audio:await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot())};
@@ -257,11 +264,18 @@ export async function holdOriginalRequest(page,url) {
 export function createHomeShot({getPage,row,target,deadline,alive,output,save,PNG,posterReference,lane}) {
   return async(label,locator,options={})=>{
       const page=getPage();
-      alive();assert.ok(row.captures.length<28,'Bounded screenshot count');const file=`${lane}-${label}.png`;let clip;
+      alive();const detailCaptureDeadline=label==='detail-film'?Math.min(deadline,performance.now()+budgets.screenshot):null;assert.ok(row.captures.length<28,'Bounded screenshot count');const file=`${lane}-${label}.png`;let clip;
       if(options.detail){const bounds=await locator.boundingBox();assert.ok(bounds);clip={x:Math.max(0,bounds.x+bounds.width*.12),y:Math.max(0,bounds.y+bounds.height*.18),width:Math.min(target.viewport.width,bounds.width*.76),height:Math.min(target.viewport.height*.65,bounds.height*.65)};}
       const heroGeometry=['hero','hero-reentry'].includes(label)?await bounded(page.evaluate(observeHeroPixelGeometry),budgets.command,'Actual hero region geometry'):null;
-      const capture={label,file,scope:options.detail?'Measured rear canvas detail crop; no alternate camera':locator?'Actual homepage canvas/element':'Actual homepage composition',...(clip?{clip}:{})};row.captures.push(capture);await save();
-      const bytes=await bounded((clip?page:locator??page).screenshot({path:resolve(output,file),timeout:budgets.screenshot,animations:'allow',scale:'css',...(clip?{clip}:{})}),Math.min(budgets.screenshot,deadline-performance.now()),'Screenshot');Object.assign(capture,{sha256:sha256(bytes),bytes:bytes.length});if(heroGeometry)capture.heroPixels=assessHeroPixels(PNG.sync.read(bytes),heroGeometry,posterReference);await save();return capture;
+      const detailLeft=()=>{const remaining=detailCaptureDeadline-performance.now();assert.ok(remaining>0,'Original45000ms detail capture deadline');return remaining;};
+      let detailGeometry=null;if(label==='detail-film'){const remaining=detailLeft();detailGeometry=await bounded(page.evaluate(observeDetailPixelGeometry),Math.min(budgets.command,remaining),'Actual detail region geometry');detailLeft();}
+      if(detailGeometry)assert.equal(row.dist.files.find(file=>file.path==='dist'+detailPoster.path)?.sha256,detailPoster.sha256,'Exact source-bound detail photo');
+      const capture={label,file,scope:options.detail?'Measured rear canvas detail crop; no alternate camera':locator?'Actual homepage canvas/element':'Actual homepage composition',...(clip?{clip}:{})};row.captures.push(capture);if(detailGeometry)detailLeft();await save();
+      const captureBudget=detailGeometry?detailLeft():Math.min(budgets.screenshot,deadline-performance.now());
+      const bytes=await bounded((clip?page:locator??page).screenshot({path:resolve(output,file),timeout:budgets.screenshot,animations:'allow',scale:'css',...(clip?{clip}:{})}),captureBudget,'Screenshot');
+      if(detailGeometry){detailLeft();const detailPixels=assessDetailPixels(PNG.sync.read(bytes),detailGeometry);detailLeft();Object.assign(capture,{sha256:sha256(bytes),bytes:bytes.length,detailPixels});}
+      else {Object.assign(capture,{sha256:sha256(bytes),bytes:bytes.length});if(heroGeometry)capture.heroPixels=assessHeroPixels(PNG.sync.read(bytes),heroGeometry,posterReference);}
+      await save();if(detailGeometry)detailLeft();return capture;
     };
 }
 export async function main(env=process.env) {

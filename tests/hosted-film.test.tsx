@@ -13,18 +13,12 @@ import { MemoryRouter } from "react-router-dom";
 import { Film } from "../src/components/home/Film";
 import { homeFilms } from "../src/data/films";
 let observe: IntersectionObserverCallback;
-let prepare: IntersectionObserverCallback;
 beforeEach(() => {
-  prepare = () => {};
   vi.stubGlobal(
     "IntersectionObserver",
     class {
-      constructor(
-        callback: IntersectionObserverCallback,
-        options?: IntersectionObserverInit,
-      ) {
-        if (options?.rootMargin) prepare = callback;
-        else observe = callback;
+      constructor(callback: IntersectionObserverCallback) {
+        observe = callback;
       }
       observe() {}
       disconnect() {}
@@ -81,7 +75,7 @@ it("uses the exact intact publisher iframe and exposes source credits", () => {
     "embedded",
   );
 });
-it("leaves detail media unloaded until that section becomes visible", () => {
+it("leaves the detail provider unloaded until that section becomes visible", () => {
   const { container } = render(scene(false, false, "detail"));
   expect(container.querySelector("iframe")).toBeNull();
   visible(true);
@@ -196,23 +190,109 @@ it("contains the detail poster and player in one media viewport above the contro
   expect(viewport?.querySelector("iframe")).toBeNull();
 });
 
-it("prepares the detail poster near the viewport without mounting the provider early", () => {
+it("requests the existing detail photograph eagerly at mount with low priority before viewport entry", () => {
   const { container } = render(scene(false, false, "detail"));
   const poster =
     container.querySelector<HTMLImageElement>(".home-film-backup")!;
-  expect(poster.getAttribute("src")).toBeNull();
-  act(() =>
-    prepare(
-      [{ isIntersecting: true } as IntersectionObserverEntry],
-      {} as IntersectionObserver,
-    ),
-  );
   expect(poster.getAttribute("src")).toBe("/images/gtr-premium.webp");
   expect(poster.getAttribute("loading")).toBe("eager");
+  expect(poster.getAttribute("fetchpriority")).toBe("low");
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-poster"),
+  ).toBe("loading");
   expect(container.querySelector("iframe")).toBeNull();
   visible(true);
-  expect(container.querySelector("iframe")).not.toBeNull();
+  expect(container.querySelector("iframe")?.getAttribute("src")).toBe(
+    homeFilms.detail.embed,
+  );
+  expect(container.querySelector(".home-film-backup")).toBe(poster);
 });
+
+it("preserves the opening photograph's source and priority while starting the detail photograph early", () => {
+  const { container, rerender } = render(scene());
+  const poster =
+    container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  expect(poster.getAttribute("src")).toBe(
+    "/media/campaign-r35-orange-hero.webp",
+  );
+  expect(poster.getAttribute("loading")).toBe("eager");
+  expect(poster.getAttribute("fetchpriority")).toBeNull();
+  rerender(scene(false, false, "detail"));
+  expect(poster.getAttribute("src")).toBe("/images/gtr-premium.webp");
+  expect(poster.getAttribute("fetchpriority")).toBe("low");
+});
+
+it("decodes the detail photograph before entry and retains it under a loaded but unverified provider", async () => {
+  const { container } = render(scene(false, false, "detail"));
+  const poster =
+    container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  const film = container.querySelector(".home-film")!;
+  expect(poster.getAttribute("src")).toBe("/images/gtr-premium.webp");
+  Object.defineProperty(poster, "complete", { value: true });
+  Object.defineProperty(poster, "naturalWidth", { value: 1600 });
+  let finish!: () => void;
+  poster.decode = () =>
+    new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+  fireEvent.load(poster);
+  expect(film.getAttribute("data-film-poster")).toBe("loading");
+  expect(container.querySelector("iframe")).toBeNull();
+  await act(async () => finish());
+  expect(film.getAttribute("data-film-poster")).toBe("decoded");
+  expect(film.getAttribute("data-film-playback")).toBe("inactive");
+  visible(true);
+  fireEvent.load(container.querySelector("iframe")!);
+  expect(film.getAttribute("data-film-poster")).toBe("decoded");
+  expect(film.getAttribute("data-film-playback")).toBe("unverified");
+  expect(container.querySelector(".home-film-backup")).toBe(poster);
+  expect(poster.hidden).toBe(false);
+  visible(false);
+  visible(true);
+  expect(container.querySelector(".home-film-backup")).toBe(poster);
+  expect(film.getAttribute("data-film-poster")).toBe("decoded");
+});
+
+it("does not certify a failed detail decode or use iframe load as a substitute", async () => {
+  const { container } = render(scene(false, false, "detail"));
+  const poster =
+    container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  const film = container.querySelector(".home-film")!;
+  expect(poster.getAttribute("src")).toBe("/images/gtr-premium.webp");
+  Object.defineProperty(poster, "complete", { value: true });
+  Object.defineProperty(poster, "naturalWidth", { value: 1600 });
+  poster.decode = () => Promise.reject(new Error("decode failed"));
+  await act(async () => fireEvent.load(poster));
+  expect(film.getAttribute("data-film-poster")).toBe("loading");
+  expect(container.querySelector("iframe")).toBeNull();
+  visible(true);
+  fireEvent.load(container.querySelector("iframe")!);
+  expect(film.getAttribute("data-film-poster")).toBe("loading");
+  expect(film.getAttribute("data-film-playback")).toBe("unverified");
+  expect(container.querySelector(".home-film-backup")).toBe(poster);
+});
+
+it.each([
+  [true, false],
+  [false, true],
+  [true, true],
+])(
+  "prepares the detail photograph while retaining explicit provider play policy %s/%s",
+  (reducedMotion, saveData) => {
+    const { container } = render(scene(reducedMotion, saveData, "detail"));
+    const poster =
+      container.querySelector<HTMLImageElement>(".home-film-backup")!;
+    expect(poster.getAttribute("src")).toBe("/images/gtr-premium.webp");
+    expect(poster.getAttribute("loading")).toBe("eager");
+    expect(poster.getAttribute("fetchpriority")).toBe("low");
+    visible(true);
+    expect(container.querySelector("iframe")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Play detail film" }));
+    expect(container.querySelector("iframe")?.getAttribute("src")).toBe(
+      homeFilms.detail.embed,
+    );
+  },
+);
 
 it.each(["hero", "detail"] as const)(
   "remounts %s silently after automatic offscreen reentry",

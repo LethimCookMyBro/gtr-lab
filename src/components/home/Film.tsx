@@ -27,7 +27,6 @@ export function Film({
 }: FilmProps) {
   const holder = useRef<HTMLDivElement>(null);
   const backup = useRef<HTMLImageElement>(null);
-  const [near, setNear] = useState(kind === "hero");
   const [fallbackLoaded, setFallbackLoaded] = useState(false);
   const [posterDecoded, setPosterDecoded] = useState(false);
   useEffect(() => {
@@ -113,31 +112,19 @@ export function Film({
     const element = holder.current;
     if (!element) return;
     if (typeof IntersectionObserver === "undefined") {
-      setNear(true);
       setVisible(true);
       return;
     }
-    // Prepare just the local photograph before entry. The provider stays
-    // unmounted until the actual film viewport intersects.
-    const preparation = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setNear(true);
-        preparation.disconnect();
-      },
-      { rootMargin: "600px 0px", threshold: 0 },
-    );
+    // The local photographs prepare from mount; the provider still waits for
+    // the actual film viewport, then unmounts whenever it leaves view.
     const visibility = new IntersectionObserver(
       ([entry]) => {
         setVisible(entry.isIntersecting);
-        if (entry.isIntersecting) setNear(true);
       },
       { threshold: 0.1 },
     );
-    preparation.observe(element);
     visibility.observe(element);
     return () => {
-      preparation.disconnect();
       visibility.disconnect();
     };
   }, []);
@@ -218,18 +205,17 @@ export function Film({
           className="home-film-backup"
           onLoad={() => setFallbackLoaded(true)}
           src={
-            near
-              ? kind === "hero"
-                ? "/media/campaign-r35-orange-hero.webp"
-                : "/images/gtr-premium.webp"
-              : undefined
+            kind === "hero"
+              ? "/media/campaign-r35-orange-hero.webp"
+              : "/images/gtr-premium.webp"
           }
           alt={
             kind === "hero"
               ? "Orange facelift Nissan GT-R R35 photographed by Martin Katler; modern example, exact model year unverified"
               : "2018 Nissan GT-R Premium in Super Silver"
           }
-          loading={near ? "eager" : "lazy"}
+          loading="eager"
+          fetchPriority={kind === "detail" ? "low" : undefined}
         />
         {active && (
           <iframe

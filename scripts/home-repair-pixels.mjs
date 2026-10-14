@@ -34,3 +34,16 @@ export function observeHeroPixelGeometry() {
   const overlays=[...document.querySelectorAll('.home-header,.home-hero-copy,.home-film--hero .home-film-controls,.home-film--hero .home-film-entry,.home-menu-dialog[open],.home-loading-gate[open]')].filter(element=>{const css=getComputedStyle(element);return css.display!=='none'&&css.visibility!=='hidden'&&Number(css.opacity)>0;}).map(rect);
   return {poster:rect(poster),overlays,naturalWidth:poster.naturalWidth,naturalHeight:poster.naturalHeight,source:poster.currentSrc};
 }
+
+export const detailPoster=Object.freeze({path:'/images/gtr-premium.webp',sha256:'b1c71c122cc98db913d12026ba6fba15700e6d83f64500ba80f56a8d51b77a39'});
+export function assessDetailPixels(png,geometry) {
+  assert.ok(new URL(geometry.source).pathname===detailPoster.path,'Exact existing local detail photograph required');
+  const observed=heroPixelStatistics(png,geometry),minimum={stddev:.012,range:.06,brightFraction:.04};
+  return {passed:observed.stddev>=minimum.stddev&&observed.p95-observed.p05>=minimum.range&&observed.brightFraction>=minimum.brightFraction,observed,minimum,region:posterRegion,geometry,sourceSha256:detailPoster.sha256,scope:'Nonblank image content in the actual detail photo region, outside measured controls/captions. Not poster pixel identity, provider playback or first-frame proof.'};
+}
+export function observeDetailPixelGeometry() {
+  const poster=document.querySelector('.home-film--detail .home-film-backup');if(!poster)throw new Error('Real detail photograph missing');
+  const rect=element=>{const box=element.getBoundingClientRect();return {x:box.x,y:box.y,width:box.width,height:box.height};};
+  const overlays=[...document.querySelectorAll('.home-header,.home-film--detail .home-film-controls,.home-film--detail .home-film-entry,.home-film--detail .home-film-error,.home-film--detail .home-film-status,.home-expanding-frame .home-film-enlarge,.home-menu-dialog[open],.home-loading-gate[open]')].filter(element=>{const css=getComputedStyle(element);return css.display!=='none'&&css.visibility!=='hidden'&&Number(css.opacity)>0;}).map(rect);
+  return {poster:rect(poster),overlays,naturalWidth:poster.naturalWidth,naturalHeight:poster.naturalHeight,source:poster.currentSrc};
+}

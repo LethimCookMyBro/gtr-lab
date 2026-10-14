@@ -28,7 +28,7 @@ test('staged exercise and screenshot behavior are byte-equivalent after export/f
   text=text.replace('export function homeSnapshot(carHeld=false) {','function homeSnapshot(carHeld=false) {');
   text=text.replace('export async function exercise({page,context,row,shot,check,save,receipts,target,held,initialStarted,startup}) {\n  if(startup)await startup();else {','async function exercise({page,context,row,shot,check,save,receipts,target,held,initialStarted}) {');
   text=text.replace("  await held.poster.release();await held.car.release();row.heldRequests=held.snapshot();await save();\n  }\n  await check('real-rear-ready'","  await held.poster.release();await held.car.release();row.heldRequests=held.snapshot();await save();\n  await check('real-rear-ready'");
-  assert.equal(createHash('sha256').update(text).digest('hex'),'292091fc760f35f55377f744650795419b65a9b7f83ae89fd7381fc7d3a15c9d');
+  assert.equal(createHash('sha256').update(text).digest('hex'),'a045a624c0978ec9a56c183345169f2a09263f750ff9847a0a0b9f1a8fab4bf1');
 });
 test('live runner reuses exact assets/body/native/capture helpers without held requests, server or baseline',async()=>{
   const text=await readFile(new URL('../scripts/home-repair-live.mjs',import.meta.url),'utf8');
