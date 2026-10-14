@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "allow": true,
+  "contract": "official-nissan-embed-qa-20261014-v1",
+  "baselineCommit": "14668a99428bd995833317cf1fa66f4101922811",
+  "baselineTree": "9ab4d5ba546a4da225be1f18f97fd6c1ae7cd538",
+  "videoId": "Ccklrg-mZyY",
+  "publisher": "https://global.nissannews.com/en/videos/video-0770352876ecd1a82c7d011f86007f37-nissan-gt-r-the-ultimate-high-speed-camera-car?channelsConstraint=channel-NNG244&firstResultIndex=16",
+  "origin": "http://127.0.0.1:4197",
+  "viewports": {
+    "desktop": {
+      "width": 1440,
+      "height": 900
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844
+    },
+    "tablet": {
+      "width": 820,
+      "height": 1180
+    }
+  },
+  "budgets": {
+    "batch": 240000,
+    "lane": 65000,
+    "navigation": 12000,
+    "ready": 15000,
+    "playing": 12000,
+    "sample": 4500,
+    "command": 4000,
+    "screenshot": 7000,
+    "cleanup": 5000,
+    "liveHeaders": 6000
+  },
+  "capturePolicy": {
+    "viewport": "desktop",
+    "maximumImages": 2,
+    "labels": [
+      "visible-frame-1",
+      "visible-frame-2"
+    ]
+  },
+  "sourceFiles": [
+    {
+      "path": ".github/workflows/official-nissan-embed-qa.yml",
+      "bytes": 3224,
+      "sha256": "f72c63e7c42c31278ae96552314a47776861df71b96f9f0fab6d3c261c115747"
+    },
+    {
+      "path": "qa/official-nissan-embed.md",
+      "bytes": 6634,
+      "sha256": "a268d3c8b60bdae6468e3c47b0596214c856e1b88c498ebad1726e51167c2743"
+    },
+    {
+      "path": "scripts/official-nissan-embed-page.mjs",
+      "bytes": 6426,
+      "sha256": "74ac492abb0399689dfb624f079ef287ad5333c90083d634ca13e4f2865a7e76"
+    },
+    {
+      "path": "scripts/official-nissan-embed-policy.mjs",
+      "bytes": 9197,
+      "sha256": "ce20c4368c004af43697b721ac2b421a6c1cc8881feb40bb8bb413810719697b"
+    },
+    {
+      "path": "scripts/official-nissan-embed.mjs",
+      "bytes": 19620,
+      "sha256": "de234a9474d8eead45e290454f5a752c42f7ee86e3f2ce44577ddc1d74d8a570"
+    },
+    {
+      "path": "tests/official-nissan-embed.node.mjs",
+      "bytes": 12152,
+      "sha256": "a3b70f8a23bed819d6473bfc217c452e31195592d60b360858d7f012ce37e852"
+    }
+  ]
+}

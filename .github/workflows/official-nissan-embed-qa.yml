@@ -1,0 +1,64 @@
+# QA-only source. Publication/execution and evidence retention need separate approval.
+name: Official Nissan embed compatibility QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/official-nissan-embed-request.json'
+permissions:
+  contents: read
+concurrency:
+  group: official-nissan-embed-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  bounded-compatibility:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before == '14668a99428bd995833317cf1fa66f4101922811' && github.run_attempt == 1 && contains(github.event.head_commit.message, '[stage-official-nissan-embed]') && !contains(github.event.head_commit.message, '[release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      R35_ALLOW_OFFICIAL_NISSAN_EMBED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Exact event, parent, added paths and source hashes before dependencies or sockets
+        run: |
+          node --check scripts/official-nissan-embed.mjs
+          node --check scripts/official-nissan-embed-page.mjs
+          node --test tests/official-nissan-embed.node.mjs
+          node scripts/official-nissan-embed.mjs --preflight
+      - run: npm ci
+        timeout-minutes: 3
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 4
+      - name: One bounded sequential three-viewport probe, normal browser policy
+        run: node scripts/official-nissan-embed.mjs
+        timeout-minutes: 5
+      - name: State evidence boundary
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          QA-only CI-local YouTube compatibility probe, not a product release or live-film acceptance.
+          Normal Chromium policy, fixed official Nissan video, one player, no provider interception or media extraction.
+          API readiness, PLAYING, advancing time and actual visible screenshot changes are distinct gates.
+          Exactly two desktop frame images maximum for the entire batch; mobile/tablet are API-only with no screenshots or visual proof.
+          Inspect the original desktop frame pair before visual acceptance. Failures are terminal; no reruns or click fallback.
+          Current production CSP excludes YouTube scripts/frames. Production integration is a separate decision.
+          Evidence follows this repository's Actions-artifact access rules; this public repository does not provide private artifact storage.
+          SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: official-nissan-embed-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/official-nissan-embed-${{ github.run_id }}/report.json
+            ${{ runner.temp }}/official-nissan-embed-${{ github.run_id }}/desktop-visible-frame-1.png
+            ${{ runner.temp }}/official-nissan-embed-${{ github.run_id }}/desktop-visible-frame-2.png
+          retention-days: 3
+          if-no-files-found: warn
