@@ -1,3 +1,4 @@
+import { ImageReferenceLabel } from "../ImageReferenceLabel";
 import { ReferenceUnavailable } from "../ReferenceUnavailable";
 import { AssetDisclosure } from "./AssetDisclosure";
 import { useCallback, useEffect, useState } from "react";
@@ -62,13 +63,14 @@ export function ConfiguratorPanels({
               }}
             >
               {m.image ? (
-                <img src={m.image.replace(".webp", ".small.webp")} alt="" />
+                <img src={m.imageSmall ?? m.image} alt="" />
               ) : (
                 <ReferenceUnavailable model={m} />
               )}
               <span>
                 <strong>{m.shortName}</strong>
                 <small>{m.tagline}</small>
+                <ImageReferenceLabel model={m} />
               </span>
               {m.id === model.id ? (
                 <Check size={18} />

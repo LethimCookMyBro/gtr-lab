@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { ArrowRight, RotateCcw } from "lucide-react";
 import { GtrWordmark } from "./GtrWordmark";
-import { formatModelBytes, sceneLoadLabel } from "./homeReadiness";
-import type { HomeSceneLoadState } from "./homeReadiness";
 
 // A pending gate must be modal before the application can paint. The passive
 // fallback keeps server rendering free of browser-only layout work.
@@ -12,14 +10,14 @@ const usePrePaintEffect =
 /** A viewport-level, accessible gate around the actual homepage preparation. */
 export function OpeningMark({
   pending,
-  scene,
+  visualFailed = false,
   heroReady,
   reducedMotion,
   onContinue,
   onRetry,
 }: {
   pending: boolean;
-  scene: HomeSceneLoadState;
+  visualFailed?: boolean;
   heroReady: boolean;
   reducedMotion: boolean;
   onContinue: () => void;
@@ -118,13 +116,11 @@ export function OpeningMark({
     if (pending && dialog.current?.hasAttribute("open"))
       skip.current?.focus({ preventScroll: true });
   }, [pending]);
-  const downloading = scene.phase === "downloading" ? scene : undefined;
-  const total = downloading?.totalBytes;
-  const animate = pending && !reducedMotion && scene.phase !== "error";
-  const label =
-    scene.phase === "ready" || scene.phase === "deferred"
-      ? "Preparing the opening image"
-      : sceneLoadLabel(scene);
+  const failed = visualFailed && !heroReady;
+  const animate = pending && !reducedMotion && !failed;
+  const label = failed
+    ? "The opening visual took too long to load. Reload the page or continue browsing."
+    : "Preparing the opening image";
   return (
     <dialog
       ref={dialog}
@@ -132,10 +128,8 @@ export function OpeningMark({
       aria-label="Preparing GT-R LAB"
       aria-describedby="home-loading-status"
       aria-modal="true"
-      data-state={
-        pending ? (scene.phase === "error" ? "error" : "loading") : "resolved"
-      }
-      data-load-phase={scene.phase}
+      data-state={pending ? (failed ? "error" : "loading") : "resolved"}
+      data-load-phase={failed ? "error" : heroReady ? "ready" : "image"}
       onCancel={(event) => event.preventDefault()}
     >
       <div className="home-opening-center">
@@ -148,32 +142,12 @@ export function OpeningMark({
         <p id="home-loading-status" role="status" aria-live="polite">
           {label}
         </p>
-        {downloading && (
-          <progress
-            className="home-loading-assistive"
-            aria-label="R35 model download"
-            value={total ? downloading.loadedBytes : undefined}
-            max={total || undefined}
-            aria-valuenow={total ? downloading.loadedBytes : undefined}
-            aria-valuemin={0}
-            aria-valuemax={total}
-            aria-valuetext={
-              total
-                ? `${formatModelBytes(downloading.loadedBytes)} of ${formatModelBytes(total)} downloaded`
-                : `${formatModelBytes(downloading.loadedBytes)} received`
-            }
-          />
-        )}
-        <p className="home-loading-assistive">
-          {heroReady ? "Opening image ready" : "Loading the opening image"} ·
-          Ciasny R35 exterior
-        </p>
       </div>
       <div className="home-loading-actions">
-        {scene.phase === "error" && (
+        {failed && (
           <button type="button" onClick={onRetry}>
             <RotateCcw size={16} aria-hidden="true" />
-            {scene.recovery === "reload" ? "Reload page" : "Retry 3D view"}
+            Reload page
           </button>
         )}
         <button
@@ -187,7 +161,7 @@ export function OpeningMark({
             onContinue();
           }}
         >
-          Continue without 3D{" "}
+          Continue browsing{" "}
           <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
         </button>
       </div>

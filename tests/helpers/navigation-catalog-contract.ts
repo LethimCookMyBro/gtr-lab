@@ -150,7 +150,37 @@ const reviewedUiSubtraction = {
   await pending.click();`,
 };
 
+// The acquired CC0 image changes only the status label and disclosure text.
+// Restore the exact neighboring assertion context before the older contract;
+// reject partial, duplicate, or otherwise edited migrations.
+const reviewedPhotoReference = [
+  {
+    before: String.raw`  const pending = page.getByRole("button", {
+    name: "Specifications only · 3D asset pending",
+  });`,
+    after: String.raw`  const pending = page.getByRole("button", {
+    name: "Photo reference · 3D asset pending",
+  });`,
+  },
+  {
+    before: String.raw`  await expect(page.getByRole("dialog")).toContainText(
+    "No rights-cleared reference image",
+  );`,
+    after: String.raw`  await expect(page.getByRole("dialog")).toContainText(
+    "photograph, not an interactive render",
+  );`,
+  },
+];
+
 export function restorePreCatalogNavigation(source: string): string {
+  for (const { before, after } of reviewedPhotoReference) {
+    const occurrences = source.split(after).length - 1;
+    if (occurrences !== 1)
+      throw new Error(
+        `Expected one reviewed photo-reference hunk; found ${occurrences}`,
+      );
+    source = source.replace(after, before);
+  }
   const uiOccurrences = source.split(reviewedUiSubtraction.after).length - 1;
   if (uiOccurrences > 1) throw new Error("Duplicate reviewed UI subtraction");
   if (uiOccurrences === 1)

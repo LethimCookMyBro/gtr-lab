@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { models } from "../../data/models";
 import { getModelExperience } from "../../data/modelExperience";
+import { ImageReferenceLabel } from "../ImageReferenceLabel";
 import { ReferenceUnavailable } from "../ReferenceUnavailable";
 import { campaignMedia } from "./campaignMedia";
 import "../../styles/home-opening-cards.css";
@@ -36,7 +37,9 @@ export function ModelInvitations() {
                   srcSet={
                     has3D
                       ? `${campaignMedia.premium.small} 640w, ${campaignMedia.premium.src} 1600w`
-                      : `/images/gtr-${model.id}.small.webp 800w, ${model.image} 1920w`
+                      : model.imageSmall && model.imageSmall !== model.image
+                        ? `${model.imageSmall} 800w, ${model.image} 1920w`
+                        : undefined
                   }
                   sizes="(max-width: 700px) 92vw, 46vw"
                   alt={has3D ? campaignMedia.premium.alt : model.imageCaption}
@@ -52,6 +55,7 @@ export function ModelInvitations() {
               )}
               <div className="home-invitation-copy">
                 <h3>{model.shortName}</h3>
+                <ImageReferenceLabel model={model} />
               </div>
               <span className="home-invitation-cta">
                 <span>{action}</span>

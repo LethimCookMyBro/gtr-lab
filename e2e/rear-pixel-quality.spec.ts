@@ -10,12 +10,15 @@ test("rear stills use a bounded native-density buffer after scroll settles", asy
     }),
   );
   await page.goto("/");
+
+  const stage = page.locator(".home-signature-runway");
+  await expect(stage).toHaveAttribute("data-scene-state", "ready", {
+    timeout: 90000,
+  });
   await expect(page.locator(".home-loading-gate")).toHaveAttribute(
     "data-state",
     "resolved",
-    { timeout: 90000 },
   );
-  const stage = page.locator(".home-signature-runway");
   const canvas = stage.locator("canvas");
   const samples = [];
   for (const progress of [0.08, 0.92]) {

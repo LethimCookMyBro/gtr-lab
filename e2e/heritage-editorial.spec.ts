@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 
 const names = [
   "1969: PGC10 Skyline GT-R",
@@ -66,7 +66,7 @@ for (const viewport of [
   }, info) => {
     await page.setViewportSize(viewport);
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator(".home-archive-navigation")).toHaveCSS(
       "position",
@@ -129,7 +129,7 @@ test("native forward and reverse scrolling restores the same timeline focus", as
   page,
 }, info) => {
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const chapter = await visit(page, 1);
   const position = await page.evaluate(() => scrollY);
   const state = () =>

@@ -1,3 +1,4 @@
+import { ImageReferenceLabel } from "../ImageReferenceLabel";
 import { ArrowUpRight } from "lucide-react";
 import type { VehicleModel } from "../../data/models";
 export function ModelDetails({ model }: { model: VehicleModel }) {
@@ -6,6 +7,7 @@ export function ModelDetails({ model }: { model: VehicleModel }) {
       {model.image && (
         <>
           <img src={model.image} alt={model.imageCaption} />
+          <ImageReferenceLabel model={model} />
           <p className="photo-caption">{model.imageCaption}</p>
         </>
       )}

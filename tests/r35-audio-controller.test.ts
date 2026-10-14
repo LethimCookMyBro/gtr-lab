@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   R35AudioController,
   R35_SAMPLE_MUTED_KEY,
+  stopR35Recording,
 } from "../src/audio/r35AudioController";
 
 // Browser Web Audio has no jsdom implementation. This small port records actual
@@ -286,4 +287,128 @@ describe("standalone genuine R35 sample", () => {
     await flush();
     expect(controller.getSnapshot().error).toContain("unavailable");
   });
+});
+
+describe("prepared section transport", () => {
+  it("prepares on a gesture without playing, then starts without a second activation", async () => {
+    const controller = create();
+    expect(controller.prepareFromGesture()).toBe(true);
+    await flush();
+    const context = FakeAudioContext.instances[0];
+    expect(fetchSample).toHaveBeenCalledTimes(1);
+    expect(context.sources).toHaveLength(0);
+    Object.defineProperty(navigator, "userActivation", {
+      configurable: true,
+      value: { isActive: false },
+    });
+    expect(controller.playPrepared()).toBe(true);
+    await flush();
+    expect(context.sources).toHaveLength(1);
+    expect(context.resume).toHaveBeenCalledTimes(1);
+  });
+  it("never lets a viewport request itself create or unlock audio", async () => {
+    const controller = create();
+    expect(controller.playPrepared()).toBe(false);
+    await flush();
+    expect(FakeAudioContext.instances).toHaveLength(0);
+    expect(fetchSample).not.toHaveBeenCalled();
+  });
+  it("fades exit with native gain and source stop, retaining nodes until ended", async () => {
+    vi.useFakeTimers();
+    const controller = create();
+    controller.playFromGesture();
+    await flush();
+    const context = FakeAudioContext.instances[0];
+    const source = context.sources[0];
+    context.currentTime = 11;
+    controller.fadeOut();
+    expect(context.gain.gain.cancelScheduledValues).toHaveBeenCalledWith(11);
+    expect(context.gain.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(
+      0,
+      11.08,
+    );
+    expect(source.stop).toHaveBeenCalledExactlyOnceWith(11.08);
+    expect(source.disconnect).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    context.currentTime = 11.05;
+    controller.fadeOut();
+    expect(source.stop).toHaveBeenCalledTimes(1);
+    source.onended?.();
+    expect(source.disconnect).toHaveBeenCalledOnce();
+    expect(context.gain.disconnect).toHaveBeenCalledOnce();
+    expect(controller.getSnapshot().phase).toBe("idle");
+  });
+  it("urgent stops supersede a pending fade and stale ended cannot stop a replacement", async () => {
+    const controller = create();
+    controller.playFromGesture();
+    await flush();
+    const context = FakeAudioContext.instances[0];
+    const oldSource = context.sources[0];
+    const ended = oldSource.onended;
+    controller.fadeOut();
+    controller.stop();
+    expect(oldSource.stop).toHaveBeenLastCalledWith();
+    controller.playPrepared();
+    await flush();
+    ended?.();
+    expect(controller.getSnapshot().phase).toBe("playing");
+    expect(context.sources[1].stop).not.toHaveBeenCalled();
+  });
+  it("a new preview supersedes a fading owner's nodes immediately", async () => {
+    const first = create();
+    first.playFromGesture();
+    await flush();
+    first.fadeOut();
+    const second = create();
+    second.playFromGesture();
+    await flush();
+    const source = FakeAudioContext.instances[0].sources[0];
+    expect(source.stop).toHaveBeenLastCalledWith();
+    expect(source.disconnect).toHaveBeenCalledOnce();
+  });
+  it("fades from the actual natural envelope gain rather than raising end-of-clip volume", async () => {
+    const controller = create();
+    controller.playFromGesture();
+    await flush();
+    const context = FakeAudioContext.instances[0];
+    context.currentTime = 17.4;
+    controller.fadeOut();
+    const held = context.gain.gain.setValueAtTime.mock.calls.at(-1)!;
+    expect(held[0]).toBeGreaterThan(0);
+    expect(held[0]).toBeLessThan(0.1);
+    expect(held[1]).toBe(17.4);
+  });
+  it("keeps the preparation deadline through a hanging decode and rejects late results", async () => {
+    vi.useFakeTimers();
+    let resolve!: (value: { duration: number }) => void;
+    const controller = create();
+    controller.prepareFromGesture();
+    const context = FakeAudioContext.instances[0];
+    context.decodeAudioData.mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    await flush();
+    expect(controller.playPrepared()).toBe(true);
+    await vi.advanceTimersByTimeAsync(12_000);
+    expect(controller.getSnapshot().phase).toBe("error");
+    resolve({ duration: 7.6 });
+    await flush();
+    expect(context.sources).toHaveLength(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+it("the modal interrupt urgently stops the globally owned fading recording", async () => {
+  const controller = create();
+  controller.playFromGesture();
+  await flush();
+  controller.fadeOut();
+  stopR35Recording();
+  expect(
+    FakeAudioContext.instances[0].sources[0].stop,
+  ).toHaveBeenLastCalledWith();
+  expect(controller.getSnapshot().phase).toBe("idle");
 });

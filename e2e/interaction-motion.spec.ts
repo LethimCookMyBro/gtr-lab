@@ -1,4 +1,4 @@
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
 
@@ -193,7 +193,7 @@ test("menu hover and keyboard focus share restrained movement, close reverses th
   page,
 }, info) => {
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const trigger = page.getByRole("button", { name: "Open menu", exact: true });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Explore GT-R LAB" });
@@ -280,7 +280,7 @@ test("model invitation hover stays subtle and preserves card layout", async ({
   page,
 }, info) => {
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const card = page.getByRole("link", {
     name: "Explore Premium: View in 3D",
     exact: true,
@@ -311,7 +311,7 @@ test("reduced motion removes hover transforms and dismisses immediately", async 
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const trigger = page.getByRole("button", { name: "Open menu" });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Explore GT-R LAB" });
@@ -341,7 +341,7 @@ for (const viewport of [
   }, info) => {
     await page.setViewportSize(viewport);
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     const footer = page.locator(".home-footer");
     const navigation = footer.getByRole("navigation", {
       name: "Footer navigation",
@@ -414,7 +414,7 @@ test("footer reduced motion preserves an immediate static underline and keyboard
 }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const footer = page.locator(".home-footer");
   const link = footer.getByRole("link", { name: "All models", exact: true });
   await link.scrollIntoViewIfNeeded();

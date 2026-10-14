@@ -8,7 +8,6 @@ it("renders pending modal markup safely without browser globals", () => {
   const markup = renderToString(
     <OpeningMark
       pending
-      scene={{ phase: "module" }}
       heroReady={false}
       reducedMotion={false}
       onContinue={() => {}}
@@ -17,5 +16,5 @@ it("renders pending modal markup safely without browser globals", () => {
   );
   expect(markup).toContain('aria-modal="true"');
   expect(markup).toContain('data-state="loading"');
-  expect(markup).toContain("Continue without 3D");
+  expect(markup).toContain("Continue browsing");
 });

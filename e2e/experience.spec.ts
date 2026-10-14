@@ -101,7 +101,7 @@ test("missing assets remain visibly honest and controls are disabled", async ({
     page.getByRole("heading", { name: "Nissan e-4ORCE 05" }),
   ).toBeVisible();
   const pending = page.getByRole("button", {
-    name: "Specifications only · 3D asset pending",
+    name: "Photo reference · 3D asset pending",
   });
   await expect(pending).toBeVisible();
   await expect(page.locator(".config-toolbar, .paint-rail")).toHaveCount(0);
@@ -118,7 +118,7 @@ test("missing assets remain visibly honest and controls are disabled", async ({
   }
   await pending.click();
   await expect(page.getByRole("dialog")).toContainText(
-    "No rights-cleared reference image",
+    "photograph, not an interactive render",
   );
 });
 test("reduced motion preserves navigation", async ({ page }) => {

@@ -52,11 +52,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function preparing(page: Page) {
-  await expect(gate(page)).toHaveAttribute("data-load-phase", "preparing");
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "preparing");
   await expect
     .poll(() => page.evaluate(() => (window as any).__rearCompilation.queries))
     .toBeGreaterThan(0);
-  await expect(gate(page)).toBeVisible();
   await expect(rear(page)).not.toHaveAttribute("data-scene-state", "ready");
 }
 async function releaseAndReady(page: Page) {
@@ -83,16 +82,33 @@ async function assertStopped(page: Page) {
   expect(after.afterDetach).toBe(0);
 }
 
-test("skipping pending compilation cancels polling before disposal and reentry prepares a fresh scene", async ({
+test("Continue preserves pending compilation and route unmount cancels it before fresh reentry", async ({
   page,
 }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  const poster = "**/media/campaign-r35-orange-hero.webp";
+  await page.route(poster, () => {});
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await preparing(page);
-  await gate(page).getByRole("button", { name: "Continue without 3D" }).click();
-  await expect(rear(page)).toHaveAttribute("data-scene-state", "skipped");
-  await assertStopped(page);
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "image");
+  const canvas = await rear(page).locator("canvas").elementHandle();
+  const before = await page.evaluate(
+    () => (window as any).__rearCompilation.queries,
+  );
+  await gate(page).getByRole("button", { name: "Continue browsing" }).click();
+  await expect(gate(page)).not.toBeVisible();
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "preparing");
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__rearCompilation.queries))
+    .toBeGreaterThan(before);
+  expect(
+    await canvas!.evaluate(
+      (element) =>
+        element === document.querySelector(".home-signature-canvas canvas"),
+    ),
+  ).toBe(true);
+  await page.unroute(poster);
   await page
     .getByRole("link", { name: "Explore the models", exact: true })
     .click();
@@ -101,11 +117,12 @@ test("skipping pending compilation cancels polling before disposal and reentry p
   // must follow an actual route unmount, not cancel a still-pending transition.
   await expect(page.locator(".models-page")).toBeVisible();
   await expect(rear(page)).toHaveCount(0);
+  await assertStopped(page);
   await page.goBack();
   await preparing(page);
   await releaseAndReady(page);
   expect(errors).toEqual([]);
-  await info.attach("skip-reentry-compilation-evidence", {
+  await info.attach("continue-route-reentry-compilation-evidence", {
     body: JSON.stringify({
       errors,
       ...(await page.evaluate(() => (window as any).__rearCompilation)),
@@ -149,9 +166,10 @@ test("context loss during pending compilation cancels the old attempt and retry 
       if (!extension) throw new Error("Missing context-loss test extension");
       extension.loseContext();
     });
-  await expect(gate(page)).toHaveAttribute("data-state", "error");
+  await expect(rear(page)).toHaveAttribute("data-scene-state", "error");
   await assertStopped(page);
-  await gate(page).getByRole("button", { name: "Retry 3D view" }).click();
+  await expect(gate(page)).not.toBeVisible();
+  await rear(page).getByRole("button", { name: "Retry 3D view" }).click();
   await preparing(page);
   await releaseAndReady(page);
   expect(errors).toEqual([]);

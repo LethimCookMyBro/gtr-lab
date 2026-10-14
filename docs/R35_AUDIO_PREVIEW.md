@@ -1,17 +1,22 @@
-# Standalone R35 recording preview
+# R35 section sound and recording provenance
 
 ## Intent and integration
 
-`R35SoundPreview` is an optional listening control below the rear narrative. It
-is separate from the moving scene and from the existing 170 ms synthetic UI
-click effect in `src/hooks/useAudio.tsx`. It requires a React Router context;
-`className` and `buttonClassName` allow integration without shared CSS changes.
+The homepage uses `R35SectionSound` inside the rear stage: one compact Sound
+on/off button and an accessible Credits link to the complete recording notice.
+There is no standalone audio band. The legacy `R35SoundPreview` remains usable
+elsewhere as an explicitly requested Hear/Stop preview. Both share the same
+transport, original bytes, gain and bounded loading/decode policy.
+
+`RearSignature.audioReducedMotion` must receive the actual OS reduced-motion
+preference, independently of `reducedMotion`, which also includes the
+short-height sequential visual fallback. Save-Data is shared.
 
 The recording is the complete original **2009 Nissan GT-R SpecV acceleration**
 by **Edvvc (Ed Pond)** at Goodwood on 3 July 2009. It is neither a startup nor a
 verified stock-exhaust sample, and it does not purport to be audio of the
-separate licensed Ciasny model shown by the site. The source is identified
-next to the control rather than assigning a generic “R35 engine” label.
+separate licensed Ciasny model shown by the site. The linked Credits notice identifies the author, source, license, historical
+license discrepancy and playback adaptations.
 
 ## Source and licensing
 
@@ -35,24 +40,26 @@ The Ogg is untrimmed and untranscoded. Web Audio applies a playback gain of
 0.2, a 0.12-second linear fade in and a 0.65-second linear fade out to the
 full 0–7.60056689342404-second recording. These playback adaptations are
 credited and offered under CC BY-SA 3.0. No audiovisual artifact is created.
-The sample is never synchronized with a logo, camera, scroll position,
-loading stage, film or other animation. **Do not include the sample in a
+Section entry triggers independent playback but never scrubs the recording
+or synchronizes its timing/rate with a logo, camera, loading stage or film.
+Ordinary section exit applies up to an 80 ms audio-clock fade; urgent stops
+silence it immediately. **Do not include the sample in a
 recorded website preview or future video without independently reviewing
 that artifact's licensing.** Unrelated site media/code retain their own
 terms, and no trademark rights or endorsement are implied.
 
 ## Asset identity
 
-| Property | Verified value |
-| --- | --- |
-| File | `/audio/nissan-gtr-specv-edvvc.ogg` |
-| Bytes | 189136 |
-| Codec | Vorbis in Ogg |
-| Channels / rate | Stereo / 44100 Hz |
-| Decoded frames | 335185 per channel |
-| Duration | 7.60056689342404 seconds |
-| SHA-256 | `496536debb72d6d540914cc330db43567fc64b85e8e7dd892d6d1dcee3051a60` |
-| SHA-1 | `e1555928be7cdff222372f3d534ad29316046de0` |
+| Property        | Verified value                                                     |
+| --------------- | ------------------------------------------------------------------ |
+| File            | `/audio/nissan-gtr-specv-edvvc.ogg`                                |
+| Bytes           | 189136                                                             |
+| Codec           | Vorbis in Ogg                                                      |
+| Channels / rate | Stereo / 44100 Hz                                                  |
+| Decoded frames  | 335185 per channel                                                 |
+| Duration        | 7.60056689342404 seconds                                           |
+| SHA-256         | `496536debb72d6d540914cc330db43567fc64b85e8e7dd892d6d1dcee3051a60` |
+| SHA-1           | `e1555928be7cdff222372f3d534ad29316046de0`                         |
 
 The source asset is small enough to commit directly. Production playback is
 same-origin, with no runtime third-party request and no dependency on an
@@ -60,49 +67,64 @@ external audio host. No new packages or accounts are required.
 
 ## Interaction and lifecycle
 
-- Mounting, scrolling, reduced motion, saved preferences and unmuting never
-  fetch audio, create an AudioContext or play sound
-- `Hear the R35` is the only initial playback path. AudioContext resume is
-  called synchronously in the click before any network/decode awaits. When
-  the browser exposes user activation, inactive calls are refused
-- Real decode completes before the interface reports playing. Loading can be
-  cancelled. Repeated calls during loading/playing cannot overlap
-- `Stop recording`, mute, tab hiding, pagehide, history/hash navigation,
-  React Router navigation and unmount cancel pending work and stop playback
-- A token plus AbortController prevents late resume/fetch/decode work from
-  restarting stopped or disposed audio; another preview stops the previous
-  one before loading its own sound
-- Errors and a 12-second loading timeout offer a fresh explicit Retry. There
-  is no automatic retry, synthetic fallback, looping or auto-resume
-- Sample mute is stored under `gtr-lab:r35-sample-muted`. It is independent
-  of the site's existing synthetic UI sound preference. Denied storage is
-  tolerated. Unmute changes preference only
-- Keyboard-native buttons, a named polite status region, a persistent Stop
-  action, source/license links and adjacent modification notices are included
+- Mount, scroll and fabricated events cannot unlock audio. The first eligible
+  trusted primary pointer or non-repeated non-modifier keyboard gesture calls
+  AudioContext resume synchronously before any network/decode await. Touch/pen
+  pointer-up is supported; the browser's active user-activation flag is checked
+  when available. Gestures in an open modal or inert subtree do not prepare it,
+  except the actual opening gate's Continue button when it is the sole modal.
+  That trusted pointer/Enter/Space action can prepare offscreen; playback remains
+  blocked until gate closure and section eligibility. For restored scroll, the
+  gate's closure releases this never-attempted entry once; later menu/film
+  dismissal cannot restart an interrupted entry
+- Preparation can happen offscreen. One playback occurs per genuine car-section
+  entry after activation. The visible area is normalized against
+  min(section width, viewport width) × min(section height, viewport height), so
+  a long runway remains reachable in short landscape. Entry is 55%; exit is 15%
+  to avoid threshold chatter. Natural end never replays within the same entry
+- Reduced motion and Save-Data each require the compact Sound control's explicit
+  opt-in in this visit, even if a prior site sound preference was on
+- A persisted `gtr-lab:sound=off` or sample mute blocks preparation/playback.
+  Explicit section Sound off stores both preferences. Same-tab events and
+  cross-tab storage changes propagate mute immediately; external unmute never
+  resumes the current entry. The synthetic UI-tone provider consumes the same
+  preference bridge without auto-playing a cue
+- Normal viewport exit schedules native gain automation and source.stop on the
+  audio clock for up to 80 ms. There is no JavaScript fade timer. Nodes and the
+  global playback owner remain retained until `ended`; repeated exit requests
+  cannot extend the fade. A replacement, mute, hidden tab, navigation, modal or
+  disposal overrides that scheduled fade with an immediate stop
+- The 0.2 playback gain, 120 ms fade-in, and 650 ms natural-end fade are retained.
+  Exit fades hold the current natural-envelope level, including during fade-in
+  or the quiet tail, rather than increasing volume
+- A 12-second deadline covers resume, fetch, bytes and decode. AbortController,
+  attempt tokens and node identity reject late work and stale ended callbacks.
+  Cleanup cancels the deadline, aborts fetch, disconnects nodes, releases the
+  global owner, removes listeners/observers and closes the context
+- One section-owned modal observer watches open/role/aria-modal changes and DOM
+  insertion/removal, covering the existing home menu and opening/film dialogs.
+  Closing a modal or returning to a tab does not resume the previous entry.
+  `stopR35Recording()` additionally lets the film opener interrupt synchronously
+  before mounting its embedded player
+- Keyboard-native controls, a polite screen-reader status and a Credits link
+  retain accessibility without visible explanatory copy over the car
 
-## Verification
+## Reconstruction and verification boundary
 
-Three dedicated Vitest suites cover controller lifecycle, React StrictMode,
-React navigation, loading cancellation, repeat actions, persisted mute,
-explicit retry, missing API, denied storage, timeouts and asset provenance.
-The existing synthetic-audio tests remain unchanged.
+This implementation was reconstructed from baseline commit `75db282` on
+14 October 2026; it is not a claim of byte identity with a lost workspace.
+The distributed Ogg bytes are still pinned by the provenance suite to the
+original SHA-256 above, including the embedded older license notice.
 
-The original file passed `ffprobe` and a complete `ffmpeg -v error ... -f null -`
-decode. Its SHA-1 matches the Commons structured-data checksum, and a test
-pins its full SHA-256 and checks that the older embedded notice remains.
+CPU-only Vitest checks cover transport races, native fade ownership, genuine
+entry hysteresis, restricted preferences, same-tab and cross-tab mute, modal
+interruption, trust/activation boundaries, short-landscape geometry, React
+StrictMode/navigation/disposal and compact DOM placement. TypeScript is checked
+without emitting files. These checks run with the supplied deny-sockets preload.
+They do not launch a browser/server or establish audible output or visual QA.
 
-At audio handoff, 26 focused tests (24 new plus 2 existing audio tests)
-passed. After the integration owner scoped older rear-scene status queries,
-the fresh aggregate `npm test` run passed all 647 tests in 69 files, and
-`npm run typecheck` passed. This is a working-tree verification; any later
-integration changes and the production build remain subject to the main
-integration gate.
-
-No subjective listening or real-browser playback is claimed from this cloud
-executor. The initial default-host Vite command hit the documented network
-interface limitation; the explicit loopback server started normally. Browser
-launch was not retried after the integration owner reported an existing
-Chromium EPERM restriction. A permitted CI browser gate should verify the
-actual file decodes, genuine button activation, natural end, Stop, tab hide,
-route leave, mute persistence, explicit error/retry and no pre-gesture audio
-request. Mobile Safari/physical-device audio output remains a separate check.
+Authorized CI remains responsible for browser playback, real Ogg decode,
+keyboard/touch activation, viewport presentation at portrait/short-landscape
+sizes, dialog opening/closing, rapid viewport exit/re-entry, and background-tab
+stopping. A physical Safari/device audio check remains separate. Do not include
+the recording in a captured preview/video without reviewing that use's license.

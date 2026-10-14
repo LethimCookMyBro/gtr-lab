@@ -41,3 +41,20 @@
     inset-block-start: 104px;
   }
 }
+
+/* Preserve both posters on every fresh embed navigation. Document load is the
+   only observable handoff; it cannot certify a first frame or playback. */
+.home-film .home-film-provider {
+  opacity: 1;
+}
+.home-film[data-film-document="loading"] .home-film-provider {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Manual play keeps an empty focus anchor until document load. Automatic
+   entry has no cue at all, and never repeats a loading announcement. */
+.home-film-entry[data-pending="true"] {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}

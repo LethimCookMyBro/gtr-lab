@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Square, Play, RotateCcw } from "lucide-react";
 import { homeFilms } from "../../data/films";
@@ -27,6 +27,7 @@ export function Film({
 }: FilmProps) {
   const holder = useRef<HTMLDivElement>(null);
   const backup = useRef<HTMLImageElement>(null);
+  const [near, setNear] = useState(kind === "hero");
   const [fallbackLoaded, setFallbackLoaded] = useState(false);
   const [posterDecoded, setPosterDecoded] = useState(false);
   useEffect(() => {
@@ -52,20 +53,37 @@ export function Film({
   const entry = useRef<HTMLDivElement>(null);
   const focusPlayerAfterLoad = useRef(false);
   const [visible, setVisible] = useState(kind === "hero");
+  const [coveredByModal, setCoveredByModal] = useState(false);
   const [documentVisible, setDocumentVisible] = useState(
     () =>
       typeof document === "undefined" || document.visibilityState !== "hidden",
   );
   const [choice, setChoice] = useState<"auto" | "play" | "stop">("auto");
-  const [loaded, setLoaded] = useState(false);
+  const [documentLoad, setDocumentLoad] = useState<{
+    node: HTMLIFrameElement;
+    kind: FilmProps["kind"];
+    attempt: number;
+  } | null>(null);
+  const attachFrame = useCallback((node: HTMLIFrameElement | null) => {
+    frame.current = node;
+    // Ref attachment runs during commit, before paint. Never let a replacement
+    // document inherit the previous node's presentation or keyboard readiness.
+    setDocumentLoad((current) => (current?.node === node ? current : null));
+  }, []);
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
+  const loaded =
+    documentLoad !== null &&
+    documentLoad.node === frame.current &&
+    documentLoad.kind === kind &&
+    documentLoad.attempt === attempt;
   const previousPolicy = useRef({ reducedMotion, saveData });
   const film = homeFilms[kind];
   const name = kind === "hero" ? "opening" : "detail";
   const title = kind === "hero" ? "Opening" : "Detail";
   const active =
     !suspended &&
+    !coveredByModal &&
     !failed &&
     visible &&
     documentVisible &&
@@ -92,21 +110,64 @@ export function Film({
     }
   }, [loaded]);
   useEffect(() => {
-    const observer =
-      typeof IntersectionObserver === "undefined"
-        ? undefined
-        : new IntersectionObserver(
-            ([entry]) => setVisible(entry.isIntersecting),
-            { threshold: 0.1 },
-          );
-    if (holder.current) observer?.observe(holder.current);
+    const element = holder.current;
+    if (!element) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      setVisible(true);
+      return;
+    }
+    // Prepare just the local photograph before entry. The provider stays
+    // unmounted until the actual film viewport intersects.
+    const preparation = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setNear(true);
+        preparation.disconnect();
+      },
+      { rootMargin: "600px 0px", threshold: 0 },
+    );
+    const visibility = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(entry.isIntersecting);
+        if (entry.isIntersecting) setNear(true);
+      },
+      { threshold: 0.1 },
+    );
+    preparation.observe(element);
+    visibility.observe(element);
+    return () => {
+      preparation.disconnect();
+      visibility.disconnect();
+    };
+  }, []);
+  useEffect(() => {
     const onVisibility = () =>
       setDocumentVisible(document.visibilityState !== "hidden");
     document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      observer?.disconnect();
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+  useEffect(() => {
+    // A modal's inline background cannot pause this cross-origin player.
+    // Unmount it instead. The initial image gate deliberately permits the
+    // opening embed to prepare in parallel without claiming playback readiness.
+    const update = () =>
+      setCoveredByModal(
+        Boolean(
+          document.querySelector(
+            'dialog[open]:not(.home-loading-gate), [role="dialog"][aria-modal="true"]:not(.home-loading-gate)',
+          ),
+        ),
+      );
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["open", "role", "aria-modal"],
+    });
+    return () => observer.disconnect();
   }, []);
   useEffect(() => {
     if (
@@ -118,18 +179,14 @@ export function Film({
     previousPolicy.current = { reducedMotion, saveData };
   }, [reducedMotion, saveData]);
   useEffect(() => {
-    setLoaded(false);
-  }, [active, kind]);
-  useEffect(() => {
-    // Loading in parallel removes a mandatory poster-only wait after the 3D
-    // gate. A slow provider must not expire before the visitor can reach it.
+    // Prepare in parallel with the photograph. A slow provider must not
+    // expire before the visitor can reach the opening film.
     if (!active || loaded || entryPending) return;
     const timeout = window.setTimeout(() => setFailed(true), 20000);
     return () => window.clearTimeout(timeout);
   }, [active, loaded, kind, attempt, entryPending]);
   const retry = () => {
     setFailed(false);
-    setLoaded(false);
     setAttempt((current) => current + 1);
     setChoice("play");
   };
@@ -161,25 +218,27 @@ export function Film({
           className="home-film-backup"
           onLoad={() => setFallbackLoaded(true)}
           src={
-            kind === "hero"
-              ? "/media/campaign-r35-orange-hero.webp"
-              : "/images/gtr-premium.webp"
+            near
+              ? kind === "hero"
+                ? "/media/campaign-r35-orange-hero.webp"
+                : "/images/gtr-premium.webp"
+              : undefined
           }
           alt={
             kind === "hero"
               ? "Orange facelift Nissan GT-R R35 photographed by Martin Katler; modern example, exact model year unverified"
               : "2018 Nissan GT-R Premium in Super Silver"
           }
-          loading={kind === "hero" ? "eager" : "lazy"}
+          loading={near ? "eager" : "lazy"}
         />
         {active && (
           <iframe
-            key={attempt}
-            ref={frame}
+            key={`${kind}:${attempt}`}
+            ref={attachFrame}
             className="home-film-provider"
-            inert={kind === "hero" && (!loaded || entryPending)}
+            inert={!loaded || (kind === "hero" && entryPending)}
             aria-hidden={
-              kind === "hero" && (!loaded || entryPending) ? true : undefined
+              !loaded || (kind === "hero" && entryPending) ? true : undefined
             }
             src={film.embed}
             title={`${title} film: ${film.description}`}
@@ -190,7 +249,7 @@ export function Film({
               if (event.currentTarget !== frame.current) return;
               focusPlayerAfterLoad.current =
                 entry.current === document.activeElement;
-              setLoaded(true);
+              setDocumentLoad({ node: event.currentTarget, kind, attempt });
             }}
           />
         )}
@@ -198,14 +257,19 @@ export function Film({
       <div className="home-film-shade" aria-hidden="true" />
       {kind === "hero" &&
         !suspended &&
+        !coveredByModal &&
         !entryPending &&
         visible &&
         documentVisible &&
-        state !== "embedded" && (
-          <div ref={entry} className="home-film-entry" tabIndex={-1}>
-            {active ? (
-              <span role="status">Loading film…</span>
-            ) : (
+        state !== "embedded" &&
+        (!active || choice === "play") && (
+          <div
+            ref={entry}
+            className="home-film-entry"
+            data-pending={active}
+            tabIndex={-1}
+          >
+            {!active && (
               <>
                 {failed && <span role="status">Film could not load.</span>}
                 <button
@@ -292,13 +356,6 @@ export function Film({
           <Link to="/credits#films">Film credits</Link>
         </div>
       </div>
-      {active && kind !== "hero" && (
-        <p className="home-film-status" role="status">
-          {loaded
-            ? "Film not moving? Retry or open the original."
-            : "Loading the publisher’s player…"}
-        </p>
-      )}
       {failed && kind !== "hero" && (
         <p className="home-film-error" role="status">
           {title} film could not load. Try again or open the credited original.

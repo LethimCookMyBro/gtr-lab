@@ -124,13 +124,22 @@ export function CreditsPage() {
           {imageCredits.map((c) => (
             <div key={c.id} id={`photography-${c.id}`}>
               <img
-                src={"/images/gtr-" + c.id + ".small.webp"}
+                src={c.smallPath ?? c.path}
                 alt={c.description}
                 loading="lazy"
               />
               <div>
                 <h3>{c.description}</h3>
-                <p>Photograph by {c.author}</p>
+                <p>
+                  Photograph by{" "}
+                  {c.authorUrl ? (
+                    <a href={c.authorUrl} target="_blank" rel="noreferrer">
+                      {c.author}
+                    </a>
+                  ) : (
+                    c.author
+                  )}
+                </p>
                 <a href={c.sourceUrl} target="_blank" rel="noreferrer">
                   Original source
                 </a>
@@ -293,9 +302,9 @@ export function CreditsPage() {
           Only licensed vehicle assets with recorded provenance are eligible for
           the live viewer. If a model is unavailable, the configurator displays
           a clearly marked photographic reference where available. The Nissan
-          Formula E entry has no rights-cleared image or licensed 3D asset, so
-          it uses a neutral text-only placeholder. No other vehicle is
-          substituted.
+          Formula E entry uses a CC0 2024/25 GEN3 Evo reference photograph; its
+          specifications describe 2025/26 Season 12. A licensed Formula E 3D
+          asset is still pending.
         </p>
         {models
           .filter((m) => m.asset.status === "ready")

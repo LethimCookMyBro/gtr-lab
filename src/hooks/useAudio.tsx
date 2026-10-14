@@ -1,5 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import {
+  rememberSiteSound,
+  SITE_SOUND_EVENT,
+  SITE_SOUND_KEY,
+  readSiteSound,
+} from "../audio/siteSoundPreference";
 interface AudioState {
   enabled: boolean;
   toggle: () => void;
@@ -12,13 +18,6 @@ const AudioContextValue = createContext<AudioState>({
   play: () => {},
   error: null,
 });
-function remember(enabled: boolean) {
-  try {
-    localStorage.setItem("gtr-lab:sound", enabled ? "on" : "off");
-  } catch {
-    /* optional persistence */
-  }
-}
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +33,34 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     } catch {
       /* storage unavailable */
     }
+    const preference = (event: Event) => {
+      const next =
+        event.type === "storage"
+          ? readSiteSound() === "on"
+          : (event as CustomEvent<unknown>).detail;
+      if (
+        event instanceof StorageEvent &&
+        event.key !== SITE_SOUND_KEY &&
+        event.key !== null
+      )
+        return;
+      if (typeof next !== "boolean") return;
+      enabledRef.current = next;
+      setEnabled(next);
+      if (!next)
+        for (const oscillator of active.current) {
+          try {
+            oscillator.stop();
+          } catch {
+            /* already stopped */
+          }
+        }
+    };
+    window.addEventListener(SITE_SOUND_EVENT, preference);
+    window.addEventListener("storage", preference);
     return () => {
+      window.removeEventListener(SITE_SOUND_EVENT, preference);
+      window.removeEventListener("storage", preference);
       mounted.current = false;
       enabledRef.current = false;
       void ctx.current?.close().catch(() => {});
@@ -46,7 +72,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (!mounted.current) return;
     enabledRef.current = false;
     setEnabled(false);
-    remember(false);
+    rememberSiteSound(false);
     setError(message);
   }
   // This function is called only by click handlers, never by an effect or timer.
@@ -95,7 +121,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     enabledRef.current = next;
     setEnabled(next);
     setError(null);
-    remember(next);
+    rememberSiteSound(next);
     if (next) cue();
     else
       for (const oscillator of active.current) {

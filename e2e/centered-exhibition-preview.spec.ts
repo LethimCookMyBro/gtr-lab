@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 
 async function settle(page: Page) {
   await page.evaluate(async () => {
@@ -35,8 +35,8 @@ test("sparse timeline and quiet cards through native forward and reverse input",
   page,
 }, info) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  // Exercise the real explicit lightweight route; rear rendering has its own clip.
-  await continueHomeWithout3D(page);
+  // Continue browsing without waiting on the poster; rear rendering has its own clip.
+  await continueHomeBrowsing(page);
   await page.evaluate(() => document.fonts.ready);
   await capture(page, info, "01-first-viewport");
   const markers: Array<{ label: string; at: number }> = [];
@@ -77,7 +77,7 @@ test("sparse timeline and quiet cards through native forward and reverse input",
     .first()
     .evaluate((node: HTMLImageElement) => node.decode());
   await expect(lineup.getByText("View in 3D", { exact: true })).toHaveCount(1);
-  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(4);
+  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(5);
   await expect(lineup.locator(".home-invitation-cursor")).toHaveCount(0);
   await capture(page, info, "03-quiet-model-cards");
   await page.waitForTimeout(600);
@@ -87,7 +87,7 @@ test("sparse timeline and quiet cards through native forward and reverse input",
         markers,
         viewport: page.viewportSize(),
         scope:
-          "Actual native browser wheel input, actual local images and application controls. Explicit Continue without 3D route; rear rendering separately recorded. Silent unretimed Playwright capture. External provider playback not certified.",
+          "Actual native browser wheel input, actual local images and application controls. Continue browsing helper (or decoded poster winning the click race); rear rendering separately recorded. Silent unretimed Playwright capture. External provider playback not certified.",
       },
       null,
       2,

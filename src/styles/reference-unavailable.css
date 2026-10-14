@@ -29,15 +29,15 @@
   height: 100%;
   padding: 90px 24px;
 }
-.model-band-formula-e .band-image {
+.model-band:has(.reference-unavailable) .band-image {
   margin-left: 0;
 }
-.model-band-formula-e .reference-unavailable {
+.model-band:has(.reference-unavailable) .reference-unavailable {
   height: 100%;
   align-items: flex-end;
   padding-right: 23%;
 }
-.model-band-formula-e:after {
+.model-band:has(.reference-unavailable):after {
   content: none;
 }
 .reference-view > .reference-unavailable {
@@ -63,7 +63,7 @@
 @media (max-width: 700px) {
   /* Unlike a photograph, these labels must reserve space for wrapping copy.
      Outrank the shared mobile card rules imported later by main.tsx. */
-  .model-band.model-band-formula-e {
+  .model-band:has(.reference-unavailable) {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr auto;
@@ -71,19 +71,19 @@
     align-items: start;
     background: #171c20;
   }
-  .model-band.model-band-formula-e .band-image {
+  .model-band:has(.reference-unavailable) .band-image {
     position: static;
     inset: auto;
     z-index: auto;
   }
-  .model-band.model-band-formula-e .reference-unavailable {
+  .model-band:has(.reference-unavailable) .reference-unavailable {
     height: auto;
     min-height: 0;
     align-items: flex-start;
     padding: 0;
     text-align: left;
   }
-  .model-band.model-band-formula-e .band-action {
+  .model-band:has(.reference-unavailable) .band-action {
     justify-self: end;
   }
   .reference-view > .reference-unavailable {

@@ -121,9 +121,7 @@ describe("cinematic homepage", () => {
     expect(container.querySelectorAll("video")).toHaveLength(0);
     expect(container.querySelectorAll("iframe")).toHaveLength(1);
     expect(container.querySelector("iframe")?.hasAttribute("inert")).toBe(true);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continue without 3D" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Continue browsing" }));
     expect(container.querySelectorAll("iframe")).toHaveLength(1);
     const invitations = screen.getByRole("navigation", {
       name: "Explore all six models",
@@ -139,7 +137,7 @@ describe("cinematic homepage", () => {
       expect(
         within(invitations)
           .getByRole("link", {
-            name: `Explore ${name}: ${id === "premium" ? "View in 3D" : id === "formula-e" ? "View specifications" : "View photos"}`,
+            name: `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
           })
           .getAttribute("href"),
       ).toBe(`/configurator/${id}`);
@@ -219,9 +217,7 @@ describe("cinematic homepage", () => {
         .querySelector(".cinematic-home")
         ?.getAttribute("data-reduced-motion"),
     ).toBe("false");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continue without 3D" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Continue browsing" }));
     expect(
       screen.getByRole("button", { name: "Stop opening film" }),
     ).toBeTruthy();
@@ -242,7 +238,7 @@ describe("cinematic homepage", () => {
     setup();
     await userEvent
       .setup()
-      .click(screen.getByRole("button", { name: "Continue without 3D" }));
+      .click(screen.getByRole("button", { name: "Continue browsing" }));
     const user = userEvent.setup();
     const trigger = screen.getByRole("button", { name: "Open menu" });
     await user.click(trigger);

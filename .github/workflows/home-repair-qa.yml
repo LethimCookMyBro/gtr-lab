@@ -1,0 +1,99 @@
+# Fresh 2026-10-14 reconstruction based on recovered staged workflow.
+# Closed staged-only batch. Never edits a release marker or targets production.
+name: Staged homepage repair evidence
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/home-repair-request.json'
+      - 'scripts/home-repair-*.mjs'
+      - 'tests/home-repair-*.node.mjs'
+      - '.github/workflows/home-repair-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: home-repair-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  bounded-home:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-home-repair]') && !contains(github.event.head_commit.message, '[release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile, tablet, landscape]
+    defaults:
+      run:
+        working-directory: candidate-app
+    env:
+      R35_ALLOW_HOME_REPAIR: '1'
+      R35_HOME_REPAIR_VIEWPORT: ${{ matrix.viewport }}
+      R35_HOME_REPAIR_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: candidate-app
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: baseline-app
+          ref: 75db282ea80770c3b7772c1ad8d5e994f3ddd1af
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: candidate-app/package-lock.json
+      - name: Verify frozen source and input assets before dependencies or sockets
+        run: |
+          node --check scripts/home-repair-browser.mjs
+          node --test tests/home-repair-contract.node.mjs tests/home-repair-audio-observer.node.mjs tests/home-repair-gpu-observer.node.mjs tests/ui-optimization-receipts.node.mjs tests/cabin-runtime-body-ledger.node.mjs
+          node scripts/home-repair-browser.mjs --preflight
+      - run: npm ci
+      - name: Install immutable baseline dependencies
+        continue-on-error: true
+        working-directory: baseline-app
+        run: npm ci
+      - name: Focused current homepage regressions and typecheck
+        run: |
+          node node_modules/vitest/vitest.mjs run tests/hosted-film.test.tsx tests/home-loading-gate.test.tsx tests/home-audio-integration.test.tsx tests/r35-audio-controller.test.ts tests/r35-section-audio.test.ts tests/home-section-styles.test.tsx --pool=threads --maxWorkers=1 --minWorkers=1
+          node node_modules/typescript/bin/tsc --noEmit
+      - name: Build immutable baseline production assets
+        continue-on-error: true
+        working-directory: baseline-app
+        run: npm run build
+        timeout-minutes: 8
+      - name: Build exact candidate production assets
+        run: npm run build
+        timeout-minutes: 8
+      - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Verify gate helper contract fixtures
+        if: matrix.viewport == 'desktop'
+        run: npx playwright test -c playwright.home-gate-helper.config.ts
+        timeout-minutes: 3
+      - name: One bounded baseline and candidate image and behavior pair
+        run: node scripts/home-repair-browser.mjs
+        timeout-minutes: 12
+      - name: State actual evidence scope
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          This is a source/asset/body-bound staged homepage batch, not a production release.
+          Inspect report.json and actual images before visual approval. Failed baseline lanes never prevent independent candidate evidence.
+          Provider playback remains blocked/unverified unless actual accessible native video time advanced; iframe loading is not playback or first-frame proof.
+          Audio evidence is native trusted gesture, Web Audio graph/clock/post-gain samples and cleanup. Headless audio does not certify audible speaker output.
+          Native hidden-state proof may be unavailable in the runner; such a row remains partial rather than being replaced with synthetic visibility.
+          Homepage rear poses use its actual rear/dolly camera; same-progress comparisons retain the same source lighting. Lighting changes across scroll progress. Front/side material acceptance is unsupported by this homepage camera and is not replaced with configurator captures.
+          SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: home-repair-${{ matrix.viewport }}-${{ github.sha }}
+          path: |
+            candidate-app/home-repair-results/
+            candidate-app/test-results/home-gate-helper/
+          if-no-files-found: warn
+          retention-days: 14

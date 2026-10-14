@@ -5,7 +5,7 @@ import { assessNeutralLayout } from "../scripts/formula-e-layout-contract.mjs";
 
 const css = parse(readFileSync("src/styles/reference-unavailable.css", "utf8"));
 const mobile = "(max-width: 700px)";
-const card = ".model-band.model-band-formula-e";
+const card = ".model-band:has(.reference-unavailable)";
 function rule(selector: string) {
   const found: Rule[] = [];
   css.walkRules(selector, (candidate) => {
@@ -27,7 +27,7 @@ function property(candidate: Rule, name: string) {
   return value;
 }
 
-describe("Formula E mobile collection flow (actual pixel acceptance remains in CI)", () => {
+describe("Missing-reference mobile collection flow (actual pixel acceptance remains in CI)", () => {
   it("keeps rejecting the actual 320px season and heading collision", () => {
     expect(
       assessNeutralLayout({
@@ -93,5 +93,11 @@ describe("Formula E mobile collection flow (actual pixel acceptance remains in C
       `${card} .reference-unavailable`,
       `${card} .band-action`,
     ]);
+  });
+});
+
+it("does not apply missing-media layout to the acquired Formula E photograph", () => {
+  css.walkRules((candidate) => {
+    expect(candidate.selector).not.toContain("model-band-formula-e");
   });
 });

@@ -157,22 +157,16 @@ describe("truthful spatial model invitations", () => {
     ].entries()) {
       expect(links[index].getAttribute("href")).toBe(`/configurator/${id}`);
       expect(links[index].getAttribute("data-experience")).toBe(
-        index === 0
-          ? "3d"
-          : id === "formula-e"
-            ? "specifications"
-            : "photography",
+        index === 0 ? "3d" : "photography",
       );
       expect(
         within(links[index]).getByText(
-          index === 0
-            ? "View in 3D"
-            : id === "formula-e"
-              ? "View specifications"
-              : "View photos",
+          index === 0 ? "View in 3D" : "View photos",
         ),
       ).toBeTruthy();
     }
+    expect(nav.querySelectorAll(".home-model-invitation > img")).toHaveLength(6);
+    expect(within(links[5]).getByText("2024/25 GEN3 Evo reference")).toBeTruthy();
     expect(links[0].hasAttribute("aria-describedby")).toBe(false);
     expect(document.querySelector("#home-model-asset-note")).toBeNull();
   });

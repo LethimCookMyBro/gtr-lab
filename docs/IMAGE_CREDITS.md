@@ -1,6 +1,6 @@
 # GT-R LAB image credits
 
-Downloaded and visually verified 2026-10-01. Original files are retained under `asset-sources/images/` outside the public bundle. WebP display copies have a maximum width of 1920 px (quality 82); small copies a maximum width of 800 px (quality 80). Images were resized and recompressed without compositing or pixel-content alterations. CSS may crop presentation. CC BY-SA image derivatives retain CC BY-SA 4.0; attribution does not imply endorsement.
+The six GT-R photographs below were downloaded and visually verified 2026-10-01. Their original files are retained under `asset-sources/images/` outside the public bundle. Their WebP display copies have a maximum width of 1920 px (quality 82); small copies a maximum width of 800 px (quality 80). Images were resized and recompressed without compositing or pixel-content alterations. CSS may crop presentation. CC BY-SA image derivatives retain CC BY-SA 4.0; attribution does not imply endorsement.
 
 ## premium
 
@@ -80,6 +80,21 @@ Downloaded and visually verified 2026-10-01. Original files are retained under `
 - Depicts: 2020 No.23 MOTUL AUTECH GT-R GT500 at Suzuka
 - Changes: Resized to at most 1920px wide and encoded as WebP quality 82; 800px variant encoded at quality 80. No compositing or content alterations. The UI may crop presentation using CSS object-fit.
 - Display SHA-256: `80daf70d58cb5838e240bd18ea52865b66ac8d66543d63c5ed13098ef42e77a0`
+
+## formula-e
+
+- Display and compact-reference file: `public/images/nissan-gen3-evo-2024-25.jpg`
+- Title: 2024-25 Nissan Gen3 Evo.jpg
+- Author: [TTTNIS](https://commons.wikimedia.org/wiki/User:TTTNIS)
+- License: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)
+- Source: https://commons.wikimedia.org/wiki/File:2024-25_Nissan_Gen3_Evo.jpg
+- Downloaded thumbnail: https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/2024-25_Nissan_Gen3_Evo.jpg/1280px-2024-25_Nissan_Gen3_Evo.jpg?utm_campaign=index&utm_content=thumbnail&utm_source=commons.wikimedia.org
+- Depicts: 2024/25 Season 11 Nissan GEN3 Evo of Oliver Rowland. The catalog specifications remain 2025/26 Season 12; the photograph is labeled “2024/25 GEN3 Evo reference”.
+- Verified: Downloaded, checksum-verified and visually inspected 2026-10-14.
+- Payload: 1280 × 702 JPEG, 246,734 bytes. The same file serves compact references.
+- Changes: Unmodified Wikimedia Commons thumbnail. No local content edits, conversion or upscaling; CSS may crop presentation. The full-resolution original was not acquired.
+- Display SHA-256: `4aaf4aafbfffc1825d9ab403c356fdf89415cae58603e93a60e7b583e35e7b08`
+- 3D status: A licensed Formula E 3D model is still unavailable. This image is a photograph, not a rendered model. Historical GT500 image provenance above remains retained; that photograph is not assigned to Formula E.
 
 ## Typeface
 DM Sans Variable, self-hosted via @fontsource-variable/dm-sans. SIL Open Font License1.1; full license retained in docs/FONT_LICENSE.txt. No Google Fonts request is required at runtime.

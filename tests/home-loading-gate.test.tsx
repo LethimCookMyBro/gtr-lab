@@ -12,6 +12,11 @@ import { MemoryRouter } from "react-router-dom";
 import { HomePage } from "../src/pages/HomePage";
 
 const rear = vi.hoisted(() => ({ props: {} as any }));
+const preferences = vi.hoisted(() => ({
+  reducedMotion: false,
+  compactHeight: false,
+  saveData: false,
+}));
 vi.mock("../src/components/home/RearSignature", () => ({
   RearSignature: (props: any) => {
     rear.props = props;
@@ -20,13 +25,14 @@ vi.mock("../src/components/home/RearSignature", () => ({
 }));
 vi.mock("../src/components/home/useHomeMotion", () => ({
   useHomeMotion: () => {},
-  useHomePreferences: () => ({
+  useHomePreferences: () => preferences,
+}));
+beforeEach(() => {
+  Object.assign(preferences, {
     reducedMotion: false,
     compactHeight: false,
     saveData: false,
-  }),
-}));
-beforeEach(() => {
+  });
   vi.stubGlobal(
     "IntersectionObserver",
     class {
@@ -52,51 +58,42 @@ const show = () =>
       <HomePage />
     </MemoryRouter>,
   );
-it("keeps the viewport gate closed while the film and model prepare independently", () => {
+function decodePoster(container: HTMLElement) {
+  const image = container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  Object.defineProperty(image, "complete", { value: true });
+  Object.defineProperty(image, "naturalWidth", { value: 1200 });
+  let finish!: () => void;
+  image.decode = () =>
+    new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+  fireEvent.load(image);
+  return finish;
+}
+it("gates only the opening image without exposing rear model progress", () => {
   const { container } = show();
   const frame = container.querySelector(".home-film--hero iframe");
-  expect(frame).not.toBeNull();
   expect(frame?.hasAttribute("inert")).toBe(true);
   const gate = screen.getByRole("dialog", { name: "Preparing GT-R LAB" });
   expect(gate.getAttribute("aria-modal")).toBe("true");
   expect(
     container.querySelector(".cinematic-home")?.hasAttribute("inert"),
   ).toBe(true);
-  act(() =>
-    rear.props.onLoadState({
-      phase: "downloading",
-      loadedBytes: 1048576,
-      totalBytes: 8388608,
-    }),
+  expect(within(gate).queryByRole("progressbar")).toBeNull();
+  expect(within(gate).getByRole("status").textContent).toBe(
+    "Preparing the opening image",
   );
-  expect(
-    within(gate).getByRole("progressbar").getAttribute("aria-valuenow"),
-  ).toBe("1048576");
-  expect(gate.textContent).not.toMatch(/\d[\d.]* MB/);
-  expect(
-    within(gate).getByRole("progressbar").getAttribute("aria-valuetext"),
-  ).toBe("1.0 MB of 8.4 MB downloaded");
+  expect(rear.props.onLoadState).toBeUndefined();
+  expect(rear.props.disabled).not.toBe(true);
   expect(document.body.style.overflow).toBe("hidden");
 });
-it("requires a decoded opening image and prepared 3D render, then restores heading focus", async () => {
+it("releases after actual poster decode while the rear and hosted film are still pending", async () => {
   vi.useFakeTimers();
   const { container } = show();
   const frame = container.querySelector(".home-film--hero iframe");
-  expect(frame).not.toBeNull();
-  for (const phase of ["decoding", "preparing"]) {
-    act(() => rear.props.onLoadState({ phase }));
-    expect(screen.getByRole("dialog")).toBeTruthy();
-  }
-  expect(
-    within(screen.getByRole("dialog")).getByRole("status").textContent,
-  ).toContain("Preparing the 3D render");
-  act(() => rear.props.onLoadState({ phase: "ready" }));
-  expect(screen.getByRole("dialog")).toBeTruthy();
-  const image = container.querySelector<HTMLImageElement>(".home-film-backup")!;
-  Object.defineProperty(image, "complete", { value: true });
-  Object.defineProperty(image, "naturalWidth", { value: 1200 });
-  image.decode = () => Promise.resolve();
-  await act(async () => fireEvent.load(image));
+  const finish = decodePoster(container);
+  expect(screen.getByRole("dialog").getAttribute("data-state")).toBe("loading");
+  await act(async () => finish());
   expect(screen.getByRole("dialog").getAttribute("data-state")).toBe(
     "resolved",
   );
@@ -108,75 +105,72 @@ it("requires a decoded opening image and prepared 3D render, then restores headi
   expect(document.body.style.overflow).toBe("");
   expect(document.activeElement?.id).toBe("home-title");
   expect(container.querySelector(".home-film--hero iframe")).toBe(frame);
+  expect(rear.props.disabled).not.toBe(true);
 });
-it("does not mistake the preloaded player for a decoded opening image", () => {
+it("does not mistake iframe load or a failed image for a decoded opening", () => {
   const { container } = show();
-  act(() => rear.props.onLoadState({ phase: "ready" }));
-  expect(screen.getByRole("dialog")).toBeTruthy();
   fireEvent.error(container.querySelector(".home-film-backup")!);
-  expect(screen.getByRole("dialog")).toBeTruthy();
   fireEvent.load(container.querySelector(".home-film--hero iframe")!);
-  expect(screen.getByRole("dialog")).toBeTruthy();
+  expect(screen.getByRole("dialog").getAttribute("data-state")).toBe("loading");
 });
-it("makes Retry a new model attempt and Continue without 3D cancels that work explicitly", () => {
+it("Continue browsing releases focus and inertness immediately without cancelling rear work", () => {
   const { container } = show();
   const frame = container.querySelector(".home-film--hero iframe");
-  expect(frame).not.toBeNull();
-  act(() =>
-    rear.props.onLoadState({
-      phase: "error",
-      message: "The model failed",
-      recovery: "retry",
-    }),
-  );
-  const firstAttempt = rear.props.attempt;
-  fireEvent.click(screen.getByRole("button", { name: "Retry 3D view" }));
-  expect(rear.props.attempt).toBe(firstAttempt + 1);
-  expect(screen.getByRole("dialog")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
-  expect(rear.props.disabled).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Continue browsing" }));
+  expect(rear.props.disabled).not.toBe(true);
   expect(screen.queryByRole("dialog")).toBeNull();
+  expect(
+    container.querySelector(".cinematic-home")?.hasAttribute("inert"),
+  ).toBe(false);
+  expect(document.activeElement?.id).toBe("home-title");
   expect(container.querySelector(".home-film--hero iframe")).toBe(frame);
 });
-it("keeps keyboard focus in the gate and Escape does not silently claim readiness", () => {
+it("keeps keyboard focus in the gate and Escape does not claim readiness", () => {
   show();
   const gate = screen.getByRole("dialog");
-  const skip = screen.getByRole("button", { name: "Continue without 3D" });
+  const skip = screen.getByRole("button", { name: "Continue browsing" });
   expect(document.activeElement).toBe(skip);
   fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
   expect(document.activeElement).toBe(skip);
   fireEvent(gate, new Event("cancel", { cancelable: true }));
   expect(screen.getByRole("dialog")).toBeTruthy();
 });
-it("offers a bounded recovery if both opening visual paths never become usable", () => {
+it("retains the exact 25-second image deadline and allows browsing after failure", () => {
   vi.useFakeTimers();
   show();
-  act(() => rear.props.onLoadState({ phase: "ready" }));
-  act(() => vi.advanceTimersByTime(25001));
+  act(() => vi.advanceTimersByTime(24999));
+  expect(screen.getByRole("dialog").getAttribute("data-state")).toBe("loading");
+  act(() => vi.advanceTimersByTime(1));
   expect(screen.getByRole("dialog").textContent).toMatch(
     /opening visual.*too long/i,
   );
   expect(screen.getByRole("button", { name: "Reload page" })).toBeTruthy();
-  vi.useRealTimers();
-});
-it("accepts a real decoded local poster without waiting for the hosted film", async () => {
-  vi.useFakeTimers();
-  const { container } = show();
-  const image = container.querySelector<HTMLImageElement>(".home-film-backup")!;
-  Object.defineProperty(image, "complete", { value: true });
-  Object.defineProperty(image, "naturalWidth", { value: 1200 });
-  let decoded: () => void;
-  image.decode = () =>
-    new Promise<void>((resolve) => {
-      decoded = resolve;
-    });
-  fireEvent.load(image);
-  act(() => rear.props.onLoadState({ phase: "ready" }));
-  expect(screen.getByRole("dialog")).toBeTruthy();
-  await act(async () => decoded!());
-  act(() => vi.advanceTimersByTime(360));
+  fireEvent.click(screen.getByRole("button", { name: "Continue browsing" }));
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(
-    container.querySelector(".home-film")?.getAttribute("data-film-state"),
-  ).toBe("loading");
+  expect(rear.props.disabled).not.toBe(true);
+});
+it("restores preexisting scroll styles and clears its timer on route unmount", () => {
+  vi.useFakeTimers();
+  document.body.style.overflow = "auto";
+  document.documentElement.style.overflow = "clip";
+  const setTimer = vi.spyOn(window, "setTimeout");
+  const clearTimer = vi.spyOn(window, "clearTimeout");
+  const { unmount } = show();
+  const openingTimerIndex = setTimer.mock.calls.findIndex(
+    ([, delay]) => delay === 25000,
+  );
+  expect(openingTimerIndex).toBeGreaterThanOrEqual(0);
+  const openingTimer = setTimer.mock.results[openingTimerIndex].value;
+  unmount();
+  expect(document.body.style.overflow).toBe("auto");
+  expect(document.documentElement.style.overflow).toBe("clip");
+  expect(clearTimer).toHaveBeenCalledWith(openingTimer);
+  document.body.style.overflow = "";
+  document.documentElement.style.overflow = "";
+});
+it("keeps actual OS motion separate from compact-height visual staging", () => {
+  preferences.compactHeight = true;
+  show();
+  expect(rear.props.reducedMotion).toBe(true);
+  expect(rear.props.audioReducedMotion).toBe(false);
 });

@@ -11,7 +11,6 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   SRGBColorSpace,
-  Texture,
   Vector4,
 } from "three";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
@@ -53,21 +52,6 @@ function restrainStudioSpecular(
   );
 }
 
-// The wing's visible underside faces away from the studio cards. Approximate
-// their white bounce locally, before the satin BRDF/clearcoat are evaluated.
-// With no per-material envMap, r180 supplies the scroll-bound scene intensity.
-function fillRearSpoiler(
-  shader: Parameters<MeshStandardMaterial["onBeforeCompile"]>[0],
-) {
-  shader.fragmentShader = shader.fragmentShader.replace(
-    "#include <lights_fragment_maps>",
-    `#include <lights_fragment_maps>
-     #if defined( USE_ENVMAP ) && defined( RE_IndirectDiffuse )
-       irradiance += vec3(PI * 0.5 * envMapIntensity);
-     #endif`,
-  );
-}
-
 // Source-local center XY and inner/outer radii measured from the four existing
 // Glass.001 annuli. This shades their actual surfaces; it adds no geometry.
 const rearLensBands = [
@@ -100,8 +84,7 @@ function gradeRearLens(
        rearBandDistance = min(rearBandDistance, abs(radius - (band.z + band.w) * 0.5) / halfWidth);
      }
      float rearCore = exp(-2.4 * rearBandDistance * rearBandDistance);
-     totalEmissiveRadiance *= mix(0.1, 1.0, rearCore);
-     totalEmissiveRadiance += rearCore * vec3(0.08, 0.035, 0.012);`,
+     totalEmissiveRadiance *= mix(0.1, 1.0, rearCore);`,
   );
 }
 
@@ -187,7 +170,7 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
         b.material.roughness = 0.36;
         if (b.material instanceof MeshPhysicalMaterial) {
           b.material.clearcoat = 0.8;
-          b.material.clearcoatRoughness = 0.24;
+          b.material.clearcoatRoughness = 0.12;
         }
       }
       if (b.role === "taillights") {
@@ -195,12 +178,11 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
         // These are the source's very thin LED tubes. The broad existing lens
         // annuli below carry the signature, rather than eight wire outlines.
         b.material.emissiveIntensity = 0.14;
-        // ACES shifts strong red emitters toward orange. Keep the real LED hue.
-        b.material.toneMapped = false;
+        // Keep both real light surfaces within the studio tone-mapping response.
+        b.material.toneMapped = true;
       }
       if (b.role === "headlights") b.material.emissiveIntensity = 0;
     }
-    const satinPaint = asset.bindings.find((b) => b.role === "paint")?.material;
     // Exact meshes/materials verified in the already-public GLB. The Metal
     // material is shared with badges, so only the three lamp housings get copies.
     const housingNames = new Set([
@@ -214,26 +196,6 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
       const adapt = (original: Material) => {
         if (!(original instanceof MeshStandardMaterial)) return original;
         let material = original;
-        if (
-          object.name === "Spoiler_Carbon_Fiber_0" &&
-          material.name === "Carbon_Fiber" &&
-          satinPaint
-        ) {
-          // Carbon_Fiber is also used by the rear grille. Replace only the wing,
-          // using the configured body finish without inherited surface maps.
-          material = satinPaint.clone();
-          material.name = "Rear_Satin_Spoiler";
-          material.side = original.side;
-          // A lighter satin coat keeps the low viewing angle from reflecting
-          // almost entirely black while the body retains its accepted finish.
-          material.metalness = 0.08;
-          if (material instanceof MeshPhysicalMaterial)
-            material.clearcoat = 0.22;
-          material.onBeforeCompile = fillRearSpoiler;
-          material.customProgramCacheKey = () => "rear-spoiler-bounce-v1";
-          for (const [key, value] of Object.entries(material))
-            if (value instanceof Texture) Reflect.set(material, key, null);
-        }
         if (housingNames.has(object.name) && material.name === "Metal") {
           material = material.clone();
           // A stable name makes StrictMode/effect re-entry reuse the owned copy.
@@ -274,15 +236,15 @@ function RearVehicle({ asset }: { asset: PreparedVehicle }) {
           // existing holes preserve dark centers; no substitute geometry/glow.
           material.color.set("#35040a");
           material.emissive.set("#ff0905");
-          material.emissiveIntensity = 0.92;
+          material.emissiveIntensity = 0.55;
           material.opacity = 0.96;
           material.transparent = true;
           material.depthWrite = false;
           material.metalness = 0;
           material.roughness = 0.26;
-          material.toneMapped = false;
+          material.toneMapped = true;
           material.onBeforeCompile = gradeRearLens;
-          material.customProgramCacheKey = () => "rear-lens-profile-v1";
+          material.customProgramCacheKey = () => "rear-lens-profile-v2";
           material.needsUpdate = true;
         }
         if (material.name === "Reverse_Emitter") {
@@ -322,7 +284,7 @@ const RearStudio = memo(function RearStudio() {
           position={[-3, 6, -5]}
           intensity={0}
         />
-        {/* A broad overhead source separates the real roof and satin wing
+        {/* A broad overhead source separates the real roof and carbon wing
             from black without turning up the frontal body reflections. */}
         <rectAreaLight
           name="rear-roof"

@@ -1,4 +1,4 @@
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 import { expect, test } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
 
@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/models/ciasny-r35.glb", (route) =>
     route.fulfill({
       status: 503,
-      body: "Deliberate motion-only failure; explicit non-3D path",
+      body: "Deliberate model failure for motion-only coverage",
     }),
   );
 });
@@ -16,8 +16,8 @@ test.beforeEach(async ({ page }) => {
 async function resolveOpening(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".home-hero-runway")).toBeVisible();
-  // This is a hero-layout test, so explicitly use the non-3D path.
-  await continueHomeWithout3D(page);
+  // This hero-layout test releases the opening independently of rear readiness.
+  await continueHomeBrowsing(page);
   await expect(page.locator(".home-hero-runway")).toHaveAttribute(
     "data-opening-resolved",
     "true",
@@ -274,8 +274,16 @@ test("continuous native wheel input reveals and reverses the hero handoff", asyn
 test("Continue keeps heading focus while native scrolling activates the hero exit", async ({
   page,
 }, info) => {
-  // Hold only the real embed request long enough to exercise the real skip path.
-  // No replacement player or playback evidence is introduced.
+  // Hold the poster separately so the Continue path cannot race automatic entry.
+  // The external document is also held; no playback evidence is introduced.
+  let releasePoster!: () => void;
+  const posterGate = new Promise<void>((resolve) => {
+    releasePoster = resolve;
+  });
+  await page.route("**/media/campaign-r35-orange-hero.webp", async (route) => {
+    await posterGate;
+    await route.continue();
+  });
   let releaseEmbed!: () => void;
   const embedGate = new Promise<void>((resolve) => {
     releaseEmbed = resolve;
@@ -286,11 +294,12 @@ test("Continue keeps heading focus while native scrolling activates the hero exi
   });
   try {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const skip = page.getByRole("button", { name: "Continue without 3D" });
+    const skip = page.getByRole("button", { name: "Continue browsing" });
     await expect(skip).toBeVisible();
     await skip.click();
     const heading = page.locator("#home-title");
     await expect(heading).toBeFocused();
+    releasePoster();
     releaseEmbed();
     await expect(page.locator(".home-opening")).not.toBeVisible();
     const runway = await page
@@ -314,6 +323,7 @@ test("Continue keeps heading focus while native scrolling activates the hero exi
     await expect(heading).toBeFocused();
     await capture(page, info, "hero-continue-native-scroll");
   } finally {
+    releasePoster();
     releaseEmbed();
   }
 });

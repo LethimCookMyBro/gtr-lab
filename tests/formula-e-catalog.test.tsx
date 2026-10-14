@@ -5,12 +5,14 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import initialFive from "./fixtures/catalog-first-five.json";
-import { models, getModel } from "../src/data/models";
+import { models, getModel, imageCredits } from "../src/data/models";
 import { ModelInvitations } from "../src/components/home/ModelInvitations";
 import { ModelsPage } from "../src/pages/ModelsPage";
 import { ConfiguratorPage } from "../src/pages/ConfiguratorPage";
 import { ModelDetails } from "../src/components/configurator/ModelDetails";
 import { AssetDisclosure } from "../src/components/configurator/AssetDisclosure";
+import { CreditsPage } from "../src/pages/CreditsPage";
+import { createHash } from "node:crypto";
 import { AudioProvider } from "../src/hooks/useAudio";
 import { useConfigurator } from "../src/stores/configurator";
 
@@ -99,10 +101,12 @@ describe("Nissan Formula E catalog correction", () => {
       /VR38|NR20|NR4S|inline-four|twin-turbo|6-speed|dual-clutch|gtr-gt500|latest/i,
     );
   });
-  it("keeps unacquired image and geometry explicitly missing", () => {
+  it("uses the approved Season 11 photograph while keeping licensed geometry explicitly missing", () => {
     const model = getModel("formula-e");
     expect(model).toBeDefined();
-    expect(model?.image).toBeNull();
+    expect(model?.image).toBe("/images/nissan-gen3-evo-2024-25.jpg");
+    expect(model?.imageSmall).toBe(model?.image);
+    expect(model?.imageReferenceLabel).toBe("2024/25 GEN3 Evo reference");
     expect(model?.asset).toMatchObject({
       status: "missing",
       url: null,
@@ -113,67 +117,87 @@ describe("Nissan Formula E catalog correction", () => {
     });
     expect(model?.asset.cabinPreview).toBeUndefined();
   });
-  it("offers a truthful keyboard-accessible home invitation with no image request", () => {
+  it("offers a keyboard-accessible photo invitation with honest season context", () => {
     wrapper(<ModelInvitations />);
     const link = screen.getByRole("link", {
-      name: "Explore Formula E: View specifications",
+      name: "Explore Formula E: View photos",
     });
     expect(link.getAttribute("href")).toBe("/configurator/formula-e");
-    expect(link.getAttribute("data-experience")).toBe("specifications");
-    expect(link.querySelector("img")).toBeNull();
-    expect(within(link).getByText("Reference image unavailable")).toBeTruthy();
-    expect(within(link).getByText("2025/26 Season 12 · GEN3 Evo")).toBeTruthy();
+    expect(link.getAttribute("data-experience")).toBe("photography");
+    expect(link.querySelector("img")?.getAttribute("src")).toBe(
+      getModel("formula-e")!.image,
+    );
+    expect(
+      link.querySelector("img")?.getAttribute("srcset") ?? "",
+    ).not.toContain(".webp");
+    expect(within(link).getByText("2024/25 GEN3 Evo reference")).toBeTruthy();
     expect(
       screen.queryByRole("heading", { name: "Find your GT-R." }),
     ).toBeNull();
   });
-  it("gives the collection an honest no-image sixth entry", () => {
+  it("gives the collection a sixth photograph with its historical season label", () => {
     wrapper(<ModelsPage />);
     const link = screen.getByRole("link", {
       name: "Explore Nissan e-4ORCE 05",
     });
-    expect(link.querySelector("img")).toBeNull();
-    expect(within(link).getByText("Reference image unavailable")).toBeTruthy();
-    expect(document.querySelectorAll(".model-band img")).toHaveLength(5);
+    expect(link.querySelector("img")?.getAttribute("src")).toBe(
+      getModel("formula-e")!.image,
+    );
+    expect(
+      link.querySelector("img")?.getAttribute("srcset") ?? "",
+    ).not.toContain(".webp");
+    expect(within(link).getByText("2024/25 GEN3 Evo reference")).toBeTruthy();
+    expect(document.querySelectorAll(".model-band img")).toHaveLength(6);
   });
   it("shows source-backed figures and retains unknown torque in the source notes", () => {
     const model = getModel("formula-e");
     expect(model).toBeDefined();
     if (!model) return;
     const { container } = wrapper(<ModelDetails model={model} />);
-    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(
+      model.image,
+    );
+    expect(screen.getByText("2024/25 GEN3 Evo reference")).toBeTruthy();
     expect(screen.queryByText("Reference image unavailable")).toBeNull();
     expect(screen.queryByText("Not specified in source")).toBeNull();
     expect(container.querySelectorAll(".key-figures > div")).toHaveLength(1);
     expect(
-      screen.getByText("Torque and transmission details are not specified in the cited sources."),
+      screen.getByText(
+        "Torque and transmission details are not specified in the cited sources.",
+      ),
     ).toBeTruthy();
     expect(
-      screen.getAllByText("No rights-cleared reference image or licensed 3D model has been integrated."),
+      screen.getAllByText("No licensed 3D model has been integrated."),
     ).toHaveLength(1);
     expect(screen.getByText("Maximum traction power")).toBeTruthy();
     expect(screen.getByText("Powertrain")).toBeTruthy();
     expect(screen.queryByText("Engine")).toBeNull();
     expect(container.textContent).not.toMatch(/0Nm|0lb-ft|Published torque0/);
   });
-  it("discloses unavailable photo rights and geometry without claiming attribution", () => {
+  it("discloses photographic reference availability separately from pending geometry", () => {
     const model = getModel("formula-e");
     expect(model).toBeDefined();
     if (!model) return;
     wrapper(<AssetDisclosure model={model} interactive={false} />);
-    expect(screen.getByText("Reference image unavailable")).toBeTruthy();
-    expect(screen.queryByText("Available · attributed")).toBeNull();
-    expect(screen.getByText(/No rights-cleared reference image/)).toBeTruthy();
+    expect(screen.queryByText("Reference image unavailable")).toBeNull();
+    expect(screen.getByText("Available · attributed")).toBeTruthy();
+    expect(screen.getByText(/clearly marked photograph/)).toBeTruthy();
   });
-  it("renders the new route without unavailable 3D controls, renderer or image", async () => {
+  it("renders a labeled photograph without unavailable 3D controls or renderer", async () => {
     const { container } = route("formula-e");
     expect(
       screen.getByRole("heading", { name: "Nissan e-4ORCE 05" }),
     ).toBeTruthy();
+    expect(screen.getByText("Photo reference · 3D asset pending")).toBeTruthy();
+    expect(container.querySelector("canvas")).toBeNull();
     expect(
-      screen.getByText("Specifications only · 3D asset pending"),
+      container.querySelector(".reference-view img")?.getAttribute("src"),
+    ).toBe(getModel("formula-e")!.image);
+    expect(
+      within(
+        container.querySelector(".reference-view")! as HTMLElement,
+      ).getByText("2024/25 GEN3 Evo reference"),
     ).toBeTruthy();
-    expect(container.querySelector("canvas, .reference-view img")).toBeNull();
     expect(
       screen.queryByRole("button", { name: "Lights", hidden: true }),
     ).toBeNull();
@@ -186,8 +210,10 @@ describe("Nissan Formula E catalog correction", () => {
     const choice = screen.getByRole("button", {
       name: "Formula E Electric racing, a different discipline.",
     });
-    expect(choice.querySelector("img")).toBeNull();
-    expect(choice.textContent).toContain("Reference image unavailable");
+    expect(choice.querySelector("img")?.getAttribute("src")).toBe(
+      getModel("formula-e")!.imageSmall,
+    );
+    expect(choice.textContent).toContain("2024/25 GEN3 Evo reference");
   });
   it("keeps the retired GT500 URL explicit without redirecting to a different vehicle", async () => {
     route("gt500");
@@ -220,4 +246,31 @@ describe("Nissan Formula E catalog correction", () => {
     expect(provenance).toContain("exterior-window proxy");
     expect(provenance).toContain("route-resident");
   });
+});
+
+it("pins the inspected Commons JPEG bytes and links author, source and CC0 in credits", () => {
+  const credit = imageCredits.find((item) => item.id === "formula-e")!;
+  expect(credit).toBeDefined();
+  const bytes = readFileSync(`public${credit.path}`);
+  expect(bytes.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+  expect(bytes.length).toBe(246734);
+  expect(createHash("sha256").update(bytes).digest("hex")).toBe(
+    "4aaf4aafbfffc1825d9ab403c356fdf89415cae58603e93a60e7b583e35e7b08",
+  );
+  expect(credit.sha256).toBe(createHash("sha256").update(bytes).digest("hex"));
+  expect(credit.bytes).toBe(bytes.length);
+  wrapper(<CreditsPage />);
+  const item = document.querySelector("#photography-formula-e")! as HTMLElement;
+  expect(item.querySelector("img")?.getAttribute("src")).toBe(credit.path);
+  expect(
+    within(item).getByRole("link", { name: "TTTNIS" }).getAttribute("href"),
+  ).toBe("https://commons.wikimedia.org/wiki/User:TTTNIS");
+  expect(
+    within(item)
+      .getByRole("link", { name: "Original source" })
+      .getAttribute("href"),
+  ).toBe("https://commons.wikimedia.org/wiki/File:2024-25_Nissan_Gen3_Evo.jpg");
+  expect(
+    within(item).getByRole("link", { name: "CC0 1.0" }).getAttribute("href"),
+  ).toBe("https://creativecommons.org/publicdomain/zero/1.0/");
 });

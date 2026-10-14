@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 
 // Helper-contract fixtures only. No model, provider playback or application
 // readiness is simulated as acceptance evidence for the production homepage.
@@ -11,7 +11,7 @@ async function gateFixture(page: Page, blockedClick = false) {
       button { min-height: 48px; }
     </style>
     <dialog class="home-loading-gate" data-state="loading">
-      <button ${blockedClick ? "disabled" : ""}>Continue without 3D</button>
+      <button ${blockedClick ? "disabled" : ""}>Continue browsing</button>
     </dialog>
     <script>
       const gate = document.querySelector('dialog');
@@ -29,7 +29,7 @@ test("a native Continue click resolves and closes the gate", async ({
   page,
 }) => {
   await gateFixture(page);
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await expect(page.locator("dialog")).toHaveAttribute("data-clicks", "1");
   await expect(page.locator("dialog")).not.toBeVisible();
 });
@@ -50,7 +50,7 @@ test("accepts only real resolution after the native click times out", async ({
     }, 6500);
   });
   const started = Date.now();
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   expect(Date.now() - started).toBeGreaterThanOrEqual(5000);
   await expect(page.locator("dialog")).toHaveAttribute("data-clicks", "0");
   await expect(page.locator("dialog")).toHaveAttribute(
@@ -64,7 +64,7 @@ test("an unresolved gate still rejects with the original native click failure", 
   page,
 }) => {
   await gateFixture(page, true);
-  await expect(continueHomeWithout3D(page)).rejects.toThrow(
+  await expect(continueHomeBrowsing(page)).rejects.toThrow(
     /Timeout 5000ms exceeded/,
   );
   await expect(page.locator("dialog")).toHaveAttribute("data-state", "loading");
@@ -79,7 +79,7 @@ test("resolved state cannot pass while the modal remains visible", async ({
   await page.locator("dialog").evaluate((gate) => {
     gate.setAttribute("data-state", "resolved");
   });
-  await expect(continueHomeWithout3D(page)).rejects.toThrow(/toBeVisible/);
+  await expect(continueHomeBrowsing(page)).rejects.toThrow(/toBeVisible/);
   await expect(page.locator("dialog")).toHaveAttribute("data-clicks", "0");
   await expect(page.locator("dialog")).toBeVisible();
 });

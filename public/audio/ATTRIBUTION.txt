@@ -1,4 +1,4 @@
-Nissan GT-R SpecV acceleration — standalone field-recording sample
+Nissan GT-R SpecV acceleration — independent field-recording sample
 
 Recording: Nissan GT-R SpecV
 Author: Edvvc (Ed Pond)
@@ -45,9 +45,16 @@ transcoding, normalization, pitch shift, denoising or metadata rewriting.
 On playback, the full recording (0–7.60056689342404 seconds) receives a gain
 of 0.2, a 0.12-second linear fade in, and a 0.65-second linear fade out.
 Those playback adaptations of the recording are offered under CC BY-SA 3.0.
-The sample is not synchronized with logos, camera animation, scrolling,
-loading progress or video. It is a separate, explicitly requested listening
-sample and never autoplays or loops. Do not capture it into a site-preview
+An ordinary exit from the homepage car section fades playback to silence in
+up to 0.08 seconds using the audio clock. Mute, hiding, navigation, a modal or
+disposal stops it immediately. The recording is never looped.
+The sample is not synchronized with logos, camera animation, loading progress
+or video. On the homepage, an eligible trusted interaction first prepares
+sound; entering the car section can then trigger one independent playback.
+Scrolling alone cannot unlock audio, and does not scrub its time or speed.
+Reduced-motion and Save-Data visitors must explicitly enable Sound. A saved
+site mute is respected. The separate Hear control, if used elsewhere, remains
+an explicit listening control. Do not capture it into a site-preview
 video or other audiovisual artifact without reviewing that artifact's
 licensing separately. This notice does not assign a license to unrelated
 website code, graphics, trademarks or media.

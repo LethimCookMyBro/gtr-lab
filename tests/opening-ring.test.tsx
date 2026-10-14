@@ -8,12 +8,7 @@ import { OpeningMark } from "../src/components/home/OpeningMark";
 afterEach(cleanup);
 const props = {
   pending: true,
-  scene: {
-    phase: "downloading",
-    loadedBytes: 1048576,
-    totalBytes: 8388608,
-  } as const,
-  heroReady: true,
+  heroReady: false,
   reducedMotion: false,
   onContinue: vi.fn(),
   onRetry: vi.fn(),
@@ -33,37 +28,14 @@ it("surrounds the genuine logos with one decorative activity ring", () => {
   expect(container.querySelector(".home-opening-rule")).toBeNull();
 });
 
-it("keeps measured download progress accessible without displaying byte numbers or a bar", () => {
-  const { container } = render(<OpeningMark {...props} />);
+it("labels only image preparation without model download progress", () => {
+  render(<OpeningMark {...props} />);
   const gate = screen.getByRole("dialog");
-  const progress = within(gate).getByRole("progressbar", {
-    name: "R35 model download",
-  });
-  expect(progress.getAttribute("value")).toBe("1048576");
-  expect(progress.getAttribute("max")).toBe("8388608");
-  expect(progress.getAttribute("aria-valuetext")).toBe(
-    "1.0 MB of 8.4 MB downloaded",
-  );
-  expect(progress.classList.contains("home-loading-assistive")).toBe(true);
-  expect(gate.textContent).not.toMatch(/\d[\d.]* MB/);
-  expect(container.querySelector(".home-loading-download")).toBeNull();
+  expect(within(gate).queryByRole("progressbar")).toBeNull();
   expect(within(gate).getByRole("status").textContent).toBe(
-    "Downloading the R35 model",
+    "Preparing the opening image",
   );
-});
-
-it("does not invent a percentage when the response has no content length", () => {
-  render(
-    <OpeningMark
-      {...props}
-      scene={{ phase: "downloading", loadedBytes: 1048576 }}
-    />,
-  );
-  const progress = screen.getByRole("progressbar");
-  expect(progress.hasAttribute("value")).toBe(false);
-  expect(progress.hasAttribute("aria-valuenow")).toBe(false);
-  expect(progress.hasAttribute("aria-valuemax")).toBe(false);
-  expect(progress.getAttribute("aria-valuetext")).toBe("1.0 MB received");
+  expect(gate.textContent).not.toMatch(/3D|model|download/i);
 });
 
 it("stops decorative motion for errors, reduced motion, and actual completion", () => {
@@ -76,15 +48,10 @@ it("stops decorative motion for errors, reduced motion, and actual completion", 
   rerender(<OpeningMark {...props} reducedMotion />);
   expect(active()).toBe("false");
   expect(container.querySelector(".gtr-brand-chrome-sweep")).toBeNull();
-  rerender(
-    <OpeningMark
-      {...props}
-      scene={{ phase: "error", message: "Download failed", recovery: "retry" }}
-    />,
-  );
+  rerender(<OpeningMark {...props} visualFailed />);
   expect(active()).toBe("false");
   expect(container.querySelector(".gtr-brand-chrome-sweep")).toBeNull();
-  expect(screen.getByRole("button", { name: "Retry 3D view" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Reload page" })).toBeTruthy();
   rerender(<OpeningMark {...props} pending={false} />);
   expect(active()).toBe("false");
   expect(container.querySelector(".gtr-brand-chrome-sweep")).toBeNull();

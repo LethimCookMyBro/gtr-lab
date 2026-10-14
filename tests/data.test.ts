@@ -2,14 +2,16 @@ import { describe, it, expect } from "vitest";
 import { models, getModel } from "../src/data/models";
 import { paints, cameraPresets } from "../src/data/configuration";
 describe("accurate distinct lineup", () => {
-  it("has six distinct identities with five photos and one explicit unavailable image", () => {
+  it("has six distinct identities with six distinct reference photographs", () => {
     expect(models).toHaveLength(6);
     expect(new Set(models.map((m) => m.id)).size).toBe(6);
-    expect(models.filter((m) => m.image)).toHaveLength(5);
+    expect(models.filter((m) => m.image)).toHaveLength(6);
     expect(
       new Set(models.filter((m) => m.image).map((m) => m.image)).size,
-    ).toBe(5);
-    expect(getModel("formula-e")?.image).toBeNull();
+    ).toBe(6);
+    expect(getModel("formula-e")?.image).toBe(
+      "/images/nissan-gen3-evo-2024-25.jpg",
+    );
   });
   it("does not invent GLB readiness", () => {
     for (const m of models) {

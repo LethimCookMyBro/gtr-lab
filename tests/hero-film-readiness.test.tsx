@@ -57,7 +57,7 @@ it("keeps document loading separate from playback and exposes recovery immediate
   expect(
     container.querySelector(".home-film-tools-panel")?.textContent,
   ).toMatch(/loading.*player/i);
-  expect(screen.getByRole("status").textContent).toBe("Loading film…");
+  expect(screen.queryByRole("status")).toBeNull();
   container.querySelector("details")!.setAttribute("open", "");
   expect(
     screen.getByRole("button", { name: "Retry opening film" }),
@@ -287,12 +287,11 @@ it("keeps the loading provider transparent over its poster without claiming play
   }
 });
 
-it("provides a contextual poster cue until the provider document loads", () => {
+it("keeps automatic document loading quiet over the stable poster", () => {
   const { container } = show();
-  const entry = container.querySelector(".home-film-entry")!;
-  expect(entry).not.toBeNull();
-  expect(entry.textContent).toBe("Loading film…");
-  expect(entry.querySelector("button")).toBeNull();
+  expect(container.querySelector(".home-film-entry")).toBeNull();
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(container.querySelector(".home-film-backup")).not.toBeNull();
   fireEvent.load(container.querySelector("iframe")!);
   expect(container.querySelector(".home-film-entry")).toBeNull();
   expect(
@@ -312,7 +311,7 @@ it("offers direct poster recovery after timeout and moves focus into the loaded 
   fireEvent.click(retry);
   expect(container.querySelector("iframe")).not.toBeNull();
   expect(document.activeElement).toBe(entry);
-  expect(entry.textContent).toBe("Loading film…");
+  expect(entry.textContent).toBe("");
   const frame = container.querySelector("iframe")!;
   fireEvent.load(frame);
   expect(document.activeElement).toBe(frame);
@@ -329,7 +328,7 @@ it.each([
     expect(container.querySelector("iframe")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Play opening video" }));
     expect(container.querySelector("iframe")).not.toBeNull();
-    expect(screen.getByRole("status").textContent).toBe("Loading film…");
+    expect(screen.queryByRole("status")).toBeNull();
     fireEvent.load(container.querySelector("iframe")!);
     expect(container.querySelector(".home-film-entry")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Stop opening film" }));

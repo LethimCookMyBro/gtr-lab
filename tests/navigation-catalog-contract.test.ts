@@ -24,6 +24,16 @@ function preservesHistoricalNavigation(source: string): boolean {
 
 it.each([
   [
+    "unreviewed photograph status",
+    '    name: "Photo reference · 3D asset pending",',
+    '    name: "3D ready",',
+  ],
+  [
+    "removed photograph disclosure",
+    '    "photograph, not an interactive render",',
+    '    "interactive render",',
+  ],
+  [
     "changed original destination",
     '  await page.goto("/");',
     '  await page.goto("/models");',

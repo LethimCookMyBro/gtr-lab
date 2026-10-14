@@ -1,4 +1,4 @@
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 import { readTimelineFocus } from "./helpers/timeline-focus";
 import { test, expect } from "@playwright/test";
 import type { Page, TestInfo } from "@playwright/test";
@@ -355,7 +355,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await expect(page).toHaveTitle(/GT-R LAB/);
   await expect(
     page.getByRole("heading", { name: "Engineered to defy." }),
@@ -715,7 +715,7 @@ test("cinematic layout, real scroll geometry, menu and six destinations", async 
       page
         .getByRole("navigation", { name: "Explore all six models" })
         .getByRole("link", {
-          name: `Explore ${name}: ${id === "premium" ? "View in 3D" : id === "formula-e" ? "View specifications" : "View photos"}`,
+          name: `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
           exact: true,
         }),
     ).toHaveAttribute("href", `/configurator/${id}`);
@@ -741,7 +741,7 @@ test("reduced motion stays sequential and permits explicit film playback", async
 }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await expect(page.locator(".cinematic-home")).toHaveAttribute(
     "data-reduced-motion",
     "true",
@@ -822,7 +822,7 @@ test("real films advance, stop by unloading and stop offscreen", async ({
   const requests: string[] = [];
   page.on("request", (request) => requests.push(request.url()));
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await expect(page.locator(".home-film--hero iframe")).toHaveAttribute(
     "src",
     "https://media.flixel.com/cinemagraph/7x5domma49p8pb7z8k1l?hd=true",
@@ -936,7 +936,7 @@ for (const policy of ["reduced-motion", "save-data"] as const) {
         });
       });
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     await expect(page.locator(".home-film iframe")).toHaveCount(0);
     expect(providerRequests).toEqual([]);
     await page.getByRole("button", { name: "Play opening film" }).click();
@@ -967,7 +967,7 @@ test("additional viewport sanity stays within bounds with usable navigation", as
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     const menu = page.getByRole("button", { name: "Open menu" });
     const primary = page.getByRole("link", {
       name: "Explore the models",
@@ -1030,7 +1030,7 @@ test("hero fading preserves existing keyboard focus and suppresses invisible idl
   page,
 }) => {
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const action = page.getByRole("link", {
     name: "Explore the models",
     exact: true,
@@ -1067,7 +1067,7 @@ test("short viewports use reachable sequential targets and keep playback control
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     await expect(page.locator(".cinematic-home")).toHaveAttribute(
       "data-sequential-motion",
       "true",
@@ -1139,7 +1139,7 @@ test("normal portrait phones keep gradual reversible staging with reachable cont
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     await expect(page.locator(".cinematic-home")).toHaveAttribute(
       "data-sequential-motion",
       "false",
@@ -1376,7 +1376,7 @@ test("archive chapters follow native forward and reverse wheel input", async ({
   page,
 }, info) => {
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await scrollArchiveChapter(page, 0);
   const headline = await archiveChapter(page, 0)
     .locator(".home-timeline-caption h3")
@@ -1410,7 +1410,7 @@ test("enlarged driving film preserves focus, scroll and one-player lifecycle", a
   page,
 }, info) => {
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await scrollProgress(page, ".home-expanding-runway", 0.5);
   const trigger = page.getByRole("button", {
     name: "Enlarge driving film",
@@ -1488,7 +1488,7 @@ test("stalled enlarged driving film shows recovery and permits an explicit retry
     () => {},
   );
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await scrollProgress(page, ".home-expanding-runway", 0.5);
   await page.clock.install();
   await page
@@ -1593,7 +1593,7 @@ test("model invitations keep all six cards separated and keyboard reachable", as
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     const cards = page.locator(".home-model-invitation");
     await expect(cards).toHaveCount(6);
     const gaps = await cards.evaluateAll((nodes) =>
@@ -1615,26 +1615,21 @@ test("model invitations keep all six cards separated and keyboard reachable", as
       await expect(card).toBeFocused();
       await expect(card).toHaveAttribute("href", `/configurator/${id}`);
       await expect(card).toHaveAccessibleName(
-        `Explore ${name}: ${id === "premium" ? "View in 3D" : id === "formula-e" ? "View specifications" : "View photos"}`,
+        `Explore ${name}: ${id === "premium" ? "View in 3D" : "View photos"}`,
       );
       await card.scrollIntoViewIfNeeded();
-      if (id === "formula-e") {
-        await expect(card.locator("img")).toHaveCount(0);
-        await expect(
-          card.getByText("Reference image unavailable"),
-        ).toBeVisible();
-      } else
-        await expect
-          .poll(() =>
-            card
-              .locator("img")
-              .evaluate(
-                (node) =>
-                  (node as HTMLImageElement).complete &&
-                  (node as HTMLImageElement).naturalWidth > 0,
-              ),
-          )
-          .toBe(true);
+      await expect(card.locator("img")).toHaveCount(1);
+      await expect
+        .poll(() =>
+          card
+            .locator("img")
+            .evaluate(
+              (node) =>
+                (node as HTMLImageElement).complete &&
+                (node as HTMLImageElement).naturalWidth > 0,
+            ),
+        )
+        .toBe(true);
       const box = (await card.boundingBox())!;
       const title = (await card.locator("h3").boundingBox())!;
       const cta = (await card.locator(".home-invitation-cta").boundingBox())!;
@@ -1690,7 +1685,7 @@ test("desktop timeline keeps readable captions, native navigation and reversible
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     const navigation = page.getByRole("navigation", { name: "GT-R eras" });
     await navigation.scrollIntoViewIfNeeded();
     await expect(navigation).toBeInViewport({ ratio: 1 });
@@ -1782,7 +1777,7 @@ test("archive disclosures retain original photo evidence and credits with keyboa
   page,
 }, info) => {
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   for (const index of [0, 1, 2, 3]) {
     const chapter = archiveChapter(page, index);
     const details = chapter.locator(".home-timeline-details");
@@ -1849,7 +1844,7 @@ test("layered menu opens and closes with real motion and retains focus", async (
   });
   const page = await context.newPage();
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const trigger = page.getByRole("button", { name: "Open menu" });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Explore GT-R LAB" }),

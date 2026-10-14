@@ -1,3 +1,4 @@
+import { ImageReferenceLabel } from "../components/ImageReferenceLabel";
 import {
   lazy,
   Suspense,
@@ -349,7 +350,10 @@ export function ConfiguratorPage() {
         ) : (
           <div className="reference-view">
             {model.image ? (
-              <img src={model.image} alt={model.imageCaption} />
+              <>
+                <img src={model.image} alt={model.imageCaption} />
+                <ImageReferenceLabel model={model} />
+              </>
             ) : (
               <ReferenceUnavailable model={model} />
             )}

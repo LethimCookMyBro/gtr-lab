@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { StrictMode } from "react";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   act,
@@ -12,12 +13,18 @@ import { MemoryRouter } from "react-router-dom";
 import { Film } from "../src/components/home/Film";
 import { homeFilms } from "../src/data/films";
 let observe: IntersectionObserverCallback;
+let prepare: IntersectionObserverCallback;
 beforeEach(() => {
+  prepare = () => {};
   vi.stubGlobal(
     "IntersectionObserver",
     class {
-      constructor(callback: IntersectionObserverCallback) {
-        observe = callback;
+      constructor(
+        callback: IntersectionObserverCallback,
+        options?: IntersectionObserverInit,
+      ) {
+        if (options?.rootMargin) prepare = callback;
+        else observe = callback;
       }
       observe() {}
       disconnect() {}
@@ -187,4 +194,139 @@ it("contains the detail poster and player in one media viewport above the contro
   fireEvent.click(screen.getByRole("button", { name: "Stop detail film" }));
   expect(viewport?.querySelector(".home-film-backup")).not.toBeNull();
   expect(viewport?.querySelector("iframe")).toBeNull();
+});
+
+it("prepares the detail poster near the viewport without mounting the provider early", () => {
+  const { container } = render(scene(false, false, "detail"));
+  const poster =
+    container.querySelector<HTMLImageElement>(".home-film-backup")!;
+  expect(poster.getAttribute("src")).toBeNull();
+  act(() =>
+    prepare(
+      [{ isIntersecting: true } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    ),
+  );
+  expect(poster.getAttribute("src")).toBe("/images/gtr-premium.webp");
+  expect(poster.getAttribute("loading")).toBe("eager");
+  expect(container.querySelector("iframe")).toBeNull();
+  visible(true);
+  expect(container.querySelector("iframe")).not.toBeNull();
+});
+
+it.each(["hero", "detail"] as const)(
+  "remounts %s silently after automatic offscreen reentry",
+  (kind) => {
+    const { container } = render(scene(false, false, kind));
+    visible(true);
+    const original = container.querySelector("iframe")!;
+    fireEvent.load(original);
+    const poster = container.querySelector(".home-film-backup");
+    visible(false);
+    expect(container.querySelector("iframe")).toBeNull();
+    visible(true);
+    expect(container.querySelector("iframe")).not.toBe(original);
+    expect(container.querySelector(".home-film-backup")).toBe(poster);
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(container.querySelector(".home-film-entry")).toBeNull();
+    expect(
+      container.querySelector(".home-film")?.getAttribute("data-film-document"),
+    ).toBe("loading");
+    expect(
+      container.querySelector(".home-film")?.getAttribute("data-film-playback"),
+    ).toBe("unverified");
+  },
+);
+
+it("keeps the detail provider transparent and inert until its document loads", () => {
+  const styles = document.createElement("style");
+  styles.textContent =
+    readFileSync("src/styles/home.css", "utf8") +
+    readFileSync("src/styles/home-film-entry.css", "utf8");
+  document.head.append(styles);
+  try {
+    const { container } = render(scene(false, false, "detail"));
+    visible(true);
+    const frame = container.querySelector("iframe")!;
+    expect(getComputedStyle(frame).opacity).toBe("0");
+    expect(getComputedStyle(frame).pointerEvents).toBe("none");
+    expect(frame.hasAttribute("inert")).toBe(true);
+    expect(frame.getAttribute("aria-hidden")).toBe("true");
+    fireEvent.load(frame);
+    expect(getComputedStyle(frame).opacity).toBe("1");
+    expect(frame.hasAttribute("inert")).toBe(false);
+    expect(
+      container.querySelector(".home-film")?.getAttribute("data-film-playback"),
+    ).toBe("unverified");
+  } finally {
+    styles.remove();
+  }
+});
+
+it("suspends inline playback under an enlarged modal then silently remounts", () => {
+  const renderFilm = (suspended: boolean) => (
+    <MemoryRouter>
+      <Film
+        kind="hero"
+        reducedMotion={false}
+        saveData={false}
+        suspended={suspended}
+      />
+    </MemoryRouter>
+  );
+  const { container, rerender } = render(renderFilm(false));
+  const first = container.querySelector("iframe")!;
+  fireEvent.load(first);
+  rerender(renderFilm(true));
+  expect(container.querySelector("iframe")).toBeNull();
+  rerender(renderFilm(false));
+  expect(container.querySelector("iframe")).not.toBe(first);
+  expect(screen.queryByRole("status")).toBeNull();
+});
+
+it("unmounts behind another open modal and returns quietly after its removal", async () => {
+  const { container } = render(scene());
+  const original = container.querySelector("iframe")!;
+  const modal = document.createElement("dialog");
+  modal.setAttribute("open", "");
+  await act(async () => document.body.append(modal));
+  expect(container.querySelector("iframe")).toBeNull();
+  await act(async () => modal.remove());
+  expect(container.querySelector("iframe")).not.toBe(original);
+  expect(screen.queryByRole("status")).toBeNull();
+});
+
+it("never reuses a removed provider document's readiness on reentry or late load", () => {
+  const { container } = render(scene());
+  const original = container.querySelector("iframe")!;
+  fireEvent.load(original);
+  visible(false);
+  visible(true);
+  const replacement = container.querySelector("iframe")!;
+  expect(replacement).not.toBe(original);
+  fireEvent.load(original);
+  expect(replacement.hasAttribute("inert")).toBe(true);
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-document"),
+  ).toBe("loading");
+  fireEvent.load(replacement);
+  expect(replacement.hasAttribute("inert")).toBe(false);
+});
+
+it("changes film identity without revealing the previous document on the replacement", () => {
+  const { container, rerender } = render(scene());
+  const original = container.querySelector("iframe")!;
+  fireEvent.load(original);
+  rerender(scene(false, false, "detail"));
+  const replacement = container.querySelector("iframe")!;
+  expect(replacement).not.toBe(original);
+  expect(replacement.hasAttribute("inert")).toBe(true);
+  fireEvent.load(original);
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-document"),
+  ).toBe("loading");
+  fireEvent.load(replacement);
+  expect(
+    container.querySelector(".home-film")?.getAttribute("data-film-document"),
+  ).toBe("loaded");
 });

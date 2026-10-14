@@ -29,14 +29,17 @@ test("published R35 renders from the rear and scroll dolly changes actual pixels
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
+
+  const stage = page.locator(".home-signature-runway"),
+    canvas = stage.locator("canvas");
+  await expect(stage).toHaveAttribute("data-scene-state", "ready", {
+    timeout: 90000,
+  });
   await expect(page.locator(".home-loading-gate")).toHaveAttribute(
     "data-state",
     "resolved",
-    { timeout: 90000 },
   );
   expect(requests).toHaveLength(1);
-  const stage = page.locator(".home-signature-runway"),
-    canvas = stage.locator("canvas");
   const originalCanvas = await canvas.elementHandle();
   const images: string[] = [];
   for (const [i, p] of [0.08, 0.5, 0.92, 0.08].entries()) {
@@ -136,11 +139,13 @@ test("failed rear asset remains readable and retry loads the real model", async 
   const gate = page.locator(".home-loading-gate");
   const stage = page.locator(".home-signature-runway");
   await expect(stage).toHaveAttribute("data-scene-state", "error");
+  await expect(gate).not.toBeVisible();
+  await reveal(page, 0.5);
   await expect(
-    gate.getByRole("button", { name: "Retry 3D view" }),
+    stage.getByRole("button", { name: "Retry 3D view" }),
   ).toBeVisible();
   fail = false;
-  await gate.getByRole("button", { name: "Retry 3D view" }).click();
+  await stage.getByRole("button", { name: "Retry 3D view" }).click();
   await expect(stage).toHaveAttribute("data-scene-state", "ready", {
     timeout: 90000,
   });

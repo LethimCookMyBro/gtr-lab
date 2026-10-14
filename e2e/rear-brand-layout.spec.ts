@@ -230,8 +230,16 @@ test("compact rear identity clears the enlarged real vehicle and preserves authe
     await holdModel;
     await route.continue();
   });
+  let releasePoster!: () => void;
+  const holdPoster = new Promise<void>((resolve) => {
+    releasePoster = resolve;
+  });
+  await page.route("**/media/campaign-r35-orange-hero.webp", async (route) => {
+    await holdPoster;
+    await route.continue();
+  });
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  // Measure the real visible loader before releasing the same one model request.
+  // Hold the poster separately to measure the visible opening identity.
   // The opening has its own circular treatment; rear sizing remains independent.
   await expect(page.locator(".home-loading-gate")).toBeVisible();
   const loader = await page
@@ -243,15 +251,16 @@ test("compact rear identity clears the enlarged real vehicle and preserves authe
   expect(openingRing).not.toBeNull();
   expect(loader!.width / openingRing!.width).toBeCloseTo(0.62, 2);
   expect(openingRing!.width).toBeCloseTo(openingRing!.height, 1);
+  releasePoster();
   releaseModel();
-  await expect(page.locator(".home-loading-gate")).toHaveAttribute(
-    "data-state",
-    "resolved",
-    { timeout: 90000 },
-  );
   await expect(page.locator(".home-signature-runway")).toHaveAttribute(
     "data-scene-state",
     "ready",
+    { timeout: 90000 },
+  );
+  await expect(page.locator(".home-loading-gate")).toHaveAttribute(
+    "data-state",
+    "resolved",
   );
   await inspectHeader(page, info, "native");
   if (page.viewportSize()!.width < 701) {

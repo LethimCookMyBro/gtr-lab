@@ -35,7 +35,7 @@ export function SoundButton({
       aria-pressed={audio.enabled}
       title={
         cueOnly
-          ? "Interface click cues · No engine recording"
+          ? "Interface click cues · Also updates the homepage sound preference"
           : audio.enabled
             ? "Sound on"
             : "Sound off"

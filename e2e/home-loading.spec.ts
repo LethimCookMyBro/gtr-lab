@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 const model = "**/models/ciasny-r35.glb";
+const heroPoster = "**/media/campaign-r35-orange-hero.webp";
 const gate = (page: Page) => page.locator(".home-loading-gate");
 const rear = (page: Page) => page.locator(".home-signature-runway");
 async function ready(page: Page) {
@@ -32,13 +33,21 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("poster-ready model-pending gate releases into a prepared rear scene before requesting the film", async ({
+test("decoded poster releases the opening while the real model remains independently pending", async ({
   page,
 }, info) => {
   let requests = 0;
   let release!: () => void;
   const hold = new Promise<void>((resolve) => {
     release = resolve;
+  });
+  let releasePoster!: () => void;
+  const posterHold = new Promise<void>((resolve) => {
+    releasePoster = resolve;
+  });
+  await page.route(heroPoster, async (route) => {
+    await posterHold;
+    await route.continue();
   });
   let releaseProvider!: () => void;
   const providerHold = new Promise<void>((resolve) => {
@@ -91,7 +100,7 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   await expect.poll(() => requests).toBe(1);
   await expect(page.locator(".home-film--hero")).toHaveAttribute(
     "data-film-poster",
-    "decoded",
+    "loading",
   );
   await expect(page.locator(".home-film--hero iframe")).toHaveCount(1);
   await expect(page.locator(".home-film--hero iframe")).toHaveAttribute(
@@ -99,7 +108,7 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
     "",
   );
   await expect(gate(page)).toBeVisible();
-  await expect(gate(page)).toHaveAttribute("data-load-phase", "downloading");
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "image");
   const emblem = gate(page).locator(".home-opening-emblem");
   const ring = emblem.locator(".home-opening-ring");
   const arc = emblem.locator(".home-opening-ring-arc");
@@ -108,9 +117,9 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   await expect(arc).toHaveCSS("animation-name", "home-opening-orbit");
   await expect(arc).toHaveCSS("animation-timing-function", "linear");
   await expect(arc).toHaveCSS("animation-iteration-count", "infinite");
-  await expect(gate(page).locator("progress")).toHaveCSS(
-    "clip-path",
-    "inset(50%)",
+  await expect(gate(page).locator("progress")).toHaveCount(0);
+  await expect(gate(page).getByRole("status")).toHaveText(
+    "Preparing the opening image",
   );
   await expect(gate(page)).not.toContainText(/\d[\d.]* MB/);
   await expect(
@@ -177,27 +186,12 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
     await gate(page).evaluate((el) => el.contains(document.activeElement)),
   ).toBe(true);
   await page.screenshot({
-    path: info.outputPath("initial-poster-ready-model-stalled.png"),
+    path: info.outputPath("initial-poster-and-model-held.png"),
   });
-  // Throttle the real GLB response, not a fabricated progress counter. This
-  // preserves a genuinely pending download through more than one chrome pass.
-  const network = await page.context().newCDPSession(page);
-  await network.send("Network.enable");
-  await network.send("Network.emulateNetworkConditions", {
-    offline: false,
-    latency: 0,
-    downloadThroughput: 650000,
-    uploadThroughput: -1,
-  });
-  release();
-  await expect
-    .poll(() => gate(page).locator("progress").getAttribute("aria-valuenow"))
-    .not.toBe("0");
+  // The poster hold keeps the opening observable independently of the model.
+  // The real model request remains pending until after the poster releases entry.
   await page.waitForTimeout(3500);
-  const bytes = Number(
-    await gate(page).locator("progress").getAttribute("aria-valuenow"),
-  );
-  expect(bytes).toBeGreaterThan(0);
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "downloading");
   await expect(gate(page)).toBeVisible();
   const sweep = await gate(page)
     .locator(".gtr-brand-chrome-sweep")
@@ -215,16 +209,30 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
     easing: "linear",
   });
   await page.screenshot({
-    path: info.outputPath("actual-download-repeating-chrome.png"),
+    path: info.outputPath("poster-held-repeating-chrome.png"),
   });
-  await network.send("Network.emulateNetworkConditions", {
-    offline: false,
-    latency: 0,
-    downloadThroughput: -1,
-    uploadThroughput: -1,
-  });
-  await ready(page);
-  await network.detach();
+  releasePoster();
+  await expect(page.locator(".home-film--hero")).toHaveAttribute(
+    "data-film-poster",
+    "decoded",
+  );
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "ready");
+  await expect(gate(page)).toHaveAttribute("data-state", "resolved");
+  await expect(gate(page)).not.toBeVisible();
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "downloading");
+  await expect(rear(page)).not.toHaveAttribute("data-scene-state", "ready");
+  await expect(page.locator(".cinematic-home")).not.toHaveAttribute(
+    "inert",
+    "",
+  );
+  await expect(
+    page.locator(".home-film--hero").getByRole("status"),
+  ).toHaveCount(0);
+  await expect(page.locator(".home-film--hero .home-film-entry")).toHaveCount(
+    0,
+  );
+  expect(requests).toBe(1);
+  release();
   // Preserve a real recording beat after automatic gate completion. Only the
   // test's provider-document fixture is held; application readiness is genuine.
   await expect(page.locator(".home-film--hero iframe")).toHaveCSS(
@@ -236,9 +244,18 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
   });
   await page.waitForTimeout(750);
   releaseProvider();
+  await expect(page.locator(".home-film--hero")).toHaveAttribute(
+    "data-film-document",
+    "loaded",
+  );
+  await expect(page.locator(".home-film--hero")).toHaveAttribute(
+    "data-film-playback",
+    "unverified",
+  );
   expect(await page.evaluate(() => document.activeElement?.id)).toBe(
     "home-title",
   );
+  await ready(page);
   await page.evaluate(() => {
     (window as any).__rearCanvas = document.querySelector(
       ".home-signature-canvas canvas",
@@ -296,23 +313,51 @@ test("poster-ready model-pending gate releases into a prepared rear scene before
     body: JSON.stringify({
       requests,
       sameCanvas: true,
-      posterReadyDuringBlockedModel: true,
-      filmSuspendedDuringBlockedModel: true,
+      posterReleasedEntryWhileModelPending: true,
+      providerDocumentHeldIndependently: true,
       readyBeforeFirstJump: true,
     }),
     contentType: "application/json",
   });
 });
 
-test("reduced motion keeps a static circular identity and immediate keyboard skip", async ({
+test("the hero poster keeps its own 25-second recovery bound and Continue leaves rear loading", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.route(heroPoster, () => {});
+  await page.route(model, () => {});
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "image");
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "downloading");
+  await page.clock.fastForward(25001);
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "error");
+  await expect(gate(page)).toHaveAttribute("data-state", "error");
+  await expect(gate(page)).toContainText("opening visual took too long");
+  await expect(
+    gate(page).getByRole("button", { name: "Reload page" }),
+  ).toBeVisible();
+  await expect(
+    gate(page).getByRole("button", { name: "Retry 3D view" }),
+  ).toHaveCount(0);
+  await gate(page)
+    .getByRole("button", { name: "Continue browsing" })
+    .press("Enter");
+  await expect(gate(page)).toHaveAttribute("data-state", "resolved");
+  await expect(gate(page)).not.toBeVisible();
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "downloading");
+  await expect(page.locator("#home-title")).toBeFocused();
+});
+
+test("reduced motion keeps a static circular identity and immediate keyboard Continue", async ({
   page,
 }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  // A held real request keeps the preparation surface observable. It is not a
-  // simulated loading timer and is cancelled by the visitor's explicit skip.
+  // Hold the poster independently; a pending model must not control the gate.
+  await page.route(heroPoster, () => {});
   await page.route(model, () => {});
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(gate(page)).toHaveAttribute("data-load-phase", "downloading");
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "image");
   const emblem = gate(page).locator(".home-opening-emblem");
   const arc = emblem.locator(".home-opening-ring-arc");
   await expect(emblem).toHaveAttribute("data-active", "false");
@@ -328,7 +373,7 @@ test("reduced motion keeps a static circular identity and immediate keyboard ski
     path: info.outputPath("reduced-motion-static-ring.png"),
   });
   await gate(page)
-    .getByRole("button", { name: "Continue without 3D" })
+    .getByRole("button", { name: "Continue browsing" })
     .press("Enter");
   await expect(gate(page)).not.toBeVisible();
   await expect(page.locator(".cinematic-home")).not.toHaveAttribute(
@@ -391,12 +436,15 @@ test("completed download and decoded geometry do not bypass a simulated shader-c
     }
   });
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(gate(page)).toHaveAttribute("data-load-phase", "preparing");
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "preparing");
   await expect
     .poll(() => page.evaluate(() => (window as any).__shaderWaits))
     .toBeGreaterThan(0);
-  await expect(gate(page)).toBeVisible();
-  await expect(gate(page).getByRole("status")).toHaveText(
+  await expect(gate(page)).toHaveAttribute("data-state", "resolved");
+  await expect(gate(page)).not.toBeVisible();
+  await expect(rear(page)).not.toHaveAttribute("data-scene-state", "ready");
+  await jumpToRear(page);
+  await expect(rear(page).getByRole("status")).toContainText(
     "Preparing the 3D render",
   );
   await page.screenshot({
@@ -425,38 +473,58 @@ test("completed download and decoded geometry do not bypass a simulated shader-c
   });
 });
 
-test("a failed model request retries a fresh real scene and Continue without 3D remains a keyboard escape", async ({
+test("a failed model retries locally and keyboard Continue preserves rear preparation", async ({
   page,
 }, info) => {
   let requests = 0;
-  await page.route(model, (route) => {
+  let holdPoster = false;
+  let releaseModel!: () => void;
+  const modelHold = new Promise<void>((resolve) => {
+    releaseModel = resolve;
+  });
+  await page.route(heroPoster, (route) => {
+    if (holdPoster) return;
+    return route.continue();
+  });
+  await page.route(model, async (route) => {
     requests++;
     if (requests === 1)
       return route.fulfill({
         status: 503,
         body: "Model temporarily unavailable",
       });
-    if (requests === 3) return; // Hold the next visit so keyboard skip cannot race readiness.
+    if (requests === 3) await modelHold;
     return route.continue();
   });
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(gate(page)).toHaveAttribute("data-state", "error");
-  await expect(gate(page)).toContainText("HTTP 503");
+  await expect(gate(page)).toHaveAttribute("data-state", "resolved");
+  await expect(gate(page)).not.toBeVisible();
+  await expect(rear(page)).toHaveAttribute("data-scene-state", "error");
+  await expect(rear(page)).toContainText("HTTP 503");
+  await jumpToRear(page);
   await page.screenshot({ path: info.outputPath("model-failure-retry.png") });
-  await gate(page).getByRole("button", { name: "Retry 3D view" }).click();
+  await rear(page).getByRole("button", { name: "Retry 3D view" }).click();
   await ready(page);
   expect(requests).toBe(2);
+  holdPoster = true;
   await page.reload({ waitUntil: "domcontentloaded" });
-  // Exercise the explicit keyboard opt-out even when real preparation is in flight.
-  const skip = gate(page).getByRole("button", { name: "Continue without 3D" });
-  await skip.focus();
+  await expect(gate(page)).toHaveAttribute("data-load-phase", "image");
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "downloading");
+  const continueButton = gate(page).getByRole("button", {
+    name: "Continue browsing",
+  });
+  await continueButton.focus();
   await page.keyboard.press("Enter");
   await expect(gate(page)).not.toBeVisible();
-  await expect(rear(page)).toHaveAttribute("data-scene-state", "skipped");
-  await expect(rear(page).locator("canvas")).toHaveCount(0);
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "downloading");
+  await expect(rear(page)).not.toHaveAttribute("data-scene-state", "skipped");
   expect(await page.evaluate(() => document.activeElement?.id)).toBe(
     "home-title",
   );
+  releaseModel();
+  await ready(page);
+  expect(requests).toBe(3);
+  await expect(rear(page).locator("canvas")).toHaveCount(1);
 });
 
 test("reduced motion still prepares 3D while Save-Data waits for an explicit load", async ({
@@ -507,24 +575,29 @@ test("fetch and scene-chunk stalls expose bounded recovery instead of endless pr
   await page.clock.install();
   await page.route(model, () => {});
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(gate(page)).toHaveAttribute("data-load-phase", "downloading");
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "downloading");
+  await expect(gate(page)).toHaveAttribute("data-state", "resolved");
+  await expect(gate(page)).not.toBeVisible();
+  await jumpToRear(page);
   await page.clock.fastForward(45001);
-  await expect(gate(page)).toHaveAttribute("data-state", "error");
-  await expect(gate(page)).toContainText("model took too long");
+  await expect(rear(page)).toHaveAttribute("data-scene-state", "error");
+  await expect(rear(page)).toContainText("model took too long");
   await expect(
-    gate(page).getByRole("button", { name: "Retry 3D view" }),
+    rear(page).getByRole("button", { name: "Retry 3D view" }),
   ).toBeVisible();
   await page.screenshot({ path: info.outputPath("bounded-model-timeout.png") });
   await page.unroute(model);
   await page.route(/\/assets\/RearVehicleScene-[^/]+\.js(?:\?.*)?$/, () => {});
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(gate(page)).toHaveAttribute("data-load-phase", "module");
+  await expect(rear(page)).toHaveAttribute("data-load-phase", "module");
+  await expect(gate(page)).toHaveAttribute("data-state", "resolved");
+  await expect(gate(page)).not.toBeVisible();
+  await jumpToRear(page);
   await page.clock.fastForward(20001);
-  await expect(gate(page)).toHaveAttribute("data-state", "error");
+  await expect(rear(page)).toHaveAttribute("data-scene-state", "error");
   await expect(
-    gate(page).getByRole("button", { name: "Reload page" }),
+    rear(page).getByRole("button", { name: "Reload page" }),
   ).toBeVisible();
-  await gate(page).getByRole("button", { name: "Continue without 3D" }).click();
   await expect(gate(page)).not.toBeVisible();
 });
 
@@ -545,9 +618,11 @@ test("corrupt GLB and lost graphics context each recover with a fresh owned scen
       : route.continue(),
   );
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(gate(page)).toHaveAttribute("data-state", "error");
-  await expect(gate(page)).toContainText("not a valid binary glTF");
-  await gate(page).getByRole("button", { name: "Retry 3D view" }).click();
+  await expect(rear(page)).toHaveAttribute("data-scene-state", "error");
+  await expect(rear(page)).toContainText("not a valid binary glTF");
+  await expect(gate(page)).not.toBeVisible();
+  await jumpToRear(page);
+  await rear(page).getByRole("button", { name: "Retry 3D view" }).click();
   await ready(page);
   await jumpToRear(page);
   await rear(page)
@@ -594,11 +669,17 @@ test("unsupported WebGL exposes explicit recovery and a usable non-3D route", as
     }),
   );
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(gate(page)).toHaveAttribute("data-state", "error");
-  await expect(gate(page)).toContainText("needs WebGL");
-  await gate(page).getByRole("button", { name: "Continue without 3D" }).click();
+  await expect(rear(page)).toHaveAttribute("data-scene-state", "error");
+  await expect(rear(page)).toContainText("needs WebGL");
+  await expect(gate(page)).toHaveAttribute("data-state", "resolved");
   await expect(gate(page)).not.toBeVisible();
-  await expect(rear(page)).toHaveAttribute("data-scene-state", "skipped");
+  await jumpToRear(page);
+  await expect(
+    rear(page).getByRole("button", { name: "Retry 3D view" }),
+  ).toBeVisible();
+  await expect(
+    rear(page).getByRole("link", { name: "Explore the R35 details" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Explore the models", exact: true }),
   ).toBeVisible();

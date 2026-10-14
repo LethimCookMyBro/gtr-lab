@@ -1,11 +1,11 @@
 # GT-R LAB asset status
 
-Original research date: 2026-10-01. Catalog correction: 2026-10-13. This is an asset acquisition record, not a legal opinion. A displayed Creative Commons label does not validate a re-uploader's ownership of a game asset. Preserve attribution, source links, license versions, and modification notices. Do not imply Nissan endorsement.
+Original research date: 2026-10-01. Catalog correction: 2026-10-13. Formula E photograph acquired: 2026-10-14. This is an asset acquisition record, not a legal opinion. A displayed Creative Commons label does not validate a re-uploader's ownership of a game asset. Preserve attribution, source links, license versions, and modification notices. Do not imply Nissan endorsement.
 
 ## Current verified delivery
 
-- Five current catalog photographs in `public/images/*.webp`, with 800px `.small.webp` alternatives; the former GT500 photograph and credits remain historical files. Formula E has no rights-cleared reference image integrated.
-- Original JPEGs preserved in `asset-sources/images/`, outside the public web bundle
+- Five current GT-R catalog photographs in `public/images/*.webp`, with 800px `.small.webp` alternatives; the former GT500 photograph and credits remain historical files. Formula E adds a CC0 photograph by TTTNIS in `public/images/nissan-gen3-evo-2024-25.jpg`: an unmodified 1280 × 702 Commons JPEG, 246,734 bytes. It depicts 2024/25 Season 11 and is labeled separately from the catalog’s 2025/26 Season 12 specifications.
+- Original GT-R JPEGs preserved in `asset-sources/images/`, outside the public web bundle. Only the verified Commons thumbnail was acquired for Formula E; its full-resolution original is not stored locally.
 - Full credits: `public/images/credits.json` and `docs/IMAGE_CREDITS.md`
 - Manufacturer-sourced facts: `docs/verified-specifications.json` and `docs/SPECIFICATIONS.md`
 - WebP display set totals 1,061,980 bytes; small set totals 341,668 bytes, versus 15,880,199 bytes of original JPEGs
@@ -23,7 +23,7 @@ Original research date: 2026-10-01. Catalog correction: 2026-10-13. This is an a
 | T-spec | Correct body/year, wider front fenders, gold wheels, T-spec details | No exact clean free model established | Obtain an authorized exact model, or properly license and carefully adapt a compatible R35 base and label the adaptation |
 | GT-R50 by Italdesign | Unique GT-R50 body, not a recolored R35 | Professional SQUIR model available commercially | Purchase not authorized; listed standard licenses may restrict distribution of the underlying model. Free candidate is a game-derived re-upload |
 | NISMO GT3 | Exact competition generation / bodywork | vecarz listing displays CC BY but description disclaims originating ownership and prohibits commercial use | Conflicting license and third-party provenance. Excluded. Obtain an authorized original racing model |
-| Nissan e-4ORCE 05 | GEN3 Evo, 2025/26 Season 12 electric single-seater | Primary facts verified; no lawful asset acquired | Missing rights-cleared image and licensed 3D geometry. Use specifications and a neutral text-only placeholder |
+| Nissan e-4ORCE 05 | GEN3 Evo, 2025/26 Season 12 electric single-seater | Primary facts verified; CC0 2024/25 Season 11 reference photograph acquired | Formula E 3D geometry remains unavailable. Use the labeled historical photograph alongside fixed 2025/26 Season 12 specifications |
 
 ## Strongest realistic acquisition candidates
 
@@ -78,8 +78,9 @@ Original research date: 2026-10-01. Catalog correction: 2026-10-13. This is an a
 - NISMO and T-spec photos depict 2024 variants
 - GT-R50 image depicts the 2018 concept, not the 2021 production car
 - GT3 image depicts the 2015-spec Bathurst car, not the 2018 / 2020 EVO specification. Original is only 1080 × 720 and was not upscaled
+- Formula E photograph depicts the 2024/25 Season 11 GEN3 Evo, while the fixed catalog specifications describe 2025/26 Season 12. The short visible label is “2024/25 GEN3 Evo reference”.
 - Retained historical GT500 image depicts the 2020 No.23 MOTUL AUTECH car. It is not assigned to Formula E or any current catalog route.
 
 ## Honest application behavior
 
-Use the real photographs with visible credits where available while licensed detailed geometry is pending. Formula E uses a neutral “Reference image unavailable” state and verified specifications. A placeholder, unavailable model state, or a photo is not a completed 3D model. Never claim six authentic models are available when only a base geometry or none has been acquired. Do not relabel a road car as GT3/GT500 or a Nissan Skyline R34 as an R35.
+Use the real photographs with visible credits where available while licensed detailed geometry is pending. Formula E shows its credited CC0 photograph with the “2024/25 GEN3 Evo reference” label and separate verified 2025/26 Season 12 specifications. A placeholder, unavailable model state, or a photo is not a completed 3D model. Never claim six authentic models are available when only a base geometry or none has been acquired. Do not relabel a road car as GT3/GT500 or a Nissan Skyline R34 as an R35.

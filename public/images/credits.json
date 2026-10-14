@@ -119,5 +119,25 @@
     "sha256": "80daf70d58cb5838e240bd18ea52865b66ac8d66543d63c5ed13098ef42e77a0",
     "smallBytes": 69870,
     "smallSha256": "a0eceba9ffccbbd40871b48f4992b81fb6f0c867f3a72001e2baba76c59732e1"
+  },
+  {
+    "id": "formula-e",
+    "path": "/images/nissan-gen3-evo-2024-25.jpg",
+    "smallPath": "/images/nissan-gen3-evo-2024-25.jpg",
+    "title": "2024-25 Nissan Gen3 Evo.jpg",
+    "author": "TTTNIS",
+    "authorUrl": "https://commons.wikimedia.org/wiki/User:TTTNIS",
+    "license": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2024-25_Nissan_Gen3_Evo.jpg",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dd/2024-25_Nissan_Gen3_Evo.jpg",
+    "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/2024-25_Nissan_Gen3_Evo.jpg/1280px-2024-25_Nissan_Gen3_Evo.jpg?utm_campaign=index&utm_content=thumbnail&utm_source=commons.wikimedia.org",
+    "changes": "Unmodified 1280 × 702 JPEG thumbnail served by Wikimedia Commons. No content edits, conversion or upscaling; CSS may crop presentation. The same JPEG serves compact references.",
+    "description": "2024/25 Season 11 Nissan GEN3 Evo of Oliver Rowland; reference photograph, not the catalog’s 2025/26 Season 12 car.",
+    "bytes": 246734,
+    "sha256": "4aaf4aafbfffc1825d9ab403c356fdf89415cae58603e93a60e7b583e35e7b08",
+    "width": 1280,
+    "height": 702,
+    "verifiedOn": "2026-10-14"
   }
 ]

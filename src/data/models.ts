@@ -33,6 +33,8 @@ export interface VehicleModel {
   description: string;
   category: "Road" | "Track" | "Bespoke";
   image: string | null;
+  imageSmall?: string;
+  imageReferenceLabel?: string;
   imagePosition: string;
   imageCaption: string;
   powerValue: number;
@@ -158,7 +160,10 @@ export const models: VehicleModel[] = facts.variants.map((v) => ({
   drive: "drive" in v ? v.drive! : "Not specified in source",
   transmission:
     "transmission" in v ? v.transmission! : "Not specified in source",
-  image: v.id === "formula-e" ? null : `/images/gtr-${v.id}.webp`,
+  image: imageCredits.find((c) => c.id === v.id)?.path ?? null,
+  imageSmall: imageCredits.find((c) => c.id === v.id)?.smallPath,
+  imageReferenceLabel:
+    v.id === "formula-e" ? "2024/25 GEN3 Evo reference" : undefined,
   imageCaption: imageCredits.find((c) => c.id === v.id)?.description || "",
   asset:
     v.id === "premium"

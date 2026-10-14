@@ -7,9 +7,14 @@ export type R35AudioSnapshot = {
   error: string | null;
 };
 const MAX_LOAD_MS = 12_000;
+const EXIT_FADE_SECONDS = 0.08;
 let activePreview: R35AudioController | null = null;
+/** Opening a film must silence the recording before its own player mounts. */
+export function stopR35Recording() {
+  activePreview?.stop();
+}
 
-/** Owns only the real recording. The site's synthetic UI tones stay separate. */
+/** Owns the unchanged field recording, independently of synthetic UI tones. */
 export class R35AudioController {
   private snapshot: R35AudioSnapshot;
   private listeners = new Set<() => void>();
@@ -21,6 +26,10 @@ export class R35AudioController {
   private loadTimer: ReturnType<typeof setTimeout> | null = null;
   private attempt = 0;
   private disposed = false;
+  private unlocked = false;
+  private wantsPlayback = false;
+  private fading = false;
+  private startedAt = 0;
 
   constructor() {
     let muted = false;
@@ -53,24 +62,35 @@ export class R35AudioController {
     if (this.loadTimer !== null) clearTimeout(this.loadTimer);
     this.loadTimer = null;
   }
+  private allowed() {
+    return (
+      !this.disposed &&
+      !this.snapshot.muted &&
+      document.visibilityState !== "hidden"
+    );
+  }
+  private claimPlayback() {
+    if (activePreview !== this) activePreview?.stop();
+    activePreview = this;
+    this.wantsPlayback = true;
+  }
 
-  // The component calls this exclusively from its native button click handler.
-  // Resume happens synchronously in that gesture, before network/decode awaits.
+  // Callers must supply an explicit gesture. The section controller additionally
+  // checks native event trust; scroll/IntersectionObserver never call resume().
+  prepareFromGesture = (): boolean => this.startFromGesture(false);
   playFromGesture = () => {
-    if (
-      this.disposed ||
-      this.snapshot.muted ||
-      this.snapshot.phase === "loading" ||
-      this.snapshot.phase === "playing" ||
-      document.visibilityState === "hidden"
-    )
-      return;
+    this.startFromGesture(true);
+  };
+  private startFromGesture(play: boolean): boolean {
+    if (!this.allowed()) return false;
+    if (this.snapshot.phase === "playing" || this.snapshot.phase === "loading")
+      return true;
     if (navigator.userActivation?.isActive === false) {
       this.update({
         phase: "error",
-        error: "Use the Hear button to start the recording.",
+        error: "Use the Hear button or Sound control to start the recording.",
       });
-      return;
+      return false;
     }
     const AudioConstructor = window.AudioContext;
     if (!AudioConstructor) {
@@ -79,10 +99,44 @@ export class R35AudioController {
         error:
           "Audio is unavailable in this browser. You can continue without sound.",
       });
-      return;
+      return false;
     }
-    activePreview?.stop();
-    activePreview = this;
+    try {
+      this.context ??= new AudioConstructor();
+      const context = this.context;
+      // This invocation remains synchronous inside the trusted gesture.
+      const resumed = context.resume();
+      this.unlocked = true;
+      if (play) this.claimPlayback();
+      this.beginPreparation(context, resumed);
+      return true;
+    } catch {
+      this.fail(
+        "The recording could not start. Retry to try again, or continue without sound.",
+      );
+      return false;
+    }
+  }
+
+  /** A viewport entry can use an already gesture-unlocked context, never unlock it. */
+  playPrepared = (): boolean => {
+    if (!this.allowed() || !this.unlocked || !this.context) return false;
+    if (this.fading) this.stop();
+    if (this.source) return true;
+    this.claimPlayback();
+    if (this.snapshot.phase === "loading") return true;
+    if (this.context.state !== "running") {
+      this.fail(
+        "Sound is paused by your browser. Use the Sound control to retry.",
+      );
+      return false;
+    }
+    // A cancelled fetch can be retried on a later genuine entry, without resume.
+    this.beginPreparation(this.context, Promise.resolve());
+    return true;
+  };
+
+  private beginPreparation(context: AudioContext, resumed: Promise<void>) {
     const attempt = ++this.attempt;
     this.request = new AbortController();
     this.update({ phase: "loading", error: null });
@@ -92,19 +146,9 @@ export class R35AudioController {
           "The recording took too long to load. Retry when your connection is ready.",
         );
     }, MAX_LOAD_MS);
-    try {
-      this.context ??= new AudioConstructor();
-      const context = this.context;
-      const resumed = context.resume();
-      void this.loadAndPlay(context, resumed, attempt, this.request.signal);
-    } catch {
-      this.fail(
-        "The recording could not start. Retry to try again, or continue without sound.",
-      );
-    }
-  };
-
-  private async loadAndPlay(
+    void this.loadAndPrepare(context, resumed, attempt, this.request.signal);
+  }
+  private async loadAndPrepare(
     context: AudioContext,
     resumed: Promise<void>,
     attempt: number,
@@ -116,6 +160,7 @@ export class R35AudioController {
       let buffer = this.buffer;
       if (!buffer) {
         const response = await fetch(r35Recording.url, { signal });
+        if (!this.isCurrent(attempt)) return;
         if (!response.ok) throw new Error("Recording unavailable");
         const bytes = await response.arrayBuffer();
         if (!this.isCurrent(attempt)) return;
@@ -128,15 +173,23 @@ export class R35AudioController {
       this.buffer = buffer;
       this.clearLoadTimer();
       this.request = null;
+      if (!this.wantsPlayback) {
+        this.update({ phase: "idle", error: null });
+        return;
+      }
       const source = context.createBufferSource();
+      this.source = source;
       const gain = context.createGain();
+      this.gain = gain;
       source.buffer = buffer;
+      source.loop = false;
       source.connect(gain);
       gain.connect(context.destination);
       const now = context.currentTime;
-      // Full unchanged source, never looped or tied to page/animation progress.
-      // A gain envelope is a playback adaptation, documented with the asset.
       const duration = buffer.duration;
+      this.startedAt = now;
+      // Full unchanged source; this quiet natural-end envelope is independent
+      // of page progress, visual animation and video.
       gain.gain.setValueAtTime(0, now);
       gain.gain.linearRampToValueAtTime(
         r35Recording.playbackGain,
@@ -147,10 +200,8 @@ export class R35AudioController {
         now + Math.max(duration - 0.65, duration / 2),
       );
       gain.gain.linearRampToValueAtTime(0, now + duration);
-      this.source = source;
-      this.gain = gain;
       source.onended = () => {
-        if (attempt !== this.attempt) return;
+        if (attempt !== this.attempt || this.source !== source) return;
         this.stop();
       };
       source.start(now, 0, duration);
@@ -163,19 +214,57 @@ export class R35AudioController {
     }
   }
   private isCurrent(attempt: number) {
-    return (
-      !this.disposed &&
-      this.attempt === attempt &&
-      !this.snapshot.muted &&
-      document.visibilityState !== "hidden"
-    );
+    return this.allowed() && this.attempt === attempt;
   }
   private fail(error: string) {
     this.stop();
     this.update({ phase: "error", error });
   }
+
+  /** Ordinary viewport exit: native audio-clock fade, no JavaScript fade timer. */
+  fadeOut = () => {
+    if (this.disposed || this.fading) return;
+    if (!this.source || !this.gain || !this.context || !this.buffer) {
+      this.stop();
+      return;
+    }
+    this.fading = true;
+    const now = this.context.currentTime;
+    const elapsed = Math.max(0, now - this.startedAt);
+    const duration = this.buffer.duration;
+    const fadeIn = Math.min(0.12, duration / 4);
+    const fadeOutStart = Math.max(duration - 0.65, duration / 2);
+    const currentGain =
+      r35Recording.playbackGain *
+      Math.max(
+        0,
+        Math.min(
+          1,
+          elapsed / fadeIn,
+          (duration - elapsed) / (duration - fadeOutStart),
+        ),
+      );
+    const end =
+      now + Math.min(EXIT_FADE_SECONDS, Math.max(0, duration - elapsed));
+    try {
+      if (typeof this.gain.gain.cancelAndHoldAtTime === "function")
+        this.gain.gain.cancelAndHoldAtTime(now);
+      else {
+        this.gain.gain.cancelScheduledValues(now);
+        this.gain.gain.setValueAtTime(currentGain, now);
+      }
+      this.gain.gain.linearRampToValueAtTime(0, end);
+      this.source.stop(end);
+      // Keep source/gain/global ownership until native ended. Urgent stop,
+      // replacement playback and disposal may still silence it synchronously.
+    } catch {
+      this.stop();
+    }
+  };
   stop = () => {
     ++this.attempt;
+    this.wantsPlayback = false;
+    this.fading = false;
     this.clearLoadTimer();
     this.request?.abort();
     this.request = null;
@@ -194,12 +283,12 @@ export class R35AudioController {
     if (activePreview === this) activePreview = null;
     this.update({ phase: "idle", error: null });
   };
-  setMuted = (muted: boolean) => {
+  setMuted = (muted: boolean, persist = true) => {
     if (this.disposed) return;
     if (muted) this.stop();
     this.update({ muted, error: null });
     try {
-      localStorage.setItem(R35_SAMPLE_MUTED_KEY, String(muted));
+      if (persist) localStorage.setItem(R35_SAMPLE_MUTED_KEY, String(muted));
     } catch {
       /* optional persistence */
     }
@@ -216,5 +305,6 @@ export class R35AudioController {
     void this.context?.close().catch(() => {});
     this.context = null;
     this.buffer = null;
+    this.unlocked = false;
   };
 }

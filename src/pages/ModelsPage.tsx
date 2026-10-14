@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { ImageReferenceLabel } from "../components/ImageReferenceLabel";
 import { ReferenceUnavailable } from "../components/ReferenceUnavailable";
 import { models } from "../data/models";
 import { getModelExperience } from "../data/modelExperience";
@@ -40,6 +41,7 @@ export function ModelsPage() {
               </span>
               <h2>{m.shortName}</h2>
               <p>{m.tagline}</p>
+              <ImageReferenceLabel model={m} />
             </div>
             <div className="band-action" id={`collection-action-${m.id}`}>
               {getModelExperience(m).action}

@@ -143,7 +143,7 @@ it("keeps the static studio resource boundaries stable across scroll progress up
   expect(runtime.shadowRenders).toBe(1);
 });
 
-it("keeps the actual taillight emission saturated red instead of passing it through the desaturating studio tone map", () => {
+it("keeps the original thin taillight tubes subdued within the studio tone map", () => {
   const lamp = new MeshStandardMaterial({ color: "#000000" });
   runtime.asset.bindings = [{ material: lamp, role: "taillights" }];
   render(
@@ -158,7 +158,8 @@ it("keeps the actual taillight emission saturated red instead of passing it thro
   expect(lamp.emissive.r).toBeGreaterThan(0.9);
   expect(lamp.emissive.g).toBeLessThan(lamp.emissive.r * 0.02);
   expect(lamp.emissive.b).toBeLessThan(lamp.emissive.r * 0.02);
-  expect(lamp.toneMapped).toBe(false);
+  expect(lamp.toneMapped).toBe(true);
+  expect(lamp.emissiveIntensity).toBe(0.14);
 });
 
 it("mounts a broad white overhead source instead of another frontal hotspot", () => {

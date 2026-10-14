@@ -19,7 +19,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 const props = {
-  scene: { phase: "ready" as const },
   heroReady: true,
   reducedMotion: false,
   onContinue: vi.fn(),
@@ -106,7 +105,7 @@ it("cancels a stale close when preparation reenters during completion", () => {
 it("skips immediately even during pending work and respects reduced motion", () => {
   vi.useFakeTimers();
   const { rerender } = render(opening(true));
-  fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue browsing" }));
   expect(screen.queryByRole("dialog")).toBeNull();
   rerender(opening(false));
   rerender(opening(true, true));
@@ -150,5 +149,5 @@ it("uses the full-width intact film and removes only the lineup asset-note strip
     container.querySelector('[aria-describedby="home-model-asset-note"]'),
   ).toBeNull();
   expect(screen.getAllByRole("link")).toHaveLength(6);
-  expect(screen.getAllByText("View photos")).toHaveLength(4);
+  expect(screen.getAllByText("View photos")).toHaveLength(5);
 });

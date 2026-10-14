@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Expand } from "lucide-react";
 import { Film } from "./Film";
 import { FilmDialog } from "./FilmDialog";
+import { stopR35Recording } from "../../audio/r35AudioController";
 export function ExpandingFilm({
   reducedMotion,
   saveData,
@@ -27,7 +28,10 @@ export function ExpandingFilm({
           <button
             className="home-film-enlarge"
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              stopR35Recording();
+              setOpen(true);
+            }}
             aria-label="Enlarge driving film"
           >
             <span className="home-film-enlarge-icon">

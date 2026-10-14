@@ -83,7 +83,7 @@ describe("concise, capability-specific catalog actions", () => {
     expect(container.querySelector(".home-invitation-copy p")).toBeNull();
   });
 
-  it.each(["nismo", "tspec", "gtr50", "gt3"])(
+  it.each(["nismo", "tspec", "gtr50", "gt3", "formula-e"])(
     "opens the actual local %s photograph from View photos",
     async (id) => {
       const model = getModel(id)!;
@@ -109,11 +109,13 @@ describe("compact Formula E details", () => {
     expect(screen.queryByText("Reference image unavailable")).toBeNull();
     expect(container.querySelector(".reference-unavailable-note")).toBeNull();
     expect(
-      screen.getAllByText(
-        "No rights-cleared reference image or licensed 3D model has been integrated.",
-      ),
+      screen.getAllByText("No licensed 3D model has been integrated."),
     ).toHaveLength(1);
-    expect(container.querySelector(".reference-unavailable, img")).toBeNull();
+    expect(container.querySelector(".reference-unavailable")).toBeNull();
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(
+      model.image,
+    );
+    expect(screen.getByText("2024/25 GEN3 Evo reference")).toBeTruthy();
     expect(screen.getAllByText(model.modelYear)).toHaveLength(1);
     expect(container.querySelector(".spec-context")?.textContent).toBe(
       model.modelYear,
@@ -175,9 +177,9 @@ describe("compact Formula E details", () => {
     const model = { ...getModel("nismo")!, torqueValue: 0 };
     const { container } = render(<ModelDetails model={model} />);
     expect(container.querySelectorAll(".key-figures > div")).toHaveLength(2);
-    expect(container.querySelectorAll(".key-figures strong")[1].textContent).toBe(
-      `0${model.torqueUnit}`,
-    );
+    expect(
+      container.querySelectorAll(".key-figures strong")[1].textContent,
+    ).toBe(`0${model.torqueUnit}`);
   });
 
   it("preserves photographed model descriptions, captions and asset provenance", () => {

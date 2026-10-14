@@ -10,7 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import { ArrowDown, RotateCcw } from "lucide-react";
 import { GtrWordmark } from "./GtrWordmark";
-import { R35SoundPreview } from "../R35SoundPreview";
+import { R35SectionSound } from "./R35SectionSound";
 import "../../styles/home-audio.css";
 import { SceneBoundary } from "../three/SceneBoundary";
 import { sectionProgress } from "./motion";
@@ -34,6 +34,8 @@ function canRenderWebGL() {
 }
 type RearSignatureProps = {
   reducedMotion?: boolean;
+  /** Actual OS preference, independent of the short-height visual fallback. */
+  audioReducedMotion?: boolean;
   saveData?: boolean;
   disabled?: boolean;
   attempt?: number;
@@ -43,20 +45,18 @@ export function RearSignature(props: RearSignatureProps) {
   const [retry, setRetry] = useState(0);
   const [optedIn, setOptedIn] = useState(false);
   return (
-    <>
-      <RearSignatureAttempt
-        key={`${props.attempt ?? 0}:${retry}`}
-        {...props}
-        optedIn={optedIn}
-        onOptIn={() => setOptedIn(true)}
-        onRetry={() => setRetry((value) => value + 1)}
-      />
-      <R35SoundPreview className="home-signature-sound" />
-    </>
+    <RearSignatureAttempt
+      key={`${props.attempt ?? 0}:${retry}`}
+      {...props}
+      optedIn={optedIn}
+      onOptIn={() => setOptedIn(true)}
+      onRetry={() => setRetry((value) => value + 1)}
+    />
   );
 }
 function RearSignatureAttempt({
   reducedMotion = false,
+  audioReducedMotion = false,
   saveData = false,
   disabled = false,
   onLoadState,
@@ -213,6 +213,11 @@ function RearSignatureAttempt({
       aria-label="The GT-R rear-light signature"
     >
       <div className="home-signature-sticky">
+        <R35SectionSound
+          sectionRef={section}
+          reducedMotion={audioReducedMotion}
+          saveData={saveData}
+        />
         <div className="home-signature-canvas" aria-busy={mount && !ready}>
           {mount && (
             <SceneBoundary onError={onModuleError}>

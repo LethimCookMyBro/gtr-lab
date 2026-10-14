@@ -43,7 +43,7 @@ it("positions the desktop poster cue below the header's full interactive area", 
     .join("\n");
   document.head.append(style);
   document.body.innerHTML =
-    '<header class="home-header"></header><div class="home-film-entry">Loading film…</div>';
+    '<header class="home-header"></header><div class="home-film-entry">Play film</div>';
   const header = getComputedStyle(document.querySelector(".home-header")!);
   const cue = getComputedStyle(document.querySelector(".home-film-entry")!);
   expect(parseFloat(cue.insetBlockStart)).toBeGreaterThanOrEqual(

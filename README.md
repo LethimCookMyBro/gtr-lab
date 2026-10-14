@@ -5,17 +5,24 @@ An original independent GT-R digital exhibition built with React, TypeScript and
 ## Current status
 **In progress. Not a completed production configurator.**
 
-One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. NISMO, T-spec, GT-R50 and GT3 remain labeled photographic references. The sixth entry is Nissan e-4ORCE 05, GEN3 Evo, 2025/26 Season 12: verified specifications only, with no rights-cleared reference image or licensed 3D asset integrated. Paint, lamps, cameras and five real-geometry environments work on the licensed exterior. Premium includes a separately authored, approximate cabin study with static instruments. Exterior and full cabin preparation share the initial loading phase; Interior opens directly once preparation is ready. The full cabin remains route-resident through inside/outside switches, without a repeat download within that route lifecycle. A lightweight exterior-window proxy provides a simplified cabin view through the glass. These are source-level behavior descriptions, not an instant-load or physical-device performance guarantee. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
+One licensed Ciasny R35 exterior renders in the real WebGL configurator on the Premium route, with its custom-aero/model-year limitations visible. NISMO, T-spec, GT-R50 and GT3 remain labeled photographic references. The sixth entry is Nissan e-4ORCE 05, GEN3 Evo, 2025/26 Season 12: verified specifications with a CC0 2024/25 Season 11 GEN3 Evo reference photograph by TTTNIS. The photo is explicitly labeled separately from the 2025/26 Season 12 catalog; no licensed Formula E 3D asset is integrated. Paint, lamps, cameras and five real-geometry environments work on the licensed exterior. Premium includes a separately authored, approximate cabin study with static instruments. Exterior and full cabin preparation share the initial loading phase; Interior opens directly once preparation is ready. The full cabin remains route-resident through inside/outside switches, without a repeat download within that route lifecycle. A lightweight exterior-window proxy provides a simplified cabin view through the glass. These are source-level behavior descriptions, not an instant-load or physical-device performance guarantee. The calibrated vehicle revision passed all14 actual-car browser flows; physical-device performance and final visual quality are still open.
 
 The homepage combines two real NissanNews GT-R track films in intact Flixel players, a reversible hero-to-paper exit, white editorial photography, focused film viewing, four multi-photo heritage chapters, including a bounded R32 race-to-engineering scroll sequence and a slim era index, an animated layered menu, six larger model invitations and an independent-project footer with full-width link rows and matching hover/keyboard feedback. Keyboard, reduced-motion and responsive checks cover the complete flow. Both exact hosted players were verified on the public Railway origin; GitHub runners have received provider playback restrictions, so deterministic app checks and public-origin media verification are reported separately. Main-only development continues; the [Railway development preview](https://gtr-lab-production.up.railway.app/) publishes reviewed releases. This is not the finished six-vehicle experience.
 
 ## Homepage preparation and identity
 
-The opening now waits for a usable hero visual and the actual rear R35 scene's
-geometry/textures plus render preparation. Byte progress and named decode/render
-phases describe real work. Retry and Continue without 3D are explicit; Save-Data
+The opening waits only for the decoded hero photograph. Continue browsing
+releases that opening gate without cancelling the rear R35 preparation. The rear
+viewer owns its download, render preparation and recovery locally; Save-Data
 keeps model loading opt-in. The same rear scene stays alive on the home route and
 pauses offscreen instead of loading again when visitors reach it.
+
+Films prepare their local posters near the viewport and automatically re-enter
+through the original publisher embeds. A document load is not proof that a video
+frame has played. Offscreen, hidden and covered players are unloaded. The compact
+car-section sound control uses the credited 7.6-second acceleration recording
+once per eligible entry after a trusted user gesture, with mute and motion/data
+preferences respected. Initial media transfer and GPU completion still take time.
 
 The image-based chrome/red GT-R badge and smaller chrome Nissan emblem retain
 their original proportions/colors. Bold self-hosted Barlow Condensed headings
@@ -24,8 +31,8 @@ sequence. All 12 heritage photographs and their qualified captions remain.
 See [implementation and verification boundaries](docs/HOME_LOADING_IDENTITY.md)
 and [brand/font provenance](docs/BRAND_IDENTITY.md). This remains an independent
 enthusiast project with one licensed exterior, an approximate authored Premium
-cabin, four other photographic-reference routes and one specifications-only
-Formula E entry. See [Formula E scope and source notes](docs/FORMULA_E_CATALOG.md).
+cabin and five photographic-reference routes, including a season-labeled
+Formula E photograph. See [Formula E scope and source notes](docs/FORMULA_E_CATALOG.md).
 
 ## Run
 
@@ -58,7 +65,7 @@ Environment HDR and PBR JPG binaries are excluded from Git. `npm run build` fetc
 - `/` cinematic home
 - `/models` six-model collection
 - `/configurator/premium`, `/configurator/nismo`, `/configurator/tspec`, `/configurator/gtr50`, `/configurator/gt3`
-- `/configurator/formula-e` Nissan e-4ORCE 05 · GEN3 Evo · 2025/26 Season 12, specifications only
+- `/configurator/formula-e` Nissan e-4ORCE 05 · GEN3 Evo · 2025/26 Season 12 specifications with a labeled 2024/25 photographic reference
 - `/configurator/gt500` unsupported legacy catalog entry, with an explanation and a collection link; no automatic redirect to another vehicle
 - `/heritage` engineering/heritage
 - `/credits` photography, factual sources and independent-project disclosure
@@ -96,7 +103,7 @@ Railway. `railway.json` defines build, Node start and healthcheck. Connect the a
 
 ## Privacy and licensing
 
-The app has no analytics, account login, backend user data or checkout. Playing a hosted film connects the browser to Flixel; reduced motion and Save-Data prevent automatic film requests. Sound preference is stored locally. Audio cues are original procedural tones, activated only after user interaction. Photographs keep their individual CC licenses; HDRIs are CC0. Unrelated user-uploaded reference screenshots and source originals are excluded from public git. The supplied GT-R badge is deliberately included for the approved design; its copyright permission remains unverified and is disclosed in the brand credits; no credential is part of this project. Code has no declared public license yet; media licenses do not grant trademark rights or official affiliation.
+The app has no analytics, account login, backend user data or checkout. Playing a hosted film connects the browser to Flixel; reduced motion and Save-Data prevent automatic film requests. Sound preference is stored locally. Interface audio cues are original procedural tones. The car section uses the separately credited CC BY-SA recording; both require permitted user interaction. Photographs keep their individual CC licenses; HDRIs are CC0. Unrelated user-uploaded reference screenshots and source originals are excluded from public git. The supplied GT-R badge is deliberately included for the approved design; its copyright permission remains unverified and is disclosed in the brand credits; no credential is part of this project. Code has no declared public license yet; media licenses do not grant trademark rights or official affiliation.
 
 ## Browser QA
 

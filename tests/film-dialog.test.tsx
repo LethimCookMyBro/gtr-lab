@@ -13,6 +13,11 @@ import { MemoryRouter } from "react-router-dom";
 import { ExpandingFilm } from "../src/components/home/ExpandingFilm";
 import { homeFilms } from "../src/data/films";
 
+const recording = vi.hoisted(() => ({ stop: vi.fn() }));
+vi.mock("../src/audio/r35AudioController", () => ({
+  stopR35Recording: recording.stop,
+}));
+
 let observe: IntersectionObserverCallback;
 const originalShowModal = Object.getOwnPropertyDescriptor(
   HTMLDialogElement.prototype,
@@ -23,6 +28,7 @@ const originalClose = Object.getOwnPropertyDescriptor(
   "close",
 );
 beforeEach(() => {
+  recording.stop.mockReset();
   // jsdom does not implement the native dialog top layer; browser tests cover its focus trap.
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
     configurable: true,
@@ -304,4 +310,17 @@ it("wraps both keyboard Tab boundaries inside the enlarged film dialog", async (
   expect(document.activeElement).toBe(original);
   await user.tab();
   expect(document.activeElement).toBe(close);
+});
+
+it("stops the rear recording before mounting the enlarged player", () => {
+  const { container } = scene();
+  recording.stop.mockImplementation(() => {
+    expect(container.querySelector(".home-film-dialog iframe")).toBeNull();
+    expect(
+      container.querySelector(".home-film-dialog")?.hasAttribute("open"),
+    ).toBe(false);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Enlarge driving film" }));
+  expect(recording.stop).toHaveBeenCalledOnce();
+  expect(container.querySelector(".home-film-dialog iframe")).not.toBeNull();
 });

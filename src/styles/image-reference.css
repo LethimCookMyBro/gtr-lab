@@ -1,0 +1,32 @@
+.image-reference-label {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: #dbe1e5;
+  overflow-wrap: anywhere;
+}
+.reference-view > .image-reference-label {
+  position: absolute;
+  z-index: 1;
+  bottom: 18px;
+  left: 24px;
+  right: 24px;
+  width: fit-content;
+  max-width: calc(100% - 48px);
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: #101416e8;
+}
+.variant-choices .image-reference-label {
+  margin-top: 4px;
+  font-size: 11px;
+}
+/* The reference photo shows the whole single-seater without a portrait crop. */
+.home-invitations .home-model-invitation--formula-e > img,
+.reference-view:has(> .image-reference-label) > img {
+  object-fit: contain;
+}

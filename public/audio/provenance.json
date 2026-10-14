@@ -37,12 +37,13 @@
     "fadeInSeconds": 0.12,
     "fadeOutSeconds": 0.65,
     "synchronizedWithVisuals": false,
-    "loop": false
+    "loop": false,
+    "sectionExitFadeSeconds": 0.08
   },
   "claimsNotVerified": [
     "stock exhaust",
     "engine startup",
     "audio of the site's Ciasny R35 model"
   ],
-  "usageLimit": "Independent user-triggered sample. Separately review any audiovisual capture or future synchronization. No trademark rights or endorsement are implied."
+  "usageLimit": "Independent recording: homepage section entry can trigger playback after an eligible trusted gesture, with explicit Sound opt-in for reduced motion or Save-Data. It is not time-aligned, scrubbed or synchronized with video. Separately review any audiovisual capture or future synchronization. No trademark rights or endorsement are implied."
 }

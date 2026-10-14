@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Route } from "@playwright/test";
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 
 // Geometry and keyboard acceptance only. Held provider navigation keeps the
 // decoded campaign photograph stable; this does not certify hosted playback.
@@ -23,11 +23,14 @@ for (const viewport of viewports) {
   }, info) => {
     await page.setViewportSize(viewport);
     await page.route("**/models/ciasny-r35.glb", (route) =>
-      route.fulfill({ status: 503, body: "Explicit non-3D layout test" }),
+      route.fulfill({
+        status: 503,
+        body: "Deliberate model failure for viewport-only coverage",
+      }),
     );
     await page.route("https://media.flixel.com/**", () => {});
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await continueHomeWithout3D(page);
+    await continueHomeBrowsing(page);
     await page.evaluate(async () => {
       await document.fonts.ready;
       await (
@@ -61,7 +64,6 @@ for (const viewport of viewports) {
         film: box(".home-film--hero iframe"),
         poster: box(".home-film--hero .home-film-backup"),
         controls: box(".home-film--hero .home-film-controls"),
-        entry: box(".home-film--hero .home-film-entry"),
         panel: box(".home-hero-sticky"),
         provider: {
           transform: css.transform,
@@ -96,17 +98,25 @@ for (const viewport of viewports) {
       mask: "none",
     });
     expect(geometry.controls.top).toBeGreaterThanOrEqual(geometry.film.bottom);
-    // Loading and recovery remain findable even when full-width player
-    // controls are below the fold. The cue only covers the local poster.
-    expect(geometry.entry.top).toBeGreaterThanOrEqual(geometry.header.bottom);
-    expect(geometry.entry.bottom).toBeLessThan(geometry.title.top);
-    expect(geometry.entry.bottom).toBeLessThan(viewport.height);
-    expect(geometry.entry.left).toBeGreaterThanOrEqual(0);
-    expect(geometry.entry.right).toBeLessThanOrEqual(viewport.width);
-    await expect(page.locator(".home-film-entry")).toContainText(
-      "Loading film",
+    // Automatic provider-document loading stays quiet on the stable poster.
+    await expect(page.locator(".home-film--hero .home-film-entry")).toHaveCount(
+      0,
     );
-    await expect(page.locator(".home-film-entry button")).toHaveCount(0);
+    await expect(
+      page.locator(".home-film--hero").getByRole("status"),
+    ).toHaveCount(0);
+    await expect(page.locator(".home-film--hero .home-film-backup")).toHaveCSS(
+      "opacity",
+      "1",
+    );
+    await expect(page.locator(".home-film--hero iframe")).toHaveCSS(
+      "opacity",
+      "0",
+    );
+    await expect(page.locator(".home-film--hero")).toHaveAttribute(
+      "data-film-playback",
+      "unverified",
+    );
     if (viewport.width >= 768) {
       for (const box of [geometry.title, geometry.support, geometry.cta]) {
         expect(box.top).toBeGreaterThanOrEqual(geometry.header.bottom);
@@ -163,19 +173,32 @@ for (const viewport of [
       requests.push(route);
     });
     await page.route("**/models/ciasny-r35.glb", () => {});
+    let posterRequest: Route | undefined;
+    await page.route("**/media/campaign-r35-orange-hero.webp", (route) => {
+      posterRequest = route;
+    });
     await page.clock.install();
     await page.goto("/", { waitUntil: "domcontentloaded" });
     const film = page.locator(".home-film--hero");
     const cue = film.locator(".home-film-entry");
-    await expect(film).toHaveAttribute("data-film-poster", "decoded");
+    await expect(film).toHaveAttribute("data-film-poster", "loading");
     await expect(cue).toHaveCount(0);
     await page.clock.fastForward(30000);
     expect(requests).toHaveLength(1);
-    await continueHomeWithout3D(page);
+    await expect(page.locator(".home-opening")).toHaveAttribute(
+      "data-load-phase",
+      "error",
+    );
+    await continueHomeBrowsing(page);
+    await expect.poll(() => Boolean(posterRequest)).toBe(true);
+    await posterRequest!.continue();
+    await expect(film).toHaveAttribute("data-film-poster", "decoded");
     await expect.poll(() => requests.length).toBe(1);
-    await expect(cue).toBeInViewport({ ratio: 1 });
-    await expect(cue.getByRole("status")).toContainText("Loading film");
-    await expect(cue.getByRole("button")).toHaveCount(0);
+    await expect(cue).toHaveCount(0);
+    await expect(film.getByRole("status")).toHaveCount(0);
+    await expect(film.locator(".home-film-backup")).toHaveCSS("opacity", "1");
+    await expect(film.locator("iframe")).toHaveCSS("opacity", "0");
+    await expect(film.locator("iframe")).toHaveAttribute("inert", "");
     await page.screenshot({
       path: info.outputPath(`poster-loading-${viewport.name}.png`),
       scale: "css",
@@ -194,6 +217,8 @@ for (const viewport of [
     await page.keyboard.press("Enter");
     await expect.poll(() => requests.length).toBe(2);
     await expect(cue).toBeFocused();
+    await expect(cue).toHaveText("");
+    await expect(film.getByRole("status")).toHaveCount(0);
     await expect(film.locator("iframe")).toHaveCSS("opacity", "0");
     await requests[1].fulfill(documentFixture);
     await expect(film).toHaveAttribute("data-film-document", "loaded");
@@ -226,7 +251,7 @@ for (const viewport of [
       });
       await page.route("**/models/ciasny-r35.glb", () => {});
       await page.goto("/", { waitUntil: "domcontentloaded" });
-      await continueHomeWithout3D(page);
+      await continueHomeBrowsing(page);
       const film = page.locator(".home-film--hero");
       const cue = film.locator(".home-film-entry");
       const play = cue.getByRole("button", { name: "Play opening video" });
@@ -241,7 +266,11 @@ for (const viewport of [
       await page.keyboard.press("Enter");
       await expect.poll(() => requests.length).toBe(1);
       await expect(cue).toBeFocused();
-      await expect(cue.getByRole("status")).toContainText("Loading film");
+      await expect(cue).toHaveText("");
+      await expect(film.getByRole("status")).toHaveCount(0);
+      await expect(film.locator(".home-film-backup")).toHaveCSS("opacity", "1");
+      await expect(film.locator("iframe")).toHaveCSS("opacity", "0");
+      await expect(film.locator("iframe")).toHaveAttribute("inert", "");
       await requests[0].fulfill(documentFixture);
       await expect(cue).toHaveCount(0);
       await expect(film.locator("iframe")).toBeFocused();
@@ -249,3 +278,38 @@ for (const viewport of [
     });
   }
 }
+
+test("detail film keeps a quiet decoded poster until its own provider document loads", async ({
+  page,
+}) => {
+  const requests: Route[] = [];
+  await page.route("https://media.flixel.com/**", (route) => {
+    requests.push(route);
+  });
+  await page.route("**/models/ciasny-r35.glb", (route) =>
+    route.fulfill({ status: 503, body: "Detail film lifecycle fixture" }),
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await continueHomeBrowsing(page);
+  const film = page.locator(".home-film--detail");
+  await film.scrollIntoViewIfNeeded();
+  await expect(film).toHaveAttribute("data-film-poster", "decoded");
+  await expect(film).toHaveAttribute("data-film-document", "loading");
+  await expect(film.getByRole("status")).toHaveCount(0);
+  await expect(film.locator(".home-film-backup")).toHaveCSS("opacity", "1");
+  await expect(film.locator("iframe")).toHaveCSS("opacity", "0");
+  await expect(film.locator("iframe")).toHaveAttribute("inert", "");
+  await expect(film.locator("iframe")).toHaveAttribute("aria-hidden", "true");
+  const source = await film.locator("iframe").getAttribute("src");
+  await expect
+    .poll(() => requests.some((route) => route.request().url() === source))
+    .toBe(true);
+  await requests
+    .find((route) => route.request().url() === source)!
+    .fulfill(documentFixture);
+  await expect(film).toHaveAttribute("data-film-document", "loaded");
+  await expect(film).toHaveAttribute("data-film-playback", "unverified");
+  await expect(film.locator("iframe")).toHaveCSS("opacity", "1");
+  await expect(film.locator("iframe")).not.toHaveAttribute("inert");
+  await expect(film.locator("iframe")).not.toHaveAttribute("aria-hidden");
+});

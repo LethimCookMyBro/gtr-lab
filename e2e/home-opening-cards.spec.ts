@@ -1,4 +1,4 @@
-import { continueHomeWithout3D } from "./helpers/home-gate";
+import { continueHomeBrowsing } from "./helpers/home-gate";
 import { test, expect } from "@playwright/test";
 import type { Locator, Route, TestInfo } from "@playwright/test";
 
@@ -44,7 +44,7 @@ async function settleCardGeometry(card: Locator, info: TestInfo) {
   });
 }
 
-test("opening keeps authentic identity visible until real scene readiness or explicit skip", async ({
+test("opening keeps authentic identity visible until decoded poster or explicit Continue", async ({
   page,
 }, info) => {
   let release: Route | undefined;
@@ -52,12 +52,16 @@ test("opening keeps authentic identity visible until real scene readiness or exp
     release = route;
   });
   await page.route("**/models/ciasny-r35.glb", () => {});
+  let posterRequest: Route | undefined;
+  await page.route("**/media/campaign-r35-orange-hero.webp", (route) => {
+    posterRequest = route;
+  });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const opening = page.locator(".home-opening");
   await expect(opening).toHaveAttribute("data-state", "loading");
   await expect(opening.getByRole("img", { name: "Nissan GT-R" })).toBeVisible();
   await expect(
-    opening.getByRole("button", { name: "Continue without 3D" }),
+    opening.getByRole("button", { name: "Continue browsing" }),
   ).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   const identity = await opening.locator("img").evaluateAll(async (nodes) => {
@@ -110,7 +114,7 @@ test("opening keeps authentic identity visible until real scene readiness or exp
     ),
   ).toBe(true);
   await expect(
-    opening.getByRole("button", { name: "Continue without 3D" }),
+    opening.getByRole("button", { name: "Continue browsing" }),
   ).toBeInViewport({ ratio: 1 });
   await info.attach("authentic-brand-geometry", {
     body: JSON.stringify({ images: identity, ringBounds, markBounds }, null, 2),
@@ -127,7 +131,9 @@ test("opening keeps authentic identity visible until real scene readiness or exp
     "inert",
     "",
   );
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
+  await expect.poll(() => Boolean(posterRequest)).toBe(true);
+  await posterRequest!.continue();
   await expect.poll(() => Boolean(release)).toBe(true);
   const frame = page.locator(".home-film--hero iframe");
   const poster = page.locator(".home-film--hero .home-film-backup");
@@ -160,15 +166,15 @@ test("opening keeps authentic identity visible until real scene readiness or exp
   );
   await expect(opening).toHaveAttribute("data-state", "resolved");
   await expect(page.locator(".home-signature-runway")).toHaveAttribute(
-    "data-scene-state",
-    "skipped",
+    "data-load-phase",
+    "downloading",
   );
   await expect(page.locator(".home-film--hero")).toHaveAttribute(
     "data-film-state",
     "embedded",
   );
   await expect(
-    page.getByRole("button", { name: "Continue without 3D" }),
+    page.getByRole("button", { name: "Continue browsing" }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Stop opening film" }).click();
   await expect(
@@ -187,13 +193,13 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
     }),
   );
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const lineup = page.getByRole("navigation", {
     name: "Explore all six models",
   });
   await expect(lineup.getByRole("link")).toHaveCount(6);
   await expect(lineup.getByText("View in 3D", { exact: true })).toHaveCount(1);
-  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(4);
+  await expect(lineup.getByText("View photos", { exact: true })).toHaveCount(5);
   for (const id of ["premium", "nismo", "tspec", "gtr50", "gt3", "formula-e"]) {
     await expect(lineup.locator(`a[href="/configurator/${id}"]`)).toHaveCount(
       1,
@@ -207,13 +213,7 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
   await expect(premium).not.toHaveAttribute("aria-describedby");
   await expect(page.locator("#home-model-asset-note")).toHaveCount(0);
   for (const card of await lineup.getByRole("link").all()) {
-    const specificationsOnly =
-      (await card.getAttribute("href")) === "/configurator/formula-e";
-    await expect(card.locator(":scope > img")).toHaveCount(
-      specificationsOnly ? 0 : 1,
-    );
-    if (specificationsOnly)
-      await expect(card.getByText("Reference image unavailable")).toBeVisible();
+    await expect(card.locator(":scope > img")).toHaveCount(1);
     await expect(card.getByRole("heading", { level: 3 })).toHaveCount(1);
     await expect(card.locator(".home-invitation-cta")).toHaveCount(1);
     await expect(card.locator(".home-invitation-cta")).toBeVisible();
@@ -222,13 +222,12 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
         ".home-invitation-copy > p, .home-invitation-meta, .home-invitation-cursor",
       ),
     ).toHaveCount(0);
-    if (!specificationsOnly)
-      await expect(card.locator("img")).toHaveCSS(
-        "object-fit",
-        (await card.getAttribute("href")) === "/configurator/gtr50"
-          ? "contain"
-          : "cover",
-      );
+    await expect(card.locator("img")).toHaveCSS(
+      "object-fit",
+      (await card.getAttribute("href")) === "/configurator/gtr50"
+        ? "contain"
+        : "cover",
+    );
     await expect(card.locator(".home-invitation-cta > span")).toHaveCSS(
       "opacity",
       "1",
@@ -236,18 +235,14 @@ test("six model cards preserve truthful actions and fit the viewport", async ({
     const photoOnly =
       (await card.getAttribute("href")) !== "/configurator/premium";
     await expect(card).toHaveAccessibleName(
-      `Explore ${await card.getByRole("heading", { level: 3 }).innerText()}: ${specificationsOnly ? "View specifications" : photoOnly ? "View photos" : "View in 3D"}`,
+      `Explore ${await card.getByRole("heading", { level: 3 }).innerText()}: ${photoOnly ? "View photos" : "View in 3D"}`,
     );
     await expect(card).toHaveAttribute(
       "data-experience",
-      specificationsOnly ? "specifications" : photoOnly ? "photography" : "3d",
+      photoOnly ? "photography" : "3d",
     );
     await expect(card.locator(".home-invitation-cta")).toHaveText(
-      specificationsOnly
-        ? "View specifications"
-        : photoOnly
-          ? "View photos"
-          : "View in 3D",
+      photoOnly ? "View photos" : "View in 3D",
     );
   }
   await settleCardGeometry(premium, info);
@@ -311,7 +306,7 @@ test("reduced motion keeps the gate static and preserves model card actions", as
 }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await expect(page.locator(".home-opening")).toHaveAttribute(
     "data-state",
     "resolved",
@@ -346,7 +341,7 @@ test("model card borders stay inside their grid tracks without overlapping", asy
     }),
   );
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const lineup = page.getByRole("navigation", {
     name: "Explore all six models",
   });
@@ -356,19 +351,11 @@ test("model card borders stay inside their grid tracks without overlapping", asy
   for (const card of await lineup.locator("a").all()) {
     await card.scrollIntoViewIfNeeded();
     const experience = await card.getAttribute("data-experience");
-    if (experience === "specifications") {
-      await expect(card.locator("img")).toHaveCount(0);
-      await expect(card.locator(".reference-unavailable")).toHaveCount(1);
-      await expect(card.locator(".reference-unavailable-label")).toHaveText(
-        "Reference image unavailable",
-      );
-    } else {
-      expect(["3d", "photography"]).toContain(experience);
-      await expect(card.locator("img")).toHaveCount(1);
-      await card
-        .locator("img")
-        .evaluate((image: HTMLImageElement) => image.decode());
-    }
+    expect(["3d", "photography"]).toContain(experience);
+    await expect(card.locator("img")).toHaveCount(1);
+    await card
+      .locator("img")
+      .evaluate((image: HTMLImageElement) => image.decode());
   }
   await lineup.locator("a").first().scrollIntoViewIfNeeded();
   // Freeze only reveal translation so this measures the layout box, not scroll progress.
@@ -499,6 +486,7 @@ test("opening keeps the preloaded player and modal focus until entry", async ({
     });
   });
   await page.route("**/models/ciasny-r35.glb", () => {});
+  await page.route("**/media/campaign-r35-orange-hero.webp", () => {});
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const film = page.locator(".home-film--hero");
   const frame = film.locator("iframe");
@@ -508,10 +496,10 @@ test("opening keeps the preloaded player and modal focus until entry", async ({
   const firstFrame = await frame.elementHandle();
   await expect(page.locator(".home-opening")).toHaveAttribute("open", "");
   await expect(
-    page.getByRole("button", { name: "Continue without 3D" }),
+    page.getByRole("button", { name: "Continue browsing" }),
   ).toBeFocused();
   expect(requests).toBe(1);
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await expect(frame).toHaveCount(1);
   expect(
     await page.evaluate(
@@ -540,15 +528,28 @@ test("opening player deadline starts after gate release and retry restores the p
     requests++;
   });
   await page.route("**/models/ciasny-r35.glb", () => {});
+  let posterRequest: Route | undefined;
+  await page.route("**/media/campaign-r35-orange-hero.webp", (route) => {
+    posterRequest = route;
+  });
   await page.clock.install();
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const film = page.locator(".home-film--hero");
   const poster = film.locator(".home-film-backup");
-  await expect(film).toHaveAttribute("data-film-poster", "decoded");
+  await expect(film).toHaveAttribute("data-film-poster", "loading");
   await page.clock.fastForward(30000);
+  await expect(page.locator(".home-opening")).toHaveAttribute(
+    "data-load-phase",
+    "error",
+  );
   expect(requests).toBe(1);
   await expect(film.locator("iframe")).toHaveCount(1);
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
+  await expect.poll(() => Boolean(posterRequest)).toBe(true);
+  await posterRequest!.continue();
+  await expect(film).toHaveAttribute("data-film-poster", "decoded");
+  await expect(film.locator(".home-film-entry")).toHaveCount(0);
+  await expect(film.getByRole("status")).toHaveCount(0);
   await expect.poll(() => requests).toBe(1);
   await expect(film).toHaveAttribute("data-film-document", "loading");
   await expect(film.locator("iframe")).toHaveCSS("opacity", "0");
@@ -589,7 +590,7 @@ test("full-width opening and complete GT-R50 keep their intact frames with keybo
     }),
   );
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   const film = page.locator(".home-film--hero");
   const frame = film.locator("iframe");
   const box = (await frame.boundingBox())!;
@@ -645,7 +646,7 @@ test("detail poster and intact player occupy the same viewport without leaking i
     }),
   );
   await page.goto("/");
-  await continueHomeWithout3D(page);
+  await continueHomeBrowsing(page);
   await page.locator(".home-expanding-runway").evaluate((section) => {
     const sticky = section.firstElementChild as HTMLElement;
     scrollTo({
