@@ -51,8 +51,51 @@ export async function sectionTarget(page,selector,progress=.5) {return page.loca
   const sticky=child&&getComputedStyle(child).position==='sticky';
   return scrollY+rect.top+(sticky?Math.max(0,rect.height-child.getBoundingClientRect().height)*p:0);
 },progress);}
-export function audioProofWaitExpression(before) {
-  return `(${assessAudio.toString()})(${JSON.stringify(before)},globalThis.__r35HomeAudio.snapshot()).passed`;
+export async function waitForAudioProof({before,read,pause,now=()=>performance.now()}) {
+  // Assess in Node: the page receives only a directly serialized snapshot read,
+  // never source text for eval under the application's unchanged strict CSP.
+  const startedAt=now(),deadline=startedAt+budgets.initialPage;let samples=0;
+  while(now()<deadline){
+    const playing=await bounded(read(),Math.min(budgets.command,deadline-now()),'Native audio snapshot');samples++;
+    assert.ok(now()<deadline,'Original 25000ms audio proof deadline exceeded after snapshot');
+    const proof=assessAudio(before,playing);
+    if(proof.passed)return {playing,proof,window:{startedAt,deadline,budget:budgets.initialPage,samples}};
+    const remaining=deadline-now();if(remaining>0)await pause(Math.min(100,remaining));
+  }
+  throw new Error('Original 25000ms audio proof deadline exceeded');
+}
+export function observeRouteExit() {
+  const home=document.querySelector('.cinematic-home'),menu=document.querySelector('.home-menu-dialog'),canvas=document.querySelector('.home-signature-runway canvas'),link=document.querySelector('.home-menu-primary a[href="/models"]');
+  const style=element=>{if(!element)return null;const css=getComputedStyle(element),box=element.getBoundingClientRect();return {connected:element.isConnected,clipPath:css.clipPath,opacity:css.opacity,transform:css.transform,pointerEvents:css.pointerEvents,rect:{x:box.x,y:box.y,width:box.width,height:box.height},animations:element.getAnimations().map(animation=>{const timing=animation.effect?.getComputedTiming();return {playState:animation.playState,currentTime:animation.currentTime,playbackRate:animation.playbackRate,timing:timing&&{delay:timing.delay,duration:timing.duration,progress:timing.progress,endTime:timing.endTime,localTime:timing.localTime}};})};};
+  const box=link?.getBoundingClientRect(),hit=box?document.elementFromPoint(box.x+box.width/2,box.y+box.height/2):null;
+  return {pathname:location.pathname,documentReadyState:document.readyState,menuOpen:menu?.hasAttribute('open')??false,homeConnected:home?.isConnected??false,canvasConnected:canvas?.isConnected??false,menu:style(menu),link:style(link),linkCenterHit:hit&&{tag:hit.tagName,id:hit.id,className:hit.className,belongsToLink:hit===link||link.contains(hit)},nativeOwners:(globalThis.__r35HomeGpuFrames?.snapshot().contexts??[]).map(({id,sceneCanvas,connected})=>({id,sceneCanvas,connected}))};
+}
+export async function observeRouteAction({receipt,action,read,pause,now=()=>performance.now()}) {
+  const startedAt=now(),deadline=startedAt+budgets.command;Object.assign(receipt,{startedAt,deadline,budget:budgets.command,status:'running',samples:0});let outcome;
+  const pending=action(budgets.command).then(()=>{outcome={};},error=>{outcome={error};});
+  try {
+    while(!outcome&&now()<deadline){
+      const sample=await bounded(Promise.race([pending.then(()=>null),read().then(value=>({value}))]),Math.max(1,deadline-now()),'Native route action observation');
+      if(sample&&now()<deadline){receipt.last=sample.value;receipt.lastAt=now();receipt.samples++;}
+      if(!outcome&&now()<deadline)await bounded(Promise.race([pending,pause(Math.min(100,deadline-now()))]),Math.max(1,deadline-now()),'Native route action interval');
+    }
+    assert.ok(outcome,'Original 5000ms route action deadline exceeded');if(outcome.error)throw outcome.error;assert.ok(now()<=deadline,'Original 5000ms route action deadline exceeded after return');receipt.status='returned';
+  }catch(error){receipt.status='failed';receipt.error=String(error);throw error;}
+  finally{receipt.finishedAt=now();receipt.elapsedMs=receipt.finishedAt-startedAt;}
+}
+export async function waitForRouteExit({receipt,read,pause,now=()=>performance.now()}) {
+  const startedAt=now(),deadline=startedAt+budgets.command;Object.assign(receipt,{startedAt,deadline,budget:budgets.command,status:'waiting',samples:0});
+  try {
+    while(now()<deadline){
+      const sample=await bounded(read(),deadline-now(),'Native route observation');
+      assert.ok(now()<deadline,'Original 5000ms route deadline exceeded after snapshot');
+      receipt.last=sample;receipt.lastAt=now();receipt.samples++;
+      if(receipt.last.pathname==='/models'){receipt.status='passed';return receipt.last;}
+      const remaining=deadline-now();if(remaining>0)await pause(Math.min(100,remaining));
+    }
+    throw new Error('Original 5000ms route deadline exceeded');
+  }catch(error){receipt.status='failed';receipt.error=String(error);throw error;}
+  finally{receipt.finishedAt=now();receipt.elapsedMs=receipt.finishedAt-startedAt;}
 }
 async function sampleProviderPair(page) {
   const before={at:Date.now(),frames:[]},after={at:null,frames:[]},owned=[];
@@ -161,9 +204,8 @@ async function exercise({page,context,row,shot,check,save,receipts,target,held,i
     else {if(await mute.getAttribute('aria-pressed')==='true')await mute.click({timeout:budgets.command});if(['loading','playing'].includes(await legacy.getAttribute('data-audio-phase')))await control.click({timeout:budgets.command});}
     await page.waitForFunction(()=>!globalThis.__r35HomeAudio.snapshot().edges.some(edge=>edge.active&&edge.fromKind==='source'),null,{timeout:budgets.command});
     await control.click({timeout:budgets.command});const atStart=await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot());
-    await page.waitForFunction(audioProofWaitExpression(atStart),null,{timeout:budgets.initialPage,polling:100});
-    const playing=await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot()),proof=assessAudio(atStart,playing);assert.equal(proof.passed,true);assert.deepEqual(playing.issues,[]);
-    row.audioEntries??=[];row.audioEntries.push({label,mode,atStart,playing,proof});return {control,mute};
+    const {playing,proof,window}=await waitForAudioProof({before:atStart,read:()=>page.evaluate(()=>globalThis.__r35HomeAudio.snapshot()),pause:ms=>page.waitForTimeout(ms)});assert.equal(proof.passed,true);assert.deepEqual(playing.issues,[]);
+    row.audioEntries??=[];row.audioEntries.push({label,mode,atStart,playing,proof,window});return {control,mute};
   }
   await check('native-section-audio',async()=>{
     row.audioAtEntry=await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot());
@@ -195,7 +237,10 @@ async function exercise({page,context,row,shot,check,save,receipts,target,held,i
   await check('spa-exit-audio-gpu-cleanup',async()=>{
     await freshSectionAudio('native-menu-route-exit');
     row.beforeExit={gpu:await page.evaluate(()=>globalThis.__r35HomeGpuFrames.snapshot()),audio:await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot())};
-    await page.getByRole('button',{name:'Open menu',exact:true}).click({timeout:budgets.command});await page.locator('.home-menu-primary a[href="/models"]').click({timeout:budgets.command});await page.waitForFunction(()=>location.pathname==='/models',null,{timeout:budgets.command});
+    row.routeExitReceipt={actions:[],pathWait:{}};
+    const action=async(name,run)=>{const receipt={name};row.routeExitReceipt.actions.push(receipt);await observeRouteAction({receipt,action:run,read:()=>page.evaluate(observeRouteExit),pause:ms=>page.waitForTimeout(ms)});};
+    await action('open-menu',timeout=>page.getByRole('button',{name:'Open menu',exact:true}).click({timeout}));await action('models-link',timeout=>page.locator('.home-menu-primary a[href="/models"]').click({timeout}));
+    await waitForRouteExit({receipt:row.routeExitReceipt.pathWait,read:()=>page.evaluate(observeRouteExit),pause:ms=>page.waitForTimeout(ms)});
     await page.waitForTimeout(500);row.afterExit={gpu:await page.evaluate(()=>globalThis.__r35HomeGpuFrames.snapshot()),audio:await page.evaluate(()=>globalThis.__r35HomeAudio.snapshot())};assert.equal(row.afterExit.audio.edges.some(e=>e.active&&e.fromKind==='source'),false);const recordingContexts=new Set(row.audioEntries.map(entry=>entry.proof.contextId));assert.ok(row.afterExit.audio.contexts.filter(context=>recordingContexts.has(context.id)).every(context=>context.state==='closed'),'Owned R35 recording contexts close; unrelated UI cue contexts are separate');assert.ok(row.afterExit.gpu.contexts.every(context=>!context.connected));
   });
 }
