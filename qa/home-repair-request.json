@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "allow": true,
+  "allow": false,
   "contract": "home-repair-reconstructed-20261014-v1",
   "baselineCommit": "75db282ea80770c3b7772c1ad8d5e994f3ddd1af",
   "baselineTree": "79671bdf0f7d201425c4e32621927c0b43b687f1ce0111ed09ce480c4bcc0298",

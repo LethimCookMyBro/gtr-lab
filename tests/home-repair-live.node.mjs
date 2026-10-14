@@ -49,8 +49,8 @@ test('live invocation rejects alternate origins, sources, budgets, staging and u
  for(const patch of [{CI:'false'},{GITHUB_ACTIONS:'false'},{GITHUB_REPOSITORY:'other/repo'},{GITHUB_REF:'refs/heads/other'},{GITHUB_EVENT_NAME:'workflow_dispatch'},{R35_HOME_LIVE_MESSAGE:'[stage-home-repair]'},{R35_HOME_LIVE_VIEWPORT:'unknown'},{R35_HOME_LIVE_URL:'https://example.test'},{R35_SOURCE_SHA:'b'.repeat(40)},{R35_CAPTURE_TIMEOUT:'90000'},{HOME_QA_URL:'https://example.test'}])assert.throws(()=>validateLiveRequest(expectedLiveRequest,{...env,...patch}),error=>!String(error).includes('Final accepted staged commit'));
 });
 
-test('exact81f live request targets all four accepted viewports and rejects drifted source/input/model pins',()=>{
+test('exact161 live request targets all four accepted viewports and rejects drifted source/input/model pins',()=>{
  for(const name of ['desktop','mobile','tablet','landscape']){const target=validateLiveRequest(expectedLiveRequest,{...env,R35_HOME_LIVE_VIEWPORT:name});assert.equal(target.name,name);assert.equal(target.origin,liveOrigin);}
- assert.equal(expectedLiveRequest.stagedCommit,'81f67c3e28229b68d5583781680a885cb4d375d6');assert.equal(expectedLiveRequest.sourceTree,'a0fcd2aec6e4e353ffc4099120a78f467928ebb7b0026deb52749a1ae3dec230');
+ assert.equal(expectedLiveRequest.stagedCommit,'161cffe8a371e5b480f1ee581e62dcc0499e7386');assert.equal(expectedLiveRequest.sourceTree,'44a235ce77f9a4a9e53e66212c59b94b94940133e9737b893c71acbf0acc7127');
  for(const key of ['stagedCommit','sourceTree','inputTree','model','audio','formulaPhoto']){const changed=structuredClone(expectedLiveRequest);changed[key]='drift';assert.throws(()=>validateLiveRequest(changed,env));}
 });

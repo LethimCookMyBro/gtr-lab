@@ -6,8 +6,8 @@ export const liveContract='home-repair-public-candidate-20261014-v1';
 export const liveReleaseToken='[release-home-repair]';
 export const liveReleaseMarker='release-home-repair-approved-20261014.approved';
 // Exact reviewed staging identity; runtime still requires the separately approved release marker.
-export const acceptedStageCommit='81f67c3e28229b68d5583781680a885cb4d375d6';
-export const acceptedSource='a0fcd2aec6e4e353ffc4099120a78f467928ebb7b0026deb52749a1ae3dec230';
+export const acceptedStageCommit='161cffe8a371e5b480f1ee581e62dcc0499e7386';
+export const acceptedSource='44a235ce77f9a4a9e53e66212c59b94b94940133e9737b893c71acbf0acc7127';
 export const acceptedInputs='f72be7c75795563b91ed5e0158eb788a4ad0b16f25429152f3c7010e52afb0a0';
 export const expectedLiveRequest=Object.freeze({version:1,allow:true,contract:liveContract,stagedCommit:acceptedStageCommit,sourceTree:acceptedSource,inputTree:acceptedInputs,model,audio,formulaPhoto});
 export function validateLiveRequest(request,env) {
