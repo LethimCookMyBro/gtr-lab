@@ -59,7 +59,7 @@ export const installIntegratedStudyCaptureObserver = new Function(
 
 import { execFileSync } from "node:child_process";
 import { sourceIdentity } from "./ui-optimization-policy.mjs";
-export const STUDY_PARENT = "271a674e9adf59e87d86b02fe63008ac5fb6eef6";
+export const STUDY_PARENT = "a517830f8e11c1ee969b15fe6402b2fb70e50d4b";
 export const STUDY_RUNTIME_TREE =
   "2eeb020da40db1aaa6b6b44021578bbf85cb894e06682d0e381988b2ee1f9a5a";
 export function validateIntegratedStudyEnvironment(env) {

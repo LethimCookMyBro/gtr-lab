@@ -1,9 +1,10 @@
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { URL as NodeURL } from "node:url";
 import { createHash } from "node:crypto";
 import { Box3, PerspectiveCamera, Texture, Vector3 } from "three";
 import { createVehicleLoader } from "../src/components/three/createVehicleLoader";
-import anchors from "../src/data/r35-study-camera-anchors.json";
+const anchors = JSON.parse(readFileSync(new NodeURL("../src/data/r35-study-camera-anchors.json", import.meta.url), "utf8"));
 // @ts-expect-error Existing dependency-free QA helpers are JavaScript modules.
 import * as studyReadiness from "../scripts/integrated-study-readiness.mjs";
 const {
