@@ -158,6 +158,7 @@ function ContextHealth({ onError }: { onError: (message: string) => void }) {
 
 /** One canvas; mount with a new key to retry a failed graphics context. */
 export default function VehicleScene(props: VehicleSceneProps) {
+  const integrated = props.cabinLayout?.kind === "integrated";
   const [dpr, setDpr] = useState(() =>
     initialVehiclePixelRatio(props.renderQuality),
   );
@@ -167,6 +168,10 @@ export default function VehicleScene(props: VehicleSceneProps) {
     props.onProgress,
     props.onError,
     props.disabledEmissive,
+    undefined,
+    false,
+    0,
+    integrated,
   );
   const cabinRequest =
     props.cabinPreparation && props.cabinPreparation.phase !== "idle"
@@ -174,7 +179,7 @@ export default function VehicleScene(props: VehicleSceneProps) {
       : 0;
   const [proxyFailed, setProxyFailed] = useState(false);
   const proxyAsset = useVehicleAsset(
-    props.cabin ? CABIN_PROXY_URL : null,
+    props.cabin && !integrated ? CABIN_PROXY_URL : null,
     { paint: [], headlights: [], taillights: [] },
     () => {},
     () => setProxyFailed(true),
@@ -194,11 +199,12 @@ export default function VehicleScene(props: VehicleSceneProps) {
     request: number;
     message: string;
   } | null>(null);
-  const cabinAsset = useResidentCabinAsset(
-    props.cabinPreparation,
+  const detachedCabinAsset = useResidentCabinAsset(
+    integrated ? undefined : props.cabinPreparation,
     (request, message) => setCabinLoadFailure({ request, message }),
     props.onCabinProgress,
   );
+  const cabinAsset = integrated ? asset : detachedCabinAsset;
   // Canvas is created before the asynchronous assets arrive. Read the latest
   // owners at final renderer disposal, after its scene children detach/restore.
   const ownedAssets = useRef({ asset, cabinAsset, proxyAsset });
@@ -238,9 +244,8 @@ export default function VehicleScene(props: VehicleSceneProps) {
         fallback={<CanvasFallback />}
         onCreated={({ gl }) => {
           prepareAsyncRendererDisposal(gl, () => {
-            ownedAssets.current.cabinAsset?.dispose();
-            ownedAssets.current.proxyAsset?.dispose();
-            ownedAssets.current.asset?.dispose();
+            for (const owner of new Set(Object.values(ownedAssets.current)))
+              owner?.dispose();
           });
           // ContactShadows removes scene.background for its depth pass. Clear
           // unused render-target pixels transparently even with an opaque canvas.

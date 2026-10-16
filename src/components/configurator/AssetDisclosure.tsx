@@ -52,6 +52,8 @@ export function AssetDisclosure({
           )}
         </p>
       )}
+      {model.asset.cabinLayout?.kind === "integrated" &&
+        model.asset.changes?.map((change) => <p key={change}>{change}</p>)}
       {study && !interactive && (
         <p>
           {model.asset.displayName}. Original approximate geometry; not
@@ -92,13 +94,15 @@ export function AssetDisclosure({
         <div>
           <dt>Detailed interior</dt>
           <dd>
-            {model.asset.cabinPreview
-              ? "Original authored preview · work in progress"
-              : model.asset.interior
-                ? study
-                  ? "Modeled study cabin"
-                  : "Verified"
-                : "Unavailable in this asset"}
+            {model.asset.cabinLayout?.kind === "integrated"
+              ? "Source-authored cabin · inspection study"
+              : model.asset.cabinPreview
+                ? "Original authored preview · work in progress"
+                : model.asset.interior
+                  ? study
+                    ? "Modeled study cabin"
+                    : "Verified"
+                  : "Unavailable in this asset"}
           </dd>
         </div>
         <div>

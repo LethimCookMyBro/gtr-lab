@@ -53,3 +53,6 @@ playwright-loading-report/
 playwright-loading-lifecycle-report/
 
 playwright-exhibition-report/
+
+# Study-specific browser evidence stays in CI artifacts.
+playwright-integrated-study-report/

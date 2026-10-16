@@ -1,0 +1,518 @@
+[
+  {
+    "id": "polytigr-r35-2008-precision-meshopt-rebuilt",
+    "path": "/models/polytigr-r35-2008-precision-meshopt-rebuilt.glb",
+    "bytes": 25813544,
+    "sha256": "a8f6e3e15ab71075f8caf817d362d31be8b7f0f4734f12602ea6348599727585",
+    "source": {
+      "title": "Nissan GT-R 2008 red",
+      "author": "PolyTigr (formerly TGRRRR)",
+      "url": "https://sketchfab.com/3d-models/nissan-gt-r-2008-red-c8cd27c3c8cf4e2d86da031f1e98f8c8"
+    },
+    "license": {
+      "name": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "originalSha256": "30b44d970d500b665ae638ca93122df6edb763c76281c754b6fab43565d9e721",
+    "changes": [
+      "Constant texture slots converted to equivalent factors; identical retained image bytes deduplicated; bounded attribute quantization and Meshopt compression. Ordered topology and cabin parts preserved."
+    ],
+    "chunks": [
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0000.bin",
+        "bytes": 262144,
+        "sha256": "03b786c68a8a4746c0022835ee0e479851cb772b19c0506653b2ea9c4569ecab"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0001.bin",
+        "bytes": 262144,
+        "sha256": "66c520118689ca1bea98cec4d2f9e68417b44c7957c425251228915d5e4df7ce"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0002.bin",
+        "bytes": 262144,
+        "sha256": "8dce944b99d41c69a117b76910f5896f90cd8e905f0147d9c0301096b8707bc9"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0003.bin",
+        "bytes": 262144,
+        "sha256": "5c520537eb688ea46df27a7d1f76ec288ab8dc42330cb797dbc68b2cbb16a20f"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0004.bin",
+        "bytes": 262144,
+        "sha256": "aa418bd5661e0aa870b8b786bdd455fb6f7475d8790f2ffa9a63675b7a48340b"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0005.bin",
+        "bytes": 262144,
+        "sha256": "5ec2463cd0f542d0a89d66d2d568b7089d67e0b38cceb8189175d691b3a7123a"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0006.bin",
+        "bytes": 262144,
+        "sha256": "3b86aedfa1032d1a75536e14f6879724e68fa667851b93d16e7248de2f924610"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0007.bin",
+        "bytes": 262144,
+        "sha256": "50c7d04d5311bf6ed03ae0070756b39d5f0eb5b23a4e5b7837abf1481beee9f3"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0008.bin",
+        "bytes": 262144,
+        "sha256": "999cc7caa6a400dedc52a2eb2425f997b5a07cc4364976e4f734a0b3e93ea576"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0009.bin",
+        "bytes": 262144,
+        "sha256": "500132449a29f9d46ffe11dd068515449597a9090fae300557854c4848683a6c"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0010.bin",
+        "bytes": 262144,
+        "sha256": "819ee367c035d818832e56fab44b10fd1ab29fa8eb5e02050acf5ed967787e45"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0011.bin",
+        "bytes": 262144,
+        "sha256": "afee4d73a65c5cd61f3113c5089330b5706a5375bca55f923437092bf2b4e0c2"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0012.bin",
+        "bytes": 262144,
+        "sha256": "ed0199cd05123a1eebf2b8fb3fdc71344ae45cd31ade892decf6d3fbeb6ae161"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0013.bin",
+        "bytes": 262144,
+        "sha256": "a547db65e1e9bde6bb684c0cc508d4b4c2a9021c813b31e02fb8801798b378b8"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0014.bin",
+        "bytes": 262144,
+        "sha256": "775a8d325f92e9421378960763bdd46ad8151e07b5f25458e2be77c6bc4a9ac9"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0015.bin",
+        "bytes": 262144,
+        "sha256": "6a5c879eb935653d9c94c1ab804ba75b7ce72bdb24461fb8eb6480cd71581a00"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0016.bin",
+        "bytes": 262144,
+        "sha256": "507eed65cdfecad6e4072ea85a279e41a767d66bc77a5439993806e0c0825cb0"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0017.bin",
+        "bytes": 262144,
+        "sha256": "5c5831f0f9e2b522aef0c60c45cc78aaf5a3bcac7cf013fbc6a6f717218a6a36"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0018.bin",
+        "bytes": 262144,
+        "sha256": "a34049e6a21e09b0e8dbc49a6220b0f602970763e89949327860852081ba5687"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0019.bin",
+        "bytes": 262144,
+        "sha256": "08d4d6819e66a25391024ac5f38e61b1cf7afe1c05317552f5366f298e83bd47"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0020.bin",
+        "bytes": 262144,
+        "sha256": "db497a72a684b00ebae34b56ed453ac7915b045b99eeadf78460fff581544185"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0021.bin",
+        "bytes": 262144,
+        "sha256": "5a967a5280c88446bd0e84b3103ae71b0dd2f5a2b4cf936408d05f4ecfeb6b2e"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0022.bin",
+        "bytes": 262144,
+        "sha256": "5dcf8327e65b16ba2085d6732974f11637ae597b4813a308341df7e80cd14021"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0023.bin",
+        "bytes": 262144,
+        "sha256": "92a35f52d12f981b4a3d185376fdfbf4d283230660a2d374e3698a726197bd1f"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0024.bin",
+        "bytes": 262144,
+        "sha256": "56e0a92925d34895855526f333597d0d92d9fece52b4093a8bf6fd4e8697e8f3"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0025.bin",
+        "bytes": 262144,
+        "sha256": "137553971284ab912e15b03116fd6af64207f5a577942efb223ec4e248c11015"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0026.bin",
+        "bytes": 262144,
+        "sha256": "e28504f5e2dd7aa575ddb9e69f5efbd64bd3f25cd1218b87249b1d6782b789b7"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0027.bin",
+        "bytes": 262144,
+        "sha256": "15c48a750e5c00da379cdd3e616d778ee5d1dd065777464466d9e6a6d287815d"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0028.bin",
+        "bytes": 262144,
+        "sha256": "89688ee8700c07f2ea41cce7e3473a4fe1f55a038434ad98ef881a8a2e0cfe80"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0029.bin",
+        "bytes": 262144,
+        "sha256": "d34cbac7ea089ffe2965f845aeb1fa99dfd6a7287ef24b1a9c55dfcf27dc4640"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0030.bin",
+        "bytes": 262144,
+        "sha256": "3cf48a9eb4fe4e32a144c200d2433190de5b29cec3cb88eba993f23be476870b"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0031.bin",
+        "bytes": 262144,
+        "sha256": "d4cd26f763b2be5ae328abf230ef428cc724e65c53654cefbefaf4d182e88cf6"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0032.bin",
+        "bytes": 262144,
+        "sha256": "a43ea20efb5b266a81c4c5d2b2bd2d6b66d1603f2c8ee191bfd20c8f97a73acc"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0033.bin",
+        "bytes": 262144,
+        "sha256": "290b7d2e4300711e0df08a67fd12a80027209bd4cb70ecf61a5c29961333f3cd"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0034.bin",
+        "bytes": 262144,
+        "sha256": "e1d31aee70360843a4a44bbbf88c9bc5428a58eedd7841a51cba781230e0b7cc"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0035.bin",
+        "bytes": 262144,
+        "sha256": "c399af8b15bfa1a482b6fc8d4ec2df97e52f1c691e7361d4fd4e9468c505bc00"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0036.bin",
+        "bytes": 262144,
+        "sha256": "8039cd5e715f3e709eafb5f223d56fbc6819c093f822d44129b0a86aae88a46f"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0037.bin",
+        "bytes": 262144,
+        "sha256": "c179909def4c7941de9b7cb3a32c64b3bebae9810e99c1e5ab92c63fe2ac2445"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0038.bin",
+        "bytes": 262144,
+        "sha256": "4f2d3080a7560b1591169432f95eb14d08ed4be5229bc964e8e1820e638e8429"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0039.bin",
+        "bytes": 262144,
+        "sha256": "674488008646975249c5d0d3544b727722aa3d953666014335ec89346bcd6a96"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0040.bin",
+        "bytes": 262144,
+        "sha256": "cdf9daefcbd1e545a34fd8c01d9adc2f4ad1a34fa1a29f71d02bd5ae4db8d53a"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0041.bin",
+        "bytes": 262144,
+        "sha256": "f5b2995965cecedeadbf6ba6e8fa6baf341164293e5494bb4c8297a9dce183b2"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0042.bin",
+        "bytes": 262144,
+        "sha256": "4178a0907bb7b6493c06266e4f2a8b2515bda4aa5a8bdab9a6a54b5f97c65025"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0043.bin",
+        "bytes": 262144,
+        "sha256": "1867160397f3403d1eef18fe09f8dd4c4b7726a8eec803c8f92cbbd5b489dd77"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0044.bin",
+        "bytes": 262144,
+        "sha256": "f00610f6627e88486d91acdd8a8df1f31a0e1a30294f4d57d702116579821e39"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0045.bin",
+        "bytes": 262144,
+        "sha256": "6b91cc21d92f7f752f84d49c5c87a850eb05b303b02125ca4e3224bd9183b5c8"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0046.bin",
+        "bytes": 262144,
+        "sha256": "75f03c5c6ecbd1767a682033a9339ccf110c04e29a0c9a8ee6a0d43c6a2038b1"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0047.bin",
+        "bytes": 262144,
+        "sha256": "48618a1a0b305d720711b03d3914f9a00f2721fe7efafc3b8aa31996e055cced"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0048.bin",
+        "bytes": 262144,
+        "sha256": "475de6557752d523fbf955aa73e47f6c860df92a3b6ee8dd0a0d1bb4b62afc8a"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0049.bin",
+        "bytes": 262144,
+        "sha256": "37d6f9a2d58dc9b6c397429393cbb435025b1955254639d69d14e4609c0fb0ae"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0050.bin",
+        "bytes": 262144,
+        "sha256": "11c4e3b52fe530a48c6cd2737d7f5dfb8870c19387e07326f7694e5cdadd6141"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0051.bin",
+        "bytes": 262144,
+        "sha256": "a0551d6209b6e61cf88b9344c00410e9a3230e13d6b05293cfe3f0be4ba9ef1b"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0052.bin",
+        "bytes": 262144,
+        "sha256": "b90f111e4d12a988962fec73808fe2a01a3bd2bddb71a956396044dca3a25106"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0053.bin",
+        "bytes": 262144,
+        "sha256": "100fe9eb089582c65b93b1688a751c5e8241cf92daa0ce61a835a80200d25c30"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0054.bin",
+        "bytes": 262144,
+        "sha256": "517d8ba2f5cdd3804db209b67e987dd3e5a6e7e72eeb5c1bd6e8503670a6cdc1"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0055.bin",
+        "bytes": 262144,
+        "sha256": "66ce34adef27028712f27193564f8254e942cd818d9f1d2d88a38ee062ef32e5"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0056.bin",
+        "bytes": 262144,
+        "sha256": "1f72e904d14c574df98958a0bdf2599c7a1b72684ee10024139726d34be5b237"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0057.bin",
+        "bytes": 262144,
+        "sha256": "942a5ec01afa5c22975112b2592407e54c2cafdaf1d1c08a0194912ee93051f7"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0058.bin",
+        "bytes": 262144,
+        "sha256": "84a3c0159cce4245fda0dc0038fca12f343e0c2c0b0dcac7a2b98bdc19d30b04"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0059.bin",
+        "bytes": 262144,
+        "sha256": "c82765acf90cdb5cb32454ccd2c3549ec96ba28665f6746e9245b470a2aa5efe"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0060.bin",
+        "bytes": 262144,
+        "sha256": "50a2f6460b5e81a8331c7b056445b0c2fef379af581c1d9e5c1e37b0737c8a9f"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0061.bin",
+        "bytes": 262144,
+        "sha256": "1a9c3b9d4443b7e3cd91c0b03de7d867ea1376bb470ff94a11ec71fbe09dcea2"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0062.bin",
+        "bytes": 262144,
+        "sha256": "5a026240517f99eda8524c57186cc5833afa54a9a36a30cf1ee4aab602721e8f"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0063.bin",
+        "bytes": 262144,
+        "sha256": "4eb1adc22f978da2656a4ef447331390fc9e517a8459bcfad145ce6c5dd644f3"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0064.bin",
+        "bytes": 262144,
+        "sha256": "97a091398438d8aa1568867c6250a0293a87ba2eaaaba75ea6abc5ced87b0bc2"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0065.bin",
+        "bytes": 262144,
+        "sha256": "71e3796d6be13a9ac9d8cf1c37db1c1b794eb2ddc0f1109952864a89e7c4749c"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0066.bin",
+        "bytes": 262144,
+        "sha256": "cc6d13cc82672fc6eafe1a60a0fca2c1bb7500bf1f139e1cdd01fa0c45ec8743"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0067.bin",
+        "bytes": 262144,
+        "sha256": "cc727f4996f06e3659e0a199761297be9cd5b9eb50eb9944bb8f8678efe2c3f6"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0068.bin",
+        "bytes": 262144,
+        "sha256": "d7aadf05b78d5da688befe64085cda9f7454319fd54927f4a2a8205e37a26d48"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0069.bin",
+        "bytes": 262144,
+        "sha256": "479f9d4fea055f6784216a665edf4115134d8d54905774077924f31d131d725b"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0070.bin",
+        "bytes": 262144,
+        "sha256": "7babc07a66db8fe2e9152d1123d7bc50015278efa8cb77744ac3bb0bd30abec9"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0071.bin",
+        "bytes": 262144,
+        "sha256": "d959dff6231a2b419a08b1e5653cfe328132a1da0b75111c0aff24e4afd59b18"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0072.bin",
+        "bytes": 262144,
+        "sha256": "f1cd1d34224b575b8206ade1ea0a9dd33551d20055d1b03d8a1067e8ffc21296"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0073.bin",
+        "bytes": 262144,
+        "sha256": "f4f9015ea37a4852938d5cad2b190c8b40bbbe2b547e379d80696cbed27cbe99"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0074.bin",
+        "bytes": 262144,
+        "sha256": "b5dfe371786fb6fc2d0a8a5360f7362d60c0ccc5891816e4dee45353d0deb098"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0075.bin",
+        "bytes": 262144,
+        "sha256": "09cca31d9a53b4994256c4a245b7de34467dc374c8c38afb0e9810527eb48488"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0076.bin",
+        "bytes": 262144,
+        "sha256": "36fc2903a2259b1c92d75f61bdcc067773fd74a3165ddf1235dfb2ddc4f869ea"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0077.bin",
+        "bytes": 262144,
+        "sha256": "df5398a48e46230128ebd50c2837671ebfa839d9d6de3f01a5dcf7ac1647f858"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0078.bin",
+        "bytes": 262144,
+        "sha256": "8ef4ff5ab12cf881d6042ffd4b00592e406ee3804bac7353fa862a6e6fe52bdb"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0079.bin",
+        "bytes": 262144,
+        "sha256": "752259fe3d047ca46274093af2ac9cb2d7a861784977c19d5d7f1a781cb0d5c2"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0080.bin",
+        "bytes": 262144,
+        "sha256": "bfe32a1ef7406b41f19540b341e3ad965f3c660aaea591cc2e16b3cda0c0ed9d"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0081.bin",
+        "bytes": 262144,
+        "sha256": "8203da4722caaf404596f9b5dadba9db37049cf1c0c85d42283a2a6c85b5f986"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0082.bin",
+        "bytes": 262144,
+        "sha256": "322c8d7b64d13f72a78b1bb88eef851a73dcb37cbf22058da0f57852b0851e0e"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0083.bin",
+        "bytes": 262144,
+        "sha256": "9b2ee7ff176d558a9b7982a0d1705ecd12e9d919c37641549fc57d9c46c07baf"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0084.bin",
+        "bytes": 262144,
+        "sha256": "ee9f208d6b797f40ba6f4fbaf5bdf599de628654248c4576538618deccccacaf"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0085.bin",
+        "bytes": 262144,
+        "sha256": "bb035be3930fa5b6bdc1f115b6d5cb9671ca857734dd9ff7aceae963f1974d78"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0086.bin",
+        "bytes": 262144,
+        "sha256": "4acd442bdceaef13d3d40f62bb9a453a9cd29b4a95aa34d8067fcbf78882f817"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0087.bin",
+        "bytes": 262144,
+        "sha256": "768cffd2c67f4bab5c8cbd6e09d647bcc40ee24bd126d67b5329ca46bf9e9c37"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0088.bin",
+        "bytes": 262144,
+        "sha256": "22b4010b23f2f2b7b29cc07127b89228477e25bc955d581c229e3752f2577197"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0089.bin",
+        "bytes": 262144,
+        "sha256": "1258f554ea06995dbb4dc3b9ed5efba1b7bc5f35c8b06501e61a2cf5e0ba656c"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0090.bin",
+        "bytes": 262144,
+        "sha256": "73ff3bd3ed63a173f468025d7d856d8ecfd564c2ae565c04e05aedb89b887b71"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0091.bin",
+        "bytes": 262144,
+        "sha256": "eb50a459df462e13892b5e1697078df2bcbf54c6db99199047ed92e14d590644"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0092.bin",
+        "bytes": 262144,
+        "sha256": "164e653f6ce4af5f8e4e8b047e90947c3f07a6e0c99508d1438993d45a369094"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0093.bin",
+        "bytes": 262144,
+        "sha256": "59fe967380f3e97c5c9a5d7af703579a1a9843b64757944c0172b5d86fc966ea"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0094.bin",
+        "bytes": 262144,
+        "sha256": "96d78278f1eee9a119b480443e116a8eaf8f03f23252b206b3d13951a63f9ec9"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0095.bin",
+        "bytes": 262144,
+        "sha256": "2cf7cfe27ce7aa310618432e351333765e3d8d6828cb409dc2a2ef2e92cce040"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0096.bin",
+        "bytes": 262144,
+        "sha256": "64146dbbccb563b3205324f1723766be232a29b31ad182ed739ef830b1556ada"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0097.bin",
+        "bytes": 262144,
+        "sha256": "5581c369062025b2ed456b548e7a62b1f2e238788cbe252823386b94d4b111f3"
+      },
+      {
+        "path": "polytigr-r35-2008-precision-meshopt-rebuilt/0098.bin",
+        "bytes": 123432,
+        "sha256": "3e88f993d5b7222685188bf530d8f4e73371d9ca2b4abbe477fed40f650d10e6"
+      }
+    ]
+  }
+]

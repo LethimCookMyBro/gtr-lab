@@ -90,6 +90,11 @@ export function CabinRuntime({
   request,
   props,
 }: Props) {
+  const integrated = props.cabinLayout?.kind === "integrated";
+  const sourceViews =
+    props.cabinLayout?.kind === "integrated"
+      ? props.cabinLayout.sourceViews
+      : undefined;
   const gl = useThree((state) => state.gl),
     scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera) as PerspectiveCamera;
@@ -118,13 +123,16 @@ export function CabinRuntime({
     props.cabinPreparation?.phase !== "ready" &&
     props.cabinPreparation?.phase !== "error";
   const driverView = useMemo(
-    () => cabinCameraView("driver", exterior),
-    [exterior],
+    () => cabinCameraView("driver", exterior, sourceViews),
+    [exterior, sourceViews],
   );
   const desiredSeat = props.cabin?.phase === "active" ? props.cabin.seat : null;
   const desiredView = useMemo(
-    () => (desiredSeat ? cabinCameraView(desiredSeat, exterior) : undefined),
-    [desiredSeat, exterior],
+    () =>
+      desiredSeat
+        ? cabinCameraView(desiredSeat, exterior, sourceViews)
+        : undefined,
+    [desiredSeat, exterior, sourceViews],
   );
   const showingDriver =
     presentation?.key === resourceKey && presentation.phase === "driver";
@@ -154,6 +162,8 @@ export function CabinRuntime({
       return () => abort.abort();
     }
     if (!asset) return () => abort.abort();
+    if (integrated)
+      callbacks.current.onCabinProgress?.(request, { phase: "preparing" });
     void (async () => {
       for (const step of createCabinPreparationSteps(
         gl,
@@ -161,6 +171,7 @@ export function CabinRuntime({
         camera,
         asset,
         exterior,
+        integrated ? "integrated" : "detached",
       )) {
         await enqueueRendererPreparation(gl, {
           signal: abort.signal,
@@ -204,6 +215,7 @@ export function CabinRuntime({
   }, [
     asset,
     exterior,
+    integrated,
     gl,
     scene,
     camera,
@@ -262,7 +274,8 @@ export function CabinRuntime({
           1e-7 ||
         (expected && !matchesPose(camera, expected)) ||
         !attached(exterior.scene, scene) ||
-        attached(asset?.scene, scene) !== wantsFull ||
+        attached(asset?.scene, scene) !== (integrated || wantsFull) ||
+        (integrated && asset !== exterior) ||
         (wantsFull && attached(proxy?.scene, scene))
       )
         return null;
@@ -354,6 +367,7 @@ export function CabinRuntime({
     camera,
     driverView,
     desiredSeat,
+    integrated,
     size.width,
     size.height,
     dpr,
@@ -376,22 +390,24 @@ export function CabinRuntime({
         appliedKey={appliedKey}
         onManual={props.onManual}
       />
-      <CabinAttachment
-        asset={asset}
-        exterior={exterior}
-        proxy={proxy}
-        proxyFailed={proxyFailed}
-        onProxyError={onProxyError}
-        onOwnerError={setOwnerFailure}
-        onWindowStatus={onWindowStatus}
-        active={!!cabinView}
-        prepared={fullPrepared}
-        request={request}
-        onReady={() => {}}
-        onError={(failedRequest, message) =>
-          callbacks.current.onCabinError?.(failedRequest, message)
-        }
-      />
+      {!integrated && (
+        <CabinAttachment
+          asset={asset}
+          exterior={exterior}
+          proxy={proxy}
+          proxyFailed={proxyFailed}
+          onProxyError={onProxyError}
+          onOwnerError={setOwnerFailure}
+          onWindowStatus={onWindowStatus}
+          active={!!cabinView}
+          prepared={fullPrepared}
+          request={request}
+          onReady={() => {}}
+          onError={(failedRequest, message) =>
+            callbacks.current.onCabinError?.(failedRequest, message)
+          }
+        />
+      )}
     </>
   );
 }

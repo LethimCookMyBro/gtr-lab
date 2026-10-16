@@ -2,6 +2,7 @@ import type {
   CameraView,
   MaterialRoles,
 } from "../components/three/sceneHelpers";
+import type { CabinLayout } from "../components/three/cabinPreview";
 import facts from "./specifications.json";
 import imageCredits from "./image-credits.json";
 export type VariantId =
@@ -20,7 +21,8 @@ export interface AssetManifest {
   author: string | null;
   materialRoles: MaterialRoles;
   interior: boolean;
-  cabinPreview?: "original-wip";
+  cabinPreview?: "original-wip" | "integrated-study";
+  cabinLayout?: CabinLayout;
   lights: boolean;
   disabledEmissive?: string[];
   cameraViews?: Partial<Record<string, CameraView>>;
@@ -37,7 +39,7 @@ export interface VehicleModel {
   imageReferenceLabel?: string;
   imagePosition: string;
   imageCaption: string;
-  powerValue: number;
+  powerValue: number | null;
   powerUnit: string;
   powerLabel?: string;
   engineLabel?: string;
@@ -150,6 +152,7 @@ const licensedR35: AssetManifest = {
   },
   interior: false,
   cabinPreview: "original-wip",
+  cabinLayout: { kind: "detached" },
   lights: true,
   disabledEmissive: ["Reverse_Emitter"],
 };

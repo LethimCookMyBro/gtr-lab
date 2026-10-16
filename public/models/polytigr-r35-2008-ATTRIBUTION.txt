@@ -1,0 +1,18 @@
+Nissan GT-R 2008 red
+Creator: PolyTigr, formerly TGRRRR
+Creator profile: https://sketchfab.com/PolyTigr
+Original embedded author: TGRRRR (https://sketchfab.com/Tgrrrr)
+Original model: https://sketchfab.com/3d-models/nissan-gt-r-2008-red-c8cd27c3c8cf4e2d86da031f1e98f8c8
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License: https://creativecommons.org/licenses/by/4.0/
+Legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Source original recovered through official Ai2 Objaverse:
+https://huggingface.co/datasets/allenai/objaverse/blob/main/glbs/000-010/c8cd27c3c8cf4e2d86da031f1e98f8c8.glb
+Original SHA-256: 30b44d970d500b665ae638ca93122df6edb763c76281c754b6fab43565d9e721
+
+Modifications, 2026-10-14: exact constant base-color and metallic/roughness texture-to-factor conversion; byte-identical image/texture deduplication and unused-image pruning; bounded position/UV/direction quantization; Meshopt compression. Topology, ordered indices, all cabin parts, source material alpha/sidedness and retained encoded images preserved. Original author/license/source/title remain embedded.
+Derivative: polytigr-r35-2008-precision-meshopt-rebuilt.glb
+Derivative SHA-256: a8f6e3e15ab71075f8caf817d362d31be8b7f0f4734f12602ea6348599727585
+This is a new private rebuild; it is not the lost historical optimized file.
+No Nissan endorsement, manufacturer certification or trademark rights are represented.

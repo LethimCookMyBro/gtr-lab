@@ -1,0 +1,10 @@
+MODEL LICENSE NOTICE
+
+The Nissan GT-R 2008 model is attributed to PolyTigr (formerly TGRRRR) and is offered under Creative Commons Attribution 4.0 International (CC BY 4.0).
+
+License deed: https://creativecommons.org/licenses/by/4.0/
+Full legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+
+This notice is not a substitute for the legal code. Preserve appropriate attribution, a license link and an indication of modifications when sharing. Do not imply creator or manufacturer endorsement. See ATTRIBUTION.txt for exact creator, source and changes. Source license receipts are in provenance/ and the separate original recovery archive.
+
+This notice concerns the model only. Software dependency licenses remain those of their respective authors. No rights in Nissan trademarks or manufacturer certification are asserted.

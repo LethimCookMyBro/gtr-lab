@@ -19,6 +19,7 @@ export function ConfiguratorPanels({
   interactive: boolean;
 }) {
   const state = useConfigurator();
+  const integrated = model.asset.cabinLayout?.kind === "integrated";
   const selectedCamera =
     state.cabin.phase === "active" ? "interior" : state.cameraPreset;
   const [lastPanel, setLastPanel] = useState(state.panel);
@@ -54,8 +55,10 @@ export function ConfiguratorPanels({
             <button
               key={m.id}
               aria-label={`${m.shortName} ${m.tagline}`}
-              aria-current={m.id === model.id ? "page" : undefined}
-              className={m.id === model.id ? "selected" : ""}
+              aria-current={
+                m.id === model.id && !integrated ? "page" : undefined
+              }
+              className={m.id === model.id && !integrated ? "selected" : ""}
               onClick={() => {
                 audio.play();
                 navigate("/configurator/" + m.id);
@@ -72,13 +75,30 @@ export function ConfiguratorPanels({
                 <small>{m.tagline}</small>
                 <ImageReferenceLabel model={m} />
               </span>
-              {m.id === model.id ? (
+              {m.id === model.id && !integrated ? (
                 <Check size={18} />
               ) : (
                 <ArrowRight size={18} />
               )}
             </button>
           ))}
+          {model.id === "premium" && (
+            <button
+              aria-label="2008 R35 study"
+              aria-pressed={integrated}
+              className={integrated ? "selected" : ""}
+              onClick={() => {
+                navigate("/configurator/premium?study=2008");
+                close();
+              }}
+            >
+              <span>
+                <strong>2008 R35 study</strong>
+                <small>Optional whole-car and cabin inspection</small>
+              </span>
+              {integrated ? <Check size={18} /> : <ArrowRight size={18} />}
+            </button>
+          )}
         </div>
       )}
       {panel === "camera" && (
@@ -99,8 +119,9 @@ export function ConfiguratorPanels({
             )}
           {model.asset.cabinPreview && (
             <p className="availability-note" id="cabin-preview-note">
-              Cabin preview · Work in progress. Original approximation, not a
-              verified factory interior. Instruments are static.
+              {integrated
+                ? "2008 source cabin · Inspection views under review. Factory seating positions are unverified; instruments are static."
+                : "Cabin preview · Work in progress. Original approximation, not a verified factory interior. Instruments are static."}
             </p>
           )}
           <div className="camera-choices">

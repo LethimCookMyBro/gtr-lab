@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,7 +21,8 @@ import {
   X,
 } from "lucide-react";
 import { ReferenceUnavailable } from "../components/ReferenceUnavailable";
-import { getModel, models } from "../data/models";
+import { models } from "../data/models";
+import { getConfiguratorModel } from "../data/r35IntegratedStudy";
 import { paints } from "../data/configuration";
 import { useConfigurator } from "../stores/configurator";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -38,26 +39,31 @@ import { formatModelBytes } from "../components/home/homeReadiness";
 const VehicleScene = lazy(() => import("../components/three/VehicleScene"));
 export function ConfiguratorPage() {
   const { model: id = "premium" } = useParams();
-  const model = getModel(id);
-  const currentModel = useRef(id);
-  currentModel.current = id;
+  const [search] = useSearchParams();
+  const integrated = id === "premium" && search.get("study") === "2008";
+  const model = getConfiguratorModel(id, integrated);
+  const selectionKey = `${id}:${integrated ? "2008" : "catalog"}`;
+  const currentModel = useRef(selectionKey);
+  currentModel.current = selectionKey;
   const [windowView, setWindowView] = useState<{
     model: string;
     status: CabinWindowStatus;
-  }>({ model: id, status: "loading" });
+  }>({ model: selectionKey, status: "loading" });
   const onWindowStatus = useCallback(
     (status: CabinWindowStatus) => {
-      if (currentModel.current === id) setWindowView({ model: id, status });
+      if (currentModel.current === selectionKey)
+        setWindowView({ model: selectionKey, status });
     },
-    [id],
+    [selectionKey],
   );
-  const windowStatus = windowView.model === id ? windowView.status : "loading";
+  const windowStatus =
+    windowView.model === selectionKey ? windowView.status : "loading";
   const state = useConfigurator();
   // Initialize the route's model/generation before mounting its expensive Canvas.
   // Otherwise a warm lazy scene mounts once here and again after selectVariant.
   const [initializedModel, setInitializedModel] = useState<string | null>(null);
-  const sceneInitialized = initializedModel === id;
-  const sceneKey = `${id}:${state.sceneRequest}`;
+  const sceneInitialized = initializedModel === selectionKey;
+  const sceneKey = `${selectionKey}:${state.sceneRequest}`;
   const currentScene = useRef(sceneKey);
   currentScene.current = sceneKey;
   const [renderWait, setRenderWait] = useState({
@@ -97,8 +103,8 @@ export function ConfiguratorPage() {
   useEffect(() => () => useConfigurator.getState().exitCabin(false), []);
   useEffect(() => {
     state.selectVariant(id);
-    setInitializedModel(id);
-  }, [id]);
+    setInitializedModel(selectionKey);
+  }, [id, selectionKey]);
   useEffect(() => {
     if (reduced) useConfigurator.setState({ autoRotate: false });
   }, [reduced, state.autoRotate]);
@@ -221,7 +227,14 @@ export function ConfiguratorPage() {
           ? state.cabinPreparation.request
           : undefined
       }
-      data-cabin-model-url={model.asset.cabinPreview ? CABIN_URL : undefined}
+      data-cabin-model-url={
+        model.asset.cabinPreview
+          ? integrated
+            ? model.asset.url!
+            : CABIN_URL
+          : undefined
+      }
+      data-cabin-layout={model.asset.cabinLayout?.kind}
       data-cabin-progress={cabinProgress?.phase}
       data-cabin-started-at={state.cabinPreparationStartedAt ?? undefined}
       data-cabin-ready-at={state.cabinPreparationReadyAt ?? undefined}
@@ -229,7 +242,7 @@ export function ConfiguratorPage() {
       className={
         "configurator environment-" +
         state.selectedEnvironment +
-        (hasAsset && model.asset.cabinPreview && !state.error
+        (hasAsset && model.asset.cabinPreview && !integrated && !state.error
           ? " has-window-view"
           : "") +
         (interactive ? " is-scene-ready" : "")
@@ -261,7 +274,7 @@ export function ConfiguratorPage() {
           {hasAsset && model.asset.kind === "licensed-model" && (
             <div
               className={
-                model.asset.cabinPreview && !state.error
+                model.asset.cabinPreview && !integrated && !state.error
                   ? "provenance-with-window-status"
                   : undefined
               }
@@ -273,10 +286,12 @@ export function ConfiguratorPage() {
                 <Info size={14} />
                 Model provenance & limitations
               </button>
-              {model.asset.cabinPreview && !state.error && (
+              {model.asset.cabinPreview && !integrated && !state.error && (
                 <span
                   className="cabin-window-status"
-                  hidden={state.cabin.phase === "active" || windowStatus === "ready"}
+                  hidden={
+                    state.cabin.phase === "active" || windowStatus === "ready"
+                  }
                   role="status"
                   aria-live="polite"
                 >
@@ -335,6 +350,7 @@ export function ConfiguratorPage() {
                 onManual={onManual}
                 onEnvironmentFallback={onEnvironmentFallback}
                 onCapabilities={onCapabilities}
+                cabinLayout={model.asset.cabinLayout}
                 cabin={model.asset.cabinPreview ? state.cabin : undefined}
                 cabinPreparation={
                   model.asset.cabinPreview ? state.cabinPreparation : undefined
@@ -449,11 +465,17 @@ export function ConfiguratorPage() {
             title={
               !interactive
                 ? "Lights require a ready 3D model"
-                : "Toggle running lights: front LED strips and rear rings"
+                : integrated
+                  ? "Authored source lamps; dynamic controls unavailable"
+                  : "Toggle running lights: front LED strips and rear rings"
             }
           >
             <Sun />
-            <span>Lights {state.lightsEnabled ? "on" : "off"}</span>
+            <span>
+              {integrated
+                ? "Source lamps"
+                : `Lights ${state.lightsEnabled ? "on" : "off"}`}
+            </span>
           </button>
           <button
             disabled={!interactive || reduced || state.cabin.phase === "active"}
@@ -535,18 +557,32 @@ export function ConfiguratorPage() {
       )}
       {hasAsset &&
         (state.cabin.phase !== "closed" ? (
-          <CabinPreviewControls onExit={exitCabin} reducedMotion={reduced} />
+          <CabinPreviewControls
+            onExit={exitCabin}
+            reducedMotion={reduced}
+            integrated={integrated}
+          />
         ) : (
           <footer className="paint-rail">
             <div className="paint-label">
-              <span>Exterior / Concept palette</span>
+              <span>
+                {integrated
+                  ? "Exterior / Authored materials"
+                  : "Exterior / Concept palette"}
+              </span>
               <strong>
-                {interactive ? paint.name : "Select your perspective"}
+                {integrated
+                  ? "Source finish"
+                  : interactive
+                    ? paint.name
+                    : "Select your perspective"}
               </strong>
               <small>
-                {interactive
-                  ? "Illustrative finish, not an official paint catalog"
-                  : "Paint controls unlock with the 3D model"}
+                {integrated
+                  ? "Paint and lamp controls unavailable in this study"
+                  : interactive
+                    ? "Illustrative finish, not an official paint catalog"
+                    : "Paint controls unlock with the 3D model"}
               </small>
             </div>
             <div

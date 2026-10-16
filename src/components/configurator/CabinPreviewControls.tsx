@@ -11,9 +11,11 @@ const seats: { id: CabinSeat; label: string }[] = [
 export function CabinPreviewControls({
   onExit,
   reducedMotion,
+  integrated = false,
 }: {
   onExit: () => void;
   reducedMotion: boolean;
+  integrated?: boolean;
 }) {
   const { cabin, beginCabin, setCabinSeat } = useConfigurator();
   const focus = useRef<HTMLButtonElement>(null);
@@ -42,11 +44,16 @@ export function CabinPreviewControls({
       aria-label="Cabin preview controls"
     >
       <div className="cabin-preview-copy">
-        <strong>Cabin preview · work in progress</strong>
+        <strong>
+          {integrated
+            ? "2008 cabin · inspection study"
+            : "Cabin preview · work in progress"}
+        </strong>
         {cabin.phase !== "error" && (
           <p>
-            Original authored R35 approximation. Not an official factory
-            interior.
+            {integrated
+              ? "Source-backed inspection views; factory seating positions unverified."
+              : "Original authored R35 approximation. Not an official factory interior."}
           </p>
         )}
       </div>
@@ -55,7 +62,9 @@ export function CabinPreviewControls({
           <div
             className="cabin-seat-choices"
             role="group"
-            aria-label="Fixed cabin seats"
+            aria-label={
+              integrated ? "Cabin inspection views" : "Fixed cabin seats"
+            }
           >
             {seats.map((seat) => (
               <button

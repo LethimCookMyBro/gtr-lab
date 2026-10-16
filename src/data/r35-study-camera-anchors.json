@@ -1,0 +1,23 @@
+{
+  "sourceSha256": "30b44d970d500b665ae638ca93122df6edb763c76281c754b6fab43565d9e721",
+  "candidateSha256": "a8f6e3e15ab71075f8caf817d362d31be8b7f0f4734f12602ea6348599727585",
+  "coordinateFrame": "Loaded glTF scene world after full original node transforms, metres per glTF; +Y up, +Z front, driver side toward +X. Not raw accessor coordinates.",
+  "qualification": "These exact fixed eye/target poses were visually tested in CPU Blender on October13 against the prior verified decoded candidate; that candidate kept this recovered original geometry within the same strict bounds. Old images are unavailable. New rebuild has not been rendered. Treat poses as inspection-camera starting points requiring fresh private visual review, not factory seat measurements or a collision-safe camera volume. Rear roof appearance was a prior review concern.",
+  "sourceViews": {
+    "driver": {
+      "position": [-1.79, 0.8, 0.55],
+      "target": [-2, 0.4, 1.38],
+      "fov": 72
+    },
+    "passenger": {
+      "position": [-2.49, 0.8, 0.55],
+      "target": [-2.25, 0.4, 1.38],
+      "fov": 72
+    },
+    "rear": {
+      "position": [-1.79, 0.8, -0.28],
+      "target": [-2.08, 0.48, 1.22],
+      "fov": 78
+    }
+  }
+}

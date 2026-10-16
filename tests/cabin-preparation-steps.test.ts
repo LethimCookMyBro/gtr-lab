@@ -276,3 +276,77 @@ it("does not charge native-prefix time before the first link poll to the shader 
     vi.useRealTimers();
   }
 });
+
+it.each([false, true])(
+  "prepares an integrated mounted scene without reparenting or mutating authored state; throw=%s",
+  async (throws) => {
+    const { createCabinPreparationSteps } = await implementation(),
+      f = fixture();
+    const owner = new Group();
+    owner.scale.setScalar(1.4);
+    owner.position.set(3, 4, 5);
+    owner.add(f.cabin);
+    f.scene.add(owner);
+    const meshes = f.cabin.children as Mesh[];
+    meshes.forEach((mesh, index) => {
+      mesh.layers.set(index % 2);
+      mesh.castShadow = true;
+      mesh.receiveShadow = index % 2 === 0;
+      mesh.renderOrder = 8;
+    });
+    const snapshot = () =>
+      meshes.map((mesh) => [
+        mesh.parent,
+        mesh.material,
+        mesh.layers.mask,
+        mesh.castShadow,
+        mesh.receiveShadow,
+        mesh.renderOrder,
+        mesh.visible,
+        mesh.frustumCulled,
+        mesh.matrix.toArray(),
+      ]);
+    const before = snapshot(),
+      rendererBefore = f.state(),
+      cameraLayers = f.camera.layers.mask;
+    const steps = createCabinPreparationSteps(
+      f.gl as any,
+      f.scene,
+      f.camera,
+      { scene: f.cabin } as any,
+      { scale: 1.4, position: [3, 4, 5] },
+      "integrated",
+    );
+    expect(snapshot()).toEqual(before);
+    expect(f.camera.layers.mask).toBe(cameraLayers);
+    f.gl.render.mockImplementation(() => {
+      expect(f.cabin.parent).toBe(owner);
+      expect(owner.parent).toBe(f.scene);
+      if (throws) throw new Error("mounted failure");
+    });
+    const step = steps.find((step) => step.kind === "geometry")!;
+    if (throws) expect(() => step.run()).toThrow("mounted failure");
+    else step.run();
+    expect(snapshot()).toEqual(before);
+    expect(f.cabin.parent).toBe(owner);
+    expect(owner.position.toArray()).toEqual([3, 4, 5]);
+    expect(owner.scale.toArray()).toEqual([1.4, 1.4, 1.4]);
+    expect(f.state()).toEqual(rendererBefore);
+  },
+);
+
+it("rejects an integrated asset that is detached from the exact scene", async () => {
+  const { createCabinPreparationSteps } = await implementation(),
+    f = fixture();
+  const steps = createCabinPreparationSteps(
+    f.gl as any,
+    f.scene,
+    f.camera,
+    { scene: f.cabin } as any,
+    { scale: 1, position: [0, 0, 0] },
+    "integrated",
+  );
+  expect(() => steps.find((step) => step.kind === "geometry")!.run()).toThrow(
+    /mounted.*scene/i,
+  );
+});

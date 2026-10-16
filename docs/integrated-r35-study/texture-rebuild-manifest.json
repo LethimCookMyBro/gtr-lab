@@ -1,0 +1,1611 @@
+{
+  "original_sha256": "30b44d970d500b665ae638ca93122df6edb763c76281c754b6fab43565d9e721",
+  "original_bytes": 50181860,
+  "output_file": "polytigr-r35-2008-texture-cleanup-rebuilt.glb",
+  "output_sha256": "097fb1b61f41b701f1ffecae43268b5a7ca014890c9158e7bbb89e8823706bca",
+  "output_bytes": 50002844,
+  "script_sha256": "3c0cc17fa03a767e8b33886f8975f9f3fd25b0cd410e5ad17bfa692cad458b4f",
+  "tools": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0"
+  },
+  "conversion_count": 41,
+  "changes": [
+    {
+      "material": 0,
+      "name": "Glass",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 0
+      },
+      "source_image": 0,
+      "constant_rgba_u8": [
+        255,
+        255,
+        255,
+        181
+      ],
+      "before_factor": [
+        0.004,
+        0.004,
+        0.004,
+        0.6624483513109611
+      ],
+      "after_factor": [
+        0.004,
+        0.004,
+        0.004,
+        0.47020843759719205
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 0,
+      "name": "Glass",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 1
+      },
+      "source_image": 1,
+      "constant_gb_u8": [
+        25,
+        255
+      ],
+      "before_roughness_factor": 0.37153926040187024,
+      "after_roughness_factor": 0.036425417686457864,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 2,
+      "name": "dark_glassw",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 5
+      },
+      "source_image": 5,
+      "constant_rgba_u8": [
+        0,
+        0,
+        0,
+        127
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.0,
+        0.0,
+        0.0,
+        0.4980392156862745
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 2,
+      "name": "dark_glassw",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 6
+      },
+      "source_image": 6,
+      "constant_gb_u8": [
+        25,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.09803921568627451,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 3,
+      "name": "plastic",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 7
+      },
+      "source_image": 7,
+      "constant_rgba_u8": [
+        37,
+        37,
+        37,
+        255
+      ],
+      "before_factor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "after_factor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 5,
+      "name": "RedightGlass",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 12
+      },
+      "source_image": 12,
+      "constant_rgba_u8": [
+        254,
+        0,
+        0,
+        106
+      ],
+      "before_factor": [
+        1.0,
+        1.0,
+        1.0,
+        0.6358612805
+      ],
+      "after_factor": [
+        0.9911020971138298,
+        0.0,
+        0.0,
+        0.26431880679607844
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 5,
+      "name": "RedightGlass",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 13
+      },
+      "source_image": 13,
+      "constant_gb_u8": [
+        25,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.09803921568627451,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 7,
+      "name": "RedMet",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 18
+      },
+      "source_image": 18,
+      "constant_rgba_u8": [
+        135,
+        13,
+        12,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.24228112246555486,
+        0.004024717018496307,
+        0.003676507324047436,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 8,
+      "name": "RedLights",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 21
+      },
+      "source_image": 21,
+      "constant_rgba_u8": [
+        153,
+        21,
+        0,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.31854677812509186,
+        0.007499032043226175,
+        0.0,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 8,
+      "name": "RedLights",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 22
+      },
+      "source_image": 22,
+      "constant_gb_u8": [
+        38,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.14901960784313725,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 9,
+      "name": "lambert1",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 24
+      },
+      "source_image": 24,
+      "constant_gb_u8": [
+        49,
+        255
+      ],
+      "before_roughness_factor": 0.7836604725230824,
+      "after_roughness_factor": 0.1505857378573766,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 10,
+      "name": "WhiteLightGlass",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 26
+      },
+      "source_image": 26,
+      "constant_rgba_u8": [
+        255,
+        255,
+        255,
+        105
+      ],
+      "before_factor": [
+        1.0,
+        1.0,
+        1.0,
+        0.1724466463
+      ],
+      "after_factor": [
+        1.0,
+        1.0,
+        1.0,
+        0.07100744259411765
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 10,
+      "name": "WhiteLightGlass",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 27
+      },
+      "source_image": 27,
+      "constant_gb_u8": [
+        25,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.09803921568627451,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 11,
+      "name": "aluminium_engine_2",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 29
+      },
+      "source_image": 29,
+      "constant_rgba_u8": [
+        113,
+        114,
+        116,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.1651321945016676,
+        0.16826940018969075,
+        0.17464740365558504,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 12,
+      "name": "stop_red",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 32
+      },
+      "source_image": 32,
+      "constant_rgba_u8": [
+        123,
+        19,
+        18,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.19806931955994886,
+        0.006512090792594475,
+        0.006048833022857054,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 12,
+      "name": "stop_red",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 33
+      },
+      "source_image": 33,
+      "constant_gb_u8": [
+        13,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.050980392156862744,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 13,
+      "name": "aluminium",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 35
+      },
+      "source_image": 35,
+      "constant_rgba_u8": [
+        195,
+        199,
+        200,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.5457244613701866,
+        0.5711248294648731,
+        0.5775804404296506,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 14,
+      "name": "symbol_Gray",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 37
+      },
+      "source_image": 37,
+      "constant_rgba_u8": [
+        238,
+        238,
+        238,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.8549926081242337,
+        0.8549926081242337,
+        0.8549926081242337,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 14,
+      "name": "symbol_Gray",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 38
+      },
+      "source_image": 38,
+      "constant_gb_u8": [
+        51,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 15,
+      "name": "symbol_red",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 40
+      },
+      "source_image": 40,
+      "constant_rgba_u8": [
+        254,
+        28,
+        29,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.9911020971138298,
+        0.011612245179743885,
+        0.012286488356915872,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 15,
+      "name": "symbol_red",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 41
+      },
+      "source_image": 41,
+      "constant_gb_u8": [
+        10,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.0392156862745098,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 16,
+      "name": "Default_Material",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 43
+      },
+      "source_image": 43,
+      "constant_rgba_u8": [
+        188,
+        188,
+        188,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.5028864580325687,
+        0.5028864580325687,
+        0.5028864580325687,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 16,
+      "name": "Default_Material",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 44
+      },
+      "source_image": 44,
+      "constant_gb_u8": [
+        76,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2980392156862745,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 18,
+      "name": "wheel",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 49
+      },
+      "source_image": 49,
+      "constant_gb_u8": [
+        98,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.3843137254901961,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 20,
+      "name": "aluminium_engine_3",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 52
+      },
+      "source_image": 52,
+      "constant_rgba_u8": [
+        52,
+        52,
+        52,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.03433980680868217,
+        0.03433980680868217,
+        0.03433980680868217,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 20,
+      "name": "aluminium_engine_3",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 53
+      },
+      "source_image": 53,
+      "constant_gb_u8": [
+        74,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2901960784313726,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 21,
+      "name": "aluminium_engine_1",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 55
+      },
+      "source_image": 55,
+      "constant_rgba_u8": [
+        195,
+        199,
+        200,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.5457244613701866,
+        0.5711248294648731,
+        0.5775804404296506,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 22,
+      "name": "aluminium_engine_4",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 58
+      },
+      "source_image": 58,
+      "constant_rgba_u8": [
+        235,
+        244,
+        243,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.8307698767746546,
+        0.9046611743911496,
+        0.8962693533742664,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 23,
+      "name": "black_aluminium",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 61
+      },
+      "source_image": 61,
+      "constant_rgba_u8": [
+        8,
+        8,
+        8,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.0024282158683907,
+        0.0024282158683907,
+        0.0024282158683907,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 24,
+      "name": "mirror",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 64
+      },
+      "source_image": 64,
+      "constant_rgba_u8": [
+        245,
+        247,
+        246,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.9130986517934192,
+        0.9301108583754237,
+        0.9215818562772946,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 24,
+      "name": "mirror",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 65
+      },
+      "source_image": 65,
+      "constant_gb_u8": [
+        0,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.0,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 1.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 28,
+      "name": "adadasd_pasted__Material_246",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 75
+      },
+      "source_image": 75,
+      "constant_gb_u8": [
+        76,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2980392156862745,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 30,
+      "name": "symbol_gray",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 37
+      },
+      "source_image": 37,
+      "constant_rgba_u8": [
+        238,
+        238,
+        238,
+        255
+      ],
+      "before_factor": [
+        0.3248856707,
+        0.3248856707,
+        0.3248856707,
+        1.0
+      ],
+      "after_factor": [
+        0.27777484693398397,
+        0.27777484693398397,
+        0.27777484693398397,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 30,
+      "name": "symbol_gray",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 38
+      },
+      "source_image": 38,
+      "constant_gb_u8": [
+        51,
+        255
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2,
+      "before_metallic_factor": 0.4651295732,
+      "after_metallic_factor": 0.4651295732,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 34,
+      "name": "interier_plastic",
+      "slot": "baseColorTexture",
+      "original_texture_info": {
+        "index": 7
+      },
+      "source_image": 7,
+      "constant_rgba_u8": [
+        37,
+        37,
+        37,
+        255
+      ],
+      "before_factor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after_factor": [
+        0.018500220128379697,
+        0.018500220128379697,
+        0.018500220128379697,
+        1.0
+      ],
+      "color_rule": "RGB piecewise sRGB-to-linear, alpha linear /255; multiplied by original factor"
+    },
+    {
+      "material": 34,
+      "name": "interier_plastic",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 88
+      },
+      "source_image": 88,
+      "constant_gb_u8": [
+        102,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.4,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 35,
+      "name": "adadasd_Material_334",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 90
+      },
+      "source_image": 90,
+      "constant_gb_u8": [
+        76,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2980392156862745,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 36,
+      "name": "adadasd_Material_335",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 92
+      },
+      "source_image": 92,
+      "constant_gb_u8": [
+        76,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2980392156862745,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 37,
+      "name": "adadasd_Material_336",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 95
+      },
+      "source_image": 95,
+      "constant_gb_u8": [
+        76,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2980392156862745,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 38,
+      "name": "adadasd_Material_337",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 97
+      },
+      "source_image": 97,
+      "constant_gb_u8": [
+        76,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2980392156862745,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    },
+    {
+      "material": 39,
+      "name": "adadasd_Material_338",
+      "slot": "metallicRoughnessTexture",
+      "original_texture_info": {
+        "index": 99
+      },
+      "source_image": 99,
+      "constant_gb_u8": [
+        76,
+        0
+      ],
+      "before_roughness_factor": 1,
+      "after_roughness_factor": 0.2980392156862745,
+      "before_metallic_factor": 1,
+      "after_metallic_factor": 0.0,
+      "color_rule": "G roughness and B metallic linear /255; original factors multiplied; R/A unused in this slot"
+    }
+  ],
+  "geometry_buffer_views_copied_verbatim": [
+    {
+      "source_view": 0,
+      "output_view": 0,
+      "bytes": 9083664,
+      "sha256": "7b7689b95d4ef6007d4e3ebeb9888fd0340046b352b481b7f68dc46b3dbc3762"
+    },
+    {
+      "source_view": 1,
+      "output_view": 1,
+      "bytes": 4813856,
+      "sha256": "1b22deffa6a959f176371118804bce91e7a4c09fec22b13a0f9e07b4d83f1e63"
+    },
+    {
+      "source_view": 2,
+      "output_view": 2,
+      "bytes": 14441568,
+      "sha256": "fb3a4388455791357aa3296ac2e3929af390d73ad47b36da188cae4fc5793647"
+    },
+    {
+      "source_view": 3,
+      "output_view": 3,
+      "bytes": 6735296,
+      "sha256": "f78760b38e0586ad4490ef27ad53fdd308983863ac9eb35491b4f4ec1ca82f1c"
+    }
+  ],
+  "source_images": 101,
+  "retained_images": 45,
+  "source_texture_records": 101,
+  "used_source_texture_records": 63,
+  "retained_texture_records": 45,
+  "retained_encoded_image_bytes": 14772635,
+  "image_map": {
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "8": 3,
+    "9": 0,
+    "10": 4,
+    "11": 0,
+    "14": 0,
+    "15": 5,
+    "16": 6,
+    "17": 0,
+    "19": 7,
+    "20": 8,
+    "23": 0,
+    "25": 0,
+    "28": 0,
+    "30": 9,
+    "31": 10,
+    "34": 11,
+    "36": 12,
+    "39": 0,
+    "42": 0,
+    "45": 0,
+    "46": 13,
+    "47": 14,
+    "48": 15,
+    "50": 16,
+    "51": 17,
+    "54": 0,
+    "56": 18,
+    "57": 19,
+    "59": 20,
+    "60": 21,
+    "62": 22,
+    "63": 23,
+    "66": 0,
+    "67": 24,
+    "68": 25,
+    "69": 26,
+    "70": 27,
+    "71": 28,
+    "72": 29,
+    "73": 30,
+    "74": 31,
+    "76": 32,
+    "77": 33,
+    "78": 34,
+    "79": 35,
+    "80": 36,
+    "81": 37,
+    "82": 38,
+    "83": 39,
+    "84": 40,
+    "85": 41,
+    "86": 42,
+    "87": 43,
+    "89": 0,
+    "91": 32,
+    "93": 32,
+    "94": 44,
+    "96": 32,
+    "98": 32,
+    "100": 32
+  },
+  "texture_map": {
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "8": 3,
+    "9": 0,
+    "10": 4,
+    "11": 0,
+    "14": 0,
+    "15": 5,
+    "16": 6,
+    "17": 0,
+    "19": 7,
+    "20": 8,
+    "23": 0,
+    "25": 0,
+    "28": 0,
+    "30": 9,
+    "31": 10,
+    "34": 11,
+    "36": 12,
+    "39": 0,
+    "42": 0,
+    "45": 0,
+    "46": 13,
+    "47": 14,
+    "48": 15,
+    "50": 16,
+    "51": 17,
+    "54": 0,
+    "56": 18,
+    "57": 19,
+    "59": 20,
+    "60": 21,
+    "62": 22,
+    "63": 23,
+    "66": 0,
+    "67": 24,
+    "68": 25,
+    "69": 26,
+    "70": 27,
+    "71": 28,
+    "72": 29,
+    "73": 30,
+    "74": 31,
+    "76": 32,
+    "77": 33,
+    "78": 34,
+    "79": 35,
+    "80": 36,
+    "81": 37,
+    "82": 38,
+    "83": 39,
+    "84": 40,
+    "85": 41,
+    "86": 42,
+    "87": 43,
+    "89": 0,
+    "91": 32,
+    "93": 32,
+    "94": 44,
+    "96": 32,
+    "98": 32,
+    "100": 32
+  },
+  "retained_image_sources": [
+    {
+      "output_image": 0,
+      "source_image": 2,
+      "encoded_sha256": "57f1d22c902af26fbdb0a9f5c835b558f16fc8ddf7a53bfd60c0af72d6f0caf2",
+      "decoded_rgba_sha256": "f459353e0765d507d391187331a30e772f9bbf6108b7f466aa1a83a920ebe844",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 1,
+      "source_image": 3,
+      "encoded_sha256": "45e7bd2759327a90eb14055462cdbbcf356d8e229efcdb8dd6322fadeb757b8e",
+      "decoded_rgba_sha256": "4b5503b688a30c2c7f9bc578d4f6671fee7f8c9c706ab062b68424d368746c79",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 2,
+      "source_image": 4,
+      "encoded_sha256": "5207ae40f0706f59d7663ed8d13eecfd9dffa02f53ee11f071e0d3f20abad451",
+      "decoded_rgba_sha256": "8ad710c7b7e22bff8bda5161c39661614b41a7b8066e4d750dd9316ff09856b2",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 3,
+      "source_image": 8,
+      "encoded_sha256": "17f19788687b1fe316aa2682a4cadd8dd2d8e33000e4666e7fd05b6f78d134f6",
+      "decoded_rgba_sha256": "36a3cf653b7e971348d91e7f9a2f95c0d47f84b0714eea20cb8d4f4d69f4144c",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 4,
+      "source_image": 10,
+      "encoded_sha256": "d40605899cf8983a130021949d668afc9aa7db62448c62c1e6fa811369d0c594",
+      "decoded_rgba_sha256": "a12b490c1fcc82cfd21f07d5a3260fe6d1957ecb5ff2aba6b0365f9e240380e1",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 5,
+      "source_image": 15,
+      "encoded_sha256": "f4787c56fc64d5ac4a3c013438978a69423aaf547760adac88177cbdafdcf56f",
+      "decoded_rgba_sha256": "b7299ae8eb38a4f405bbcf7f6f9518a0d14f3eec905cb0361407459a99dd6b98",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 6,
+      "source_image": 16,
+      "encoded_sha256": "622666a3f529d71fb24a2ec5754c869eb9dbf680e22764444ac2d3099636b667",
+      "decoded_rgba_sha256": "291bd11fa792b56d6034b631abb2eaf63f7549de26bd692e648d3c886695389a",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 7,
+      "source_image": 19,
+      "encoded_sha256": "79d78d0310c92c8981d21c58ce0f5ae7d3291bb6f02cada4178884a78ecd54c6",
+      "decoded_rgba_sha256": "d9fd09c5d0f9799bd2bf1c129efa4fc3200038bdf12c8ec674ba322cbf422686",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 8,
+      "source_image": 20,
+      "encoded_sha256": "1ef0231c12ce9dd1b806a1088d518e3767063a1518964f93369edff6a429a243",
+      "decoded_rgba_sha256": "043c5609c69922f5e1306fd4ab84b5edffa9dfc50aa8aae859ec94f241fb09d0",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 9,
+      "source_image": 30,
+      "encoded_sha256": "54f6f250c9e3bb953c638fd5d3b0b901c0f5ff55590c6be1178c0b9ea50fe054",
+      "decoded_rgba_sha256": "6974c499b4f4726b73666f18e58975167b8976333cfefbdcced63099038cd498",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 10,
+      "source_image": 31,
+      "encoded_sha256": "0acef3fd46152db9aa3ab87bddce96a2a540be6efa0330c81366301478e6a25a",
+      "decoded_rgba_sha256": "e0f75d625865aa03f6cccf1ede1c5b3415cd824bf605b9d63e3b24bef089cd4e",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 11,
+      "source_image": 34,
+      "encoded_sha256": "0016c2b1ce76bf86d8585c80126f9645228ee569f255f439e429269401209fe1",
+      "decoded_rgba_sha256": "7eb9dedc81002bc58cd4dbc4da9aa8fcedd44cae567f1544d2a6fd133e882bc1",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 12,
+      "source_image": 36,
+      "encoded_sha256": "e0c2635a115949fc6b5da233f4d4dda2cbc1fa6abd9fd5ab895feb969ad42bc0",
+      "decoded_rgba_sha256": "7da749ac27866d4a644cd95fc6c68beeb8b53eca4e95764284d74b46d8d52531",
+      "dimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "output_image": 13,
+      "source_image": 46,
+      "encoded_sha256": "a40d284cc0cff8db970c26a9cdf1a4b46a9259a26b7f5c8871f7f6d3e932fe9d",
+      "decoded_rgba_sha256": "b1cf5498990677a7beb48d0351981b41df6f020637c01a97450bf04ec74e7f4d",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 14,
+      "source_image": 47,
+      "encoded_sha256": "17b2e2a5e9102c700b4d5dd744ec68205be80872d18be46db2baa401fc5b9b77",
+      "decoded_rgba_sha256": "c1d4845d15840771f1ae07c9826d9326492d1cc91ee2cff06b85092136726246",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 15,
+      "source_image": 48,
+      "encoded_sha256": "423d2167f6fd0509a886b16ecb40280de16a37a430783d8ccc92c196092a3fb4",
+      "decoded_rgba_sha256": "2924ab81f4557697cbd5b95fcfde08660a319d20f216ddb0e396f5f2be88bf65",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 16,
+      "source_image": 50,
+      "encoded_sha256": "aed6562eb3fd4343d39ca75f9f271d220ec65395110b79ef3e1d36c48f1bf87f",
+      "decoded_rgba_sha256": "82ef3fd684286e8d1d989fb6f166a62f23eed1d1bbd7c17346d77947621e9a12",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 17,
+      "source_image": 51,
+      "encoded_sha256": "d9ffaccc5fb688cb99028b15913dc8e51b4c443bcb86e00b57b6bbb6e2b98121",
+      "decoded_rgba_sha256": "c32b7a6517014ec227c4252b5f46761c2950f5770a4c6659cf737eb1d2387846",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 18,
+      "source_image": 56,
+      "encoded_sha256": "794587bf240a679c3f011cfd9fd845f1e51749dc18a49a3494c4decd5ece8e2c",
+      "decoded_rgba_sha256": "19c0aefc2e18686e61970ea79e81a320924c704a0f66b79858d0dc5988104d46",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 19,
+      "source_image": 57,
+      "encoded_sha256": "4b6fe3b2c80a0bda28fca5cc1c1418af4b3617d8fa5e27e15468d1d63b5339c1",
+      "decoded_rgba_sha256": "b0c9f9d5a9f1d69e62aadd69630d5ea4a756ead7f8485b8e804095996315fc83",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 20,
+      "source_image": 59,
+      "encoded_sha256": "39c0b3a5cdaea2ecc37aadc0cd2b2567669471ef7873eabbe087c6ec1229613e",
+      "decoded_rgba_sha256": "4bb5af864aea2ecbfc63cfad23f55c07d142c8c97a310aca3cdd8a465652e814",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 21,
+      "source_image": 60,
+      "encoded_sha256": "a1053276213a82c8d860d2de9db1f9398d43c1e8249ba12e3d6fc569abd091dd",
+      "decoded_rgba_sha256": "a23aa5d3349dd1358e5eb472f0cc941e9cbd8cdc5e64556ec1a31385d3425c45",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 22,
+      "source_image": 62,
+      "encoded_sha256": "d2e72468141d04d71b044fd67a0f28e90d570f8c5e519bc90c1abcea913fe6de",
+      "decoded_rgba_sha256": "fb7c4966ee18035fb27655bdd44e24bc357c5f9136d4162cec0ad70ce7fd4e01",
+      "dimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "output_image": 23,
+      "source_image": 63,
+      "encoded_sha256": "0c3509ae9261e336ebceb2035e13057abfaf16cdb2c5618bc8c013e2f42bee6b",
+      "decoded_rgba_sha256": "7710e08abfd40876de840067f24de5e97acfc195a8de9b3784112d7ae5687585",
+      "dimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "output_image": 24,
+      "source_image": 67,
+      "encoded_sha256": "ac7f68738070ed376adf79ae88d65edb0d7d2a020c96d58e3f76e10d903eb713",
+      "decoded_rgba_sha256": "491f9c6a81f1cd376e0601b5725df23519fcc658b27f17e6c8c7650141938c91",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 25,
+      "source_image": 68,
+      "encoded_sha256": "3b8640e3224d8bfd230c9b19ccdbcd32469ae4813f48941b9eae57a8e1806d0d",
+      "decoded_rgba_sha256": "9f59082aaeeee4c9e323eeab55c7717c93c5e1f9ad8652f3c7ef3cfda611576b",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 26,
+      "source_image": 69,
+      "encoded_sha256": "c8b5d5cd511eb740d4e1f91ab69f3f1dc3e1f02d95a6ca33ba207fc69b33e4d0",
+      "decoded_rgba_sha256": "ee44bd41af1de6ace16dbebb66ae9643e26a4f28813b11adfb876b192facfbd5",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 27,
+      "source_image": 70,
+      "encoded_sha256": "7f7f6842f80bc177696caba7c074701dec268d4130a33cd262e1a6b5fe90fdc0",
+      "decoded_rgba_sha256": "ad86eda0c853df6414ed78d9fdbb03fa1edc58c20afb13e828edf71b5c6b2e7a",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 28,
+      "source_image": 71,
+      "encoded_sha256": "84836294ff71ac930dfefe5106fdc260ac52192703185282e4be5feecb029f1b",
+      "decoded_rgba_sha256": "d698a4d5fadb9ad0989bb60683a51f1ce6f4c7875b4174d1d3012a50efa26121",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 29,
+      "source_image": 72,
+      "encoded_sha256": "330a3b74ec5f1ac8e0efdc943223a8f7ef751d7493490f241ad7d70565779595",
+      "decoded_rgba_sha256": "43fd38a66abc36fa0e5709a92fed0a37462c9d54f99919cb35f4bd65ff161982",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 30,
+      "source_image": 73,
+      "encoded_sha256": "e91c74064dfbd4219715b63e0d67768ab93dd3f81ebad8b157551bc4cdeb961a",
+      "decoded_rgba_sha256": "8438501be7fb44bf06f281c9dd30d5af929ec91fc4d7287ad25075d01ff89e2e",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 31,
+      "source_image": 74,
+      "encoded_sha256": "b92e1874215799c8ef9dd8675dec88b54c9436fd363d0bde4ef41b5d84c19f32",
+      "decoded_rgba_sha256": "206658abc6e063859909b945f4d09186685cc7fe4bf4718c2f021e745767a080",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 32,
+      "source_image": 76,
+      "encoded_sha256": "4a6d5f6f4289212b32a327927483d21242afab4850360ccc38b65d413736c861",
+      "decoded_rgba_sha256": "70eb492517cef240487f65d0264f9f63eeedcf9971302fedbeb4ff2b3c152746",
+      "dimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "output_image": 33,
+      "source_image": 77,
+      "encoded_sha256": "65025d2bc8726958ad1c942c8e59f491cc6447851bfdab877d90f13d92be1c4d",
+      "decoded_rgba_sha256": "0793db651a3a46e5e5585f06b9c10c1e2657bcceccc99ca20ae903b1898460f5",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 34,
+      "source_image": 78,
+      "encoded_sha256": "5e6387f49b4698a83a61a4242f366610f72bab932e037f57c95eddf75c79eb49",
+      "decoded_rgba_sha256": "bb84c4879c40c30af124fa67cbe743b3381df6c6c65f20774a282870cc52a3d9",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 35,
+      "source_image": 79,
+      "encoded_sha256": "d42d3767ec47e442bf22b1204e0b07db5daa08a9619711a62a2e936b2eb263a0",
+      "decoded_rgba_sha256": "5575f7e5208cf0a8230311f33b8fa9650a8bde38a7b4fb823ded81a91f09b404",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 36,
+      "source_image": 80,
+      "encoded_sha256": "5b395302406fcb3283ce480388882a94a3fef53c3e853103406291de496977dd",
+      "decoded_rgba_sha256": "991a5aab5a94dd169a48abde708cfd75fdc9923d0e3db36d93edd518cb982f49",
+      "dimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "output_image": 37,
+      "source_image": 81,
+      "encoded_sha256": "62d61f36711ca96c85905ae4e8094f99a1fd11d8dd11c4cb730307a91aea59c9",
+      "decoded_rgba_sha256": "972b97abc4e723466578f5a8871027edb2acfd2d9fde16e9ac7326017b11268a",
+      "dimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "output_image": 38,
+      "source_image": 82,
+      "encoded_sha256": "346f8cfbbbce21cc46d5d5673900dac865a1505b7d35c885f1bb09de42bacc7f",
+      "decoded_rgba_sha256": "b43aafaeb46d72a0fa1c550041163e08d298d8a5e6eb84beb05eafd2cb1d342b",
+      "dimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "output_image": 39,
+      "source_image": 83,
+      "encoded_sha256": "a479e18206eda6043950a8eafaf88be6e34ef9398e1d94bde038a5240afbe1f4",
+      "decoded_rgba_sha256": "cdc75a1474ba0fafc1a4c1543e829a1379db003bf4c4d8ec7307f7e8d10be1fb",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 40,
+      "source_image": 84,
+      "encoded_sha256": "b87aa054887d359f80081c87537a5180c175a3c299b18ed32782309b5c5e0c19",
+      "decoded_rgba_sha256": "c77e75224f6be897cd12769f4fe5b70d5fbbb4892fc01c42e4b903328be13656",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 41,
+      "source_image": 85,
+      "encoded_sha256": "05fb03f154f104347244016a2952fe0148e861d7801528da75388b7c9b4bed28",
+      "decoded_rgba_sha256": "625bc43f6f0f96d2ebec56717ea036f29ecac61ca4690abfb720d677a59d38a8",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 42,
+      "source_image": 86,
+      "encoded_sha256": "40c2d0d26567b038ace367605b2c710721cfe42123a563266d8f5886191ebeeb",
+      "decoded_rgba_sha256": "bad8747206b885b97f0dd734c279f3c7f91f89aec269ad298c98e6e3589bff67",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 43,
+      "source_image": 87,
+      "encoded_sha256": "9596f9486f4ee71bfd2372950d6fa8108306dc5c926122e005cb13d104dbf17f",
+      "decoded_rgba_sha256": "1945b4980609515dad686b4af314fc82e7055975d51dfe7b6e975443ce858b5c",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "output_image": 44,
+      "source_image": 94,
+      "encoded_sha256": "880cc83de2bf15991dea662c910632b59744931b4607c3d1bc642360042364f7",
+      "decoded_rgba_sha256": "fe46da935be50e7594c2a87fe785039db81192fe611c4bdda80c3701fc2e4f36",
+      "dimensions": [
+        1024,
+        1024
+      ]
+    }
+  ],
+  "removed_source_images": [
+    0,
+    1,
+    5,
+    6,
+    7,
+    12,
+    13,
+    18,
+    21,
+    22,
+    24,
+    26,
+    27,
+    29,
+    32,
+    33,
+    35,
+    37,
+    38,
+    40,
+    41,
+    43,
+    44,
+    49,
+    52,
+    53,
+    55,
+    58,
+    61,
+    64,
+    65,
+    75,
+    88,
+    90,
+    92,
+    95,
+    97,
+    99
+  ],
+  "lossy_image_changes": false,
+  "geometry_changes": false,
+  "notes": "Constant-factor conversion is mathematical glTF equivalence, subject to normal renderer floating-point arithmetic; no pixel-identity or browser validation claim."
+}

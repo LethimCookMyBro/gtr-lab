@@ -92,6 +92,7 @@ export function useVehicleAsset(
   onLoadState?: (state: HomeSceneLoadState) => void,
   nativeCabin = false,
   request: string | number = 0,
+  preserveAuthored = false,
 ) {
   const identity = JSON.stringify([
     url,
@@ -99,6 +100,7 @@ export function useVehicleAsset(
     disabledEmissive,
     nativeCabin,
     request,
+    preserveAuthored,
   ]);
   const [loaded, setLoaded] = useState<{
     identity: string;
@@ -171,11 +173,18 @@ export function useVehicleAsset(
             disposeVehicleObject(gltf.scene);
             return;
           }
+          if (preserveAuthored) {
+            gltf.scene.traverse((object) => {
+              const association = gltf.parser.associations.get(object);
+              if (association) object.userData.gltfSource = { ...association };
+            });
+          }
           owned = prepareVehicle(
             gltf.scene,
             JSON.parse(rolesKey) as MaterialRoles,
             JSON.parse(disabledEmissiveKey) as string[],
             nativeCabin,
+            preserveAuthored,
           );
           callbacks.current.onProgress(99);
           callbacks.current.onLoadState?.({ phase: "preparing" });
@@ -200,7 +209,15 @@ export function useVehicleAsset(
       window.clearTimeout(timeout);
       owned?.dispose();
     };
-  }, [url, rolesKey, disabledEmissiveKey, nativeCabin, request, identity]);
+  }, [
+    url,
+    rolesKey,
+    disabledEmissiveKey,
+    nativeCabin,
+    request,
+    identity,
+    preserveAuthored,
+  ]);
   // Never expose a previous route/request between render and effect cleanup.
   return loaded?.identity === identity ? loaded.asset : null;
 }

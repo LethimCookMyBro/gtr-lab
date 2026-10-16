@@ -2,8 +2,7 @@ import { DoubleSide, Mesh, MeshStandardMaterial, type Object3D } from "three";
 import type { CameraView, VectorTuple } from "./sceneHelpers";
 import type { HomeSceneLoadState } from "../home/homeReadiness";
 
-export const CABIN_URL =
-  "/models/r35-cabin-fine-roughness-ed88ad0e.glb";
+export const CABIN_URL = "/models/r35-cabin-fine-roughness-ed88ad0e.glb";
 export const CABIN_PROXY_URL = "/models/r35-exterior-cabin-proxy-49d7c2ab.glb";
 export type CabinWindowStatus = "loading" | "ready" | "unavailable";
 export const CABIN_SEATS = ["driver", "passenger", "rear"] as const;
@@ -25,10 +24,13 @@ export type CabinPreviewState =
     }
   | { phase: "error"; request: number; message: string };
 export type CabinCameraView = CameraView & { near: number; far: number };
-const nativeViews: Record<
+export type CabinSourceViews = Record<
   CabinSeat,
   Pick<CameraView, "position" | "target" | "fov">
-> = {
+>;
+export type CabinLayout =
+  { kind: "detached" } | { kind: "integrated"; sourceViews: CabinSourceViews };
+const nativeViews: CabinSourceViews = {
   driver: {
     position: [0.42, 1.18, -0.235],
     target: [0.15, 0.84, 0.39],
@@ -45,8 +47,9 @@ const nativeViews: Record<
 export function cabinCameraView(
   seat: CabinSeat,
   exterior: { scale: number; position: VectorTuple },
+  sourceViews: CabinSourceViews = nativeViews,
 ): CabinCameraView {
-  const view = nativeViews[seat];
+  const view = sourceViews[seat];
   const transform = (p: VectorTuple): VectorTuple => [
     p[0] * exterior.scale + exterior.position[0],
     p[1] * exterior.scale + exterior.position[1],

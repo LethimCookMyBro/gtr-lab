@@ -145,16 +145,39 @@ afterEach(() => {
 });
 function fixture({
   strict = false,
+  integrated = false,
   initialReady = false,
   missingAsset = false,
   loadFailure = undefined as string | undefined,
 } = {}) {
-  const full = asset(),
-    exterior = asset(),
+  const exterior = asset(),
+    full = integrated ? exterior : asset(),
     proxy = asset();
   host.state.scene.add(exterior.scene);
   let props = {
     url: "/car.glb",
+    cabinLayout: integrated
+      ? {
+          kind: "integrated",
+          sourceViews: {
+            driver: {
+              position: [-1.79, 0.8, 0.55],
+              target: [-2, 0.4, 1.38],
+              fov: 72,
+            },
+            passenger: {
+              position: [-2.49, 0.8, 0.55],
+              target: [-2.25, 0.4, 1.38],
+              fov: 72,
+            },
+            rear: {
+              position: [-1.79, 0.8, -0.28],
+              target: [-2.08, 0.48, 1.22],
+              fov: 78,
+            },
+          },
+        }
+      : undefined,
     paint: "#eee",
     environment: "studio",
     environmentRequest: 0,
@@ -173,6 +196,7 @@ function fixture({
       : { phase: "loading", request: 1, progress: { phase: "preparing" } },
     cabinPreparationAllowed: true,
     onCabinReady: vi.fn(),
+    onCabinProgress: vi.fn(),
     onCabinError: vi.fn(),
   } as VehicleSceneProps;
   let request = 1,
@@ -426,3 +450,38 @@ it.each(["HTTP 404", "Embedded texture decode failed"])(
     expect(f.props.onCabinReady).not.toHaveBeenCalled();
   },
 );
+
+it("certifies the same integrated whole car in driver and return phases without detached attachment or repeat preparation", async () => {
+  host.brokenWindows = true; // Any CabinAttachment mount would fail this source's unverified window roles.
+  const f = fixture({ integrated: true });
+  await resources();
+  expect(f.props.onCabinProgress).toHaveBeenCalledWith(1, {
+    phase: "preparing",
+  });
+  expect(f.exterior.scene.parent).toBe(host.state.scene);
+  expect(host.state.camera.position.toArray()).toEqual([-1.79, 0.8, 0.55]);
+  expect(f.proxy.scene.parent).toBeNull();
+  await complete(0);
+  expect(f.exterior.scene.parent).toBe(host.state.scene);
+  expect(f.props.onCabinReady).not.toHaveBeenCalled();
+  await complete(1);
+  expect(f.props.onCabinReady).toHaveBeenCalledTimes(1);
+  expect(f.props.onCabinError).not.toHaveBeenCalled();
+  f.update({
+    cabinPreparation: { phase: "ready", request: 1 },
+    cabin: {
+      phase: "active",
+      request: 1,
+      seat: "passenger",
+      resumeRotation: false,
+    },
+  });
+  expect(host.state.camera.position.toArray()).toEqual([-2.49, 0.8, 0.55]);
+  f.update({ cabin: { phase: "closed" } });
+  f.update({
+    cabin: { phase: "active", request: 1, seat: "rear", resumeRotation: false },
+  });
+  expect(host.state.camera.position.toArray()).toEqual([-1.79, 0.8, -0.28]);
+  expect(host.stepBuilds).toBe(1);
+  expect(f.exterior.scene.parent).toBe(host.state.scene);
+});

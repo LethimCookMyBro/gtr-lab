@@ -1,4 +1,5 @@
 import type {
+  CabinLayout,
   CabinPreviewState,
   CabinPreparationState,
   CabinWindowStatus,
@@ -14,6 +15,7 @@ export type VehicleSceneProps = {
   url: string;
   renderQuality?: RenderQuality;
   cabin?: CabinPreviewState;
+  cabinLayout?: CabinLayout;
   cabinPreparation?: CabinPreparationState;
   cabinPreparationAllowed?: boolean;
   onWindowStatus?: (status: CabinWindowStatus) => void;

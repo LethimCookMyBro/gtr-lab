@@ -1,0 +1,159 @@
+{
+  "source_sha256": "30b44d970d500b665ae638ca93122df6edb763c76281c754b6fab43565d9e721",
+  "candidate_sha256": "a8f6e3e15ab71075f8caf817d362d31be8b7f0f4734f12602ea6348599727585",
+  "coordinate_frame": "Loaded glTF scene world after full original node transforms, metres per glTF; +Y up, +Z front, driver side toward +X. Not raw accessor coordinates.",
+  "original_world_bounds": {
+    "min": [
+      -3.1138544922143296,
+      -0.3239994614508402,
+      -1.3959166738966964
+    ],
+    "max": [
+      -1.170216390396206,
+      1.0205597947188882,
+      3.1205105860071187
+    ],
+    "extents": [
+      1.9436381018181237,
+      1.3445592561697284,
+      4.516427259903815
+    ]
+  },
+  "original_root_matrix": [
+    3.1205105781555176,
+    0,
+    0,
+    0,
+    0,
+    6.928925384909229e-16,
+    -3.1205105781555176,
+    0,
+    0,
+    3.1205105781555176,
+    6.928925384909229e-16,
+    0,
+    0,
+    0,
+    0,
+    1
+  ],
+  "original_child_matrix": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    -4.371139006309477e-08,
+    0.999999999999999,
+    0,
+    0,
+    -0.999999999999999,
+    -4.371139006309477e-08,
+    0,
+    0,
+    0,
+    0,
+    1
+  ],
+  "evidence_status": "These exact fixed eye/target poses were visually tested in CPU Blender on October13 against the prior verified decoded candidate; that candidate kept this recovered original geometry within the same strict bounds. Old images are unavailable. New rebuild has not been rendered. Treat poses as inspection-camera starting points requiring fresh private visual review, not factory seat measurements or a collision-safe camera volume. Rear roof appearance was a prior review concern.",
+  "source_views": {
+    "driver": {
+      "position": [
+        -1.79,
+        0.8,
+        0.55
+      ],
+      "target": [
+        -2,
+        0.4,
+        1.38
+      ],
+      "fov": 72
+    },
+    "passenger": {
+      "position": [
+        -2.49,
+        0.8,
+        0.55
+      ],
+      "target": [
+        -2.25,
+        0.4,
+        1.38
+      ],
+      "fov": 72
+    },
+    "rear_driver_side": {
+      "position": [
+        -1.79,
+        0.8,
+        -0.28
+      ],
+      "target": [
+        -2.08,
+        0.48,
+        1.22
+      ],
+      "fov": 78
+    }
+  },
+  "near_source_m": 0.015,
+  "far_viewer_m": 50,
+  "whole_car_normalization_example": {
+    "scale": 1.0406412955952211,
+    "translation": [
+      2.229097117757533,
+      0.33719029570801806,
+      -0.8973321871735576
+    ],
+    "formula": "viewerPoint = sourceSceneWorldPoint * scale + translation; apply exactly once to geometry and camera points"
+  },
+  "viewer_views": {
+    "driver": {
+      "position": [
+        0.36634919864208704,
+        1.169703332184195,
+        -0.3249794745961859
+      ],
+      "target": [
+        0.1478145265670907,
+        0.7534468139461066,
+        0.5387528007478475
+      ],
+      "fov": 72,
+      "near": 0.015609619433928317,
+      "far": 50
+    },
+    "passenger": {
+      "position": [
+        -0.36209970827456806,
+        1.169703332184195,
+        -0.3249794745961859
+      ],
+      "target": [
+        -0.11234579733171479,
+        0.7534468139461066,
+        0.5387528007478475
+      ],
+      "fov": 72,
+      "near": 0.015609619433928317,
+      "far": 50
+    },
+    "rear_driver_side": {
+      "position": [
+        0.36634919864208704,
+        1.169703332184195,
+        -1.1887117499402196
+      ],
+      "target": [
+        0.0645632229194728,
+        0.8366981175937243,
+        0.3722501934526121
+      ],
+      "fov": 78,
+      "near": 0.015609619433928317,
+      "far": 50
+    }
+  },
+  "runtime_boundary": "Single whole-car asset owner and mount. Bypass detached CabinAttachment, separate cabin/proxy fetches, blanket cabin layer/shadow mutation and source glass replacement. Mounted preparation must preserve layers/shadows/transforms and never reparent. Exact driver/return presentation stamps require this one scene attached in both phases."
+}

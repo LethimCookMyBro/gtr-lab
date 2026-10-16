@@ -2,6 +2,27 @@ import { ImageReferenceLabel } from "../ImageReferenceLabel";
 import { ArrowUpRight } from "lucide-react";
 import type { VehicleModel } from "../../data/models";
 export function ModelDetails({ model }: { model: VehicleModel }) {
+  if (model.asset.cabinLayout?.kind === "integrated")
+    return (
+      <div className="model-details">
+        <p className="detail-lead">{model.description}</p>
+        <p className="spec-context">{model.modelYear}</p>
+        <p className="availability-note">{model.asset.referenceNote}</p>
+        <p>
+          One artist-built exterior and cabin. Inspection cameras need fresh
+          visual review.
+        </p>
+        <p>
+          <a href={model.asset.source!} target="_blank" rel="noreferrer">
+            PolyTigr · Original 3D model
+          </a>
+          {" · "}
+          <a href={model.asset.license!} target="_blank" rel="noreferrer">
+            CC BY 4.0
+          </a>
+        </p>
+      </div>
+    );
   return (
     <div className="model-details">
       {model.image && (

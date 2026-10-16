@@ -81,13 +81,16 @@ export function prepareVehicle(
   roles: MaterialRoles,
   disabledEmissive: string[] = [],
   nativeCabin = false,
+  preserveAuthored = false,
 ) {
-  const scene = clone(source);
+  // Integrated studies own the original parsed scene and its resources directly.
+  // No clones, source glass replacements or blanket mesh-flag mutations.
+  const scene = preserveAuthored ? source : clone(source);
   const bindings: Binding[] = [];
   const inactiveMaterials = new Set(disabledEmissive);
   const copies = new Map<Material, Map<string, Material>>();
   scene.traverse((object) => {
-    if (!(object instanceof Mesh)) return;
+    if (!(object instanceof Mesh) || preserveAuthored) return;
     object.castShadow = !nativeCabin;
     object.receiveShadow = !nativeCabin;
     // Opaque sorting otherwise uses allocation-time material IDs: a fast

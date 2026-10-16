@@ -152,3 +152,24 @@ it("does not start preparation on a photo page after cancelling the active model
   expect(state().cabinRequest).toBe(request);
   expect(state().cabin.phase).toBe("closed");
 });
+
+it("offers the optional 2008 study and keeps its details separate from later Premium specifications", async () => {
+  setup();
+  await waitFor(() => expect(viewer.props).not.toBeNull());
+  expect(viewer.props!.url).toBe("/models/ciasny-r35.glb");
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Switch model" }));
+  await user.click(screen.getByRole("button", { name: "2008 R35 study" }));
+  await waitFor(() => expect(viewer.props!.url).toContain("polytigr-r35-2008"));
+  expect(viewer.props!.cabinLayout?.kind).toBe("integrated");
+  expect(
+    screen.getByRole("heading", { name: "2008 GT-R R35 · Study" }),
+  ).toBeTruthy();
+  expect(screen.queryByText(/Loading window view/)).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Model detail" }));
+  expect(screen.queryByText("2024 US specification")).toBeNull();
+  expect(screen.queryByText("Published power")).toBeNull();
+  expect(
+    screen.getByText("2008 artist model · factory specifications unverified"),
+  ).toBeTruthy();
+});

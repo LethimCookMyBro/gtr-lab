@@ -1,0 +1,14 @@
+{
+  "candidate_bytes": 25813544,
+  "gzip_level9_mtime0_bytes": 22843385,
+  "retained_images": 45,
+  "retained_texture_records": 45,
+  "dimensions": {
+    "1024x1024": 38,
+    "128x128": 7
+  },
+  "rgba8_base_bytes": 159842304,
+  "rgba8_full_mip_bytes": 213123012,
+  "rgba8_full_mip_mib": 203.24994277954102,
+  "limits": "Local transfer compression size, not actual HTTP encoding. Texture storage assumes one RGBA8 allocation per unique image/sampler and is not measured GPU residency; excludes CPU decode copies, texture clones, geometry, framebuffers and the app. No mobile-readiness claim."
+}

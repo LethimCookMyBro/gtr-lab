@@ -93,13 +93,14 @@ export function createCabinPreparationSteps(
   camera: Camera,
   asset: PreparedVehicle,
   exterior: Pick<PreparedVehicle, "scale" | "position">,
+  layout: "detached" | "integrated" = "detached",
 ): CabinPreparationStep[] {
-  configureCabinLayers(asset.scene, camera);
+  if (layout === "detached") configureCabinLayers(asset.scene, camera);
   const meshes: Mesh[] = [],
     textures = new Set<Texture>();
   asset.scene.traverse((object) => {
     if (!(object instanceof Mesh)) return;
-    object.castShadow = object.receiveShadow = false;
+    if (layout === "detached") object.castShadow = object.receiveShadow = false;
     meshes.push(object);
     for (const material of Array.isArray(object.material)
       ? object.material
@@ -156,8 +157,16 @@ export function createCabinPreparationSteps(
       kind: "geometry",
       run() {
         requireDefault();
-        if (asset.scene.parent)
+        if (layout === "detached" && asset.scene.parent)
           throw new Error("Interior preparation must own a detached cabin.");
+        if (layout === "integrated") {
+          let owner: Object3D | null = asset.scene;
+          while (owner && owner !== scene) owner = owner.parent;
+          if (owner !== scene)
+            throw new Error(
+              "Integrated preparation requires the mounted whole-car scene.",
+            );
+        }
         const viewport = renderer.getViewport(new Vector4()),
           scissor = renderer.getScissor(new Vector4());
         const scissorTest = renderer.getScissorTest(),
@@ -183,8 +192,10 @@ export function createCabinPreparationSteps(
         group.position.fromArray(exterior.position);
         const selected = new Set<Object3D>(batch);
         try {
-          group.add(asset.scene);
-          scene.add(group);
+          if (layout === "detached") {
+            group.add(asset.scene);
+            scene.add(group);
+          }
           scene.traverse((object) => {
             const renderable = object as Object3D & {
               isMesh?: boolean;
@@ -220,8 +231,10 @@ export function createCabinPreparationSteps(
             flag.object.visible = flag.visible;
             flag.object.frustumCulled = flag.frustumCulled;
           }
-          group.remove(asset.scene);
-          scene.remove(group);
+          if (layout === "detached") {
+            group.remove(asset.scene);
+            scene.remove(group);
+          }
           scene.background = background;
           renderer.shadowMap.autoUpdate = shadowAuto;
           renderer.shadowMap.needsUpdate = shadowDirty;
