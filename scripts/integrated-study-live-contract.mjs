@@ -26,7 +26,10 @@ export function validateStudyLiveEnvironment(env) {
   assert.match(env.GITHUB_SHA??'',/^[a-f0-9]{40}$/);
   assert.ok(env.R35_STUDY_LIVE_MESSAGE?.includes('[verify-integrated-r35-study-live]'));
   assert.ok(!env.R35_STUDY_LIVE_MESSAGE.includes('[release-'));
-  for(const key of Object.keys(env)) if(/^(R35_|PLAYWRIGHT_|STUDY_)/.test(key)) assert.ok(['R35_STUDY_LIVE','R35_STUDY_LIVE_MESSAGE'].includes(key),`No live target/browser/budget override: ${key}`);
+  // Installed Playwright 1.63.0 runner sets this exact marker before global setup.
+  // It selects no target, browser, timeout or execution budget. CPU preflight omits it.
+  if(Object.hasOwn(env,'PLAYWRIGHT_TEST')) assert.equal(env.PLAYWRIGHT_TEST,'1','Exact installed Playwright Test runtime marker');
+  for(const key of Object.keys(env)) if(/^(R35_|PLAYWRIGHT_|STUDY_)/.test(key)) assert.ok(['R35_STUDY_LIVE','R35_STUDY_LIVE_MESSAGE','PLAYWRIGHT_TEST'].includes(key),`No live target/browser/budget override: ${key}`);
 }
 export async function verifyStudyLiveSource(root,env) {
   validateStudyLiveEnvironment(env);

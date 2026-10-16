@@ -54,3 +54,19 @@ for(const [name,path,options] of [
 });
 test('missing JS body cannot count as complete',async()=>{const f=fixture();f.issue('/index.html');f.issue('/assets/main.css');await assert.rejects(f.observer.finish());});
 test('unexpected second document rejected',async()=>{const f=fixture();f.issue('/index.html');f.issue('/assets/main.js');f.issue('/assets/main.css');f.issue('/index.html');await assert.rejects(f.observer.finish());});
+
+test('actual installed Playwright Test runner marker admits only its exact runtime value',async()=>{
+ const before={...process.env};
+ const playwright=await import('@playwright/test');
+ assert.equal(typeof playwright.defineConfig,'function');
+ // Import alone does not set the marker; invoke the same installed helper as the runner.
+ const {default:core}=await import('playwright-core/lib/coreBundle');
+ core.utils.setPlaywrightTestProcessEnv();
+ assert.equal(process.env.PLAYWRIGHT_TEST,'1');
+ const changed=Object.keys(process.env).filter(key=>/^(R35_|PLAYWRIGHT_|STUDY_)/.test(key)&&process.env[key]!==before[key]);
+ assert.ok(changed.every(key=>key==='PLAYWRIGHT_TEST'),'Unexpected installed runner environment mutation');
+ validateStudyLiveEnvironment({...env,PLAYWRIGHT_TEST:process.env.PLAYWRIGHT_TEST});
+ validateStudyLiveEnvironment(env);
+ for(const value of ['0','true','', '2']) assert.throws(()=>validateStudyLiveEnvironment({...env,PLAYWRIGHT_TEST:value}));
+ for(const patch of [{PLAYWRIGHT_TEST_BASE_URL:ORIGIN},{PLAYWRIGHT_BROWSERS_PATH:'/tmp/browser'},{PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:'/tmp/chrome'},{PLAYWRIGHT_DOWNLOAD_NO_PROGRESS:'1'},{PLAYWRIGHT_TEST_OTHER:'1'}]) assert.throws(()=>validateStudyLiveEnvironment({...env,PLAYWRIGHT_TEST:'1',...patch}));
+});
