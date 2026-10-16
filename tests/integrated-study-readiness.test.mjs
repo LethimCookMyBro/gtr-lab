@@ -1,19 +1,17 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { installFunctionalCaptureObserver } from "../scripts/functional-capture-readiness.mjs";
-let install = installFunctionalCaptureObserver;
-try {
-  install = (
-    await import(
-      /* @vite-ignore */ "../scripts/" + "integrated-study-readiness.mjs"
-    )
-  ).installIntegratedStudyCaptureObserver;
-} catch {
-  /* Existing observer demonstrates the absent integrated contract. */
-}
+import { readFileSync } from "node:fs";
+import { deriveQualityReadiness } from "../scripts/build-selectable-quality-drivers.mjs";
+import { installIntegratedStudyCaptureObserver as install } from "../scripts/integrated-study-readiness.mjs";
 let state, observer;
 const path = "/models/polytigr-r35-2008-precision-meshopt-rebuilt.glb";
-const expected = { preset: "hero", seat: null, lights: false, proxy: false };
+const expected = {
+  preset: "hero",
+  seat: null,
+  lights: false,
+  proxy: false,
+  maxBufferPixels: 2_000_000,
+};
 const api = () => globalThis.__gtrFunctionalCapture;
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["performance"] });
@@ -114,4 +112,46 @@ it("preserves the original deadline rather than treating late completion as succ
   signal();
   vi.advanceTimersByTime(20001);
   expect(() => api().poll({ expected, deadline: 20000 })).toThrow(/deadline/i);
+});
+
+it("certifies Reduced quality only at its explicit one-million-pixel geometry", () => {
+  const ratio = Math.sqrt(1_000_000 / (1500 * 1000));
+  state.dimensions = {
+    width: Math.floor(1500 * ratio),
+    height: Math.floor(1000 * ratio),
+    cssWidth: 1500,
+    cssHeight: 1000,
+    renderWidth: 1500,
+    renderHeight: 1000,
+    pixelRatio: ratio,
+  };
+  submit();
+  signal();
+  expect(api().poll({ expected, deadline: 20000 })).toBeNull();
+  expect(
+    api().poll({
+      expected: { ...expected, maxBufferPixels: 1_000_000 },
+      deadline: 20000,
+    }),
+  ).toMatchObject({ owner: 1, nativeStatus: 0x911c });
+});
+it("rejects an unreviewed quality ceiling", () => {
+  submit();
+  signal();
+  expect(() =>
+    api().poll({
+      expected: { ...expected, maxBufferPixels: 3_000_000 },
+      deadline: 20000,
+    }),
+  ).toThrow(/reviewed quality budget/i);
+});
+
+it("reuses the exact pinned quality-only capture derivation", () => {
+  expect(
+    readFileSync("scripts/cabin-preparation-readiness.generated.mjs", "utf8"),
+  ).toBe(
+    deriveQualityReadiness(
+      readFileSync("scripts/functional-capture-readiness.mjs"),
+    ),
+  );
 });

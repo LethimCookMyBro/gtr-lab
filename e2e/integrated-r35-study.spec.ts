@@ -14,7 +14,9 @@ const {
   verifyIntegratedStudySource,
 } = studyReadiness;
 // @ts-expect-error Existing passive observer, shared with accepted cabin QA.
-import { installPreparationObserver } from "../scripts/cabin-preparation-observer.mjs";
+import * as preparationObservers from "../scripts/cabin-preparation-observer.mjs";
+const { installPreparationObserver, installPreparationDecodeFixture } =
+  preparationObservers;
 // @ts-expect-error Existing passive resource observer.
 import { installCabinResourceObserver } from "../scripts/cabin-resource-observer.mjs";
 // @ts-expect-error Existing exact resource assertions.
@@ -29,10 +31,15 @@ const {
   remainingBudget,
   assertResidentWorkUnchanged,
   assertRestoredExteriorPose,
+  assertCurrentGeometry,
 } = preparationPolicy;
 
 // @ts-expect-error Existing absolute-window wrapper, with before/after checks and racing timeout.
 import { boundedOperation } from "../scripts/cabin-preparation-checkpoint.mjs";
+// @ts-expect-error Existing CI-only native-positive observation fixture.
+import { installRenderBackpressureLifecycleFixture } from "../scripts/render-backpressure-lifecycle-fixture.mjs";
+// @ts-expect-error Existing dependency-free native ownership assertions.
+import { assertRetiredFenceContext } from "../scripts/diagnose-render-backpressure-lifecycle.mjs";
 const verifiedSource = await verifyIntegratedStudySource(
   process.cwd(),
   process.env,
@@ -90,7 +97,7 @@ const translation = [
   -bounds.min.y * scale,
   (-(bounds.min.z + bounds.max.z) * scale) / 2,
 ];
-function expectedPose(seat: "driver" | "passenger", dimensions: any) {
+function expectedPose(seat: "driver" | "passenger" | "rear", dimensions: any) {
   const view = anchors.sourceViews[seat],
     transform = (point: number[]) =>
       point.map((value, index) => value * scale + translation[index]);
@@ -110,9 +117,24 @@ function expectedPose(seat: "driver" | "passenger", dimensions: any) {
   };
 }
 const reports = new WeakMap<Page, any>();
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, info) => {
+  const decodeGate = info.tags.includes("@decode-gate");
+  const nativeLifecycle = info.tags.includes("@lifecycle");
+  const quality = info.tags.includes("@reduced-quality")
+    ? "reduced"
+    : "standard";
+  const reducedMotion = info.tags.includes("@reduced-motion")
+    ? "reduce"
+    : "no-preference";
+  await page.emulateMedia({ reducedMotion });
   const report = {
     source: verifiedSource,
+    quality,
+    reducedMotion,
+    fixtures: {
+      decodeDeliveryHold: decodeGate,
+      nativePositiveObservationHold: info.tags.includes("@gpu-cancel"),
+    },
     modelPath,
     sha256: anchors.candidateSha256,
     viewport: page.viewportSize(),
@@ -150,7 +172,7 @@ test.beforeEach(async ({ page }) => {
       );
   });
   await page.addInitScript({
-    content: `(${installCabinResourceObserver.toString()})(${JSON.stringify({ expectedImages })});(${installIntegratedStudyCaptureObserver.toString()})();(${installPreparationObserver.toString()})(${JSON.stringify({ modelPath, modelJson })});`,
+    content: `(${installCabinResourceObserver.toString()})(${JSON.stringify({ expectedImages })});${nativeLifecycle ? `(${installRenderBackpressureLifecycleFixture.toString()})();` : ""}(${installIntegratedStudyCaptureObserver.toString()})();(${installPreparationObserver.toString()})(${JSON.stringify({ modelPath, modelJson })});${decodeGate ? `(${installPreparationDecodeFixture.toString()})(${JSON.stringify({ images: expectedImages })});globalThis.__r35PreparationDecode.arm();` : ""}`,
   });
 });
 test.afterEach(async ({ page }, info) => {
@@ -166,10 +188,19 @@ test.afterEach(async ({ page }, info) => {
           (window as any).__r35Preparation?.snapshot(),
         );
         remaining();
+        report.decodeFixture = await page.evaluate(() =>
+          (window as any).__r35PreparationDecode?.snapshot(),
+        );
+        remaining();
+        report.nativeFixture = await page.evaluate(() =>
+          (window as any).__r35RenderBackpressureLifecycle?.snapshot(),
+        );
+        remaining();
         report.resources = await page.evaluate(() =>
           (window as any).__cabinResourceObserver?.snapshot(),
         );
         remaining();
+        expect(report.bodies).toHaveLength(report.modelRequests.length);
         expect(
           report.bodies.every(
             (body: any) =>
@@ -232,6 +263,35 @@ async function initial(page: Page) {
       waitUntil: "domcontentloaded",
       timeout: remaining(),
     });
+    if (reports.get(page).quality === "reduced") {
+      await page.waitForFunction(
+        () => (window as any).__r35PreparationDecode?.snapshot().pending === 1,
+        null,
+        { timeout: remaining() },
+      );
+      await page
+        .getByRole("button", { name: "Environment", exact: true })
+        .click({ timeout: remaining() });
+      const radio = page
+        .getByRole("dialog")
+        .locator('input[name="render-quality"][value="reduced"]');
+      await radio.check({ timeout: remaining() });
+      await expect(radio).toBeChecked({ timeout: remaining() });
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "Close panel", exact: true })
+        .click({ timeout: remaining() });
+      await expect(page.getByRole("dialog")).toHaveCount(0, {
+        timeout: remaining(),
+      });
+      const held = await observation(page, window);
+      expect(held.ui.preparation.phase).toBe("loading");
+      expect(held.ui.maskOpaque).toBe(true);
+      remaining();
+      await page.evaluate(() =>
+        (window as any).__r35PreparationDecode.release(),
+      );
+    }
     await expect(page.locator("main")).toHaveAttribute(
       "data-cabin-preparation",
       "ready",
@@ -259,11 +319,15 @@ async function capture(
   page: Page,
   info: TestInfo,
   label: string,
-  seat: "driver" | "passenger" | null,
+  seat: "driver" | "passenger" | "rear" | null,
   window: Window,
 ) {
   await step(window, "exact native readiness", async (remaining) =>
-    waitForFunctionalCapture(page, { preset: "hero", timeout: remaining() }),
+    waitForFunctionalCapture(page, {
+      preset: "hero",
+      quality: reports.get(page).quality,
+      timeout: remaining(),
+    }),
   );
   if (label === "2008-source-exterior")
     reports.get(page).initialNativeReadyMs =
@@ -279,6 +343,13 @@ async function capture(
       remaining();
       const certificate = await verifyFunctionalCapture(page);
       remaining();
+      const nativeDpr = await page.evaluate(() => devicePixelRatio);
+      remaining();
+      assertCurrentGeometry(
+        certificate.snapshot,
+        reports.get(page).quality,
+        nativeDpr,
+      );
       expect(certificate.snapshot.vehicle).toMatchObject({
         url: modelPath,
         exterior: true,
@@ -421,7 +492,7 @@ async function retire(page: Page, cohort: any, owner: number) {
     remaining();
   });
 }
-test("one exact preparation supports matching exterior, driver and passenger views with no refetch and clean retirement", async ({
+test("[resident] one exact preparation supports matching exterior, driver, passenger and rear views with no refetch and clean retirement", async ({
   page,
 }, info) => {
   const initialWindow = await initial(page);
@@ -468,6 +539,15 @@ test("one exact preparation supports matching exterior, driver and passenger vie
     "passenger",
     passengerWindow,
   );
+  const rearWindow = readinessWindow(budgets.functional);
+  await step(rearWindow, "trusted rear view", async (remaining) => {
+    await armFunctionalCapture(page);
+    remaining();
+    await page
+      .getByRole("button", { name: "Rear seat", exact: true })
+      .click({ timeout: remaining() });
+  });
+  await capture(page, info, "2008-source-rear", "rear", rearWindow);
   const returnWindow = readinessWindow(budgets.functional);
   await step(returnWindow, "trusted exterior return", async (remaining) => {
     await armFunctionalCapture(page);
@@ -532,7 +612,7 @@ test("one exact preparation supports matching exterior, driver and passenger vie
   );
   await retire(page, cohort, exterior.owner);
 });
-test("native context loss closes old images and trusted retry creates one fresh owner", async ({
+test("[resident] native context loss closes old images and trusted retry creates one fresh owner", async ({
   page,
 }, info) => {
   const initialWindow = await initial(page);
@@ -616,3 +696,388 @@ test("native context loss closes old images and trusted retry creates one fresh 
   remainingBudget(inspect);
   await retire(page, fresh, after.owner);
 });
+
+for (const setting of [
+  { name: "Reduced quality", tags: ["@reduced-quality", "@decode-gate"] },
+  { name: "reduced motion", tags: ["@reduced-motion"] },
+]) {
+  test(
+    `[settings] ${setting.name} preserves exact study views and resident re-entry`,
+    { tag: setting.tags },
+    async ({ page }, info) => {
+      const initialWindow = await initial(page);
+      const exterior = await capture(
+        page,
+        info,
+        `${setting.name}-exterior`,
+        null,
+        initialWindow,
+      );
+      const inspect = readinessWindow(budgets.lifecycle);
+      const before = await observation(page, inspect);
+      assertInitialTimeline(before, exterior);
+      const cohort = cabinResourceCohort(
+        { sequence: 0 },
+        await resources(page, inspect),
+        expectedImages,
+      );
+      expect(cohort.bitmapIds).toHaveLength(45);
+      expect(cohort.decodedButNotUploaded).toEqual([]);
+      await step(
+        inspect,
+        "verify the requested motion preference",
+        async () => {
+          expect(
+            await page.evaluate(
+              () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+            ),
+          ).toBe(reports.get(page).reducedMotion === "reduce");
+        },
+      );
+      const driverWindow = readinessWindow(budgets.functional);
+      await enter(page, driverWindow);
+      const driver = await capture(
+        page,
+        info,
+        `${setting.name}-driver`,
+        "driver",
+        driverWindow,
+      );
+      const rearWindow = readinessWindow(budgets.functional);
+      await step(
+        rearWindow,
+        "trusted rear view under selected setting",
+        async (remaining) => {
+          await armFunctionalCapture(page);
+          remaining();
+          await page
+            .getByRole("button", { name: "Rear seat", exact: true })
+            .click({ timeout: remaining() });
+        },
+      );
+      await capture(page, info, `${setting.name}-rear`, "rear", rearWindow);
+      const returnWindow = readinessWindow(budgets.functional);
+      await step(
+        returnWindow,
+        "trusted exterior return under selected setting",
+        async (remaining) => {
+          await armFunctionalCapture(page);
+          remaining();
+          await page
+            .getByRole("button", { name: "Back to exterior", exact: true })
+            .click({ timeout: remaining() });
+        },
+      );
+      const restored = await capture(
+        page,
+        info,
+        `${setting.name}-exterior-restored`,
+        null,
+        returnWindow,
+      );
+      assertRestoredExteriorPose(
+        restored.snapshot.pose,
+        exterior.snapshot.pose,
+      );
+      const repeatWindow = readinessWindow(budgets.functional);
+      await enter(page, repeatWindow);
+      const repeated = await capture(
+        page,
+        info,
+        `${setting.name}-driver-repeat`,
+        "driver",
+        repeatWindow,
+      );
+      expect(repeated.owner).toBe(driver.owner);
+      const review = readinessWindow(budgets.functional);
+      await step(review, "verify setting-specific residency", async () => {
+        const after = await observation(page, review);
+        assertResidentWorkUnchanged(before.totals, after.totals);
+        expect(
+          after.measures.filter(
+            (row: any) => row.name === "gtr-cabin-resource-preparation",
+          ),
+        ).toHaveLength(1);
+        expect(reports.get(page).modelRequests).toEqual([modelPath]);
+      });
+      await retire(page, cohort, exterior.owner);
+    },
+  );
+}
+
+async function heldDecode(page: Page) {
+  const window = readinessWindow(budgets.initial);
+  reports.get(page).initialWindow = window;
+  return step(
+    window,
+    "navigate to an exact native image decode-delivery hold",
+    async (remaining) => {
+      await page.goto("/configurator/premium?study=2008", {
+        waitUntil: "domcontentloaded",
+        timeout: remaining(),
+      });
+      await page.waitForFunction(
+        () =>
+          (globalThis as any).__r35PreparationDecode?.snapshot().pending === 1,
+        null,
+        { timeout: remaining() },
+      );
+      const fixture = await page.evaluate(() =>
+        (globalThis as any).__r35PreparationDecode.snapshot(),
+      );
+      remaining();
+      expect(fixture.records).toHaveLength(1);
+      const held = fixture.records[0];
+      expect(held.nativeCompletedAt).not.toBeNull();
+      expect(held.releasedAt).toBeNull();
+      expect(
+        expectedImages.some(
+          (image: any) =>
+            image.sha256 === held.sourceSha256 &&
+            image.bytes === held.sourceBytes,
+        ),
+      ).toBe(true);
+      const state = await observation(page, window);
+      expect(state.ui.preparation).toMatchObject({
+        phase: "loading",
+        progressPhase: "decoding",
+      });
+      expect(state.ui.maskOpaque).toBe(true);
+      expect(state.dom.some((row: any) => row.ready)).toBe(false);
+      const owner = state.events.find(
+        (event: any) => event.kind === "attach",
+      )?.owner;
+      expect(owner).toEqual(expect.any(Number));
+      reports.get(page).decodeBeforeCancellation = fixture;
+      return { window, owner, held };
+    },
+  );
+}
+
+async function routeAway(page: Page, window: Window) {
+  await step(
+    window,
+    "trusted route exit while initial preparation is incomplete",
+    async (remaining) => {
+      await page
+        .getByRole("link", { name: "Back to models", exact: true })
+        .click({ timeout: remaining() });
+      await expect(page).toHaveURL(/\/models$/, { timeout: remaining() });
+      await expect(page.locator(".scene-stage canvas")).toHaveCount(0, {
+        timeout: remaining(),
+      });
+      const state = await observation(page, window);
+      const click = state.clicks.findLast(
+        (row: any) => row.label === "Back to models",
+      );
+      expect(click).toMatchObject({
+        trusted: true,
+        ui: { preparation: { phase: "loading" } },
+      });
+    },
+  );
+}
+
+async function cancelledOwnerReleased(
+  page: Page,
+  owner: number,
+  window: Window,
+) {
+  await step(
+    window,
+    "settle the exact cancelled owner's late images and native resources",
+    async (remaining) => {
+      await expect
+        .poll(
+          async () => {
+            try {
+              const snapshot = await resources(page, window);
+              const bitmaps = expectedImages.map((image: any) => {
+                const matches = snapshot.bitmaps.filter(
+                  (bitmap: any) => bitmap.sourceSha256 === image.sha256,
+                );
+                expect(matches).toHaveLength(1);
+                return matches[0];
+              });
+              expect(bitmaps).toHaveLength(45);
+              const cohort = {
+                bitmapIds: bitmaps.map((bitmap: any) => bitmap.id),
+                textureIds: [],
+              };
+              assertCabinResourcesReleased(cohort, snapshot);
+              const preparation = await observation(page, window);
+              expect(preparation.issues).toEqual([]);
+              const context = preparation.contexts.find(
+                (row: any) => row.owner === owner,
+              );
+              expect(context).toMatchObject({ connected: false });
+              const owned = preparation.resources.filter(
+                (row: any) => row.contextId === context.id,
+              );
+              if (reports.get(page).fixtures.nativePositiveObservationHold)
+                expect(owned.length).toBeGreaterThan(0);
+              expect(
+                owned.every((row: any) => row.deleted === 1 && row.deletedLive),
+              ).toBe(true);
+              expect(preparation.totals.fetches).toBe(1);
+              expect(preparation.totals.gltfParses).toBe(1);
+              expect(preparation.ui.cabinRail).toBe(false);
+              expect(
+                preparation.dom.some(
+                  (row: any) => row.pathname === "/models" && row.ready,
+                ),
+              ).toBe(false);
+              expect(
+                preparation.events.some(
+                  (row: any) =>
+                    row.kind === "main" &&
+                    row.ui.pathname === "/models" &&
+                    row.snapshot?.vehicle?.url === modelPath,
+                ),
+              ).toBe(false);
+              const native = await page.evaluate(() =>
+                (globalThis as any).__r35RenderBackpressureLifecycle.snapshot(),
+              );
+              remaining();
+              const sceneContexts = native.contexts.filter(
+                (row: any) => row.sceneOwner,
+              );
+              expect(sceneContexts).toHaveLength(1);
+              const retirement = assertRetiredFenceContext(
+                native,
+                sceneContexts[0].id,
+              );
+              reports.get(page).cancelledOwner = {
+                owner,
+                bitmapIds: cohort.bitmapIds,
+                nativeResourceIds: owned.map((row: any) => row.id),
+                retirement,
+              };
+              return true;
+            } catch (error) {
+              remaining();
+              return false;
+            }
+          },
+          { timeout: remaining() },
+        )
+        .toBe(true);
+      expect(reports.get(page).modelRequests).toEqual([modelPath]);
+    },
+  );
+}
+
+test(
+  "[cancellation] trusted route exit during native decode delivery closes the exact late image",
+  { tag: ["@decode-gate", "@lifecycle"] },
+  async ({ page }) => {
+    const { owner, held } = await heldDecode(page);
+    const lifecycle = readinessWindow(budgets.lifecycle);
+    await routeAway(page, lifecycle);
+    await step(
+      lifecycle,
+      "release the genuine native bitmap to its cancelled owner",
+      async () => {
+        await page.evaluate(() =>
+          (globalThis as any).__r35PreparationDecode.release(),
+        );
+      },
+    );
+    await cancelledOwnerReleased(page, owner, lifecycle);
+    await step(
+      lifecycle,
+      "verify exact held-bitmap closure after cancellation",
+      async () => {
+        const fixture = await page.evaluate(() =>
+          (globalThis as any).__r35PreparationDecode.snapshot(),
+        );
+        expect(fixture.pending).toBe(0);
+        expect(fixture.records).toHaveLength(1);
+        const after = fixture.records[0];
+        expect(after.bitmapIdentity).toBe(held.bitmapIdentity);
+        expect(after.sourceSha256).toBe(held.sourceSha256);
+        expect(after.closeCalls).toBe(1);
+        expect(after.releasedAt).toBeGreaterThanOrEqual(
+          after.nativeCompletedAt,
+        );
+        expect(after.closedAt).toBeGreaterThanOrEqual(after.releasedAt);
+      },
+    );
+  },
+);
+
+test(
+  "[cancellation] trusted route exit during native-positive preparation retires its outstanding queue",
+  { tag: ["@decode-gate", "@lifecycle", "@gpu-cancel"] },
+  async ({ page }) => {
+    const { window, owner } = await heldDecode(page);
+    const hold = await step(
+      window,
+      "arm the existing first-owner native-positive observation fixture",
+      async () => {
+        const hold = await page.evaluate(() =>
+          (globalThis as any).__r35RenderBackpressureLifecycle.armCurrent(
+            "completion-clear",
+          ),
+        );
+        await page.evaluate(() =>
+          (globalThis as any).__r35PreparationDecode.release(),
+        );
+        return hold;
+      },
+    );
+    await step(
+      window,
+      "observe an actual positive native fence while preparation remains masked",
+      async (remaining) => {
+        await page.waitForFunction(
+          (id) => {
+            const f = (
+              globalThis as any
+            ).__r35RenderBackpressureLifecycle.snapshot();
+            const p = (globalThis as any).__r35Preparation.status();
+            return (
+              f.holds.find((row: any) => row.id === id)?.substitutions > 0 &&
+              p.ui.preparation?.progressPhase === "preparing"
+            );
+          },
+          hold.id,
+          { timeout: remaining() },
+        );
+        const state = await observation(page, window);
+        expect(state.ui.preparation.phase).toBe("loading");
+        expect(state.ui.maskOpaque).toBe(true);
+        expect(state.dom.some((row: any) => row.ready)).toBe(false);
+        const fixture = await page.evaluate(() =>
+          (globalThis as any).__r35RenderBackpressureLifecycle.snapshot(),
+        );
+        remaining();
+        expect(
+          fixture.fences.some(
+            (row: any) =>
+              row.contextId === hold.contextId && row.deletedSequence === null,
+          ),
+        ).toBe(true);
+        reports.get(page).preparationCancellation = {
+          hold,
+          state: state.current,
+          fixture,
+        };
+      },
+    );
+    const lifecycle = readinessWindow(budgets.lifecycle);
+    await routeAway(page, lifecycle);
+    await step(
+      lifecycle,
+      "release only the positive-observation delay after trusted route cancellation",
+      async () => {
+        await page.evaluate(() =>
+          (
+            globalThis as any
+          ).__r35RenderBackpressureLifecycle.releaseCompletion(),
+        );
+      },
+    );
+    await cancelledOwnerReleased(page, owner, lifecycle);
+  },
+);

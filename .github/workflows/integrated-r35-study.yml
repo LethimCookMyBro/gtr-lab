@@ -16,6 +16,11 @@ concurrency:
 jobs:
   native-proof:
     if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[stage-integrated-r35-study]') && !contains(github.event.head_commit.message, '[release-')
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop-1440, mobile-390]
+        group: [resident, settings, cancellation]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -37,6 +42,7 @@ jobs:
       - name: Validate the separate exact study transport and CPU contracts
         run: |
           node scripts/prepare-integrated-study.mjs
+          node --test tests/integrated-study-observer-source.node.mjs
           node node_modules/vitest/vitest.mjs run tests/integrated-r35-study.test.ts tests/integrated-r35-loader.test.tsx tests/integrated-r35-scene-wiring.test.tsx tests/integrated-study-transport.test.mjs tests/integrated-study-readiness.test.mjs tests/cabin-preparation-steps.test.ts tests/cabin-runtime-preparation.test.tsx tests/cabin-preparation-ui.test.tsx --pool=threads --maxWorkers=2 --minWorkers=1
           node node_modules/typescript/bin/tsc --noEmit
       - name: Build the exact checked-out source and complete baseline assets
@@ -46,16 +52,16 @@ jobs:
         run: node node_modules/playwright/cli.js install --with-deps chromium
         timeout-minutes: 5
       - name: Native desktop and phone proof without changing production
-        run: node node_modules/playwright/cli.js test -c playwright.integrated-study.config.ts
+        run: node node_modules/playwright/cli.js test -c playwright.integrated-study.config.ts --project=${{ matrix.project }} --grep='\[${{ matrix.group }}\]'
         timeout-minutes: 11
       - name: State verification scope
         if: always()
         run: |
-          echo 'Staged whole-car study only. Exact initial preparation costs and failures are retained. Inspect source-identified exterior, driver and passenger images before visual acceptance. SwiftShader proof is not physical-device performance or factory-accuracy evidence. No production release marker is changed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Staged whole-car study only. Exact initial preparation costs and failures are retained. Inspect source-identified exterior, driver, passenger and rear images before visual acceptance. Explicit decode-delivery/native-positive-observation holds prove cancellation ownership, not loading speed. Reduced quality and reduced motion are independent settings cases. SwiftShader proof is not physical-device performance or factory-accuracy evidence. No production release marker is changed.' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: integrated-study-${{ github.sha }}
+          name: integrated-study-${{ github.sha }}-${{ matrix.project }}-${{ matrix.group }}
           path: |
             test-results/integrated-study/
             playwright-integrated-study-report/

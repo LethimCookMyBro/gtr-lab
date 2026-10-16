@@ -62,7 +62,7 @@ it("binds native QA to the exact reviewed main parent and first push attempt, re
     expect(() =>
       module.validateIntegratedStudyEnvironment({ ...env, ...change }),
     ).toThrow();
-  expect(module.STUDY_PARENT).toBe("648590901f82de578132c44a280fe1c6bb72845b");
+  expect(module.STUDY_PARENT).toBe("271a674e9adf59e87d86b02fe63008ac5fb6eef6");
   expect(module.STUDY_RUNTIME_TREE).toBe(
     "2eeb020da40db1aaa6b6b44021578bbf85cb894e06682d0e381988b2ee1f9a5a",
   );

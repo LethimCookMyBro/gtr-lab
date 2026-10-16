@@ -27,6 +27,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Prepare the exact optional study fixture before CPU tests
+        run: node scripts/prepare-integrated-study.mjs
       - run: npm test
       - run: npm run typecheck
       - run: npx playwright install --with-deps chromium

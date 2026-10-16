@@ -1,40 +1,65 @@
 /** CI-only adaptation of the existing exact native-main observer. No browser/server side effects. */
 import assert from "node:assert/strict";
-import { installFunctionalCaptureObserver } from "./functional-capture-readiness.mjs";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { URL as NodeURL } from "node:url";
 export {
   armFunctionalCapture,
   waitForFunctionalCapture,
   verifyFunctionalCapture,
-} from "./functional-capture-readiness.mjs";
-const detached = `expected.seat
+} from "./cabin-preparation-readiness.generated.mjs";
+export function deriveIntegratedStudyCaptureObserverSource(bytes) {
+  // Playwright transforms imported functions, including their whitespace. Read
+  // and pin the reviewed source instead of adapting transformed Function.toString.
+  assert.equal(
+    createHash("sha256").update(bytes).digest("hex"),
+    "9a3b09e5592058214e65715edc8f3c7039acf335fd9210c5b4428142cac343c6",
+    "Reviewed quality observer preimage must match exactly",
+  );
+  const moduleSource = String(bytes);
+  const start = "export function installFunctionalCaptureObserver() {";
+  const end = "\nexport async function armFunctionalCapture(";
+  for (const boundary of [start, end])
+    assert.equal(
+      moduleSource.split(boundary).length,
+      2,
+      "Reviewed observer boundary must match exactly once",
+    );
+  const source = moduleSource
+    .slice(moduleSource.indexOf(start) + "export ".length, moduleSource.indexOf(end))
+    .trimEnd();
+  const detached = `expected.seat
         ? !vehicle.full || vehicle.proxy
         : vehicle.full || vehicle.proxy !== expected.proxy`;
-const lamp = "vehicle.lamps.length > 0 &&";
-const source = installFunctionalCaptureObserver.toString();
-assert.equal(
-  source.split(detached).length,
-  2,
-  "Reviewed detached representation predicate must match exactly once",
-);
-assert.equal(
-  source.split(lamp).length,
-  2,
-  "Reviewed lamp predicate must match exactly once",
-);
-// Only the expected representation and empty authored-role contract differ.
-// Native-positive fences, exact states, quality, deadlines and capture checks are unchanged.
-export const installIntegratedStudyCaptureObserver = new Function(
-  `return (${source
+  const lamp = "vehicle.lamps.length > 0 &&";
+  assert.equal(
+    source.split(detached).length,
+    2,
+    "Reviewed detached representation predicate must match exactly once",
+  );
+  assert.equal(
+    source.split(lamp).length,
+    2,
+    "Reviewed lamp predicate must match exactly once",
+  );
+  // Only the expected representation and empty authored-role contract differ.
+  // Native-positive fences, exact states, quality, deadlines and capture checks are unchanged.
+  return source
     .replace(
       detached,
       '!vehicle.full || vehicle.proxy || vehicle.url !== "/models/polytigr-r35-2008-precision-meshopt-rebuilt.glb"',
     )
-    .replace(lamp, "vehicle.lamps.length === 0 &&")})`,
+    .replace(lamp, "vehicle.lamps.length === 0 &&");
+}
+export const installIntegratedStudyCaptureObserver = new Function(
+  `return (${deriveIntegratedStudyCaptureObserverSource(
+    readFileSync(new NodeURL("./cabin-preparation-readiness.generated.mjs", import.meta.url)),
+  )})`,
 )();
 
 import { execFileSync } from "node:child_process";
 import { sourceIdentity } from "./ui-optimization-policy.mjs";
-export const STUDY_PARENT = "648590901f82de578132c44a280fe1c6bb72845b";
+export const STUDY_PARENT = "271a674e9adf59e87d86b02fe63008ac5fb6eef6";
 export const STUDY_RUNTIME_TREE =
   "2eeb020da40db1aaa6b6b44021578bbf85cb894e06682d0e381988b2ee1f9a5a";
 export function validateIntegratedStudyEnvironment(env) {
