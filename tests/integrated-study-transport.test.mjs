@@ -62,8 +62,8 @@ it("binds native QA to the exact reviewed main parent and first push attempt, re
     expect(() =>
       module.validateIntegratedStudyEnvironment({ ...env, ...change }),
     ).toThrow();
-  expect(module.STUDY_PARENT).toBe("a517830f8e11c1ee969b15fe6402b2fb70e50d4b");
+  expect(module.STUDY_PARENT).toBe("ec52935017233661f3c46a566ce4661eaa555783");
   expect(module.STUDY_RUNTIME_TREE).toBe(
-    "2eeb020da40db1aaa6b6b44021578bbf85cb894e06682d0e381988b2ee1f9a5a",
+    "a742f29926561f8c6b1e7256dc3c71d54ec10792ace219c5fbbeb330ad74310a",
   );
 });

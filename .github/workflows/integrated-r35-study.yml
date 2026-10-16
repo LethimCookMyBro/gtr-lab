@@ -42,7 +42,7 @@ jobs:
       - name: Validate the separate exact study transport and CPU contracts
         run: |
           node scripts/prepare-integrated-study.mjs
-          node --test tests/integrated-study-observer-source.node.mjs
+          node --test tests/integrated-study-observer-source.node.mjs tests/integrated-study-network.node.mjs tests/integrated-study-rear-anchor.node.mjs
           node node_modules/vitest/vitest.mjs run tests/integrated-r35-study.test.ts tests/integrated-r35-loader.test.tsx tests/integrated-r35-scene-wiring.test.tsx tests/integrated-study-transport.test.mjs tests/integrated-study-readiness.test.mjs tests/cabin-preparation-steps.test.ts tests/cabin-runtime-preparation.test.tsx tests/cabin-preparation-ui.test.tsx --pool=threads --maxWorkers=2 --minWorkers=1
           node node_modules/typescript/bin/tsc --noEmit
       - name: Build the exact checked-out source and complete baseline assets

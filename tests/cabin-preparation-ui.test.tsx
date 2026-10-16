@@ -173,3 +173,28 @@ it("offers the optional 2008 study and keeps its details separate from later Pre
     screen.getByText("2008 artist model · factory specifications unverified"),
   ).toBeTruthy();
 });
+it("omits unavailable study paint and lamp controls while retaining source information", async () => {
+  setup("premium?study=2008");
+  await waitFor(() => expect(viewer.props).not.toBeNull());
+  expect(screen.queryByRole("button", { name: "Lights" })).toBeNull();
+  expect(screen.queryByRole("group", { name: "Exterior paint" })).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Asset information" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Source finish")).toBeTruthy();
+  act(() => viewer.props!.onReady());
+  await waitFor(() => expect(state().cabinPreparation.phase).toBe("loading"));
+  act(() => state().cabinReady(state().cabinRequest));
+  expect(screen.queryByRole("button", { name: "Lights" })).toBeNull();
+  expect(screen.queryByRole("group", { name: "Exterior paint" })).toBeNull();
+});
+it("retains paint and lamp controls for the existing Premium car", async () => {
+  setup();
+  await waitFor(() => expect(viewer.props).not.toBeNull());
+  expect(screen.getByRole("button", { name: "Lights" })).toBeTruthy();
+  expect(
+    screen
+      .getByRole("group", { name: "Exterior paint" })
+      .querySelectorAll("button"),
+  ).toHaveLength(9);
+});

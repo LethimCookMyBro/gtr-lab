@@ -452,31 +452,35 @@ export function ConfiguratorPage() {
             <Image />
             <span>Environment</span>
           </button>
-          <button
-            onClick={() => {
-              useConfigurator.setState({ lightsEnabled: !state.lightsEnabled });
-              audio.play();
-            }}
-            disabled={
-              !interactive || !model.asset.lights || !state.lightsAvailable
-            }
-            aria-label="Lights"
-            aria-pressed={state.lightsEnabled}
-            title={
-              !interactive
-                ? "Lights require a ready 3D model"
-                : integrated
-                  ? "Authored source lamps; dynamic controls unavailable"
-                  : "Toggle running lights: front LED strips and rear rings"
-            }
-          >
-            <Sun />
-            <span>
-              {integrated
-                ? "Source lamps"
-                : `Lights ${state.lightsEnabled ? "on" : "off"}`}
-            </span>
-          </button>
+          {!integrated && (
+            <button
+              onClick={() => {
+                useConfigurator.setState({
+                  lightsEnabled: !state.lightsEnabled,
+                });
+                audio.play();
+              }}
+              disabled={
+                !interactive || !model.asset.lights || !state.lightsAvailable
+              }
+              aria-label="Lights"
+              aria-pressed={state.lightsEnabled}
+              title={
+                !interactive
+                  ? "Lights require a ready 3D model"
+                  : integrated
+                    ? "Authored source lamps; dynamic controls unavailable"
+                    : "Toggle running lights: front LED strips and rear rings"
+              }
+            >
+              <Sun />
+              <span>
+                {integrated
+                  ? "Source lamps"
+                  : `Lights ${state.lightsEnabled ? "on" : "off"}`}
+              </span>
+            </button>
+          )}
           <button
             disabled={!interactive || reduced || state.cabin.phase === "active"}
             onClick={() => {
@@ -585,32 +589,34 @@ export function ConfiguratorPage() {
                     : "Paint controls unlock with the 3D model"}
               </small>
             </div>
-            <div
-              className="paint-swatches"
-              role="group"
-              aria-label="Exterior paint"
-            >
-              {paints.map((p) => (
-                <button
-                  key={p.id}
-                  disabled={!interactive || !state.paintAvailable}
-                  onClick={() => {
-                    state.setPaint(p.id);
-                    audio.play();
-                  }}
-                  aria-label={p.name}
-                  aria-pressed={p.id === paint.id}
-                  className={p.id === paint.id ? "selected" : ""}
-                  title={p.name}
-                >
-                  <span
-                    className="swatch"
-                    style={{ backgroundColor: p.color }}
-                  />
-                  <span className="swatch-name">{p.name}</span>
-                </button>
-              ))}
-            </div>
+            {!integrated && (
+              <div
+                className="paint-swatches"
+                role="group"
+                aria-label="Exterior paint"
+              >
+                {paints.map((p) => (
+                  <button
+                    key={p.id}
+                    disabled={!interactive || !state.paintAvailable}
+                    onClick={() => {
+                      state.setPaint(p.id);
+                      audio.play();
+                    }}
+                    aria-label={p.name}
+                    aria-pressed={p.id === paint.id}
+                    className={p.id === paint.id ? "selected" : ""}
+                    title={p.name}
+                  >
+                    <span
+                      className="swatch"
+                      style={{ backgroundColor: p.color }}
+                    />
+                    <span className="swatch-name">{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               className="paint-info icon-button"
               aria-label="Asset information"

@@ -7,6 +7,8 @@ import { createVehicleLoader } from "../src/components/three/createVehicleLoader
 const anchors = JSON.parse(readFileSync(new NodeURL("../src/data/r35-study-camera-anchors.json", import.meta.url), "utf8"));
 // @ts-expect-error Existing dependency-free QA helpers are JavaScript modules.
 import * as studyReadiness from "../scripts/integrated-study-readiness.mjs";
+// @ts-expect-error Exact-source reuse of the established same-session CDP recorder.
+import { observeIntegratedStudyRuntimeBodies, studyBodyRecorderSourceSha256 } from "../scripts/integrated-study-network.mjs";
 const {
   installIntegratedStudyCaptureObserver,
   armFunctionalCapture,
@@ -118,6 +120,7 @@ function expectedPose(seat: "driver" | "passenger" | "rear", dimensions: any) {
   };
 }
 const reports = new WeakMap<Page, any>();
+const bodyObservers = new WeakMap<Page, any>();
 test.beforeEach(async ({ page }, info) => {
   const decodeGate = info.tags.includes("@decode-gate");
   const nativeLifecycle = info.tags.includes("@lifecycle");
@@ -141,11 +144,27 @@ test.beforeEach(async ({ page }, info) => {
     viewport: page.viewportSize(),
     modelRequests: [] as string[],
     bodies: [] as any[],
+    bodyErrors: [] as any[],
+    pageResponses: [] as any[],
+    requestFailures: [] as any[],
+    bodyRecorderSourceSha256: studyBodyRecorderSourceSha256,
     diagnostics: [] as any[],
     captures: [] as any[],
   };
   reports.set(page, report);
+  const requestIds = new WeakMap<object, number>();
+  let nextRequestId = 0;
+  const requestId = (request: object) => {
+    if (!requestIds.has(request)) requestIds.set(request, ++nextRequestId);
+    return requestIds.get(request)!;
+  };
+  const cdp = await page.context().newCDPSession(page);
+  bodyObservers.set(page, await observeIntegratedStudyRuntimeBodies({
+    cdp, responses: report.bodies, errors: report.bodyErrors,
+    phase: () => "integrated-study",
+  }));
   page.on("request", (request) => {
+    requestId(request);
     if (new URL(request.url()).pathname.endsWith(".glb"))
       report.modelRequests.push(new URL(request.url()).pathname);
   });
@@ -161,16 +180,17 @@ test.beforeEach(async ({ page }, info) => {
   });
   page.on("response", (response) => {
     if (new URL(response.url()).pathname === modelPath)
-      report.bodies.push(
-        response
-          .body()
-          .then((body) => ({
-            status: response.status(),
-            bytes: body.length,
-            sha256: hash(body),
-          }))
-          .catch((error) => ({ error: String(error) })),
-      );
+      report.pageResponses.push({
+        requestId: requestId(response.request()), path: modelPath,
+        url: response.url(), status: response.status(),
+      });
+  });
+  page.on("requestfailed", (request) => {
+    if (new URL(request.url()).pathname === modelPath)
+      report.requestFailures.push({
+        requestId: requestId(request), path: modelPath, url: request.url(),
+        phase: "integrated-study", failure: request.failure()?.errorText,
+      });
   });
   await page.addInitScript({
     content: `(${installCabinResourceObserver.toString()})(${JSON.stringify({ expectedImages })});${nativeLifecycle ? `(${installRenderBackpressureLifecycleFixture.toString()})();` : ""}(${installIntegratedStudyCaptureObserver.toString()})();(${installPreparationObserver.toString()})(${JSON.stringify({ modelPath, modelJson })});${decodeGate ? `(${installPreparationDecodeFixture.toString()})(${JSON.stringify({ images: expectedImages })});globalThis.__r35PreparationDecode.arm();` : ""}`,
@@ -183,8 +203,6 @@ test.afterEach(async ({ page }, info) => {
       readinessWindow(budgets.lifecycle),
       "settle exact bodies and final observations",
       async (remaining) => {
-        report.bodies = await Promise.all(report.bodies);
-        remaining();
         report.preparation = await page.evaluate(() =>
           (window as any).__r35Preparation?.snapshot(),
         );
@@ -200,6 +218,8 @@ test.afterEach(async ({ page }, info) => {
         report.resources = await page.evaluate(() =>
           (window as any).__cabinResourceObserver?.snapshot(),
         );
+        remaining();
+        await bodyObservers.get(page).verify(report.pageResponses, report.requestFailures);
         remaining();
         expect(report.bodies).toHaveLength(report.modelRequests.length);
         expect(
@@ -286,7 +306,11 @@ async function initial(page: Page) {
         timeout: remaining(),
       });
       const held = await observation(page, window);
-      expect(held.ui.preparation.phase).toBe("loading");
+      expect(held.ui.preparation).toMatchObject({
+        phase: "idle", progressPhase: null, modelUrl: modelPath,
+        request: null, startedAt: null, readyAt: null,
+      });
+      expect(held.dom.some((row: any) => row.ready)).toBe(false);
       expect(held.ui.maskOpaque).toBe(true);
       remaining();
       await page.evaluate(() =>
@@ -307,10 +331,8 @@ async function initial(page: Page) {
     });
     await expect(
       page.getByRole("button", { name: "Lights", exact: true }),
-    ).toBeDisabled({ timeout: remaining() });
-    await expect(
-      page.getByRole("button", { name: "Ultimate Silver" }),
-    ).toBeDisabled({ timeout: remaining() });
+    ).toHaveCount(0, { timeout: remaining() });
+    await expect(page.locator(".paint-swatches")).toHaveCount(0, { timeout: remaining() });
     expect(reports.get(page).modelRequests).toEqual([modelPath]);
     await armFunctionalCapture(page, { allowUnchanged: true });
   });
@@ -840,9 +862,10 @@ async function heldDecode(page: Page) {
       ).toBe(true);
       const state = await observation(page, window);
       expect(state.ui.preparation).toMatchObject({
-        phase: "loading",
-        progressPhase: "decoding",
+        phase: "idle", progressPhase: null, modelUrl: modelPath,
+        request: null, startedAt: null, readyAt: null,
       });
+      await expect(page.locator("main")).toHaveAttribute("data-cabin-layout", "integrated", { timeout: remaining() });
       expect(state.ui.maskOpaque).toBe(true);
       expect(state.dom.some((row: any) => row.ready)).toBe(false);
       const owner = state.events.find(
@@ -855,7 +878,7 @@ async function heldDecode(page: Page) {
   );
 }
 
-async function routeAway(page: Page, window: Window) {
+async function routeAway(page: Page, window: Window, expectedPhase: "idle" | "loading") {
   await step(
     window,
     "trusted route exit while initial preparation is incomplete",
@@ -873,7 +896,7 @@ async function routeAway(page: Page, window: Window) {
       );
       expect(click).toMatchObject({
         trusted: true,
-        ui: { preparation: { phase: "loading" } },
+        ui: { preparation: { phase: expectedPhase, modelUrl: modelPath } },
       });
     },
   );
@@ -974,7 +997,7 @@ test(
   async ({ page }) => {
     const { owner, held } = await heldDecode(page);
     const lifecycle = readinessWindow(budgets.lifecycle);
-    await routeAway(page, lifecycle);
+    await routeAway(page, lifecycle, "idle");
     await step(
       lifecycle,
       "release the genuine native bitmap to its cancelled owner",
@@ -1007,6 +1030,40 @@ test(
   },
 );
 
+function armPreparationCompletionHold(modelPath: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const main = document.querySelector("main");
+    if (!main) throw new Error("Study preparation root is missing");
+    const inspect = () => {
+      try {
+        if (!main.isConnected || main !== document.querySelector("main") ||
+          main.getAttribute("data-cabin-layout") !== "integrated" ||
+          main.getAttribute("data-cabin-model-url") !== modelPath)
+          throw new Error("Exact study preparation owner changed before the hold");
+        if (main.getAttribute("data-cabin-preparation") === "ready" ||
+          main.hasAttribute("data-cabin-ready-at"))
+          throw new Error("Native preparation hold missed the initial preparation boundary");
+        if (main.getAttribute("data-cabin-preparation") !== "loading" ||
+          main.getAttribute("data-cabin-progress") !== "preparing") return;
+        const hold = (globalThis as any).__r35RenderBackpressureLifecycle.armCurrent("completion-clear");
+        observer.disconnect();
+        resolve(hold);
+      } catch (error) {
+        observer.disconnect();
+        reject(error);
+      }
+    };
+    const observer = new MutationObserver(inspect);
+    observer.observe(main, { attributes: true, attributeFilter: [
+      "data-cabin-preparation", "data-cabin-progress", "data-cabin-ready-at",
+      "data-cabin-layout", "data-cabin-model-url",
+    ] });
+    // Install the observer before releasing decode. Initial whole-car frames
+    // remain native; only the real loading/preparing boundary arms the fixture.
+    (globalThis as any).__r35PreparationDecode.release();
+  });
+}
+
 test(
   "[cancellation] trusted route exit during native-positive preparation retires its outstanding queue",
   { tag: ["@decode-gate", "@lifecycle", "@gpu-cancel"] },
@@ -1014,18 +1071,8 @@ test(
     const { window, owner } = await heldDecode(page);
     const hold = await step(
       window,
-      "arm the existing first-owner native-positive observation fixture",
-      async () => {
-        const hold = await page.evaluate(() =>
-          (globalThis as any).__r35RenderBackpressureLifecycle.armCurrent(
-            "completion-clear",
-          ),
-        );
-        await page.evaluate(() =>
-          (globalThis as any).__r35PreparationDecode.release(),
-        );
-        return hold;
-      },
+      "arm the existing native-positive fixture at the actual preparation boundary",
+      async () => page.evaluate(armPreparationCompletionHold, modelPath),
     );
     await step(
       window,
@@ -1067,7 +1114,7 @@ test(
       },
     );
     const lifecycle = readinessWindow(budgets.lifecycle);
-    await routeAway(page, lifecycle);
+    await routeAway(page, lifecycle, "loading");
     await step(
       lifecycle,
       "release only the positive-observation delay after trusted route cancellation",

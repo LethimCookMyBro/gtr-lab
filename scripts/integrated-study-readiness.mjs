@@ -59,9 +59,9 @@ export const installIntegratedStudyCaptureObserver = new Function(
 
 import { execFileSync } from "node:child_process";
 import { sourceIdentity } from "./ui-optimization-policy.mjs";
-export const STUDY_PARENT = "a517830f8e11c1ee969b15fe6402b2fb70e50d4b";
+export const STUDY_PARENT = "ec52935017233661f3c46a566ce4661eaa555783";
 export const STUDY_RUNTIME_TREE =
-  "2eeb020da40db1aaa6b6b44021578bbf85cb894e06682d0e381988b2ee1f9a5a";
+  "a742f29926561f8c6b1e7256dc3c71d54ec10792ace219c5fbbeb330ad74310a";
 export function validateIntegratedStudyEnvironment(env) {
   assert.equal(env.GITHUB_ACTIONS, "true");
   assert.equal(env.GITHUB_REPOSITORY, "LethimCookMyBro/gtr-lab");
