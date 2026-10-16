@@ -1,0 +1,66 @@
+name: Exact deployed integrated 2008 R35 proof
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/integrated-study-live-*.json'
+      - 'scripts/integrated-study-live-*'
+      - 'e2e/integrated-r35-study-live.spec.ts'
+      - 'playwright.integrated-study-live.config.ts'
+      - 'tests/integrated-study-live.node.mjs'
+      - '.github/workflows/integrated-r35-study-live.yml'
+permissions:
+  contents: read
+concurrency:
+  group: integrated-study-live-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  public-native-proof:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[verify-integrated-r35-study-live]') && !contains(github.event.head_commit.message, '[release-')
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop-1440, mobile-390]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      R35_STUDY_LIVE: '1'
+      R35_STUDY_LIVE_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Socket-free exact-adapter regression and TypeScript checks
+        run: |
+          node --test tests/integrated-study-live.node.mjs
+          node node_modules/typescript/bin/tsc --noEmit
+      - name: Build exact accepted source and all local model oracles
+        run: npm run build
+        timeout-minutes: 8
+      - name: Enforce exact accepted source, checked-in deployment pins and local build
+        run: node --input-type=module -e "import {verifyStudyLiveSource} from './scripts/integrated-study-live-contract.mjs'; await verifyStudyLiveSource(process.cwd(), process.env)"
+      - name: Install CI Chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
+        timeout-minutes: 5
+      - name: Actual public-origin resident and native-context retry proof
+        run: node node_modules/playwright/cli.js test -c playwright.integrated-study-live.config.ts --project=${{ matrix.project }}
+        timeout-minutes: 11
+      - name: State evidence scope
+        if: always()
+        run: echo 'Fixed Railway origin only. Separate connector deployment identity; exact served HTML/JS/CSS and same-session GLB bodies. Original resident workload, native fences, absolute windows, screenshot hashes and cleanup assertions retained. SwiftShader is not physical-device performance. No release or deployment action.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integrated-study-live-${{ github.sha }}-${{ matrix.project }}
+          path: |
+            test-results/integrated-study-live/
+            playwright-integrated-study-live-report/
+          if-no-files-found: warn
+          retention-days: 14

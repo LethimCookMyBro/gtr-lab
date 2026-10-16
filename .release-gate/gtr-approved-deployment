@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "scope": "optional-polytigr-2008-r35-study",
+  "acceptedCommit": "0565727177dc549f52a3181bface65c6582a0fcb",
+  "sourceSha256": "a742f29926561f8c6b1e7256dc3c71d54ec10792ace219c5fbbeb330ad74310a",
+  "buildSha256": "b94f7ccfcc4cb58e06f73653fc2e3093dc29083b790f1c41c9c8a40114b36c36",
+  "defaultCar": "unchanged-premium",
+  "modelSha256": "a8f6e3e15ab71075f8caf817d362d31be8b7f0f4734f12602ea6348599727585"
+}
