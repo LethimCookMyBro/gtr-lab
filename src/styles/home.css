@@ -2257,28 +2257,11 @@
   }
 }
 
-/* Original layered menu motion, informed by the observed interaction pattern. */
+/* A short opacity reveal preserves stable interactive hit areas. */
 .home-menu-dialog {
   isolation: isolate;
   background: #111416;
-  animation: menu-window-in 480ms cubic-bezier(0.22, 0.7, 0.22, 1) both;
-}
-.home-menu-underlays {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  overflow: hidden;
-}
-.home-menu-underlays span {
-  position: absolute;
-  inset: 0;
-  background: #555b60;
-  animation: menu-curtain 650ms cubic-bezier(0.7, 0, 0.2, 1) both;
-}
-.home-menu-underlays span:last-child {
-  background: #95232b;
-  animation-duration: 490ms;
+  animation: menu-window-in 220ms cubic-bezier(0.22, 0.7, 0.22, 1) both;
 }
 .home-menu-top,
 .home-menu-body,
@@ -2287,25 +2270,7 @@
 }
 .home-menu-primary a,
 .home-menu-models a {
-  animation: menu-link-in 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: 250ms;
-}
-.home-menu-primary a:nth-child(2),
-.home-menu-models a:nth-child(2) {
-  animation-delay: 300ms;
-}
-.home-menu-primary a:nth-child(3),
-.home-menu-models a:nth-child(3) {
-  animation-delay: 350ms;
-}
-.home-menu-models a:nth-child(4) {
-  animation-delay: 400ms;
-}
-.home-menu-models a:nth-child(5) {
-  animation-delay: 450ms;
-}
-.home-menu-models a:nth-child(6) {
-  animation-delay: 500ms;
+  animation: menu-link-in 180ms ease-out both;
 }
 .home-menu-primary a > span {
   display: flex;
@@ -2335,31 +2300,18 @@
 }
 @keyframes menu-window-in {
   from {
-    clip-path: inset(0 0 100%);
+    opacity: 0;
   }
   to {
-    clip-path: inset(0);
-  }
-}
-@keyframes menu-curtain {
-  0%,
-  20% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-102%);
+    opacity: 1;
   }
 }
 @keyframes menu-link-in {
   from {
     opacity: 0;
-    transform: translateY(28px);
-    clip-path: inset(100% 0 0);
   }
   to {
     opacity: 1;
-    transform: none;
-    clip-path: inset(0);
   }
 }
 @keyframes menu-window-out {
@@ -2745,9 +2697,6 @@
   .home-menu-dialog::backdrop {
     animation: none !important;
     transition: none !important;
-  }
-  .home-menu-underlays {
-    display: none;
   }
   .home-model-invitation,
   .home-editorial-copy,

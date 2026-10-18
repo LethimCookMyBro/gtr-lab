@@ -21,18 +21,21 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
+const view = () => (
+  <MemoryRouter>
+    <Routes>
+      <Route path="/" element={<HomeHeader />} />
+      <Route path="/models" element={<h1>Models destination</h1>} />
+    </Routes>
+  </MemoryRouter>
+);
 function show() {
-  render(
-    <MemoryRouter>
-      <Routes>
-        <Route path="/" element={<HomeHeader />} />
-        <Route path="/models" element={<h1>Models destination</h1>} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  const result = render(view());
   screen.getByRole("button", { name: "Open menu" }).focus();
   fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+  return result;
 }
+
 it("finishes the visible close transition before navigating", () => {
   show();
   fireEvent.click(
@@ -83,4 +86,26 @@ it("Escape closes with restored trigger focus", () => {
   expect(document.activeElement).toBe(
     screen.getByRole("button", { name: "Open menu" }),
   );
+});
+it("accepts immediate selection before any entry animation or timer completes", () => {
+  show();
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("link", { name: "Models" }),
+  );
+  act(() => vi.advanceTimersByTime(260));
+  expect(
+    screen.getByRole("heading", { name: "Models destination" }),
+  ).toBeTruthy();
+});
+
+it("retains delayed navigation across an unrelated parent rerender", () => {
+  const { rerender } = show();
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("link", { name: "Models" }),
+  );
+  rerender(view());
+  act(() => vi.advanceTimersByTime(260));
+  expect(
+    screen.getByRole("heading", { name: "Models destination" }),
+  ).toBeTruthy();
 });

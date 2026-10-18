@@ -205,10 +205,6 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
         requestClose();
       }}
     >
-      <div className="home-menu-underlays" aria-hidden="true">
-        <span />
-        <span />
-      </div>
       <div className="home-menu-top">
         <button type="button" onClick={requestClose} aria-label="Close menu">
           <X size={26} strokeWidth={1.5} />
