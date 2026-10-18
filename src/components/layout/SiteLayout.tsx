@@ -1,5 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -112,18 +124,39 @@ export function Footer() {
 }
 
 function HomeMenu({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const destination = useRef<string | null>(null);
   const ref = useRef<HTMLDialogElement>(null);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestClose = useCallback(() => {
     if (closeTimer.current) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const finish = () => {
       onClose();
+      if (destination.current) navigate(destination.current);
+    };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finish();
       return;
     }
     setClosing(true);
-    closeTimer.current = setTimeout(onClose, 260);
-  }, [onClose]);
+    closeTimer.current = setTimeout(finish, 260);
+  }, [onClose, navigate]);
+  const selectDestination = (event: MouseEvent<HTMLAnchorElement>) => {
+    // Keep modified clicks and opening a new tab native.
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    if (closeTimer.current) return;
+    destination.current = event.currentTarget.getAttribute("href");
+    requestClose();
+  };
   useEffect(() => {
     const dialog = ref.current;
     const previous = document.activeElement as HTMLElement | null;
@@ -188,19 +221,19 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
       </h2>
       <div className="home-menu-body">
         <nav aria-label="Main navigation" className="home-menu-primary">
-          <Link to="/models" onClick={onClose}>
+          <Link to="/models" onClick={selectDestination}>
             <span>
               <small aria-hidden="true">01</small>Models
             </span>{" "}
             <ArrowUpRight strokeWidth={1} />
           </Link>
-          <Link to="/heritage" onClick={onClose}>
+          <Link to="/heritage" onClick={selectDestination}>
             <span>
               <small aria-hidden="true">02</small>Heritage
             </span>{" "}
             <ArrowUpRight strokeWidth={1} />
           </Link>
-          <Link to="/configurator/premium" onClick={onClose}>
+          <Link to="/configurator/premium" onClick={selectDestination}>
             <span>
               <small aria-hidden="true">03</small>Enter the lab
             </span>{" "}
@@ -212,7 +245,7 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
             <Link
               key={model.id}
               to={`/configurator/${model.id}`}
-              onClick={onClose}
+              onClick={selectDestination}
             >
               <span>{model.shortName}</span>
               <ArrowRight size={19} strokeWidth={1.5} />
@@ -222,7 +255,7 @@ function HomeMenu({ onClose }: { onClose: () => void }) {
       </div>
       <div className="home-menu-bottom">
         <span>An independent exploration of an icon.</span>
-        <Link to="/credits" onClick={onClose}>
+        <Link to="/credits" onClick={selectDestination}>
           Credits & sources
         </Link>
       </div>

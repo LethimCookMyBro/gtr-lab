@@ -2997,3 +2997,50 @@
     animation: none;
   }
 }
+
+/* Header menu feedback keeps the pointer/touch target fixed. */
+.home-menu-trigger {
+  position: relative;
+  touch-action: manipulation;
+}
+.home-menu-trigger > span {
+  transition:
+    transform 180ms ease,
+    color 180ms ease;
+}
+.home-menu-trigger:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 6px;
+}
+.home-menu-trigger:focus-visible .home-menu-lines {
+  transform: scaleX(1.15);
+  color: #e64149;
+}
+@media (hover: hover) and (pointer: fine) {
+  .home-menu-trigger:hover .home-menu-lines {
+    transform: scaleX(1.15);
+    color: #e64149;
+  }
+  .home-menu-trigger:hover > span:last-child {
+    transform: translateX(3px);
+  }
+}
+.home-menu-trigger:active > span,
+.home-menu-top > button:active > span,
+.home-menu-primary a:active > span,
+.home-menu-models a:active > span {
+  transform: translateY(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-menu-trigger > span {
+    transition: none;
+  }
+  .home-menu-trigger:hover > span,
+  .home-menu-trigger:focus-visible > span,
+  .home-menu-trigger:active > span,
+  .home-menu-top > button:active > span,
+  .home-menu-primary a:active > span,
+  .home-menu-models a:active > span {
+    transform: none;
+  }
+}
