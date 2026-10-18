@@ -22,7 +22,7 @@ try {
  page.on('pageerror',e=>report.errors.push(e.message));page.on('response',r=>{if(r.status()>=400)report.networkFailures.push({url:r.url(),status:r.status()})});
  async function capture(label){
   const state=await page.evaluate(()=>({url:location.href,title:document.title,overflow:document.documentElement.scrollWidth>innerWidth,canvasCount:document.querySelectorAll('canvas').length,film:document.querySelector('.home-film--hero')?.getAttribute('data-film-document'),cabin:document.querySelector('main')?.getAttribute('data-cabin-preparation'),sceneHeight:document.querySelector('.scene-stage')?.getBoundingClientRect().height}));
-  report.pages.push({label,...state});await page.screenshot({path:`${out}/${label}.png`,fullPage:false,timeout:90000});assert.equal(state.overflow,false,`${label} horizontal overflow`);
+  report.pages.push({label,...state});await page.screenshot({path:`${out}/${label}.png`,fullPage:name==='landscape'&&(label.startsWith('configurator-')||label==='premium'||label==='study2008'),timeout:90000});assert.equal(state.overflow,false,`${label} horizontal overflow`);if(name==='landscape'&&label.startsWith('configurator-'))assert.ok(state.sceneHeight>=240,`${label} reference scene too short`);
  }
  async function opening(){
   await page.goto(pin.origin,{waitUntil:'domcontentloaded'});
@@ -50,9 +50,9 @@ try {
   await page.goto(pin.origin+'/configurator/premium'+(study?'?study=2008':''),{waitUntil:'domcontentloaded'});
   await page.locator('.scene-stage canvas').waitFor();await page.locator('.scene-loading').waitFor({state:'hidden'});await page.waitForTimeout(700);
   if(study){await expect(page.locator('main')).toHaveAttribute('data-cabin-preparation','ready');assert.equal(await page.title(),'GT-R LAB — 2008 GT-R R35 Study');}
-  else{const red=page.getByRole('button',{name:'Vibrant Red',exact:true});await red.click();await expect(red).toHaveAttribute('aria-pressed','true');}
+  else{const red=page.getByRole('button',{name:'Vibrant Red',exact:true});await red.click();await expect(red).toHaveAttribute('aria-pressed','true');await page.waitForTimeout(1500);}
   await capture(study?'study2008':'premium');
-  const camera=page.getByRole('button',{name:'Camera',exact:true});await camera.click();await page.getByRole('dialog').waitFor();await capture(study?'study-camera':'premium-camera');await page.getByRole('dialog').getByRole('button',{name:'Close panel',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+  const camera=page.getByRole('button',{name:'Camera',exact:true});await camera.click();await page.getByRole('dialog').waitFor();await page.waitForTimeout(300);await capture(study?'study-camera':'premium-camera');await page.getByRole('dialog').getByRole('button',{name:'Close panel',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
  }
  if(!touch){
   await context.close();const reduced=await browser.newContext({viewport:{width,height},reducedMotion:'reduce',serviceWorkers:'block'});const p=await reduced.newPage();await p.goto(pin.origin);await p.locator('.home-loading-gate[open]').waitFor({state:'hidden',timeout:16000});assert.equal(await p.locator('.home-film--hero iframe').count(),0);await p.getByRole('button',{name:'Open menu',exact:true}).click();await p.getByRole('dialog').getByRole('link',{name:'Models',exact:true}).click();await p.waitForURL('**/models');report.checks.push('Reduced-motion no autoplay and immediate menu navigation');await reduced.close();

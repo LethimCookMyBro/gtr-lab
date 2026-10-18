@@ -1,34 +1,34 @@
 {
   "origin": "https://gtr-lab-do56-ten.vercel.app",
-  "sourceCommit": "86174fe210012845c2a75be8fbaf96cd382c2703",
+  "sourceCommit": "d2ce4a4921059d42c4a3dced95bfa5296765706f",
   "assets": {
-    "assets/ConfiguratorPage-oGzo46nO.js": {
+    "assets/ConfiguratorPage-SL4V-j4w.js": {
       "bytes": 42211,
-      "sha256": "4465a28142342f2afd097d2b0c227ee9b432b1e5cfc4129f294e23ae3fa2f2a9"
+      "sha256": "15307a758307633fe3d5fe63ea6964db5b89ca5ebe464e2f5248293cf9d31350"
     },
     "assets/ConfiguratorPage-wvtzG_eM.css": {
       "bytes": 5841,
       "sha256": "a7d1d0b5ab2070256b88e502576652f39c1b7f7b937bf36a83aaa88a582ccced"
     },
-    "assets/RearVehicleScene-BKonwkk1.js": {
+    "assets/RearVehicleScene-Bcb59jhR.js": {
       "bytes": 11833,
-      "sha256": "6ee7b257bd9b56de8a21b88b54b99566d1030f289e5c2e4fef0219045edf3707"
+      "sha256": "9c3de1bc5884b87269d374cab39e08edf1d22801621085852c078c2747676d03"
     },
-    "assets/VehicleScene-BRhx1JRt.js": {
+    "assets/VehicleScene-Doxqjtpj.js": {
       "bytes": 153106,
-      "sha256": "927f97517cb9f61c44a3d47fe8b352abc75e85e37252ea37cef2f4345035a337"
+      "sha256": "b3537da3b15a3c3d9f35182fee563b38de528074e6d819c3c8c3601667f9ef8a"
     },
-    "assets/compileRearScene-DoE2QnMq.js": {
+    "assets/compileRearScene-D9hcdWV4.js": {
       "bytes": 575791,
-      "sha256": "3c77769a48840e36ee09a23756f521bd7aaec6f5fc00e47088a7608715cf5e96"
+      "sha256": "6238d901bf4c98d1806237c0bcbb8b47facfc70314d03f076faf1ce87a601533"
     },
-    "assets/index-Cn05P82W.js": {
+    "assets/index-BV_OvUvo.js": {
       "bytes": 352522,
-      "sha256": "2f3ac352cd67f19e316e4116785fbfc47da5b14680d8fec64132f52df2b7fd8f"
+      "sha256": "1b1959da90e800b84c8b3a3bcff457415082308c9cd316eb4ad1a616948ad9bc"
     },
-    "assets/index-majdTmFP.css": {
-      "bytes": 107823,
-      "sha256": "bb7c72d6cf03e667e1b37c9be47f5474f2fd0bfad6015c12ab5d2f9598adf5ad"
+    "assets/index-oNNPWRzX.css": {
+      "bytes": 107966,
+      "sha256": "b255e735547ca61d836850388a9783ac8b794ca0cc54f658b4aebe31575981de"
     },
     "assets/react-core-D_MqGOP-.js": {
       "bytes": 50559,
@@ -48,7 +48,7 @@
     },
     "index.html": {
       "bytes": 700,
-      "sha256": "3e191512540b46239eef17584666e01c80de65396e523fdccdf1a835bac3e07d"
+      "sha256": "cf48ca6f5e5cd4d3e34fea090463bbcc991ddb2dfadaa7505905dbc8a6396844"
     },
     "models/ciasny-r35-brake-index-e9425289.glb": {
       "bytes": 8566388,
