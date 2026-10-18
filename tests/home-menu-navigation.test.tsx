@@ -38,7 +38,6 @@ it("finishes the visible close transition before navigating", () => {
   fireEvent.click(
     within(screen.getByRole("dialog")).getByRole("link", {
       name: "Models",
-      exact: true,
     }),
   );
   expect(screen.getByRole("dialog").getAttribute("data-phase")).toBe("closing");
@@ -59,7 +58,6 @@ it("navigates immediately under reduced motion", () => {
   fireEvent.click(
     within(screen.getByRole("dialog")).getByRole("link", {
       name: "Models",
-      exact: true,
     }),
   );
   expect(
@@ -72,7 +70,6 @@ it("keeps modified link clicks native and the menu open", () => {
   fireEvent.click(
     within(screen.getByRole("dialog")).getByRole("link", {
       name: "Models",
-      exact: true,
     }),
     { ctrlKey: true },
   );
