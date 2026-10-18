@@ -1,0 +1,39 @@
+name: Vercel responsive release verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/vercel-responsive-qa.yml'
+      - 'scripts/verify-vercel-responsive.mjs'
+      - 'qa/vercel-responsive-20261018.json'
+permissions:
+  contents: read
+jobs:
+  browser:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && contains(github.event.head_commit.message, '[verify-vercel-responsive]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [mobile320, mobile390, tablet768, tablet1024, desktop1440, landscape]
+    env:
+      GTR_VIEWPORT: ${{ matrix.viewport }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --check scripts/verify-vercel-responsive.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/verify-vercel-responsive.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vercel-responsive-${{ matrix.viewport }}
+          path: vercel-responsive-results/
+          retention-days: 14
