@@ -17,17 +17,21 @@ export function HomePage() {
   const root = useRef<HTMLDivElement>(null);
   const [activeEra, setActiveEra] = useState(0);
   const preferences = useHomePreferences();
-  const [heroReady, setHeroReady] = useState(false);
+  const [posterReady, setPosterReady] = useState(false);
+  const [playerDocumentReady, setPlayerDocumentReady] = useState(false);
+  const expectsPlayer = !preferences.reducedMotion && !preferences.saveData;
+  // Cross-origin document readiness is observable; video playback is not.
+  const heroReady = posterReady && (!expectsPlayer || playerDocumentReady);
   const [visualFailed, setVisualFailed] = useState(false);
   const [released, setReleased] = useState(false);
-  const reportHeroReady = useCallback(() => setHeroReady(true), []);
+  const reportHeroReady = useCallback(() => setPosterReady(true), []);
   useEffect(() => {
     if (heroReady || released) return;
-    const timeout = window.setTimeout(() => setVisualFailed(true), 25000);
+    const timeout = window.setTimeout(() => setVisualFailed(true), 12000);
     return () => window.clearTimeout(timeout);
   }, [heroReady, released]);
-  // The opening owns only the photograph. Rear GPU preparation and recovery
-  // remain local so a slow or unsupported renderer never blocks navigation.
+  // Prepare the poster and publisher document together. Rear GPU work stays
+  // local; visitors can skip immediately or recover after the bounded deadline.
   const pending = !released && !heroReady;
   useEffect(() => {
     if (heroReady) setReleased(true);
@@ -36,6 +40,12 @@ export function HomePage() {
   useHomeMotion(root, sequential, setActiveEra);
   return (
     <>
+      {expectsPlayer && (
+        <>
+          <link rel="preconnect" href="https://media.flixel.com" />
+          <link rel="preconnect" href="https://cdn.flixel.com" />
+        </>
+      )}
       <OpeningMark
         pending={pending}
         visualFailed={visualFailed}
@@ -56,6 +66,7 @@ export function HomePage() {
           {...preferences}
           openingResolved={!pending}
           onVisualReady={reportHeroReady}
+          onDocumentReady={setPlayerDocumentReady}
         />
         <EditorialOverlap />
         <ExpandingFilm {...preferences} />

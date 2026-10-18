@@ -33,7 +33,7 @@ it("labels only image preparation without model download progress", () => {
   const gate = screen.getByRole("dialog");
   expect(within(gate).queryByRole("progressbar")).toBeNull();
   expect(within(gate).getByRole("status").textContent).toBe(
-    "Preparing the opening image",
+    "Preparing the opening",
   );
   expect(gate.textContent).not.toMatch(/3D|model|download/i);
 });

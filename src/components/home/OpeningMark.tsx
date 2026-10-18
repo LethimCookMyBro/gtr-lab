@@ -119,8 +119,8 @@ export function OpeningMark({
   const failed = visualFailed && !heroReady;
   const animate = pending && !reducedMotion && !failed;
   const label = failed
-    ? "The opening visual took too long to load. Reload the page or continue browsing."
-    : "Preparing the opening image";
+    ? "The opening is taking longer than expected."
+    : "Preparing the opening";
   return (
     <dialog
       ref={dialog}
@@ -129,7 +129,7 @@ export function OpeningMark({
       aria-describedby="home-loading-status"
       aria-modal="true"
       data-state={pending ? (failed ? "error" : "loading") : "resolved"}
-      data-load-phase={failed ? "error" : heroReady ? "ready" : "image"}
+      data-load-phase={failed ? "error" : heroReady ? "ready" : "opening"}
       onCancel={(event) => event.preventDefault()}
     >
       <div className="home-opening-center">

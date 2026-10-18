@@ -8,12 +8,15 @@ export function HeroFilm({
   saveData,
   openingResolved = true,
   onVisualReady,
+  onDocumentReady,
 }: {
   reducedMotion: boolean;
   saveData: boolean;
   openingResolved?: boolean;
   /** Called only after the local opening photograph decodes, not on iframe load. */
   onVisualReady?: () => void;
+  /** Publisher document only; not a media playback signal. */
+  onDocumentReady?: (ready: boolean) => void;
 }) {
   return (
     <>
@@ -31,6 +34,7 @@ export function HeroFilm({
             saveData={saveData}
             entryPending={!openingResolved}
             onFallbackReady={onVisualReady}
+            onStateChange={(state) => onDocumentReady?.(state === "embedded")}
           />
           <div className="home-hero-copy">
             <h1 id="home-title" tabIndex={-1}>

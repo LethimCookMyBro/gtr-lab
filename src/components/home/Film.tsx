@@ -222,6 +222,7 @@ export function Film({
             key={`${kind}:${attempt}`}
             ref={attachFrame}
             className="home-film-provider"
+            loading="eager"
             inert={!loaded || (kind === "hero" && entryPending)}
             aria-hidden={
               !loaded || (kind === "hero" && entryPending) ? true : undefined

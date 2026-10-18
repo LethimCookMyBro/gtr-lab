@@ -70,7 +70,7 @@ function decodePoster(container: HTMLElement) {
   fireEvent.load(image);
   return finish;
 }
-it("gates only the opening image without exposing rear model progress", () => {
+it("gates the opening document and photograph without exposing rear model progress", () => {
   const { container } = show();
   const frame = container.querySelector(".home-film--hero iframe");
   expect(frame?.hasAttribute("inert")).toBe(true);
@@ -81,19 +81,21 @@ it("gates only the opening image without exposing rear model progress", () => {
   ).toBe(true);
   expect(within(gate).queryByRole("progressbar")).toBeNull();
   expect(within(gate).getByRole("status").textContent).toBe(
-    "Preparing the opening image",
+    "Preparing the opening",
   );
   expect(rear.props.onLoadState).toBeUndefined();
   expect(rear.props.disabled).not.toBe(true);
   expect(document.body.style.overflow).toBe("hidden");
 });
-it("releases after actual poster decode while the rear and hosted film are still pending", async () => {
+it("waits for poster and publisher document, preserving the same iframe across reveal", async () => {
   vi.useFakeTimers();
   const { container } = show();
   const frame = container.querySelector(".home-film--hero iframe");
   const finish = decodePoster(container);
   expect(screen.getByRole("dialog").getAttribute("data-state")).toBe("loading");
   await act(async () => finish());
+  expect(screen.getByRole("dialog").getAttribute("data-state")).toBe("loading");
+  fireEvent.load(frame!);
   expect(screen.getByRole("dialog").getAttribute("data-state")).toBe(
     "resolved",
   );
@@ -135,15 +137,13 @@ it("keeps keyboard focus in the gate and Escape does not claim readiness", () =>
   fireEvent(gate, new Event("cancel", { cancelable: true }));
   expect(screen.getByRole("dialog")).toBeTruthy();
 });
-it("retains the exact 25-second image deadline and allows browsing after failure", () => {
+it("retains the bounded 12-second opening deadline and allows browsing after failure", () => {
   vi.useFakeTimers();
   show();
-  act(() => vi.advanceTimersByTime(24999));
+  act(() => vi.advanceTimersByTime(11999));
   expect(screen.getByRole("dialog").getAttribute("data-state")).toBe("loading");
   act(() => vi.advanceTimersByTime(1));
-  expect(screen.getByRole("dialog").textContent).toMatch(
-    /opening visual.*too long/i,
-  );
+  expect(screen.getByRole("dialog").textContent).toMatch(/opening.*longer/i);
   expect(screen.getByRole("button", { name: "Reload page" })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Continue browsing" }));
   expect(screen.queryByRole("dialog")).toBeNull();
@@ -157,7 +157,7 @@ it("restores preexisting scroll styles and clears its timer on route unmount", (
   const clearTimer = vi.spyOn(window, "clearTimeout");
   const { unmount } = show();
   const openingTimerIndex = setTimer.mock.calls.findIndex(
-    ([, delay]) => delay === 25000,
+    ([, delay]) => delay === 12000,
   );
   expect(openingTimerIndex).toBeGreaterThanOrEqual(0);
   const openingTimer = setTimer.mock.results[openingTimerIndex].value;
@@ -174,3 +174,17 @@ it("keeps actual OS motion separate from compact-height visual staging", () => {
   expect(rear.props.reducedMotion).toBe(true);
   expect(rear.props.audioReducedMotion).toBe(false);
 });
+
+it.each(["reducedMotion", "saveData"] as const)(
+  "releases on photograph alone with %s and never requests the player",
+  async (preference) => {
+    preferences[preference] = true;
+    const { container } = show();
+    const finish = decodePoster(container);
+    await act(async () => finish());
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(
+      container.querySelector(".home-loading-gate")?.getAttribute("data-state"),
+    ).toBe("resolved");
+  },
+);
