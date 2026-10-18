@@ -44,11 +44,15 @@ type RearSignatureProps = {
 export function RearSignature(props: RearSignatureProps) {
   const [retry, setRetry] = useState(0);
   const [optedIn, setOptedIn] = useState(false);
+  const [started, setStarted] = useState(false);
+  const start = useCallback(() => setStarted(true), []);
   return (
     <RearSignatureAttempt
       key={`${props.attempt ?? 0}:${retry}`}
       {...props}
       optedIn={optedIn}
+      started={started}
+      onStart={start}
       onOptIn={() => setOptedIn(true)}
       onRetry={() => setRetry((value) => value + 1)}
     />
@@ -63,9 +67,13 @@ function RearSignatureAttempt({
   onRetry,
   optedIn,
   onOptIn,
+  started,
+  onStart,
 }: RearSignatureProps & {
   onRetry: () => void;
   optedIn: boolean;
+  started: boolean;
+  onStart: () => void;
   onOptIn: () => void;
 }) {
   const section = useRef<HTMLElement>(null);
@@ -92,7 +100,8 @@ function RearSignatureAttempt({
       : state;
   const ready = state.phase === "ready";
   const error = state.phase === "error";
-  const mount = permitted && supported === true && !error;
+  const preparing = permitted && (started || optedIn);
+  const mount = preparing && supported === true && !error;
   const active = visible && (!ready || near);
   useEffect(() => {
     callback.current?.(reported);
@@ -115,7 +124,7 @@ function RearSignatureAttempt({
   );
   const ignoreLegacyProgress = useCallback(() => {}, []);
   useEffect(() => {
-    if (!permitted || supported !== null) return;
+    if (!preparing || supported !== null) return;
     const available = canRenderWebGL();
     setSupported(available);
     if (!available)
@@ -125,7 +134,7 @@ function RearSignatureAttempt({
           "A closer look needs WebGL. Continue without 3D or enable hardware acceleration and retry.",
         recovery: "retry",
       });
-  }, [permitted, supported]);
+  }, [preparing, supported]);
   useEffect(() => {
     if (
       !mount ||
@@ -153,17 +162,22 @@ function RearSignatureAttempt({
       typeof IntersectionObserver === "undefined"
         ? undefined
         : new IntersectionObserver(
-            (entries) => setNear(entries.some((entry) => entry.isIntersecting)),
-            { rootMargin: "240px 0px" },
+            (entries) => {
+              const approaching = entries.some((entry) => entry.isIntersecting);
+              setNear(approaching);
+              if (approaching) onStart();
+            },
+            { rootMargin: "1200px 0px" },
           );
     if (section.current) observer?.observe(section.current);
+    if (!observer) onStart();
     const visibility = () => setVisible(document.visibilityState !== "hidden");
     document.addEventListener("visibilitychange", visibility);
     return () => {
       observer?.disconnect();
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, []);
+  }, [onStart]);
   useEffect(() => {
     if (!near || !visible) return;
     let frame = 0;

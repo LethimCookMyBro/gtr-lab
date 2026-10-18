@@ -62,8 +62,16 @@ const show = (props = {}) =>
       <RearSignature {...props} />
     </MemoryRouter>,
   );
-it("prepares its actual scene before intersection and keeps it alive offscreen and while hidden", async () => {
+it("starts ahead of the viewport once and retains the scene offscreen and while hidden", async () => {
   const { container } = show();
+  expect(container.querySelector("canvas")).toBeNull();
+  expect(HTMLCanvasElement.prototype.getContext).not.toHaveBeenCalled();
+  act(() =>
+    intersection(
+      [{ isIntersecting: true }] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    ),
+  );
   await waitFor(() => expect(container.querySelector("canvas")).not.toBeNull());
   const canvas = container.querySelector("canvas");
   expect(runtime.mounts).toBe(1);
@@ -96,6 +104,12 @@ it("does not start Save-Data until opt-in and remounts failed model attempts on 
   fireEvent.click(
     screen.getByRole("button", { name: "Load 3D view · 8.3 MB" }),
   );
+  act(() =>
+    intersection(
+      [{ isIntersecting: true }] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    ),
+  );
   await waitFor(() => expect(container.querySelector("canvas")).not.toBeNull());
   act(() => runtime.props.onError("Failed decoding"));
   expect(container.querySelector("canvas")).toBeNull();
@@ -104,6 +118,12 @@ it("does not start Save-Data until opt-in and remounts failed model attempts on 
 });
 it("bounds a render stall instead of allowing an endless gate", async () => {
   const { container } = show();
+  act(() =>
+    intersection(
+      [{ isIntersecting: true }] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    ),
+  );
   await waitFor(() => expect(container.querySelector("canvas")).not.toBeNull());
   vi.useFakeTimers();
   act(() => runtime.props.onLoadState({ phase: "preparing" }));

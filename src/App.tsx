@@ -12,7 +12,7 @@ const Configurator = lazy(() =>
     default: m.ConfiguratorPage,
   })),
 );
-function routeTitle(pathname: string) {
+function routeTitle(pathname: string, search: string) {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === "/") return "GT-R LAB — Engineered to defy.";
   if (path === "/models") return "GT-R LAB — Models";
@@ -20,6 +20,11 @@ function routeTitle(pathname: string) {
   if (path === "/credits") return "GT-R LAB — Credits & sources";
   const match = /^\/configurator(?:\/([^/]+))?$/.exec(path);
   if (match) {
+    if (
+      (!match[1] || match[1] === "premium") &&
+      new URLSearchParams(search).get("study") === "2008"
+    )
+      return "GT-R LAB — 2008 GT-R R35 Study";
     const model = getModel(match[1] || "premium");
     return model
       ? `GT-R LAB — ${model.shortName} configurator`
@@ -60,7 +65,7 @@ function RouteEffects() {
         document.getElementById(location.hash.slice(1))?.scrollIntoView(),
       );
     } else window.scrollTo(0, 0);
-    document.title = routeTitle(location.pathname);
+    document.title = routeTitle(location.pathname, location.search);
   }, [location]);
   return null;
 }

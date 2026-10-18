@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { ImageReferenceLabel } from "../ImageReferenceLabel";
 import { ReferenceUnavailable } from "../ReferenceUnavailable";
 import { AssetDisclosure } from "./AssetDisclosure";
@@ -18,7 +19,20 @@ export function ConfiguratorPanels({
   model: VehicleModel;
   interactive: boolean;
 }) {
-  const state = useConfigurator();
+  const state = useConfigurator(
+    useShallow((state) => ({
+      beginCabin: state.beginCabin,
+      cabin: state.cabin,
+      cabinPreparation: state.cabinPreparation,
+      cameraPreset: state.cameraPreset,
+      panel: state.panel,
+      renderQuality: state.renderQuality,
+      selectedEnvironment: state.selectedEnvironment,
+      setCamera: state.setCamera,
+      setEnvironment: state.setEnvironment,
+      setRenderQuality: state.setRenderQuality,
+    })),
+  );
   const integrated = model.asset.cabinLayout?.kind === "integrated";
   const selectedCamera =
     state.cabin.phase === "active" ? "interior" : state.cameraPreset;

@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { ImageReferenceLabel } from "../components/ImageReferenceLabel";
 import {
   lazy,
@@ -58,7 +59,39 @@ export function ConfiguratorPage() {
   );
   const windowStatus =
     windowView.model === selectionKey ? windowView.status : "loading";
-  const state = useConfigurator();
+  const state = useConfigurator(
+    useShallow((state) => ({
+      autoRotate: state.autoRotate,
+      cabin: state.cabin,
+      cabinEntryRequestedAt: state.cabinEntryRequestedAt,
+      cabinFailed: state.cabinFailed,
+      cabinPreparation: state.cabinPreparation,
+      cabinPreparationReadyAt: state.cabinPreparationReadyAt,
+      cabinPreparationStartedAt: state.cabinPreparationStartedAt,
+      cabinProgress: state.cabinProgress,
+      cabinReady: state.cabinReady,
+      cameraPreset: state.cameraPreset,
+      cameraRequest: state.cameraRequest,
+      environmentRequest: state.environmentRequest,
+      error: state.error,
+      lightsAvailable: state.lightsAvailable,
+      lightsEnabled: state.lightsEnabled,
+      loadingProgress: state.loadingProgress,
+      notice: state.notice,
+      paintAvailable: state.paintAvailable,
+      panel: state.panel,
+      prepareCabin: state.prepareCabin,
+      ready: state.ready,
+      renderQuality: state.renderQuality,
+      retryScene: state.retryScene,
+      sceneRequest: state.sceneRequest,
+      selectVariant: state.selectVariant,
+      selectedEnvironment: state.selectedEnvironment,
+      selectedPaint: state.selectedPaint,
+      setPaint: state.setPaint,
+      togglePanel: state.togglePanel,
+    })),
+  );
   // Initialize the route's model/generation before mounting its expensive Canvas.
   // Otherwise a warm lazy scene mounts once here and again after selectVariant.
   const [initializedModel, setInitializedModel] = useState<string | null>(null);
@@ -506,9 +539,19 @@ export function ConfiguratorPage() {
         </button>
         {interactive ? (
           <p className="interaction-hint">
-            {state.cabin.phase === "active" || state.cameraPreset === "interior"
-              ? "Drag or use arrow keys to look · Esc to exit"
-              : "Drag to orbit · Scroll to zoom"}
+            {state.cabin.phase === "active" ||
+            state.cameraPreset === "interior" ? (
+              "Drag or use arrow keys to look · Esc to exit"
+            ) : (
+              <>
+                <span className="hint-pointer">
+                  Drag to orbit · Scroll to zoom
+                </span>
+                <span className="hint-touch">
+                  Drag to orbit · Pinch to zoom
+                </span>
+              </>
+            )}
           </p>
         ) : (
           <button className="asset-status" onClick={() => open("assets")}>

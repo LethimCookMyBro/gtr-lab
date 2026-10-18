@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useRef } from "react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { useConfigurator } from "../../stores/configurator";
@@ -17,7 +18,13 @@ export function CabinPreviewControls({
   reducedMotion: boolean;
   integrated?: boolean;
 }) {
-  const { cabin, beginCabin, setCabinSeat } = useConfigurator();
+  const { cabin, beginCabin, setCabinSeat } = useConfigurator(
+    useShallow((state) => ({
+      cabin: state.cabin,
+      beginCabin: state.beginCabin,
+      setCabinSeat: state.setCabinSeat,
+    })),
+  );
   const focus = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (cabin.phase === "closed") return;

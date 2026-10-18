@@ -164,6 +164,8 @@ it.each([
   ["/models/", "GT-R LAB — Models"],
   ["/configurator", "GT-R LAB — Premium configurator"],
   ["/configurator/premium", "GT-R LAB — Premium configurator"],
+  ["/configurator/premium?study=2008", "GT-R LAB — 2008 GT-R R35 Study"],
+  ["/configurator/nismo?study=2008", "GT-R LAB — NISMO configurator"],
   ["/configurator/nismo", "GT-R LAB — NISMO configurator"],
   ["/unmapped-route", "GT-R LAB — Page not found"],
   ["/configurator/unknown", "GT-R LAB — Model not found"],
