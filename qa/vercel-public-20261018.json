@@ -1,0 +1,82 @@
+{
+  "origin": "https://gtr-lab-do56-ten.vercel.app",
+  "sourceCommit": "b96b4f1326866eba86ac0d1232ff1d398f537725",
+  "assets": {
+    "index.html": {
+      "bytes": 700,
+      "sha256": "d8e7e47d6d9a79e7fe2db4f338556f7ac5771e183cc462ae7ddbf8c814b00be0"
+    },
+    "assets/RearVehicleScene-B-iXZSLY.js": {
+      "bytes": 11833,
+      "sha256": "41db8ab29d88dbdd01c52b275cc754400ef7291cc0dc9ee3929241155dbbfb16"
+    },
+    "assets/ConfiguratorPage-wvtzG_eM.css": {
+      "bytes": 5841,
+      "sha256": "a7d1d0b5ab2070256b88e502576652f39c1b7f7b937bf36a83aaa88a582ccced"
+    },
+    "assets/vanilla-m3Xdu9cz.js": {
+      "bytes": 344,
+      "sha256": "65399dfdb398e1cbf16974d31f6db0f5a672116d676f86be3737ae366741074c"
+    },
+    "assets/index-OM6pLJRT.css": {
+      "bytes": 110226,
+      "sha256": "85800d846beda0da783e87cba42b3b3196a809993226324f1c2db64f52be8a10"
+    },
+    "assets/index-GMwIOQhO.js": {
+      "bytes": 351845,
+      "sha256": "0fa6afa0e7cdd0d636fa283ccf4fb510cad41fbe7416ba8dd479bd866e4301ee"
+    },
+    "assets/react-core-BUY0TcQo.js": {
+      "bytes": 50559,
+      "sha256": "0a948cc50f789ef50d03679cf937166615f530e38c3ac473bc7038074623a4da"
+    },
+    "assets/three-core-Ci3lxaSX.js": {
+      "bytes": 704534,
+      "sha256": "3acfedafa4bee6e32f1eccd288aff03c63c68234a6f6e42efbc0a1f52495fd3f"
+    },
+    "assets/VehicleScene-CCWy9I0r.js": {
+      "bytes": 153106,
+      "sha256": "f99966d85444289284415b98f19f48e0476853d535dce452b26013b69bdd02f6"
+    },
+    "assets/ConfiguratorPage-Co7utllx.js": {
+      "bytes": 39992,
+      "sha256": "71c5496c56189596ecdbb8a487eac204b5a3d514104dc1eee21769bca5b6b3e6"
+    },
+    "assets/compileRearScene-ffPj0Vjs.js": {
+      "bytes": 575791,
+      "sha256": "aca0288e8e9c176d9832dfd3401cbcab6393497d35f9464676b6ef25ac516432"
+    },
+    "models/ciasny-r35-brake-index-e9425289.glb": {
+      "bytes": 8566388,
+      "sha256": "e942528980753f9dea6218bdf50ab943b13974b288faf2fd2305984b600fb1c9"
+    },
+    "models/r35-cabin-fine-roughness-ed88ad0e.glb": {
+      "bytes": 20196108,
+      "sha256": "ed88ad0eeff561e9c0f36f004fcdd4c3a31601f57865ce335268896e3219f5c0"
+    },
+    "models/r35-cabin-contact-ao-static-faces-8645956f.glb": {
+      "bytes": 20195752,
+      "sha256": "8645956fca144da9e7fffd8269889da4c5acf4270ee04b3d403af395b6d35452"
+    },
+    "models/ciasny-r35.glb": {
+      "bytes": 8296356,
+      "sha256": "fa889f70cd9c35d6831d7c81b9e647382dc1c59cd71a77bca2030c87a8dc308d"
+    },
+    "models/r35-exterior-cabin-proxy-49d7c2ab.glb": {
+      "bytes": 956368,
+      "sha256": "49d7c2ab44461e33ce6621287089eb4a9d54c50ebc339a2932f587ce3d355347"
+    },
+    "models/polytigr-r35-2008-precision-meshopt-rebuilt.glb": {
+      "bytes": 25813544,
+      "sha256": "a8f6e3e15ab71075f8caf817d362d31be8b7f0f4734f12602ea6348599727585"
+    },
+    "models/r35-cabin-dashboard-5c0a9dca.glb": {
+      "bytes": 19170816,
+      "sha256": "5c0a9dcae17b8f2621d82d45d67958b4bd0ae3f7917b76928dac9d4f6fbed326"
+    },
+    "environments/kloofendal_48d_partly_cloudy_puresky_2k.hdr": {
+      "bytes": 5451493,
+      "sha256": "5244534e9cf5b606f2ff513aa00ddb161b0a4826ffd88a0d3bd03ac29247d198"
+    }
+  }
+}

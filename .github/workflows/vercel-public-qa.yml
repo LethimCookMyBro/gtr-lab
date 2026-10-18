@@ -1,0 +1,33 @@
+name: Vercel public migration QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/vercel-public-qa.yml'
+      - 'scripts/verify-vercel-public.mjs'
+      - 'qa/vercel-public-20261018.json'
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'LethimCookMyBro/gtr-lab' && contains(github.event.head_commit.message, '[verify-vercel-public]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --check scripts/verify-vercel-public.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/verify-vercel-public.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vercel-public-20261018
+          path: vercel-public-results/
+          retention-days: 14
