@@ -2370,3 +2370,12 @@ p {
     bottom: 184px;
   }
 }
+
+/* Short landscape screens scroll rather than compressing reference cars to a strip. */
+@media (max-height: 500px) {
+  .configurator[data-asset-state="missing"] {
+    height: auto;
+    min-height: 100svh;
+    grid-template-rows: auto minmax(240px, 1fr) auto;
+  }
+}
